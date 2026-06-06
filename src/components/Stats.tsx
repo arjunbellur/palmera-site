@@ -1,3 +1,4 @@
+'use client'
 // Section #story — dark background, large serif numbers + app mockup images
 
 export default function Stats() {

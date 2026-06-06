@@ -1,3 +1,4 @@
+'use client'
 // Section #signal — "Step inside early" CTA with circular image arrangement
 
 const CIRCLE_IMAGES = [

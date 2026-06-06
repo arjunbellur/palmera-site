@@ -1,3 +1,4 @@
+'use client'
 // Section #makes — Full-screen destination snap sections: Dakar, Marrakesh, Lagos
 
 const DESTINATIONS = [

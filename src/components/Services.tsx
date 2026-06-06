@@ -1,3 +1,4 @@
+'use client'
 // Section #skills — Light cream, services grid with dashed vertical dividers + inline SVG icons
 
 const SERVICE_ICONS: Record<string, string> = {

@@ -1,3 +1,4 @@
+'use client'
 // Footer — email signup form + marquee with actual SVG assets + copyright
 
 'use client'
