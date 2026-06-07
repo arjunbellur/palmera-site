@@ -1,7 +1,7 @@
 'use client'
 
-// Webflow CSS: .master-snap-section { position: sticky; top: 48px; height: 80vh; border-radius: 8px; overflow: hidden }
-// Outer container stacks them, each is sticky so they layer on top of each other on scroll
+// Sticky stacked destination cards — each is position:sticky top:48px
+// City name is large, centered, fills the card like the live Webflow site
 
 const DESTINATIONS = [
   {
@@ -30,100 +30,107 @@ export default function Destinations() {
       id="makes"
       style={{
         background: 'var(--bg-body)',
-        padding: '0 48px 48px',
+        padding: '0 40px 200px',
+      }}
+    >
+      {/* Stack of sticky cards — each layers on top of previous */}
+      <div style={{
         display: 'flex',
         flexDirection: 'column',
         gap: '48px',
-      }}
-    >
-      {DESTINATIONS.map((dest) => (
-        <div
-          key={dest.city}
-          style={{
-            position: 'sticky',
-            top: '48px',
-            height: '80vh',
-            minHeight: '500px',
-            borderRadius: '8px',
-            overflow: 'hidden',
-            flexShrink: 0,
-          }}
-        >
-          {/* Full bleed image */}
-          <img
-            src={dest.image}
-            alt={`${dest.city}, ${dest.country}`}
+      }}>
+        {DESTINATIONS.map((dest, i) => (
+          <div
+            key={dest.city}
             style={{
-              position: 'absolute',
-              inset: 0,
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              objectPosition: 'center',
-              display: 'block',
+              position: 'sticky',
+              top: `${48 + i * 8}px`, // slight offset so cards peek behind each other
+              height: '82vh',
+              minHeight: '520px',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              zIndex: 10 + i,
             }}
-          />
+          >
+            {/* Full bleed image */}
+            <img
+              src={dest.image}
+              alt={`${dest.city}, ${dest.country}`}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                objectPosition: 'center',
+              }}
+            />
 
-          {/* Top gradient + text */}
-          <div style={{
-            position: 'absolute',
-            inset: 0,
-            background: 'linear-gradient(to bottom, rgba(4,4,4,0.6) 0%, transparent 45%, rgba(4,4,4,0.5) 100%)',
-            zIndex: 1,
-          }} />
-
-          {/* Text */}
-          <div style={{
-            position: 'absolute',
-            top: '48px',
-            left: '40px',
-            right: '40px',
-            zIndex: 2,
-          }}>
-            <p style={{
-              fontFamily: 'Geist Mono Variable, Courier New, monospace',
-              fontSize: '11px',
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              color: 'rgba(235,232,219,0.6)',
-              marginBottom: '12px',
-            }}>
-              Explore Premium Destinations<br />{dest.country}
-            </p>
-            <h2 style={{
-              fontFamily: 'var(--font-serif)',
-              fontSize: 'clamp(64px, 11vw, 140px)',
-              fontWeight: 400,
-              letterSpacing: '-3px',
-              lineHeight: 0.95,
-              color: '#ebe8db',
-              margin: 0,
-            }}>
-              {dest.city}
-            </h2>
-          </div>
-
-          {/* Bottom note */}
-          {dest.note && (
+            {/* Overlay gradient */}
             <div style={{
               position: 'absolute',
-              bottom: '40px',
-              left: '40px',
-              zIndex: 2,
+              inset: 0,
+              background: 'linear-gradient(to bottom, rgba(4,4,4,0.55) 0%, rgba(4,4,4,0.1) 40%, rgba(4,4,4,0.45) 100%)',
+            }} />
+
+            {/* Content */}
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              textAlign: 'center',
+              padding: '48px 40px',
             }}>
               <p style={{
                 fontFamily: 'Geist Mono Variable, Courier New, monospace',
                 fontSize: '11px',
-                letterSpacing: '0.12em',
+                letterSpacing: '0.15em',
                 textTransform: 'uppercase',
-                color: 'rgba(235,232,219,0.5)',
+                color: 'rgba(235,232,219,0.65)',
+                marginBottom: '16px',
+                lineHeight: 1.6,
               }}>
-                {dest.note}
+                Explore Premium Destinations<br />{dest.country}
               </p>
+              <h2 style={{
+                fontFamily: 'var(--font-serif)',
+                fontSize: 'clamp(80px, 13vw, 180px)',
+                fontWeight: 400,
+                letterSpacing: '-3px',
+                lineHeight: 0.9,
+                color: '#ebe8db',
+                margin: 0,
+              }}>
+                {dest.city}
+              </h2>
             </div>
-          )}
-        </div>
-      ))}
+
+            {/* Bottom note */}
+            {dest.note && (
+              <div style={{
+                position: 'absolute',
+                bottom: '40px',
+                left: '40px',
+                right: '40px',
+                textAlign: 'center',
+              }}>
+                <p style={{
+                  fontFamily: 'Geist Mono Variable, Courier New, monospace',
+                  fontSize: '11px',
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: 'rgba(235,232,219,0.5)',
+                }}>
+                  {dest.note.toUpperCase()}
+                </p>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </section>
   )
 }
