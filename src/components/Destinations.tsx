@@ -1,11 +1,14 @@
 'use client'
-// Section #makes — Full-screen destination snap sections: Dakar, Marrakesh, Lagos
+
+// Webflow CSS: .master-snap-section { position: sticky; top: 48px; height: 80vh; border-radius: 8px; overflow: hidden }
+// Outer container stacks them, each is sticky so they layer on top of each other on scroll
 
 const DESTINATIONS = [
   {
     country: 'Senegal',
     city: 'Dakar',
     image: '/images/ton-toan-dxwt8veyBzQ-unsplash.jpg',
+    note: null,
   },
   {
     country: 'Morocco',
@@ -17,76 +20,110 @@ const DESTINATIONS = [
     country: 'Nigeria',
     city: 'Lagos',
     image: '/images/gbenga-onalaja-bZC_VAVhoQE-unsplash.jpg',
+    note: null,
   },
 ]
 
 export default function Destinations() {
   return (
-    <section id="makes" style={{ background: 'var(--bg-body)' }}>
+    <section
+      id="makes"
+      style={{
+        background: 'var(--bg-body)',
+        padding: '0 48px 48px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '48px',
+      }}
+    >
       {DESTINATIONS.map((dest) => (
         <div
           key={dest.city}
           style={{
-            position: 'relative',
-            height: '100vh',
-            minHeight: '600px',
+            position: 'sticky',
+            top: '48px',
+            height: '80vh',
+            minHeight: '500px',
+            borderRadius: '8px',
             overflow: 'hidden',
+            flexShrink: 0,
           }}
-          className="dest-snap"
         >
+          {/* Full bleed image */}
           <img
             src={dest.image}
             alt={`${dest.city}, ${dest.country}`}
-            className="image-cover"
-            style={{ transition: 'transform 0.8s cubic-bezier(0.16,1,0.3,1)' }}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              objectPosition: 'center',
+              display: 'block',
+            }}
           />
 
           {/* Top gradient + text */}
           <div style={{
-            position: 'absolute', top: 0, left: 0, right: 0,
-            background: 'linear-gradient(to bottom, rgba(4,4,4,0.7) 0%, transparent 50%)',
-            padding: '48px 40px',
+            position: 'absolute',
+            inset: 0,
+            background: 'linear-gradient(to bottom, rgba(4,4,4,0.6) 0%, transparent 45%, rgba(4,4,4,0.5) 100%)',
+            zIndex: 1,
+          }} />
+
+          {/* Text */}
+          <div style={{
+            position: 'absolute',
+            top: '48px',
+            left: '40px',
+            right: '40px',
+            zIndex: 2,
           }}>
-            <p className="label" style={{ color: 'rgba(235,232,219,0.6)', marginBottom: '16px' }}>
+            <p style={{
+              fontFamily: 'Geist Mono Variable, Courier New, monospace',
+              fontSize: '11px',
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color: 'rgba(235,232,219,0.6)',
+              marginBottom: '12px',
+            }}>
               Explore Premium Destinations<br />{dest.country}
             </p>
             <h2 style={{
               fontFamily: 'var(--font-serif)',
-              fontSize: 'clamp(56px, 10vw, 140px)',
+              fontSize: 'clamp(64px, 11vw, 140px)',
               fontWeight: 400,
               letterSpacing: '-3px',
-              lineHeight: 1,
+              lineHeight: 0.95,
               color: '#ebe8db',
+              margin: 0,
             }}>
               {dest.city}
             </h2>
           </div>
 
-          {/* Bottom gradient */}
-          <div style={{
-            position: 'absolute', bottom: 0, left: 0, right: 0,
-            background: 'linear-gradient(to top, rgba(4,4,4,0.8) 0%, transparent 40%)',
-            height: '240px',
-          }} />
-
-          {/* Optional note */}
+          {/* Bottom note */}
           {dest.note && (
             <div style={{
               position: 'absolute',
-              bottom: '48px',
+              bottom: '40px',
               left: '40px',
+              zIndex: 2,
             }}>
-              <p className="label" style={{ color: 'rgba(235,232,219,0.5)' }}>{dest.note}</p>
+              <p style={{
+                fontFamily: 'Geist Mono Variable, Courier New, monospace',
+                fontSize: '11px',
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                color: 'rgba(235,232,219,0.5)',
+              }}>
+                {dest.note}
+              </p>
             </div>
           )}
         </div>
       ))}
-
-      <style>{`
-        .dest-snap:hover img {
-          transform: scale(1.04);
-        }
-      `}</style>
     </section>
   )
 }

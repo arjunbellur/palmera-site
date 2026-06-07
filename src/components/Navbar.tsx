@@ -1,204 +1,114 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
-const NAV_LINKS = [
-  { label: 'Palmera', href: '#hero', type: 'brand' },
-  { label: 'Learn', href: '#base', type: 'link' },
-  { label: 'Location', href: '#makes', type: 'link' },
-  { label: 'Experience', href: '#skills', type: 'link' },
-  { label: 'App', href: '#story', type: 'link' },
-  { label: 'Sign Up', href: '#signal', type: 'link' },
-  { label: 'Partners', href: '/partners', type: 'link' },
-  { label: 'Early Access', href: 'https://form.typeform.com/to/xo1Bskym', type: 'cta', external: true },
+const LINKS = [
+  { label: 'Learn', href: '#base' },
+  { label: 'Location', href: '#makes' },
+  { label: 'Experience', href: '#skills' },
+  { label: 'App', href: '#story' },
+  { label: 'Sign Up', href: '#signal' },
 ]
 
+const labelStyle: React.CSSProperties = {
+  fontFamily: 'Geist Mono Variable, Courier New, monospace',
+  fontSize: '11px',
+  letterSpacing: '0.1em',
+  textTransform: 'uppercase',
+  lineHeight: 1.33,
+}
+
+const pillBase: React.CSSProperties = {
+  padding: '9px 16px',
+  borderRadius: '4px',
+  backdropFilter: 'blur(16px)',
+  WebkitBackdropFilter: 'blur(16px)',
+  textDecoration: 'none',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  cursor: 'pointer',
+  whiteSpace: 'nowrap' as const,
+}
+
 export default function Navbar() {
+  const [isMobile, setIsMobile] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
 
-  return (
-    <>
-      {/* Desktop nav — full width pill-tab bar */}
-      <nav style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 100,
-        padding: '16px 24px',
-      }}>
-        {/* Desktop */}
-        <div
-          className="hidden md:flex"
-          style={{
-            display: 'flex',
-            gap: '8px',
-            alignItems: 'center',
-            width: '100%',
-          }}
-        >
-          {NAV_LINKS.map((link) => {
-            const isBrand = link.type === 'brand'
-            const isCta = link.type === 'cta'
-            const bg = isBrand
-              ? 'rgba(42,33,25,0.48)'
-              : isCta
-              ? '#dfc9a6'
-              : 'rgba(255,255,255,0.32)'
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
-            const color = isCta ? '#2a2119' : '#dfc9a6'
-            const flex = isBrand || isCta ? '0 0 auto' : '1'
-
-            const el = (
-              <div
-                key={link.label}
-                style={{
-                  flex,
-                  padding: '8px 12px',
-                  borderRadius: '4px',
-                  background: bg,
-                  backdropFilter: 'blur(16px)',
-                  WebkitBackdropFilter: 'blur(16px)',
-                  color,
-                  textAlign: 'center',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  textDecoration: 'none',
-                  transition: 'background 0.2s ease',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                <span style={{
-                  fontFamily: 'Geist Mono Variable, Courier New, monospace',
-                  fontSize: '0.7em',
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                  lineHeight: 1.33,
-                }}>
-                  {link.label}
-                </span>
-              </div>
-            )
-
-            if (link.external) {
-              return (
-                <a key={link.label} href={link.href} target="_blank" rel="noopener noreferrer"
-                  style={{ flex, textDecoration: 'none' }}>
-                  {el}
-                </a>
-              )
-            }
-            return (
-              <Link key={link.label} href={link.href} style={{ flex, textDecoration: 'none' }}>
-                {el}
-              </Link>
-            )
-          })}
-        </div>
-
-        {/* Mobile — brand + hamburger */}
-        <div className="flex md:hidden" style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}>
-          <div style={{
-            padding: '8px 16px',
-            background: 'rgba(42,33,25,0.48)',
-            backdropFilter: 'blur(16px)',
-            borderRadius: '4px',
-          }}>
-            <span style={{
-              fontFamily: 'Geist Mono Variable, Courier New, monospace',
-              fontSize: '0.7em',
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              color: '#dfc9a6',
-            }}>
-              The Palmera Experience
-            </span>
-          </div>
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            style={{
-              background: 'rgba(255,255,255,0.32)',
-              backdropFilter: 'blur(16px)',
-              border: 'none',
-              borderRadius: '4px',
-              padding: '10px 14px',
-              cursor: 'pointer',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '4px',
-            }}
-          >
+  if (isMobile) {
+    return (
+      <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, padding: '16px 20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Link href="#hero" style={{ ...pillBase, background: 'rgba(42,33,25,0.55)', textDecoration: 'none' }}>
+            <span style={{ ...labelStyle, color: '#dfc9a6' }}>The Palmera Experience</span>
+          </Link>
+          <button onClick={() => setMenuOpen(!menuOpen)}
+            style={{ ...pillBase, background: 'rgba(255,255,255,0.28)', border: 'none', gap: '0', flexDirection: 'column', padding: '10px 14px' }}>
             {[0,1,2].map(i => (
-              <span key={i} style={{
-                display: 'block', width: '20px', height: '1px',
-                background: '#dfc9a6',
-                transition: 'all 0.3s ease',
-                transform: menuOpen && i===0 ? 'rotate(45deg) translateY(7px)' :
-                           menuOpen && i===2 ? 'rotate(-45deg) translateY(-7px)' : 'none',
-                opacity: menuOpen && i===1 ? 0 : 1,
-              }} />
+              <span key={i} style={{ display: 'block', width: '18px', height: '1px', background: '#dfc9a6', margin: '3px 0',
+                transition: 'all 0.25s',
+                transform: menuOpen && i===0 ? 'rotate(45deg) translateY(7px)' : menuOpen && i===2 ? 'rotate(-45deg) translateY(-7px)' : 'none',
+                opacity: menuOpen && i===1 ? 0 : 1 }} />
             ))}
           </button>
         </div>
-
-        {/* Mobile menu */}
         {menuOpen && (
-          <div style={{
-            marginTop: '8px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '8px',
-          }}>
-            {NAV_LINKS.filter(l => l.type !== 'brand').map((link) => (
-              link.external ? (
-                <a key={link.label} href={link.href} target="_blank" rel="noopener noreferrer"
-                  onClick={() => setMenuOpen(false)}
-                  style={{
-                    padding: '12px 16px',
-                    background: link.type === 'cta' ? '#dfc9a6' : 'rgba(255,255,255,0.2)',
-                    backdropFilter: 'blur(16px)',
-                    borderRadius: '4px',
-                    textDecoration: 'none',
-                    color: link.type === 'cta' ? '#2a2119' : '#dfc9a6',
-                    fontFamily: 'Geist Mono Variable, Courier New, monospace',
-                    fontSize: '0.7em',
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase',
-                    textAlign: 'center',
-                  }}>
-                  {link.label}
-                </a>
-              ) : (
-                <Link key={link.label} href={link.href}
-                  onClick={() => setMenuOpen(false)}
-                  style={{
-                    padding: '12px 16px',
-                    background: 'rgba(255,255,255,0.2)',
-                    backdropFilter: 'blur(16px)',
-                    borderRadius: '4px',
-                    textDecoration: 'none',
-                    color: '#dfc9a6',
-                    fontFamily: 'Geist Mono Variable, Courier New, monospace',
-                    fontSize: '0.7em',
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase',
-                    textAlign: 'center',
-                    display: 'block',
-                  }}>
-                  {link.label}
-                </Link>
-              )
+          <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {LINKS.map(l => (
+              <Link key={l.label} href={l.href} onClick={() => setMenuOpen(false)}
+                style={{ ...pillBase, background: 'rgba(255,255,255,0.22)', textDecoration: 'none' }}>
+                <span style={{ ...labelStyle, color: '#dfc9a6' }}>{l.label}</span>
+              </Link>
             ))}
+            <Link href="/partners" onClick={() => setMenuOpen(false)}
+              style={{ ...pillBase, background: 'rgba(255,255,255,0.22)', textDecoration: 'none' }}>
+              <span style={{ ...labelStyle, color: '#dfc9a6' }}>Partners</span>
+            </Link>
+            <a href="https://form.typeform.com/to/xo1Bskym" target="_blank" rel="noopener noreferrer"
+              style={{ ...pillBase, background: '#dfc9a6', textDecoration: 'none' }}>
+              <span style={{ ...labelStyle, color: '#2a2119' }}>Early Access</span>
+            </a>
           </div>
         )}
       </nav>
-    </>
+    )
+  }
+
+  // Desktop — single row pill bar
+  return (
+    <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, padding: '16px 24px' }}>
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', width: '100%' }}>
+        {/* Brand pill — fixed width */}
+        <Link href="#hero" style={{ ...pillBase, background: 'rgba(42,33,25,0.55)', flexShrink: 0, textDecoration: 'none' }}>
+          <span style={{ ...labelStyle, color: '#dfc9a6' }}>Palmera</span>
+        </Link>
+
+        {/* Nav links — each flex:1 to fill row */}
+        {LINKS.map(l => (
+          <Link key={l.label} href={l.href}
+            style={{ ...pillBase, background: 'rgba(255,255,255,0.28)', flex: 1, textDecoration: 'none' }}>
+            <span style={{ ...labelStyle, color: '#dfc9a6' }}>{l.label}</span>
+          </Link>
+        ))}
+        <Link href="/partners"
+          style={{ ...pillBase, background: 'rgba(255,255,255,0.28)', flex: 1, textDecoration: 'none' }}>
+          <span style={{ ...labelStyle, color: '#dfc9a6' }}>Partners</span>
+        </Link>
+
+        {/* CTA — fixed width */}
+        <a href="https://form.typeform.com/to/xo1Bskym" target="_blank" rel="noopener noreferrer"
+          style={{ ...pillBase, background: '#dfc9a6', flexShrink: 0, textDecoration: 'none' }}>
+          <span style={{ ...labelStyle, color: '#2a2119' }}>Early Access</span>
+        </a>
+      </div>
+    </nav>
   )
 }
