@@ -25,16 +25,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const isLoginPage = pathname === '/dashboard'
 
   useEffect(() => {
-    if (isLoginPage) {
-      setLoading(false)
-      return
-    }
-
+    if (isLoginPage) { setLoading(false); return }
     const unsub = onAuthChange(async (user) => {
-      if (!user) {
-        router.replace('/dashboard')
-        return
-      }
+      if (!user) { router.replace('/dashboard'); return }
       setEmail(user.email || '')
       const partner = await getPartner(user.uid)
       if (partner?.sections) setSections(partner.sections)
@@ -62,35 +55,34 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (status === 'complete') return '#9e763b'
     if (status === 'in_progress') return '#be9a56'
     if (status === 'none') return 'transparent'
-    return 'rgba(223,201,166,0.2)'
+    return 'rgba(223,201,166,0.3)'
   }
 
-  if (isLoginPage) {
-    return <>{children}</>
-  }
+  if (isLoginPage) return <>{children}</>
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: 'var(--bg-body)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ width: '32px', height: '32px', border: '2px solid rgba(223,201,166,0.1)', borderTopColor: 'var(--accent-4)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      <div style={{ minHeight: '100vh', background: '#040404', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: '32px', height: '32px', border: '2px solid rgba(190,154,86,0.15)', borderTopColor: '#be9a56', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
       </div>
     )
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-body)' }}>
+    <div style={{ minHeight: '100vh', background: '#040404' }}>
       <DashboardNav email={email} />
       <div style={{ display: 'flex', paddingTop: '64px', minHeight: '100vh' }}>
         <aside style={{
           width: '220px',
           flexShrink: 0,
-          borderRight: '1px solid rgba(223,201,166,0.08)',
+          borderRight: '1px solid rgba(190,154,86,0.12)',
           padding: '32px 0',
           position: 'sticky',
           top: '64px',
           height: 'calc(100vh - 64px)',
           overflowY: 'auto',
+          background: '#040404',
         }}>
           {NAV_ITEMS.map(item => {
             const active = pathname === item.href
@@ -103,25 +95,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   display: 'flex',
                   alignItems: 'center',
                   gap: '10px',
-                  padding: '11px 24px',
+                  padding: '12px 24px',
                   textDecoration: 'none',
-                  background: active ? 'rgba(158,118,59,0.1)' : 'transparent',
-                  borderLeft: active ? '2px solid var(--accent-3)' : '2px solid transparent',
+                  background: active ? 'rgba(158,118,59,0.12)' : 'transparent',
+                  borderLeft: active ? '2px solid #be9a56' : '2px solid transparent',
                   transition: 'background 0.15s',
                 }}
-                onMouseEnter={e => { if (!active) (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.03)' }}
+                onMouseEnter={e => { if (!active) (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.04)' }}
                 onMouseLeave={e => { if (!active) (e.currentTarget as HTMLAnchorElement).style.background = 'transparent' }}
               >
                 <div style={{
                   width: '7px', height: '7px', borderRadius: '50%',
                   background: dotColor(status),
                   flexShrink: 0,
-                  border: status === 'incomplete' ? '1px solid rgba(223,201,166,0.2)' : 'none',
+                  border: status === 'incomplete' ? '1px solid rgba(223,201,166,0.35)' : 'none',
                 }} />
                 <span style={{
                   fontSize: '13px',
                   fontFamily: 'var(--font-sans)',
-                  color: active ? 'var(--accent-4)' : 'rgba(223,201,166,0.55)',
+                  color: active ? '#be9a56' : 'rgba(223,201,166,0.8)',
                   letterSpacing: '0.02em',
                   fontWeight: active ? 500 : 400,
                 }}>

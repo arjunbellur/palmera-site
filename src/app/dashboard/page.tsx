@@ -1,4 +1,3 @@
-
 'use client'
 export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
@@ -59,11 +58,11 @@ export default function DashboardPage() {
 
   const inputStyle = {
     width: '100%',
-    background: 'rgba(255,255,255,0.04)',
-    border: '1px solid rgba(223,201,166,0.15)',
+    background: 'rgba(255,255,255,0.06)',
+    border: '1px solid rgba(190,154,86,0.25)',
     borderRadius: '6px',
-    padding: '12px 16px',
-    color: 'var(--color-tan)',
+    padding: '13px 16px',
+    color: '#dfc9a6',
     fontSize: '15px',
     fontFamily: 'var(--font-sans)',
     outline: 'none',
@@ -73,48 +72,41 @@ export default function DashboardPage() {
 
   if (checking) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        background: 'var(--bg-body)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
-        <div style={{ width: '32px', height: '32px', border: '2px solid rgba(223,201,166,0.1)', borderTopColor: 'var(--accent-4)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      <div style={{ minHeight: '100vh', background: '#040404', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: '32px', height: '32px', border: '2px solid rgba(190,154,86,0.15)', borderTopColor: '#be9a56', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
       </div>
     )
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'var(--bg-body)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '24px',
-    }}>
+    <div style={{ minHeight: '100vh', background: '#040404', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
       <div style={{ width: '100%', maxWidth: '420px' }}>
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <Image src="/images/Footer-Logo-1.svg" alt="Palmera" width={48} height={48} style={{ marginBottom: '12px', opacity: 0.9 }} />
+          <Image
+            src="/images/PALMERA_cracked.png"
+            alt="Palmera"
+            width={56}
+            height={56}
+            style={{ objectFit: 'contain', marginBottom: '14px' }}
+          />
           <h1 style={{
             fontFamily: 'var(--font-display)',
-            color: 'var(--color-tan)',
-            fontSize: '22px',
+            color: '#dfc9a6',
+            fontSize: '24px',
             fontWeight: 400,
-            letterSpacing: '0.12em',
+            letterSpacing: '0.14em',
             margin: '0 0 6px',
           }}>
             PALMERA
           </h1>
           <p style={{
             fontFamily: 'var(--font-serif)',
-            color: 'rgba(223,201,166,0.4)',
+            color: 'rgba(190,154,86,0.8)',
             fontSize: '14px',
             margin: 0,
-            letterSpacing: '0.04em',
+            letterSpacing: '0.06em',
           }}>
             Partner Portal
           </p>
@@ -122,15 +114,15 @@ export default function DashboardPage() {
 
         {/* Card */}
         <div style={{
-          background: 'rgba(255,255,255,0.03)',
-          border: '1px solid rgba(223,201,166,0.1)',
+          background: 'rgba(255,255,255,0.04)',
+          border: '1px solid rgba(190,154,86,0.2)',
           borderRadius: '12px',
           padding: '36px 32px',
         }}>
           <h2 style={{
             fontFamily: 'var(--font-serif)',
-            color: 'var(--color-tan)',
-            fontSize: '18px',
+            color: '#dfc9a6',
+            fontSize: '20px',
             fontWeight: 400,
             margin: '0 0 24px',
             letterSpacing: '0.02em',
@@ -166,12 +158,7 @@ export default function DashboardPage() {
           )}
 
           {error && (
-            <p style={{
-              fontSize: '13px',
-              color: '#e07070',
-              fontFamily: 'var(--font-sans)',
-              margin: '-4px 0 12px',
-            }}>
+            <p style={{ fontSize: '13px', color: '#e07070', fontFamily: 'var(--font-sans)', margin: '-4px 0 12px' }}>
               {error}
             </p>
           )}
@@ -181,32 +168,34 @@ export default function DashboardPage() {
             disabled={loading}
             style={{
               width: '100%',
-              padding: '13px',
-              background: 'var(--accent-3)',
+              padding: '14px',
+              background: '#9e763b',
               border: 'none',
               borderRadius: '6px',
-              color: '#fff',
+              color: '#ebe8db',
               fontSize: '14px',
               fontFamily: 'var(--font-sans)',
               letterSpacing: '0.08em',
               cursor: loading ? 'wait' : 'pointer',
               marginBottom: '20px',
               opacity: loading ? 0.7 : 1,
-              transition: 'opacity 0.2s',
+              transition: 'opacity 0.2s, background 0.2s',
             }}
+            onMouseEnter={e => { if (!loading) (e.target as HTMLButtonElement).style.background = '#be9a56' }}
+            onMouseLeave={e => { if (!loading) (e.target as HTMLButtonElement).style.background = '#9e763b' }}
           >
             {loading ? 'Please wait...' : mode === 'login' ? 'Log in' : 'Create account'}
           </button>
 
           <div style={{ textAlign: 'center' }}>
-            <span style={{ fontSize: '13px', color: 'rgba(223,201,166,0.4)', fontFamily: 'var(--font-sans)' }}>
+            <span style={{ fontSize: '13px', color: 'rgba(223,201,166,0.7)', fontFamily: 'var(--font-sans)' }}>
               {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
             </span>
             <button
               onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError('') }}
               style={{
                 background: 'none', border: 'none',
-                color: 'var(--accent-4)',
+                color: '#be9a56',
                 fontSize: '13px',
                 fontFamily: 'var(--font-sans)',
                 cursor: 'pointer',
@@ -221,12 +210,12 @@ export default function DashboardPage() {
         <p style={{
           textAlign: 'center',
           marginTop: '20px',
-          fontSize: '12px',
-          color: 'rgba(223,201,166,0.2)',
+          fontSize: '13px',
+          color: 'rgba(223,201,166,0.55)',
           fontFamily: 'var(--font-sans)',
         }}>
           For experience providers only. Applying to list on Palmera?{' '}
-          <a href="/partners" style={{ color: 'rgba(223,201,166,0.35)', textDecoration: 'underline' }}>
+          <a href="/partners" style={{ color: '#be9a56', textDecoration: 'underline' }}>
             Apply here
           </a>
         </p>
