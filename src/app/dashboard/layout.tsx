@@ -6,13 +6,13 @@ import { getPartner } from '@/lib/firestore'
 import DashboardNav from '@/components/dashboard/DashboardNav'
 
 const NAV_ITEMS = [
-  { href: '/dashboard/home', label: 'Overview', icon: '◈' },
-  { href: '/dashboard/profile', label: 'Business Profile', icon: '○' },
-  { href: '/dashboard/listings', label: 'Listings', icon: '◇' },
-  { href: '/dashboard/photos', label: 'Photos', icon: '□' },
-  { href: '/dashboard/operations', label: 'Operations', icon: '△' },
-  { href: '/dashboard/documents', label: 'Documents', icon: '◻' },
-  { href: '/dashboard/settings', label: 'Terms & Sign-off', icon: '◉' },
+  { href: '/dashboard/home', label: 'Overview' },
+  { href: '/dashboard/profile', label: 'Business Profile' },
+  { href: '/dashboard/listings', label: 'Listings' },
+  { href: '/dashboard/photos', label: 'Photos' },
+  { href: '/dashboard/operations', label: 'Operations' },
+  { href: '/dashboard/documents', label: 'Documents' },
+  { href: '/dashboard/settings', label: 'Terms & Sign-off' },
 ]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -22,7 +22,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sections, setSections] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
 
+  const isLoginPage = pathname === '/dashboard'
+
   useEffect(() => {
+    if (isLoginPage) {
+      setLoading(false)
+      return
+    }
+
     const unsub = onAuthChange(async (user) => {
       if (!user) {
         router.replace('/dashboard')
@@ -34,7 +41,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       setLoading(false)
     })
     return () => unsub()
-  }, [router])
+  }, [router, isLoginPage])
 
   const getStatusDot = (href: string) => {
     const key = href.split('/').pop() || ''
@@ -58,6 +65,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return 'rgba(223,201,166,0.2)'
   }
 
+  if (isLoginPage) {
+    return <>{children}</>
+  }
+
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--bg-body)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -70,9 +81,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-body)' }}>
       <DashboardNav email={email} />
-
       <div style={{ display: 'flex', paddingTop: '64px', minHeight: '100vh' }}>
-        {/* Sidebar */}
         <aside style={{
           width: '220px',
           flexShrink: 0,
@@ -122,8 +131,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             )
           })}
         </aside>
-
-        {/* Main content */}
         <main style={{ flex: 1, padding: '40px 48px', maxWidth: '900px' }}>
           {children}
         </main>
