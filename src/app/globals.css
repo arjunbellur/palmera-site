@@ -1,11 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap');
 
 /* ============================================
    PALMERA — Global Styles
-   Faithfully migrated from Webflow export
    ============================================ */
 
-/* Custom fonts */
 @font-face {
   font-family: 'Raveo Display';
   src: url('/fonts/Raveo-Display-Medium.woff2') format('woff2');
@@ -48,50 +46,22 @@
   font-display: swap;
 }
 
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ============================================
-   CSS Variables — exact from Webflow export
+   Base — 1rem = 16px
    ============================================ */
-:root {
-  /* Backgrounds */
-  --bg-1: #ebe8db;
-  --bg-2: #f5f0ea;
-  --bg-3: #d3bba8;
-  --bg-body: #040404;
-
-  /* Colors */
-  --color-dark: #2a2119;
-  --color-light: #ffffff;
-  --color-tan: #dfc9a6;
-
-  /* Accents */
-  --accent-1: #0a1d39;
-  --accent-2: #0f2723;
-  --accent-3: #9e763b;
-  --accent-4: #be9a56;
-
-  /* Fonts */
-  --font-display: 'Raveo Display', Arial, sans-serif;
-  --font-serif: 'LT Superior Serif', Arial, sans-serif;
-  --font-sans: 'Instrument Sans', sans-serif;
-  --font-mono: 'Geist Mono Variable', 'Courier New', monospace;
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
 }
 
-/* ============================================
-   Base Reset
-   ============================================ */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-}
-
-html {
-  scroll-behavior: smooth;
 }
 
 body {
@@ -104,64 +74,50 @@ body {
 }
 
 /* ============================================
-   Typography Classes
+   CSS Variables
    ============================================ */
-.heading-hero {
-  font-family: var(--font-display);
-  font-size: clamp(80px, 16vw, 220px);
-  line-height: 1;
-  font-weight: 500;
-  letter-spacing: -0.02em;
+:root {
+  --bg-1: #ebe8db;
+  --bg-2: #f5f0ea;
+  --bg-3: #d3bba8;
+  --bg-body: #040404;
+  --color-dark: #2a2119;
+  --color-light: #ffffff;
+  --color-tan: #dfc9a6;
+  --accent-1: #0a1d39;
+  --accent-2: #0f2723;
+  --accent-3: #9e763b;
+  --accent-4: #be9a56;
+  --font-display: 'Raveo Display', Arial, sans-serif;
+  --font-serif: 'LT Superior Serif', Arial, sans-serif;
+  --font-sans: 'Instrument Sans', sans-serif;
+  --font-mono: 'Geist Mono Variable', 'Courier New', monospace;
 }
 
-.heading-large {
-  font-family: var(--font-serif);
-  font-size: 80px;
-  line-height: 100%;
-  letter-spacing: -4px;
-}
-
+/* ============================================
+   Typography
+   ============================================ */
 .label {
   font-family: var(--font-mono);
-  font-size: 0.7em;
-  line-height: 133%;
+  font-size: 0.6875rem;
+  line-height: 1.33;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.subheading-regular {
-  font-family: var(--font-sans);
-  font-size: 18px;
-  font-weight: 600;
-  line-height: 1.3;
-  color: var(--color-dark);
-}
-
-.paragraph-regular {
-  font-family: var(--font-serif);
-  font-size: 15px;
-  line-height: 1.6;
-  color: rgba(42, 33, 25, 0.6);
-}
-
 .text-h2 {
   font-family: var(--font-serif);
-  font-size: 4em;
+  font-size: clamp(2rem, 4vw, 4rem);
   line-height: 1.3;
   letter-spacing: 0;
 }
 
 /* ============================================
-   Marquee Animations
+   Animations
    ============================================ */
 @keyframes marquee {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
-}
-
-@keyframes marquee-reverse {
-  0% { transform: translateX(-50%); }
-  100% { transform: translateX(0); }
 }
 
 @keyframes marquee-slow {
@@ -169,16 +125,14 @@ body {
   100% { transform: translateX(-50%); }
 }
 
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 .marquee-track {
   display: flex;
   width: max-content;
   animation: marquee 28s linear infinite;
-}
-
-.marquee-track-reverse {
-  display: flex;
-  width: max-content;
-  animation: marquee-reverse 34s linear infinite;
 }
 
 .marquee-track-footer {
@@ -188,86 +142,8 @@ body {
 }
 
 /* ============================================
-   Scroll Section — Discover/Gather/Reserve/Commit
+   Scrollbar
    ============================================ */
-.scroll-section {
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* ============================================
-   Preloader
-   ============================================ */
-@keyframes preloaderReveal {
-  0% { transform: scaleY(1); }
-  100% { transform: scaleY(0); transform-origin: top; }
-}
-
-@keyframes fadeOut {
-  0% { opacity: 1; }
-  100% { opacity: 0; pointer-events: none; }
-}
-
-.preloader {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  background: var(--bg-body);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: fadeOut 0.6s ease 1.8s forwards;
-}
-
-/* ============================================
-   Partner form inputs
-   ============================================ */
-.partner-input {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(190,154,86,0.25);
-  color: #f5f0ea;
-  padding: 14px 18px;
-  width: 100%;
-  font-size: 15px;
-  font-family: var(--font-serif);
-  transition: border-color 0.2s ease;
-  outline: none;
-}
-
-.partner-input:focus {
-  border-color: var(--accent-4);
-}
-
-.partner-input::placeholder {
-  color: rgba(245,240,234,0.3);
-}
-
-/* ============================================
-   Utilities
-   ============================================ */
-.image-cover {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.section-divider {
-  width: 100%;
-  height: 1px;
-  background: rgba(42,33,25,0.12);
-}
-
-::-webkit-scrollbar {
-  width: 3px;
-}
-::-webkit-scrollbar-track {
-  background: var(--bg-body);
-}
-::-webkit-scrollbar-thumb {
-  background: var(--accent-4);
-}
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: var(--bg-body); }
+::-webkit-scrollbar-thumb { background: var(--accent-4); }

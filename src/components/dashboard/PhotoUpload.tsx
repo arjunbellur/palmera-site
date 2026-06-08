@@ -52,7 +52,7 @@ export default function PhotoUpload({
     <div style={{ marginBottom: '16px' }}>
       <label style={{
         display: 'block',
-        fontSize: '11px',
+        fontSize: '0.6875rem',
         color: 'rgba(223,201,166,0.5)',
         letterSpacing: '0.08em',
         textTransform: 'uppercase',
@@ -68,31 +68,31 @@ export default function PhotoUpload({
         onDragOver={e => e.preventDefault()}
         style={{
           border: `1px dashed ${preview ? 'rgba(158,118,59,0.4)' : 'rgba(223,201,166,0.15)'}`,
-          borderRadius: '8px',
-          padding: '20px',
+          borderRadius: '0.5rem',
+          padding: '1.25rem',
           textAlign: 'center',
           cursor: 'pointer',
           background: preview ? 'rgba(158,118,59,0.05)' : 'rgba(255,255,255,0.02)',
           transition: 'all 0.2s',
           position: 'relative',
           overflow: 'hidden',
-          minHeight: '100px',
+          minHeight: '6.25rem',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           flexDirection: 'column',
-          gap: '8px',
+          gap: '0.5rem',
         }}
       >
         {preview ? (
           <>
             <img src={preview} alt={label} style={{
-              maxHeight: '120px',
+              maxHeight: '7.5rem',
               maxWidth: '100%',
-              borderRadius: '4px',
+              borderRadius: '0.25rem',
               objectFit: 'cover',
             }} />
-            <span style={{ fontSize: '11px', color: 'var(--accent-4)', fontFamily: 'var(--font-sans)' }}>
+            <span style={{ fontSize: '0.6875rem', color: 'var(--accent-4)', fontFamily: 'var(--font-sans)' }}>
               Click to replace
             </span>
           </>
@@ -100,7 +100,7 @@ export default function PhotoUpload({
           <>
             <div style={{
               width: '100%',
-              height: '4px',
+              height: '0.25rem',
               background: 'rgba(223,201,166,0.1)',
               borderRadius: '2px',
               overflow: 'hidden',
@@ -113,18 +113,18 @@ export default function PhotoUpload({
                 transition: 'width 0.2s',
               }} />
             </div>
-            <span style={{ fontSize: '12px', color: 'rgba(223,201,166,0.5)', fontFamily: 'var(--font-sans)' }}>
+            <span style={{ fontSize: '0.75rem', color: 'rgba(223,201,166,0.5)', fontFamily: 'var(--font-sans)' }}>
               Uploading {progress}%
             </span>
           </>
         ) : (
           <>
-            <span style={{ fontSize: '24px', opacity: 0.3 }}>↑</span>
-            <span style={{ fontSize: '13px', color: 'rgba(223,201,166,0.4)', fontFamily: 'var(--font-sans)' }}>
+            <span style={{ fontSize: '1.5rem', opacity: 0.3 }}>↑</span>
+            <span style={{ fontSize: '0.8125rem', color: 'rgba(223,201,166,0.4)', fontFamily: 'var(--font-sans)' }}>
               Click or drag to upload
             </span>
             {hint && (
-              <span style={{ fontSize: '11px', color: 'rgba(223,201,166,0.25)', fontFamily: 'var(--font-sans)' }}>
+              <span style={{ fontSize: '0.6875rem', color: 'rgba(223,201,166,0.25)', fontFamily: 'var(--font-sans)' }}>
                 {hint}
               </span>
             )}

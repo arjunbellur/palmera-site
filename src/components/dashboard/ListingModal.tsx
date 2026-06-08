@@ -63,10 +63,10 @@ const inputStyle = {
   width: '100%',
   background: 'rgba(255,255,255,0.05)',
   border: '1px solid rgba(223,201,166,0.15)',
-  borderRadius: '4px',
+  borderRadius: '0.25rem',
   padding: '10px 12px',
   color: 'var(--color-tan)',
-  fontSize: '14px',
+  fontSize: '0.875rem',
   fontFamily: 'var(--font-sans)',
   outline: 'none',
   boxSizing: 'border-box' as const,
@@ -74,7 +74,7 @@ const inputStyle = {
 
 const labelStyle = {
   display: 'block',
-  fontSize: '11px',
+  fontSize: '0.6875rem',
   color: 'rgba(223,201,166,0.5)',
   letterSpacing: '0.08em',
   textTransform: 'uppercase' as const,
@@ -85,8 +85,8 @@ const labelStyle = {
 const rowStyle = {
   display: 'grid',
   gridTemplateColumns: '1fr 1fr',
-  gap: '16px',
-  marginBottom: '16px',
+  gap: '1rem',
+  marginBottom: '1rem',
 }
 
 export default function ListingModal({ listing, onSave, onClose }: ListingModalProps) {
@@ -123,19 +123,19 @@ export default function ListingModal({ listing, onSave, onClose }: ListingModalP
       <div style={{
         background: '#0d0d0b',
         border: '1px solid rgba(223,201,166,0.15)',
-        borderRadius: '12px',
+        borderRadius: '0.75rem',
         width: '100%',
-        maxWidth: '720px',
+        maxWidth: '45rem',
         maxHeight: '90vh',
         overflowY: 'auto',
-        padding: '32px',
+        padding: '2rem',
       }}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
           <h2 style={{
             fontFamily: 'var(--font-display)',
             color: 'var(--color-tan)',
-            fontSize: '20px',
+            fontSize: '1.25rem',
             fontWeight: 400,
             margin: 0,
             letterSpacing: '0.06em',
@@ -144,12 +144,12 @@ export default function ListingModal({ listing, onSave, onClose }: ListingModalP
           </h2>
           <button onClick={onClose} style={{
             background: 'transparent', border: 'none',
-            color: 'rgba(223,201,166,0.4)', fontSize: '22px', cursor: 'pointer',
+            color: 'rgba(223,201,166,0.4)', fontSize: '1.375rem', cursor: 'pointer',
           }}>×</button>
         </div>
 
         {/* Title */}
-        <div style={{ marginBottom: '16px' }}>
+        <div style={{ marginBottom: '1rem' }}>
           <label style={labelStyle}>Listing title *</label>
           <input style={inputStyle} placeholder='e.g. "Sunset Yacht on Gorée Bay"'
             value={form.title} onChange={e => set('title', e.target.value)} />
@@ -249,7 +249,7 @@ export default function ListingModal({ listing, onSave, onClose }: ListingModalP
         </div>
 
         {/* Cancellation */}
-        <div style={{ marginBottom: '16px' }}>
+        <div style={{ marginBottom: '1rem' }}>
           <label style={labelStyle}>Cancellation policy</label>
           <select style={{ ...inputStyle, appearance: 'none' }}
             value={form.cancellationPolicy} onChange={e => set('cancellationPolicy', e.target.value)}>
@@ -289,7 +289,7 @@ export default function ListingModal({ listing, onSave, onClose }: ListingModalP
         </div>
 
         {/* Languages */}
-        <div style={{ marginBottom: '16px' }}>
+        <div style={{ marginBottom: '1rem' }}>
           <label style={labelStyle}>Languages spoken</label>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {LANGUAGES.map(lang => (
@@ -298,11 +298,11 @@ export default function ListingModal({ listing, onSave, onClose }: ListingModalP
                 onClick={() => toggleLanguage(lang)}
                 style={{
                   padding: '6px 14px',
-                  borderRadius: '4px',
+                  borderRadius: '0.25rem',
                   border: `1px solid ${form.languages.includes(lang) ? 'var(--accent-4)' : 'rgba(223,201,166,0.15)'}`,
                   background: form.languages.includes(lang) ? 'rgba(190,154,86,0.15)' : 'transparent',
                   color: form.languages.includes(lang) ? 'var(--accent-4)' : 'rgba(223,201,166,0.5)',
-                  fontSize: '13px',
+                  fontSize: '0.8125rem',
                   fontFamily: 'var(--font-sans)',
                   cursor: 'pointer',
                   transition: 'all 0.15s',
@@ -315,12 +315,12 @@ export default function ListingModal({ listing, onSave, onClose }: ListingModalP
         </div>
 
         {/* Description */}
-        <div style={{ marginBottom: '24px' }}>
+        <div style={{ marginBottom: '1.5rem' }}>
           <label style={labelStyle}>Description (60–100 words)</label>
           <textarea style={{ ...inputStyle, height: '110px', resize: 'vertical' }}
             placeholder="Write the marketing pitch in your own voice. Include sensory detail — what guests see, smell, feel. What makes this experience unmissable?"
             value={form.description} onChange={e => set('description', e.target.value)} />
-          <span style={{ fontSize: '11px', color: 'rgba(223,201,166,0.3)', fontFamily: 'var(--font-sans)' }}>
+          <span style={{ fontSize: '0.6875rem', color: 'rgba(223,201,166,0.3)', fontFamily: 'var(--font-sans)' }}>
             {form.description.trim().split(/\s+/).filter(Boolean).length} / 100 words
           </span>
         </div>
@@ -331,9 +331,9 @@ export default function ListingModal({ listing, onSave, onClose }: ListingModalP
             padding: '10px 24px',
             background: 'transparent',
             border: '1px solid rgba(223,201,166,0.2)',
-            borderRadius: '4px',
+            borderRadius: '0.25rem',
             color: 'rgba(223,201,166,0.6)',
-            fontSize: '14px',
+            fontSize: '0.875rem',
             fontFamily: 'var(--font-sans)',
             cursor: 'pointer',
             letterSpacing: '0.04em',
@@ -345,9 +345,9 @@ export default function ListingModal({ listing, onSave, onClose }: ListingModalP
               padding: '10px 28px',
               background: 'var(--accent-3)',
               border: 'none',
-              borderRadius: '4px',
+              borderRadius: '0.25rem',
               color: '#fff',
-              fontSize: '14px',
+              fontSize: '0.875rem',
               fontFamily: 'var(--font-sans)',
               cursor: saving ? 'wait' : 'pointer',
               letterSpacing: '0.06em',
