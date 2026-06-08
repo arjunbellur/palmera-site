@@ -1,9 +1,11 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 
 export default function Hero() {
   const [loaded, setLoaded] = useState(false)
-  useEffect(() => { const t = setTimeout(() => setLoaded(true), 100); return () => clearTimeout(t) }, [])
+  const t = useTranslations('hero')
+  useEffect(() => { const tm = setTimeout(() => setLoaded(true), 100); return () => clearTimeout(tm) }, [])
 
   return (
     <section id="hero" style={{ position: 'relative', height: '100vh', minHeight: '37.5rem', overflow: 'hidden' }}>
@@ -14,30 +16,16 @@ export default function Hero() {
       <div style={{ position: 'absolute', inset: 0, zIndex: 1, background: 'linear-gradient(to bottom, rgba(4,4,4,0.15) 0%, rgba(4,4,4,0.45) 70%, rgba(4,4,4,0.82) 100%)' }} />
       <div style={{ position: 'relative', zIndex: 2, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '5rem 2.5rem 3rem' }}>
         <div>
-          <h1 style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 'clamp(4.5rem, 11vw, 10rem)',
-            fontWeight: 500,
-            lineHeight: 0.95,
-            letterSpacing: '-0.02em',
-            color: '#ebe8db',
-            margin: 0,
-            opacity: loaded ? 1 : 0,
-            transition: 'opacity 1s ease 0.2s',
-          }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(4.5rem, 11vw, 10rem)', fontWeight: 500, lineHeight: 0.95, letterSpacing: '-0.02em', color: '#ebe8db', margin: 0, opacity: loaded ? 1 : 0, transition: 'opacity 1s ease 0.2s' }}>
             Palmera
           </h1>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', alignItems: 'flex-end', gap: '1.5rem' }}>
-          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(235,232,219,0.7)', margin: 0 }}>
-            PALMERA
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(235,232,219,0.7)', margin: 0 }}>PALMERA</p>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(235,232,219,0.65)', margin: 0, textAlign: 'center', lineHeight: 1.6 }}>
+            {t('tagline')}<br />{t('subtitle')}
           </p>
-          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(235,232,219,0.6)', margin: 0, textAlign: 'center', lineHeight: 1.6 }}>
-            WHERE LEISURE LIVES.<br />BUILT FOR CONVENIENCE. ENJOYED WITH FRIENDS.
-          </p>
-          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', letterSpacing: '0.18em', color: 'rgba(235,232,219,0.4)', margin: 0, textAlign: 'right' }}>
-            2025
-          </p>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', letterSpacing: '0.18em', color: 'rgba(235,232,219,0.5)', margin: 0, textAlign: 'right' }}>{t('year')}</p>
         </div>
       </div>
     </section>

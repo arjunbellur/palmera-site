@@ -1,17 +1,9 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import LanguageToggle from './LanguageToggle'
 
-const LINKS = [
-  { label: 'Learn', href: '#base' },
-  { label: 'Location', href: '#makes' },
-  { label: 'Experience', href: '#skills' },
-  { label: 'App', href: '#story' },
-  { label: 'Sign Up', href: '#signal' },
-  { label: 'Partners', href: '/partners' },
-]
-
-export default function Navbar() {
+export default function Navbar({ messages }: { messages: Record<string, string> }) {
   const [isMobile, setIsMobile] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [isLight, setIsLight] = useState(false)
@@ -77,22 +69,27 @@ export default function Navbar() {
     fontWeight: 400,
   }
 
+  const LINKS = [
+    { label: messages.learn, href: '#base' },
+    { label: messages.location, href: '#makes' },
+    { label: messages.experience, href: '#skills' },
+    { label: messages.app, href: '#story' },
+    { label: messages.signup, href: '#signal' },
+    { label: messages.partners, href: '/dashboard' },
+  ]
+
   if (isMobile) {
     return (
       <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, padding: '1rem 1.25rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
           <Link href="/" style={{ ...pill, background: brandBg, textDecoration: 'none' }}>
             <span style={{ ...mono, color: tan }}>Palmera</span>
           </Link>
+          <LanguageToggle light={isLight} />
           <button onClick={() => setMenuOpen(o => !o)}
             style={{ ...pill, background: linkBg, flexDirection: 'column', padding: '0.625rem 0.875rem' }}>
             {[0,1,2].map(i => (
-              <span key={i} style={{
-                display: 'block', width: '1.125rem', height: '1.5px', background: linkText, margin: '0.1875rem 0',
-                transition: 'all 0.25s ease',
-                transform: menuOpen && i===0 ? 'rotate(45deg) translateY(0.4375rem)' : menuOpen && i===2 ? 'rotate(-45deg) translateY(-0.4375rem)' : 'none',
-                opacity: menuOpen && i===1 ? 0 : 1,
-              }} />
+              <span key={i} style={{ display: 'block', width: '1.125rem', height: '1.5px', background: linkText, margin: '0.1875rem 0', transition: 'all 0.25s ease', transform: menuOpen && i===0 ? 'rotate(45deg) translateY(0.4375rem)' : menuOpen && i===2 ? 'rotate(-45deg) translateY(-0.4375rem)' : 'none', opacity: menuOpen && i===1 ? 0 : 1 }} />
             ))}
           </button>
         </div>
@@ -107,7 +104,7 @@ export default function Navbar() {
             <a href="https://form.typeform.com/to/xo1Bskym" target="_blank" rel="noopener noreferrer"
               onClick={() => setMenuOpen(false)}
               style={{ ...pill, background: ctaBg, textDecoration: 'none' }}>
-              <span style={{ ...mono, color: ctaText }}>Early Access</span>
+              <span style={{ ...mono, color: ctaText }}>{messages.earlyAccess}</span>
             </a>
           </div>
         )}
@@ -122,15 +119,15 @@ export default function Navbar() {
           <span style={{ ...mono, color: tan }}>Palmera</span>
         </Link>
         {LINKS.map(l => (
-          <Link key={l.label} href={l.href}
-            style={{ ...pill, background: linkBg, flex: 1, textDecoration: 'none' }}>
+          <Link key={l.label} href={l.href} style={{ ...pill, background: linkBg, flex: 1, textDecoration: 'none' }}>
             <span style={{ ...mono, color: linkText }}>{l.label}</span>
           </Link>
         ))}
         <a href="https://form.typeform.com/to/xo1Bskym" target="_blank" rel="noopener noreferrer"
           style={{ ...pill, background: ctaBg, flexShrink: 0, textDecoration: 'none', minWidth: '7.5rem' }}>
-          <span style={{ ...mono, color: ctaText }}>Early Access</span>
+          <span style={{ ...mono, color: ctaText }}>{messages.earlyAccess}</span>
         </a>
+        <LanguageToggle light={isLight} />
       </div>
     </nav>
   )

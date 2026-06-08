@@ -1,12 +1,6 @@
 'use client'
 import { useEffect, useRef } from 'react'
-
-const PILLARS = [
-  { label: 'Discover', text: 'Curated places, moments' },
-  { label: 'Gather', text: 'Effortless group planning' },
-  { label: 'Reserve', text: 'Seamless bookings, split payments' },
-  { label: 'Commit', text: 'Plans without friction' },
-]
+import { useTranslations } from 'next-intl'
 
 const PHOTOS = [
   { src: '/images/bas-van-den-eijkhof-w_O7qjB9ZVY-unsplash.jpg',   top: '12vh', left: '3vw',  w: '18vw', h: '18vw', speed: 0.35 },
@@ -24,21 +18,24 @@ const PHOTOS = [
 ]
 
 export default function BaseSection() {
+  const t = useTranslations('base')
   const outerRef = useRef<HTMLDivElement>(null)
   const photoRefs = useRef<(HTMLDivElement | null)[]>([])
   const headingRefs = useRef<(HTMLDivElement | null)[]>([])
   const labelRefs = useRef<(HTMLDivElement | null)[]>([])
   const introRef = useRef<HTMLDivElement>(null)
 
+  const PILLARS = [
+    { label: t('discover'), text: t('discoverText') },
+    { label: t('gather'), text: t('gatherText') },
+    { label: t('reserve'), text: t('reserveText') },
+    { label: t('commit'), text: t('commitText') },
+  ]
+
   useEffect(() => {
     let rafId: number
     let lastScrollY = -1
-
-    // Init first pillar visible
-    if (headingRefs.current[0]) {
-      headingRefs.current[0].style.opacity = '1'
-      headingRefs.current[0].style.transform = 'translateY(0)'
-    }
+    if (headingRefs.current[0]) { headingRefs.current[0].style.opacity = '1'; headingRefs.current[0].style.transform = 'translateY(0)' }
     if (labelRefs.current[0]) labelRefs.current[0].style.opacity = '1'
 
     const update = () => {
@@ -46,24 +43,14 @@ export default function BaseSection() {
       const scrollY = window.scrollY
       if (Math.abs(scrollY - lastScrollY) < 0.5) return
       lastScrollY = scrollY
-
       const rect = outerRef.current.getBoundingClientRect()
       const totalScroll = outerRef.current.offsetHeight - window.innerHeight
       const scrolled = Math.max(0, -rect.top)
       const progress = Math.min(1, scrolled / totalScroll)
 
-      // Parallax photos — vw-based offsets so they work on all screens
-      photoRefs.current.forEach((el, i) => {
-        if (!el) return
-        el.style.transform = `translateY(${scrolled * PHOTOS[i].speed * -1}px)`
-      })
+      photoRefs.current.forEach((el, i) => { if (!el) return; el.style.transform = `translateY(${scrolled * PHOTOS[i].speed * -1}px)` })
+      if (introRef.current) introRef.current.style.opacity = String(Math.max(0, 1 - progress * 18))
 
-      // Intro fade
-      if (introRef.current) {
-        introRef.current.style.opacity = String(Math.max(0, 1 - progress * 18))
-      }
-
-      // Pillar cross-fade
       const pillarProgress = Math.max(0, Math.min(1, (progress - 0.05) / 0.9))
       const rawIndex = pillarProgress * 4
       const activeIndex = Math.min(3, Math.floor(rawIndex))
@@ -73,22 +60,13 @@ export default function BaseSection() {
         if (!el) return
         let opacity = 0
         if (i === activeIndex) {
-          if (i < 3) {
-            if (withinPillar < 0.25) opacity = withinPillar / 0.25
-            else if (withinPillar < 0.8) opacity = 1
-            else opacity = Math.max(0, 1 - (withinPillar - 0.8) / 0.2)
-          } else {
-            opacity = progress >= 0.9 ? 1 : Math.min(1, withinPillar / 0.25)
-          }
+          if (i < 3) { if (withinPillar < 0.25) opacity = withinPillar / 0.25; else if (withinPillar < 0.8) opacity = 1; else opacity = Math.max(0, 1 - (withinPillar - 0.8) / 0.2) }
+          else { opacity = progress >= 0.9 ? 1 : Math.min(1, withinPillar / 0.25) }
         }
         el.style.opacity = String(opacity)
         el.style.transform = `translateY(${(1 - opacity) * 0.75}rem)`
       })
-
-      labelRefs.current.forEach((el, i) => {
-        if (!el) return
-        el.style.opacity = i === activeIndex ? '1' : '0'
-      })
+      labelRefs.current.forEach((el, i) => { if (!el) return; el.style.opacity = i === activeIndex ? '1' : '0' })
     }
 
     const onScroll = () => { cancelAnimationFrame(rafId); rafId = requestAnimationFrame(update) }
@@ -98,71 +76,32 @@ export default function BaseSection() {
   }, [])
 
   return (
-    <section id="base" ref={outerRef} style={{
-      position: 'relative', height: '400vh',
-      background: 'var(--bg-1)',
-      borderTopLeftRadius: '1.5rem', borderTopRightRadius: '1.5rem',
-      zIndex: 1,
-    }}>
+    <section id="base" ref={outerRef} style={{ position: 'relative', height: '400vh', background: 'var(--bg-1)', borderTopLeftRadius: '1.5rem', borderTopRightRadius: '1.5rem', zIndex: 1 }}>
       <div style={{ position: 'sticky', top: 0, height: '100vh', overflow: 'hidden', width: '100%' }}>
-
         {PHOTOS.map((photo, i) => (
           <div key={i} ref={el => { photoRefs.current[i] = el }}
-            style={{
-              position: 'absolute',
-              top: photo.top,
-              ...((photo as any).left !== undefined ? { left: (photo as any).left } : {}),
-              ...((photo as any).right !== undefined ? { right: (photo as any).right } : {}),
-              width: photo.w, height: photo.h,
-              borderRadius: '0.625rem', overflow: 'hidden',
-              willChange: 'transform', zIndex: 1,
-            }}>
-            <img src={photo.src} alt="" loading="lazy"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            style={{ position: 'absolute', top: photo.top, ...((photo as any).left !== undefined ? { left: (photo as any).left } : {}), ...((photo as any).right !== undefined ? { right: (photo as any).right } : {}), width: photo.w, height: photo.h, borderRadius: '0.625rem', overflow: 'hidden', willChange: 'transform', zIndex: 1 }}>
+            <img src={photo.src} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
           </div>
         ))}
-
-        {/* Intro text */}
-        <div ref={introRef} style={{
-          position: 'absolute', top: '6rem', left: '2.5rem', right: '2.5rem',
-          zIndex: 3, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem',
-        }}>
-          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(42,33,25,0.65)', lineHeight: 1.7, margin: 0 }}>
-            Ease into a space where plans feel lighter and moments feel shared.
-          </p>
-          <p style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1rem, 1.8vw, 1.375rem)', lineHeight: 1.55, color: 'rgba(42,33,25,0.75)', margin: 0 }}>
-            Somewhere between plans and presence, we found experiences worth sharing—intentional, effortless, and designed to linger.
-          </p>
+        <div ref={introRef} style={{ position: 'absolute', top: '6rem', left: '2.5rem', right: '2.5rem', zIndex: 3, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem' }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(42,33,25,0.65)', lineHeight: 1.7, margin: 0 }}>{t('intro1')}</p>
+          <p style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1rem, 1.8vw, 1.375rem)', lineHeight: 1.55, color: 'rgba(42,33,25,0.75)', margin: 0 }}>{t('intro2')}</p>
         </div>
-
-        {/* Pillar text */}
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 4, pointerEvents: 'none' }}>
           <div style={{ position: 'relative', height: '1.5rem', width: '100%', textAlign: 'center', marginBottom: '1rem' }}>
             {PILLARS.map((p, i) => (
               <div key={p.label} ref={el => { labelRefs.current[i] = el }}
                 style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: i === 0 ? 1 : 0, transition: 'opacity 0.5s ease' }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: '#9e763b' }}>
-                  {p.label}
-                </span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: '#9e763b' }}>{p.label}</span>
               </div>
             ))}
           </div>
           <div style={{ position: 'relative', width: '100%', textAlign: 'center', minHeight: '7.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {PILLARS.map((p, i) => (
               <div key={p.text} ref={el => { headingRefs.current[i] = el }}
-                style={{
-                  position: i === 0 ? 'relative' : 'absolute', inset: 0,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  opacity: i === 0 ? 1 : 0, transform: 'translateY(0)',
-                  transition: 'opacity 0.5s ease, transform 0.5s ease',
-                  willChange: 'opacity, transform',
-                }}>
-                <h2 style={{
-                  fontFamily: 'var(--font-serif)',
-                  fontSize: 'clamp(2.25rem, 5vw, 4rem)',
-                  fontWeight: 400, letterSpacing: '-0.09375rem', lineHeight: 1.1,
-                  color: 'var(--color-dark)', margin: 0, padding: '0 2.5rem', textAlign: 'center',
-                }}>
+                style={{ position: i === 0 ? 'relative' : 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: i === 0 ? 1 : 0, transform: 'translateY(0)', transition: 'opacity 0.5s ease, transform 0.5s ease', willChange: 'opacity, transform' }}>
+                <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(2.25rem, 5vw, 4rem)', fontWeight: 400, letterSpacing: '-0.09375rem', lineHeight: 1.1, color: 'var(--color-dark)', margin: 0, padding: '0 2.5rem', textAlign: 'center' }}>
                   {p.text}
                 </h2>
               </div>

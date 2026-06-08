@@ -1,14 +1,7 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  images: {
-    unoptimized: true,
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'cdn.prod.website-files.com',
-      },
-    ],
-  },
-}
+const createNextIntlPlugin = require('next-intl/plugin')
+const withNextIntl = createNextIntlPlugin('./i18n.ts')
 
-module.exports = nextConfig
+/** @type {import('next').NextConfig} */
+const nextConfig = {}
+
+module.exports = withNextIntl(nextConfig)
