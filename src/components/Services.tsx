@@ -14,7 +14,7 @@ export default function Services() {
   ]
 
   return (
-    <section id="skills" style={{ background: 'transparent', padding: '5rem 0', position: 'relative', zIndex: 1 }}>
+    <section id="skills" style={{ background: 'transparent', padding: '9rem 0 11rem', position: 'relative', zIndex: 1 }}>
       <div style={{ maxWidth: '75rem', margin: '0 auto', padding: '0 1.5rem' }}>
         <div style={{ marginBottom: '4rem' }}>
           <p className="label" style={{ color: 'var(--accent-3)', marginBottom: '1rem' }}>{t('label')}</p>

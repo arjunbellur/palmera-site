@@ -25,7 +25,7 @@ export default function Stats() {
             </div>
           ))}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', alignItems: 'flex-end' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', alignItems: 'flex-end', maxWidth: '48rem', margin: '0 auto' }}>
           {[
             { src: '/images/Unitru.png', alt: 'App mockup 1', rotateY: '-30deg' },
             { src: '/images/Group-1.png', alt: 'App mockup 2', rotateY: '0deg' },

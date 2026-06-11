@@ -1,10 +1,11 @@
 'use client'
 import { useEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
+import { onScrollFrame } from '@/lib/scroll-bus'
 
 const DESTINATIONS = [
   { countryFr: 'Sénégal', countryEn: 'Senegal', city: 'Dakar', image: '/images/ton-toan-dxwt8veyBzQ-unsplash.jpg' },
-  { countryFr: 'Maroc', countryEn: 'Morocco', city: 'Marrakesh', image: '/images/paul-macallan-CFKksjYRSQ8-unsplash.jpg' },
+  { countryFr: 'Maroc', countryEn: 'Morocco', city: 'Marrakech', image: '/images/paul-macallan-CFKksjYRSQ8-unsplash.jpg' },
   { countryFr: 'Nigeria', countryEn: 'Nigeria', city: 'Lagos', image: '/images/gbenga-onalaja-bZC_VAVhoQE-unsplash.jpg' },
 ]
 
@@ -16,7 +17,7 @@ export default function Destinations({ locale }: { locale: string }) {
   const cardRefs = useRef<(HTMLDivElement | null)[]>([])
 
   useEffect(() => {
-    const onScroll = () => {
+    const update = () => {
       cardRefs.current.forEach((card, i) => {
         if (!card || i === DESTINATIONS.length - 1) return
         const next = cardRefs.current[i + 1]
@@ -26,11 +27,12 @@ export default function Destinations({ locale }: { locale: string }) {
         const shrink = Math.min(0.06, overlap / window.innerHeight * 0.1)
         const scale = Math.max(0.92, 1 - shrink)
         card.style.transform = `scale(${scale})`
-        card.style.filter = shrink > 0 ? `brightness(${1 - shrink * 3})` : 'none'
+        card.style.filter = shrink > 0 ? `brightness(${1 - shrink * 3})` : ''
       })
     }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
+    const unsub = onScrollFrame(update)
+    update()
+    return () => { unsub() }
   }, [])
 
   return (
@@ -49,7 +51,6 @@ export default function Destinations({ locale }: { locale: string }) {
                 overflow: 'hidden',
                 zIndex: 10 + i,
                 transformOrigin: 'center top',
-                transition: 'transform 0.3s ease, filter 0.3s ease',
                 willChange: 'transform, filter',
               }}>
 

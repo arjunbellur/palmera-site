@@ -1,5 +1,6 @@
 'use client'
 import { useEffect } from 'react'
+import { onScrollFrame } from '@/lib/scroll-bus'
 
 // Replicates Webflow's "Color Change" / "Color Light" wrapper behavior:
 // the page background itself animates between light and dark as you scroll.
@@ -19,45 +20,38 @@ const ZONES: { id: string; color: string }[] = [
 
 export default function BackgroundController() {
   useEffect(() => {
-    document.body.style.transition = 'background-color 0.8s ease'
+    document.body.style.transition = 'background-color 0.45s ease'
     document.body.style.backgroundColor = DARK
 
-    let raf = 0
+    // Cache DOM refs — avoids querySelector on every frame
+    const zoneEls: (Element | null)[] = ZONES.map(z => document.getElementById(z.id))
+    let footer = document.querySelector('footer')
+    const onResize = () => { footer = document.querySelector('footer') }
+    window.addEventListener('resize', onResize)
+
     const update = () => {
       const mid = window.innerHeight * 0.5
       let color = LIGHT
 
-      // Footer counts as light
-      const footer = document.querySelector('footer')
       if (footer) {
         const r = footer.getBoundingClientRect()
-        if (r.top <= mid && r.bottom > mid) {
-          document.body.style.backgroundColor = LIGHT
-          return
-        }
+        if (r.top <= mid && r.bottom > mid) { document.body.style.backgroundColor = LIGHT; return }
       }
 
-      for (const zone of ZONES) {
-        const el = document.getElementById(zone.id)
+      for (let i = 0; i < ZONES.length; i++) {
+        const el = zoneEls[i]
         if (!el) continue
         const r = el.getBoundingClientRect()
-        if (r.top <= mid && r.bottom > mid) {
-          color = zone.color
-          break
-        }
+        if (r.top <= mid && r.bottom > mid) { color = ZONES[i].color; break }
       }
       document.body.style.backgroundColor = color
     }
 
-    const onScroll = () => {
-      cancelAnimationFrame(raf)
-      raf = requestAnimationFrame(update)
-    }
-    window.addEventListener('scroll', onScroll, { passive: true })
+    const unsub = onScrollFrame(update)
     update()
     return () => {
-      window.removeEventListener('scroll', onScroll)
-      cancelAnimationFrame(raf)
+      unsub()
+      window.removeEventListener('resize', onResize)
     }
   }, [])
 
