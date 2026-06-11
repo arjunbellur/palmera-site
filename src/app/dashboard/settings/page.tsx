@@ -11,7 +11,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [partnerName, setPartnerName] = useState('')
-  const [checks, setChecks] = useState({ accuracyConfirm: false, termsAgree: false, partnerAgreement: false })
+  const [checks, setChecks] = useState({ accuracyConfirm: false, termsAgree: false, processorTerms: false, partnerAgreement: false })
   const [signedAt, setSignedAt] = useState<string | null>(null)
 
   useEffect(() => {
@@ -27,7 +27,7 @@ export default function SettingsPage() {
     return () => unsub()
   }, [router])
 
-  const allChecked = checks.accuracyConfirm && checks.termsAgree && checks.partnerAgreement
+  const allChecked = checks.accuracyConfirm && checks.termsAgree && checks.processorTerms && checks.partnerAgreement
   const alreadySigned = !!signedAt
   const toggle = (f: keyof typeof checks) => { if (!alreadySigned) setChecks(p => ({ ...p, [f]: !p[f] })) }
 
@@ -86,6 +86,7 @@ export default function SettingsPage() {
       <h2 style={{ fontFamily: 'var(--font-serif)', color: '#dfc9a6', fontSize: '1.0625rem', fontWeight: 400, margin: '0 0 1rem' }}>Confirm and sign</h2>
       <CheckItem field="accuracyConfirm" label="I confirm that all information I have provided is accurate and up to date." sublabel="You can update your profile at any time from this dashboard." />
       <CheckItem field="termsAgree" label="I have read and agree to the Palmera Partner Terms & Conditions." sublabel="Including commission structure, cancellation policy, and payout terms." />
+      <CheckItem field="processorTerms" label="I accept the payment processor Terms of Service." sublabel="Required by Stripe for processing customer payments on your behalf." />
       <CheckItem field="partnerAgreement" label="I agree to the Palmera Partner Agreement and authorise Palmera to list my experiences." sublabel="This is a digital acknowledgment — no physical signature required." />
 
       {!alreadySigned && (

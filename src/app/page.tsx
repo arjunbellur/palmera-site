@@ -1,6 +1,6 @@
-import { useTranslations } from 'next-intl'
-import { getTranslations } from 'next-intl/server'
+import { getTranslations, getLocale } from 'next-intl/server'
 import NavbarWrapper from '@/components/NavbarWrapper'
+import BackgroundController from '@/components/BackgroundController'
 import Hero from '@/components/Hero'
 import BaseSection from '@/components/BaseSection'
 import Destinations from '@/components/Destinations'
@@ -11,6 +11,8 @@ import Footer from '@/components/Footer'
 
 export default async function Home() {
   const t = await getTranslations()
+  const locale = await getLocale()
+
   const navMessages = {
     learn: t('nav.learn'),
     location: t('nav.location'),
@@ -23,10 +25,11 @@ export default async function Home() {
 
   return (
     <main>
+      <BackgroundController />
       <NavbarWrapper messages={navMessages} />
       <Hero />
       <BaseSection />
-      <Destinations />
+      <Destinations locale={locale} />
       <Services />
       <Stats />
       <AppSection />

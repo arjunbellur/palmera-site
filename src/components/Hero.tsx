@@ -21,11 +21,11 @@ export default function Hero() {
           </h1>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', alignItems: 'flex-end', gap: '1.5rem' }}>
-          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(235,232,219,0.7)', margin: 0 }}>PALMERA</p>
-          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(235,232,219,0.65)', margin: 0, textAlign: 'center', lineHeight: 1.6 }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(235,232,219,0.95)', margin: 0 }}>PALMERA</p>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(235,232,219,0.92)', margin: 0, textAlign: 'center', lineHeight: 1.6, fontWeight: 500 }}>
             {t('tagline')}<br />{t('subtitle')}
           </p>
-          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', letterSpacing: '0.18em', color: 'rgba(235,232,219,0.5)', margin: 0, textAlign: 'right' }}>{t('year')}</p>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', letterSpacing: '0.18em', color: 'rgba(235,232,219,0.75)', margin: 0, textAlign: 'right' }}>{t('year')}</p>
         </div>
       </div>
     </section>

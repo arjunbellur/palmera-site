@@ -8,10 +8,12 @@ import { onAuthChange } from '@/lib/auth'
 import { getPartner, updatePartner, updateSectionStatus } from '@/lib/firestore'
 
 const DOCUMENTS = [
-  { field: 'businessRegistration', label: 'Business registration certificate', hint: 'NINEA / RCCM' },
+  { field: 'businessRegistration', label: 'Business registration certificate', hint: 'NINEA / RCCM document' },
   { field: 'taxCertificate', label: 'Tax certificate', hint: 'NINEA fiscal certificate' },
+  { field: 'ownerIdCopy', label: "Owner's government ID", hint: 'Passport or national ID card (CNI) — required for KYC' },
+  { field: 'proofOfService', label: 'Proof of service', hint: 'Photos, certifications, or portfolio showing your experience offer' },
+  { field: 'proofOfPayoutAccount', label: 'Proof of payout account', hint: 'Bank statement or mobile money screenshot — speeds KYC verification' },
   { field: 'liabilityInsurance', label: 'Liability insurance policy', hint: 'Or written acknowledgment of liability acceptance' },
-  { field: 'ownerIdCopy', label: "Owner's national ID", hint: 'Required for KYC / payouts' },
   { field: 'partnershipAgreement', label: 'Signed Palmera partnership agreement', hint: 'Sent by Palmera upon review' },
 ]
 

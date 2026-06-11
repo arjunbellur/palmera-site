@@ -5,7 +5,7 @@ export default function Stats() {
   const t = useTranslations('stats')
 
   return (
-    <section id="story" style={{ background: 'var(--bg-body)', padding: '6.25rem 0', overflow: 'hidden' }}>
+    <section id="story" style={{ background: 'transparent', padding: '6.25rem 0', overflow: 'hidden' }}>
       <div style={{ maxWidth: '75rem', margin: '0 auto', padding: '0 2.5rem' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem', marginBottom: '5rem', alignItems: 'start' }}>
           <h2 className="text-h2" style={{ color: '#ebe8db' }}>{t('heading')}</h2>
