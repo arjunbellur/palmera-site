@@ -15,7 +15,6 @@ const TAN = 'hsla(36.84, 47.11%, 76.27%, 1)'
 export default function Destinations({ locale }: { locale: string }) {
   const t = useTranslations('destinations')
   const cardRefs = useRef<(HTMLDivElement | null)[]>([])
-
   useEffect(() => {
     const update = () => {
       cardRefs.current.forEach((card, i) => {
@@ -36,7 +35,7 @@ export default function Destinations({ locale }: { locale: string }) {
   }, [])
 
   return (
-    <section id="makes" style={{ background: 'transparent', padding: '5rem 2.5rem 18.75rem' }}>
+    <section id="makes" style={{ background: 'transparent', padding: 'clamp(3rem,5vw,5rem) clamp(1rem,4.5vw,2.5rem) clamp(14rem,25vw,18.75rem)' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
         {DESTINATIONS.map((dest, i) => {
           const countryName = locale === 'fr' ? dest.countryFr : dest.countryEn

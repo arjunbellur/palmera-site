@@ -2,30 +2,34 @@
 import { useEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { onScrollFrame } from '@/lib/scroll-bus'
+import { useViewport } from '@/lib/use-viewport'
 
-// Group 0: visible on entry, outer edges, pushed below intro text (26vh+)
-// Groups 1-3: centered vertically (38-42vh top, 58-62vh bottom) so they sit mid-viewport
+// Photo config — clamp min values are sized for mobile (~375px), max for desktop (1280px+)
 const PHOTOS = [
-  { src: '/images/bas-van-den-eijkhof-w_O7qjB9ZVY-unsplash.jpg',    top: '26vh', left: '1vw',   w: 'clamp(180px,22vw,356px)', h: 'clamp(180px,22vw,356px)', speed: 0.1,  group: 0 },
-  { src: '/images/priscilla-du-preez-W3SEyZODn8U-unsplash-min.jpg', top: '24vh', right: '1vw',  w: 'clamp(160px,20vw,320px)', h: 'clamp(180px,22vw,356px)', speed: 0.1,  group: 0 },
-  { src: '/images/upgraded-points-uu5Z7cx2PdA-unsplash.jpg',        top: '62vh', left: '3vw',   w: 'clamp(140px,18vw,280px)', h: 'clamp(140px,18vw,280px)', speed: 0.08, group: 0 },
-  { src: '/images/aliunix-NI265AcvQZs-unsplash-1.jpg',              top: '62vh', right: '3vw',  w: 'clamp(140px,18vw,280px)', h: 'clamp(140px,18vw,280px)', speed: 0.08, group: 0 },
-  // Group 1 (Gather) — straddling mid-viewport: top pair ~38vh, bottom pair ~60vh
-  { src: '/images/ron-mcclenny-iqUSpwmvnw8-unsplash.jpg',           top: '38vh', left: '1vw',   w: 'clamp(120px,14vw,220px)', h: 'clamp(100px,11vw,180px)', speed: 0.12, group: 1 },
-  { src: '/images/gilles-de-muynck-PtJDCD4fTI4-unsplash.jpg',       top: '40vh', right: '1vw',  w: 'clamp(120px,14vw,220px)', h: 'clamp(120px,14vw,220px)', speed: 0.12, group: 1 },
-  { src: '/images/konrad-bachusz--tpKv0goE94-unsplash.jpg',         top: '60vh', left: '16vw',  w: 'clamp(130px,15vw,240px)', h: 'clamp(130px,15vw,240px)', speed: 0.1,  group: 1 },
-  { src: '/images/chaz-mcgregor-THXYw7ysYus-unsplash.jpg',          top: '62vh', right: '16vw', w: 'clamp(120px,14vw,220px)', h: 'clamp(130px,16vw,260px)', speed: 0.1,  group: 1 },
-  // Group 2 (Reserve) — mid-viewport
-  { src: '/images/redcharlie-nf7W_hn6DKQ-unsplash-min.jpg',         top: '40vh', left: '1vw',   w: 'clamp(160px,20vw,320px)', h: 'clamp(160px,20vw,320px)', speed: 0.1,  group: 2 },
-  { src: '/images/haven-xie-IoTTc6Z5lTM-unsplash.jpg',              top: '38vh', right: '1vw',  w: 'clamp(150px,18vw,290px)', h: 'clamp(130px,15vw,240px)', speed: 0.1,  group: 2 },
-  // Group 3 (Commit) — positioned lower with reduced speed to compensate for accumulated
-  // parallax offset by the time this group appears (~74–100% through the 700vh section).
-  { src: '/images/ed-wingate-ZMIdqdsbP2U-unsplash-min.jpg',         top: '56vh', left: '16vw',  w: 'clamp(120px,14vw,220px)', h: 'clamp(130px,16vw,240px)', speed: 0.025, group: 3 },
-  { src: '/images/bruno-ngarukiye-2qCs8eel2qI-unsplash.jpg',        top: '60vh', right: '16vw', w: 'clamp(110px,13vw,200px)', h: 'clamp(110px,13vw,190px)', speed: 0.025, group: 3 },
+  // Group 0: visible on entry, pushed below intro text on mobile via MOBILE_TOPS
+  { src: '/images/bas-van-den-eijkhof-w_O7qjB9ZVY-unsplash.jpg',    top: '26vh', left: '1vw',   w: 'clamp(68px,22vw,356px)', h: 'clamp(68px,22vw,356px)', speed: 0.1,  group: 0 },
+  { src: '/images/priscilla-du-preez-W3SEyZODn8U-unsplash-min.jpg', top: '24vh', right: '1vw',  w: 'clamp(62px,20vw,320px)', h: 'clamp(68px,22vw,356px)', speed: 0.1,  group: 0 },
+  { src: '/images/upgraded-points-uu5Z7cx2PdA-unsplash.jpg',        top: '62vh', left: '3vw',   w: 'clamp(58px,18vw,280px)', h: 'clamp(58px,18vw,280px)', speed: 0.08, group: 0 },
+  { src: '/images/aliunix-NI265AcvQZs-unsplash-1.jpg',              top: '62vh', right: '3vw',  w: 'clamp(58px,18vw,280px)', h: 'clamp(58px,18vw,280px)', speed: 0.08, group: 0 },
+  // Group 1 (Gather)
+  { src: '/images/ron-mcclenny-iqUSpwmvnw8-unsplash.jpg',           top: '38vh', left: '1vw',   w: 'clamp(54px,14vw,220px)', h: 'clamp(46px,11vw,180px)', speed: 0.12, group: 1 },
+  { src: '/images/gilles-de-muynck-PtJDCD4fTI4-unsplash.jpg',       top: '40vh', right: '1vw',  w: 'clamp(54px,14vw,220px)', h: 'clamp(54px,14vw,220px)', speed: 0.12, group: 1 },
+  { src: '/images/konrad-bachusz--tpKv0goE94-unsplash.jpg',         top: '60vh', left: '16vw',  w: 'clamp(58px,15vw,240px)', h: 'clamp(58px,15vw,240px)', speed: 0.1,  group: 1 },
+  { src: '/images/chaz-mcgregor-THXYw7ysYus-unsplash.jpg',          top: '62vh', right: '16vw', w: 'clamp(54px,14vw,220px)', h: 'clamp(58px,16vw,260px)', speed: 0.1,  group: 1 },
+  // Group 2 (Reserve)
+  { src: '/images/redcharlie-nf7W_hn6DKQ-unsplash-min.jpg',         top: '40vh', left: '1vw',   w: 'clamp(64px,20vw,320px)', h: 'clamp(64px,20vw,320px)', speed: 0.1,  group: 2 },
+  { src: '/images/haven-xie-IoTTc6Z5lTM-unsplash.jpg',              top: '38vh', right: '1vw',  w: 'clamp(60px,18vw,290px)', h: 'clamp(54px,15vw,240px)', speed: 0.1,  group: 2 },
+  // Group 3 (Commit)
+  { src: '/images/ed-wingate-ZMIdqdsbP2U-unsplash-min.jpg',         top: '56vh', left: '16vw',  w: 'clamp(50px,14vw,220px)', h: 'clamp(54px,16vw,240px)', speed: 0.025, group: 3 },
+  { src: '/images/bruno-ngarukiye-2qCs8eel2qI-unsplash.jpg',        top: '60vh', right: '16vw', w: 'clamp(46px,13vw,200px)', h: 'clamp(46px,13vw,190px)', speed: 0.025, group: 3 },
 ]
+
+// Only group 0 top-row photos need a position shift on mobile (push below navbar/intro text)
+const MOBILE_TOPS: (string | null)[] = ['44vh', '42vh', null, null, null, null, null, null, null, null, null, null]
 
 export default function BaseSection() {
   const t = useTranslations('base')
+  const { isMobile, isTablet } = useViewport()
   const outerRef = useRef<HTMLDivElement>(null)
   const photoRefs = useRef<(HTMLDivElement | null)[]>([])
   const headingRefs = useRef<(HTMLDivElement | null)[]>([])
@@ -59,10 +63,8 @@ export default function BaseSection() {
       const scrolled = Math.max(0, -rect.top)
       const prog = Math.min(1, scrolled / total)
 
-      // Intro fades out quickly — gone by prog 0.06 so heading can take over cleanly
       if (introRef.current) introRef.current.style.opacity = String(Math.max(0, 1 - prog / 0.06))
 
-      // Pillars start at prog 0.04 — heading reaches full opacity exactly as intro disappears
       const pp = Math.max(0, Math.min(1, (prog - 0.04) / 0.92))
       const ri = pp * 4
       const ai = Math.min(3, Math.floor(ri))
@@ -99,31 +101,47 @@ export default function BaseSection() {
     return () => { unsub() }
   }, [])
 
+  const sectionH = isMobile ? '520vh' : isTablet ? '620vh' : '700vh'
+
   return (
-    <section id="base" ref={outerRef} style={{ position: 'relative', height: '700vh', background: 'transparent', zIndex: 1 }}>
+    <section id="base" ref={outerRef} style={{ position: 'relative', height: sectionH, background: 'transparent', zIndex: 1 }}>
       <div style={{ position: 'sticky', top: 0, height: '100vh', overflow: 'hidden', width: '100%' }}>
 
-        {PHOTOS.map((p, i) => (
-          <div key={i} ref={el => { photoRefs.current[i] = el }}
-            style={{
-              position: 'absolute', top: p.top,
-              ...((p as any).left ? { left: (p as any).left } : {}),
-              ...((p as any).right ? { right: (p as any).right } : {}),
-              width: p.w, height: p.h,
-              borderRadius: '8px',
-              overflow: 'hidden', willChange: 'transform, opacity', zIndex: 1,
-            }}>
-            <img src={p.src} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-          </div>
-        ))}
+        {PHOTOS.map((p, i) => {
+          const top = (isMobile && MOBILE_TOPS[i]) ? MOBILE_TOPS[i]! : p.top
+          return (
+            <div key={i} ref={el => { photoRefs.current[i] = el }}
+              style={{
+                position: 'absolute', top,
+                ...((p as any).left  ? { left:  (p as any).left  } : {}),
+                ...((p as any).right ? { right: (p as any).right } : {}),
+                width: p.w, height: p.h,
+                borderRadius: '8px',
+                overflow: 'hidden', willChange: 'transform, opacity', zIndex: 1,
+              }}>
+              <img src={p.src} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            </div>
+          )
+        })}
 
-        <div ref={introRef} style={{ position: 'absolute', top: '5.5rem', left: '2.5rem', right: '2.5rem', zIndex: 5, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem' }}>
+        <div ref={introRef} style={{
+          position: 'absolute',
+          top: 'clamp(4rem,5.5vw,5.5rem)',
+          left: 'clamp(1.5rem,4.5vw,2.5rem)',
+          right: 'clamp(1.5rem,4.5vw,2.5rem)',
+          zIndex: 5,
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+          gap: 'clamp(0.75rem,3.8vw,3rem)',
+        }}>
           <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(42,33,25,0.72)', lineHeight: 1.7, margin: 0, maxWidth: '24rem' }}>
             {t('intro1')}
           </p>
-          <p style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1rem,1.6vw,1.25rem)', lineHeight: 1.6, color: 'rgba(42,33,25,0.82)', margin: 0, maxWidth: '32rem', justifySelf: 'end' }}>
-            {t('intro2')}
-          </p>
+          {!isMobile && (
+            <p style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1rem,1.6vw,1.25rem)', lineHeight: 1.6, color: 'rgba(42,33,25,0.82)', margin: 0, maxWidth: '32rem', justifySelf: 'end' }}>
+              {t('intro2')}
+            </p>
+          )}
         </div>
 
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 4, pointerEvents: 'none', gap: '16px' }}>
@@ -135,11 +153,11 @@ export default function BaseSection() {
               </div>
             ))}
           </div>
-          <div style={{ position: 'relative', width: '100%', textAlign: 'center', minHeight: '7.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ position: 'relative', width: '100%', textAlign: 'center', minHeight: 'clamp(5.5rem,9vw,7.5rem)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {PILLARS.map((p, i) => (
               <div key={p.text} ref={el => { headingRefs.current[i] = el }}
                 style={{ position: i === 0 ? 'relative' : 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transform: 'translateY(0.75rem)', willChange: 'opacity, transform' }}>
-                <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(2.25rem,5vw,4rem)', fontWeight: 400, letterSpacing: '-0.09375rem', lineHeight: 1.1, color: 'var(--color-dark)', margin: 0, padding: '0 2.5rem', textAlign: 'center' }}>
+                <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.75rem,5vw,4rem)', fontWeight: 400, letterSpacing: '-0.09375rem', lineHeight: 1.15, color: 'var(--color-dark)', margin: 0, padding: '0 clamp(1.5rem,4.5vw,2.5rem)', textAlign: 'center' }}>
                   {p.text}
                 </h2>
               </div>

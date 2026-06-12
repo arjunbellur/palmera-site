@@ -1,8 +1,10 @@
 'use client'
 import { useTranslations } from 'next-intl'
+import { useViewport } from '@/lib/use-viewport'
 
 export default function Services() {
   const t = useTranslations('services')
+  const { isMobile, isTablet } = useViewport()
 
   const SERVICES = [
     { titleKey: 'villas', descKey: 'villasDesc', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M3 21h18M9 21V11l3-3 3 3v10M3 21V7l9-4 9 4v14"/></svg>` },
@@ -14,15 +16,15 @@ export default function Services() {
   ]
 
   return (
-    <section id="skills" style={{ background: 'transparent', padding: '9rem 0 11rem', position: 'relative', zIndex: 1 }}>
-      <div style={{ maxWidth: '75rem', margin: '0 auto', padding: '0 1.5rem' }}>
-        <div style={{ marginBottom: '4rem' }}>
+    <section id="skills" style={{ background: 'transparent', padding: 'clamp(4.5rem,9vw,9rem) 0 clamp(5rem,10vw,11rem)', position: 'relative', zIndex: 1 }}>
+      <div style={{ maxWidth: '75rem', margin: '0 auto', padding: '0 clamp(1.5rem,4.5vw,2.5rem)' }}>
+        <div style={{ marginBottom: 'clamp(2rem,4vw,4rem)' }}>
           <p className="label" style={{ color: 'var(--accent-3)', marginBottom: '1rem' }}>{t('label')}</p>
-          <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(3rem, 6vw, 5rem)', fontWeight: 400, letterSpacing: '-0.125rem', lineHeight: 1, color: 'var(--color-dark)', margin: 0 }}>{t('heading')}</h2>
+          <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(2rem,6vw,5rem)', fontWeight: 400, letterSpacing: '-0.125rem', lineHeight: 1, color: 'var(--color-dark)', margin: 0 }}>{t('heading')}</h2>
         </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', rowGap: '2rem' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', rowGap: 'clamp(1.5rem,2.5vw,2rem)' }}>
           {SERVICES.map((s) => (
-            <div key={s.titleKey} style={{ width: '33.333%', padding: '0 2rem 0 1.5rem', borderLeft: '1px dashed rgba(42,33,25,0.25)', position: 'relative', boxSizing: 'border-box' }}>
+            <div key={s.titleKey} style={{ width: isMobile ? '100%' : isTablet ? '50%' : '33.333%', padding: '0 clamp(1.25rem,2.5vw,2rem) 0 clamp(1.25rem,2.5vw,1.5rem)', borderLeft: '1px dashed rgba(42,33,25,0.25)', position: 'relative', boxSizing: 'border-box' }}>
               <div style={{ position: 'absolute', left: '-1px', top: 0, width: '2px', height: '2.5rem', background: 'var(--accent-3)' }} />
               <div style={{ color: 'var(--color-dark)', marginBottom: '1rem' }} dangerouslySetInnerHTML={{ __html: s.icon }} />
               <p style={{ fontFamily: 'var(--font-sans)', fontSize: '1rem', fontWeight: 600, color: 'var(--color-dark)', marginBottom: '0.5rem', letterSpacing: '-0.02em' }}>{t(s.titleKey as any)}</p>

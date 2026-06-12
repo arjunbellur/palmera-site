@@ -2,15 +2,13 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
-
 export default function Footer() {
   const [email, setEmail] = useState('')
   const [submitted, setSubmitted] = useState(false)
   const t = useTranslations('footer')
-
   return (
-    <footer style={{ background: 'var(--bg-1)', paddingTop: '5rem', overflow: 'hidden' }}>
-      <div style={{ maxWidth: '75rem', margin: '0 auto', padding: '0 2.5rem 5rem' }}>
+    <footer style={{ background: 'var(--bg-1)', paddingTop: 'clamp(3.5rem,5.5vw,5rem)', overflow: 'hidden' }}>
+      <div style={{ maxWidth: '75rem', margin: '0 auto', padding: '0 clamp(1.5rem,4.5vw,2.5rem) clamp(3rem,5vw,5rem)' }}>
         <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(42,33,25,0.6)', marginBottom: '1.25rem' }}>{t('earlyAccess')}</p>
         {!submitted ? (
           <div style={{ display: 'flex', alignItems: 'center', borderBottom: '1px dashed rgba(42,33,25,0.3)', paddingBottom: '1rem', maxWidth: '37.5rem' }}>
@@ -37,7 +35,7 @@ export default function Footer() {
           ))}
         </div>
       </div>
-      <div style={{ maxWidth: '75rem', margin: '0 auto', padding: '1.75rem 2.5rem', borderTop: '1px solid rgba(42,33,25,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+      <div style={{ maxWidth: '75rem', margin: '0 auto', padding: 'clamp(1.25rem,2vw,1.75rem) clamp(1.5rem,4.5vw,2.5rem)', borderTop: '1px solid rgba(42,33,25,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
         <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', letterSpacing: '0.08em', color: 'rgba(42,33,25,0.5)', textTransform: 'uppercase', margin: 0 }}>{t('copyright')}</p>
         <div style={{ display: 'flex', gap: '1.5rem' }}>
           <Link href="/dashboard" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', color: 'rgba(42,33,25,0.5)', textDecoration: 'none', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{t('partner')}</Link>

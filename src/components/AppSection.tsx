@@ -33,7 +33,7 @@ return(<section id="signal" style={{background:'transparent',height:'120vh',disp
 <div ref={ringRef} style={{position:'absolute',inset:0,pointerEvents:'none'}}>
 {IMGS.map((src,i)=>(<div key={i} className="ci" style={{borderRadius:'0.75rem',overflow:'hidden',boxShadow:'0 0.25rem 1.5rem rgba(42,33,25,0.2)'}}><img src={src} alt="" loading="lazy" style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/></div>))}
 </div>
-<div style={{position:'relative',zIndex:2,textAlign:'center',maxWidth:'28rem',padding:'2rem 2.5rem',borderRadius:'1rem',background:'rgba(235,232,219,0.88)',backdropFilter:'blur(10px)',WebkitBackdropFilter:'blur(10px)'}}>
+<div style={{position:'relative',zIndex:2,textAlign:'center',maxWidth:'min(28rem,calc(100% - clamp(3rem,6vw,6rem)))',padding:'clamp(1.5rem,2.5vw,2rem) clamp(1.25rem,3vw,2.5rem)',borderRadius:'1rem',background:'rgba(235,232,219,0.88)',backdropFilter:'blur(10px)',WebkitBackdropFilter:'blur(10px)'}}>
 <p style={{fontFamily:'var(--font-mono)',fontSize:'0.6875rem',letterSpacing:'0.18em',textTransform:'uppercase',color:'rgba(42,33,25,0.6)',marginBottom:'1rem'}}>{t('stepInside')}</p>
 <h2 style={{fontFamily:'var(--font-serif)',fontSize:'clamp(2rem,5vw,3.5rem)',fontWeight:400,letterSpacing:'-0.1rem',lineHeight:1.1,color:'var(--color-dark)',marginBottom:'2rem'}}>{t('heading')}</h2>
 <a href="https://form.typeform.com/to/xo1Bskym" target="_blank" rel="noopener noreferrer" style={{display:'inline-flex',alignItems:'center',gap:'0.75rem',padding:'0.875rem 2rem',background:'var(--color-dark)',color:'#ebe8db',textDecoration:'none',borderRadius:'0.25rem',fontFamily:'var(--font-mono)',fontSize:'0.75rem',letterSpacing:'0.12em',textTransform:'uppercase'}}>
