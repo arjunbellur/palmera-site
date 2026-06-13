@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation'
 import { onAuthChange } from '@/lib/auth'
 import { getPartner, updatePartner, updateSectionStatus } from '@/lib/firestore'
 
-const inp: React.CSSProperties = { width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(190,154,86,0.2)', borderRadius: '0.375rem', padding: '0.6875rem 0.875rem', color: '#dfc9a6', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', outline: 'none', boxSizing: 'border-box' }
+const inp: React.CSSProperties = { width: '100%', background: 'var(--db-bg-input)', border: '1px solid var(--db-border-gold)', borderRadius: '0.375rem', padding: '0.6875rem 0.875rem', color: 'var(--db-text)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', outline: 'none', boxSizing: 'border-box' }
 const sel: React.CSSProperties = { ...inp, appearance: 'none' as const }
-const lbl: React.CSSProperties = { display: 'block', fontSize: '0.6875rem', color: 'rgba(223,201,166,0.75)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.375rem', fontFamily: 'var(--font-sans)' }
+const lbl: React.CSSProperties = { display: 'block', fontSize: '0.6875rem', color: 'var(--db-text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.375rem', fontFamily: 'var(--font-sans)' }
 const row: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 12rem), 1fr))', gap: '1rem', marginBottom: '1rem' }
-const h2s: React.CSSProperties = { fontFamily: 'var(--font-serif)', color: '#dfc9a6', fontSize: '1.0625rem', fontWeight: 400, margin: '1.75rem 0 1rem' }
-const hint: React.CSSProperties = { fontSize: '0.6875rem', color: 'rgba(223,201,166,0.5)', fontFamily: 'var(--font-sans)', marginTop: '0.25rem' }
+const h2s: React.CSSProperties = { fontFamily: 'var(--font-serif)', color: 'var(--db-text)', fontSize: '1.0625rem', fontWeight: 400, margin: '1.75rem 0 1rem' }
+const hint: React.CSSProperties = { fontSize: '0.6875rem', color: 'var(--db-text-faint)', fontFamily: 'var(--font-sans)', marginTop: '0.25rem' }
 
 const WEST_AFRICA_CODES = new Set(['SN', 'ML', 'CI', 'BF', 'GN', 'TG', 'BJ', 'NE', 'MR', 'GW', 'GM', 'CV', 'SL', 'LR', 'GH', 'NG'])
 const STRIPE_SUPPORTED_CODES = new Set(['US', 'CA', 'GB', 'FR', 'DE', 'ES', 'IT', 'NL', 'BE', 'PT', 'CH', 'AT', 'IE', 'SE', 'NO', 'DK', 'FI', 'AU', 'NZ', 'SG', 'HK', 'JP'])
@@ -50,6 +50,7 @@ export default function ProfilePage() {
   const [uid, setUid] = useState('')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const [activeTab, setActiveTab] = useState<'business' | 'owner' | 'payouts'>('business')
   const [form, setForm] = useState({
     legalName: '', tradingName: '', businessType: '', country: '',
@@ -64,7 +65,9 @@ export default function ProfilePage() {
     payoutFrequency: '', payoutCurrency: 'XOF', stripeCurrency: 'EUR',
   })
   const [beneficialOwners, setBeneficialOwners] = useState<BeneficialOwner[]>([])
-  const set = (f: string, v: string) => setForm(p => ({ ...p, [f]: v }))
+  const set = (f: string, v: string) => { setForm(p => ({ ...p, [f]: v })); setErrors(p => { const n = { ...p }; delete n[f]; return n }) }
+  const err = (f: string) => errors[f] ? { border: '1px solid rgba(224,112,112,0.6)' } : {}
+  const errMsg = (f: string) => errors[f] ? <p style={{ fontSize: '0.6875rem', color: '#e07070', fontFamily: 'var(--font-sans)', margin: '0.25rem 0 0' }}>{errors[f]}</p> : null
 
   const isWestAfrica = WEST_AFRICA_CODES.has(form.country)
   const isStripe = STRIPE_SUPPORTED_CODES.has(form.country)
@@ -92,6 +95,44 @@ export default function ProfilePage() {
     : false
 
   const handleSave = async () => {
+    const newErrors: Record<string, string> = {}
+    if (activeTab === 'business') {
+      if (!form.legalName) newErrors.legalName = 'Required'
+      if (!form.businessType) newErrors.businessType = 'Required'
+      if (!form.country) newErrors.country = 'Required'
+      if (!form.taxId) newErrors.taxId = 'Required'
+      if (!form.industryCategory) newErrors.industryCategory = 'Required'
+      if (!form.address) newErrors.address = 'Required'
+    }
+    if (activeTab === 'owner') {
+      if (!form.ownerName) newErrors.ownerName = 'Required'
+      if (!form.ownerDob) newErrors.ownerDob = 'Required'
+      if (!form.ownerNationality) newErrors.ownerNationality = 'Required'
+      if (!form.ownerRole) newErrors.ownerRole = 'Required'
+      if (!form.ownerResidentialAddress) newErrors.ownerResidentialAddress = 'Required'
+      if (!form.primaryPhone) newErrors.primaryPhone = 'Required'
+      if (!form.email) newErrors.email = 'Required'
+    }
+    if (activeTab === 'payouts' && form.country) {
+      if (isWestAfrica) {
+        if (!form.payoutMethod) newErrors.payoutMethod = 'Required'
+        if (!form.accountName) newErrors.accountName = 'Required'
+        if (form.payoutMethod === 'Mobile Money') {
+          if (!form.mobileMoneyProvider) newErrors.mobileMoneyProvider = 'Required'
+          if (!form.mobileMoneyNumber) newErrors.mobileMoneyNumber = 'Required'
+        }
+        if (form.payoutMethod === 'Bank Transfer') {
+          if (!form.bankName) newErrors.bankName = 'Required'
+          if (!form.accountNumber) newErrors.accountNumber = 'Required'
+        }
+      }
+      if (isStripe) {
+        if (!form.stripeAccountHolderName) newErrors.stripeAccountHolderName = 'Required'
+        if (!form.stripeIban) newErrors.stripeIban = 'Required'
+      }
+    }
+    if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return }
+    setErrors({})
     setSaving(true)
     await updatePartner(uid, { ...form, beneficialOwners })
     await updateSectionStatus(uid, 'basics', basicsOk && ownerOk ? 'complete' : 'in_progress')
@@ -114,13 +155,13 @@ export default function ProfilePage() {
     <div>
       <div style={{ marginBottom: '2rem' }}>
         <p style={{ fontFamily: 'var(--font-sans)', color: 'rgba(190,154,86,0.8)', fontSize: '0.75rem', letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 0.5rem' }}>Business Profile</p>
-        <h1 style={{ fontFamily: 'var(--font-display)', color: '#dfc9a6', fontSize: 'clamp(1.375rem, 3vw, 1.625rem)', fontWeight: 400, letterSpacing: '0.06em', margin: 0 }}>Your Business Details</h1>
+        <h1 style={{ fontFamily: 'var(--font-display)', color: 'var(--db-text)', fontSize: 'clamp(1.375rem, 3vw, 1.625rem)', fontWeight: 400, letterSpacing: '0.06em', margin: 0 }}>Your Business Details</h1>
       </div>
 
-      <div style={{ display: 'flex', marginBottom: '2rem', borderBottom: '1px solid rgba(223,201,166,0.1)' }}>
+      <div style={{ display: 'flex', marginBottom: '2rem', borderBottom: '1px solid var(--db-border-subtle)' }}>
         {TABS.map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-            style={{ padding: '0.625rem 1.5rem', background: 'transparent', border: 'none', borderBottom: activeTab === tab.key ? '2px solid #be9a56' : '2px solid transparent', color: activeTab === tab.key ? '#be9a56' : 'rgba(223,201,166,0.65)', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', cursor: 'pointer', textTransform: 'uppercase', transition: 'color 0.15s' }}>
+            style={{ padding: '0.625rem 1.5rem', background: 'transparent', border: 'none', borderBottom: activeTab === tab.key ? '2px solid #be9a56' : '2px solid transparent', color: activeTab === tab.key ? '#be9a56' : 'var(--db-text-muted)', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', cursor: 'pointer', textTransform: 'uppercase', transition: 'color 0.15s' }}>
             {tab.label}
           </button>
         ))}
@@ -130,30 +171,33 @@ export default function ProfilePage() {
       {activeTab === 'business' && (
         <div>
           <div style={row}>
-            <div><label style={lbl}>Legal business name *</label><input style={inp} placeholder="As registered" value={form.legalName} onChange={e => set('legalName', e.target.value)} /></div>
+            <div><label style={lbl}>Legal business name *</label><input style={{...inp,...err('legalName')}} placeholder="As registered" value={form.legalName} onChange={e => set('legalName', e.target.value)} />{errMsg('legalName')}</div>
             <div><label style={lbl}>Trading / brand name</label><input style={inp} placeholder='e.g. "Atlantic Yachting Sénégal"' value={form.tradingName} onChange={e => set('tradingName', e.target.value)} /></div>
           </div>
           <div style={row}>
             <div>
               <label style={lbl}>Business type *</label>
-              <select style={sel} value={form.businessType} onChange={e => set('businessType', e.target.value)}>
+              <select style={{...sel,...err('businessType')}} value={form.businessType} onChange={e => set('businessType', e.target.value)}>
                 <option value="">Select type</option>
                 <option value="Individual">Individual / Sole trader</option>
                 <option value="Registered Company">Registered Company</option>
                 <option value="Cooperative">Cooperative</option>
               </select>
+              {errMsg('businessType')}
             </div>
             <div>
               <label style={lbl}>Country of registration *</label>
-              <select style={sel} value={form.country} onChange={e => set('country', e.target.value)}>
+              <select style={{...sel,...err('country')}} value={form.country} onChange={e => set('country', e.target.value)}>
                 {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
               </select>
+              {errMsg('country')}
             </div>
           </div>
           <div style={row}>
             <div>
               <label style={lbl}>NINEA (tax ID) *</label>
-              <input style={inp} placeholder="e.g. 1234567A" value={form.taxId} onChange={e => set('taxId', e.target.value)} />
+              <input style={{...inp,...err('taxId')}} placeholder="e.g. 1234567A" value={form.taxId} onChange={e => set('taxId', e.target.value)} />
+              {errMsg('taxId')}
               <p style={hint}>7 digits followed by a check letter — Senegalese tax identifier</p>
             </div>
             {isCompany && (
@@ -166,10 +210,11 @@ export default function ProfilePage() {
           <div style={row}>
             <div>
               <label style={lbl}>Industry / experience category *</label>
-              <select style={sel} value={form.industryCategory} onChange={e => set('industryCategory', e.target.value)}>
+              <select style={{...sel,...err('industryCategory')}} value={form.industryCategory} onChange={e => set('industryCategory', e.target.value)}>
                 <option value="">Select category</option>
                 {INDUSTRY_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
+              {errMsg('industryCategory')}
             </div>
             <div>
               <label style={lbl}>Years in operation</label>
@@ -178,7 +223,8 @@ export default function ProfilePage() {
           </div>
           <div style={{ marginBottom: '1rem' }}>
             <label style={lbl}>Registered business address *</label>
-            <input style={inp} placeholder="Street, city, region" value={form.address} onChange={e => set('address', e.target.value)} />
+            <input style={{...inp,...err('address')}} placeholder="Street, city, region" value={form.address} onChange={e => set('address', e.target.value)} />
+            {errMsg('address')}
           </div>
           <div style={row}>
             <div>
@@ -200,19 +246,19 @@ export default function ProfilePage() {
                   + Add owner
                 </button>
               </div>
-              <p style={{ fontSize: '0.8125rem', color: 'rgba(223,201,166,0.65)', fontFamily: 'var(--font-sans)', marginBottom: '1rem', lineHeight: 1.5 }}>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--db-text-muted)', fontFamily: 'var(--font-sans)', marginBottom: '1rem', lineHeight: 1.5 }}>
                 List all individuals who directly or indirectly own 25% or more of the company.
               </p>
               {beneficialOwners.length === 0 && (
-                <div style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(223,201,166,0.12)', borderRadius: '0.375rem', textAlign: 'center' }}>
-                  <p style={{ fontSize: '0.8125rem', color: 'rgba(223,201,166,0.4)', fontFamily: 'var(--font-sans)', margin: 0 }}>No beneficial owners added yet</p>
+                <div style={{ padding: '1.25rem', background: 'var(--db-bg-card)', border: '1px dashed var(--db-border-dashed)', borderRadius: '0.375rem', textAlign: 'center' }}>
+                  <p style={{ fontSize: '0.8125rem', color: 'var(--db-text-faint)', fontFamily: 'var(--font-sans)', margin: 0 }}>No beneficial owners added yet</p>
                 </div>
               )}
               {beneficialOwners.map((bo, i) => (
-                <div key={i} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(223,201,166,0.1)', borderRadius: '0.5rem', padding: '1rem 1.25rem', marginBottom: '0.75rem' }}>
+                <div key={i} style={{ background: 'var(--db-bg-card)', border: '1px solid var(--db-border-subtle)', borderRadius: '0.5rem', padding: '1rem 1.25rem', marginBottom: '0.75rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                    <span style={{ fontSize: '0.6875rem', color: 'rgba(223,201,166,0.55)', fontFamily: 'var(--font-sans)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Owner {i + 1}</span>
-                    <button onClick={() => removeBO(i)} style={{ background: 'none', border: 'none', color: 'rgba(223,201,166,0.4)', fontSize: '0.8125rem', cursor: 'pointer', fontFamily: 'var(--font-sans)', padding: '0.125rem 0.375rem' }}>Remove</button>
+                    <span style={{ fontSize: '0.6875rem', color: 'var(--db-text-faint)', fontFamily: 'var(--font-sans)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Owner {i + 1}</span>
+                    <button onClick={() => removeBO(i)} style={{ background: 'none', border: 'none', color: 'var(--db-text-faint)', fontSize: '0.8125rem', cursor: 'pointer', fontFamily: 'var(--font-sans)', padding: '0.125rem 0.375rem' }}>Remove</button>
                   </div>
                   <div style={row}>
                     <div><label style={lbl}>Full legal name</label><input style={inp} placeholder="As on ID" value={bo.name} onChange={e => setBO(i, 'name', e.target.value)} /></div>
@@ -231,30 +277,33 @@ export default function ProfilePage() {
         <div>
           <h2 style={h2s}>Personal identity</h2>
           <div style={row}>
-            <div><label style={lbl}>Full legal name *</label><input style={inp} placeholder="As on government ID" value={form.ownerName} onChange={e => set('ownerName', e.target.value)} /></div>
-            <div><label style={lbl}>Date of birth *</label><input style={inp} type="date" value={form.ownerDob} onChange={e => set('ownerDob', e.target.value)} /></div>
+            <div><label style={lbl}>Full legal name *</label><input style={{...inp,...err('ownerName')}} placeholder="As on government ID" value={form.ownerName} onChange={e => set('ownerName', e.target.value)} />{errMsg('ownerName')}</div>
+            <div><label style={lbl}>Date of birth *</label><input style={{...inp,...err('ownerDob')}} type="date" value={form.ownerDob} onChange={e => set('ownerDob', e.target.value)} />{errMsg('ownerDob')}</div>
           </div>
           <div style={row}>
             <div>
               <label style={lbl}>Nationality *</label>
-              <select style={sel} value={form.ownerNationality} onChange={e => set('ownerNationality', e.target.value)}>
+              <select style={{...sel,...err('ownerNationality')}} value={form.ownerNationality} onChange={e => set('ownerNationality', e.target.value)}>
                 <option value="">Select nationality</option>
                 {COUNTRIES.filter(c => c.code).map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
               </select>
+              {errMsg('ownerNationality')}
             </div>
             <div>
               <label style={lbl}>Role in business *</label>
-              <select style={sel} value={form.ownerRole} onChange={e => set('ownerRole', e.target.value)}>
+              <select style={{...sel,...err('ownerRole')}} value={form.ownerRole} onChange={e => set('ownerRole', e.target.value)}>
                 <option value="">Select role</option>
                 <option value="Owner">Owner</option>
                 <option value="Director">Director</option>
                 <option value="Representative">Representative</option>
               </select>
+              {errMsg('ownerRole')}
             </div>
           </div>
           <div style={{ marginBottom: '1rem' }}>
             <label style={lbl}>Residential address *</label>
-            <input style={inp} placeholder="Personal home address (not business address)" value={form.ownerResidentialAddress} onChange={e => set('ownerResidentialAddress', e.target.value)} />
+            <input style={{...inp,...err('ownerResidentialAddress')}} placeholder="Personal home address (not business address)" value={form.ownerResidentialAddress} onChange={e => set('ownerResidentialAddress', e.target.value)} />
+            {errMsg('ownerResidentialAddress')}
           </div>
           <div style={{ marginBottom: '1.5rem' }}>
             <label style={lbl}>Personal tax ID</label>
@@ -263,8 +312,8 @@ export default function ProfilePage() {
 
           <h2 style={h2s}>Contact details</h2>
           <div style={row}>
-            <div><label style={lbl}>Email *</label><input style={inp} type="email" placeholder="For booking confirmations" value={form.email} onChange={e => set('email', e.target.value)} /></div>
-            <div><label style={lbl}>Primary phone *</label><input style={inp} type="tel" placeholder="+221 77 000 0000" value={form.primaryPhone} onChange={e => set('primaryPhone', e.target.value)} /></div>
+            <div><label style={lbl}>Email *</label><input style={{...inp,...err('email')}} type="email" placeholder="For booking confirmations" value={form.email} onChange={e => set('email', e.target.value)} />{errMsg('email')}</div>
+            <div><label style={lbl}>Primary phone *</label><input style={{...inp,...err('primaryPhone')}} type="tel" placeholder="+221 77 000 0000" value={form.primaryPhone} onChange={e => set('primaryPhone', e.target.value)} />{errMsg('primaryPhone')}</div>
           </div>
           <div style={{ marginBottom: '1.5rem' }}>
             <label style={lbl}>WhatsApp number</label>
@@ -278,7 +327,7 @@ export default function ProfilePage() {
         <div>
           {!form.country && (
             <div style={{ background: 'rgba(158,118,59,0.06)', border: '1px solid rgba(158,118,59,0.2)', borderRadius: '0.375rem', padding: '1rem 1.25rem', marginBottom: '1.5rem' }}>
-              <p style={{ fontSize: '0.8125rem', color: 'rgba(223,201,166,0.72)', fontFamily: 'var(--font-sans)', margin: 0, lineHeight: 1.5 }}>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--db-text-muted)', fontFamily: 'var(--font-sans)', margin: 0, lineHeight: 1.5 }}>
                 Set your country of registration in the Business tab to see the correct payout options.
               </p>
             </div>
@@ -367,16 +416,16 @@ export default function ProfilePage() {
           )}
 
           {form.country && !isWestAfrica && !isStripe && (
-            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(223,201,166,0.1)', borderRadius: '0.5rem', padding: '1.25rem 1.5rem' }}>
-              <p style={{ fontSize: '0.875rem', color: 'rgba(223,201,166,0.72)', fontFamily: 'var(--font-sans)', margin: 0, lineHeight: 1.6 }}>
-                Payout support for <strong style={{ color: '#dfc9a6' }}>{COUNTRIES.find(c => c.code === form.country)?.name}</strong> is not yet configured. Please contact Palmera to discuss payout options.
+            <div style={{ background: 'var(--db-bg-card)', border: '1px solid var(--db-border-subtle)', borderRadius: '0.5rem', padding: '1.25rem 1.5rem' }}>
+              <p style={{ fontSize: '0.875rem', color: 'var(--db-text-muted)', fontFamily: 'var(--font-sans)', margin: 0, lineHeight: 1.6 }}>
+                Payout support for <strong style={{ color: 'var(--db-text)' }}>{COUNTRIES.find(c => c.code === form.country)?.name}</strong> is not yet configured. Please contact Palmera to discuss payout options.
               </p>
             </div>
           )}
         </div>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(223,201,166,0.08)', marginTop: '1.5rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--db-border-subtle)', marginTop: '1.5rem' }}>
         <button onClick={handleSave} disabled={saving}
           style={{ padding: '0.75rem 2rem', background: '#9e763b', border: 'none', borderRadius: '0.375rem', color: '#ebe8db', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', cursor: saving ? 'wait' : 'pointer', opacity: saving ? 0.7 : 1 }}>
           {saving ? 'Saving...' : 'Save changes'}

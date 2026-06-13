@@ -79,3 +79,9 @@ export const deleteListing = async (uid: string, listingId: string) => {
   const ref = doc(db, 'partners', uid, 'listings', listingId)
   await deleteDoc(ref)
 }
+
+// ── Admin ─────────────────────────────────────────────────────────
+export const getAllPartners = async () => {
+  const snap = await getDocs(collection(db, 'partners'))
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+}

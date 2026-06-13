@@ -61,11 +61,11 @@ interface ListingModalProps {
 
 const inputStyle = {
   width: '100%',
-  background: 'rgba(255,255,255,0.05)',
-  border: '1px solid rgba(223,201,166,0.15)',
+  background: 'var(--db-bg-input)',
+  border: '1px solid var(--db-border-subtle)',
   borderRadius: '0.25rem',
   padding: '10px 12px',
-  color: 'var(--color-tan)',
+  color: 'var(--db-text)',
   fontSize: '0.875rem',
   fontFamily: 'var(--font-sans)',
   outline: 'none',
@@ -75,7 +75,7 @@ const inputStyle = {
 const labelStyle = {
   display: 'block',
   fontSize: '0.6875rem',
-  color: 'rgba(223,201,166,0.5)',
+  color: 'var(--db-text-faint)',
   letterSpacing: '0.08em',
   textTransform: 'uppercase' as const,
   marginBottom: '6px',
@@ -111,30 +111,33 @@ export default function ListingModal({ listing, onSave, onClose }: ListingModalP
   }
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0,
-      background: 'rgba(4,4,4,0.85)',
-      zIndex: 200,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '20px',
-    }}>
+    <div
+      data-lenis-prevent
+      style={{
+        position: 'fixed', inset: 0,
+        background: 'var(--db-overlay)',
+        zIndex: 200,
+        overflowY: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        padding: '20px',
+      }}
+    >
       <div style={{
-        background: '#0d0d0b',
-        border: '1px solid rgba(223,201,166,0.15)',
+        background: 'var(--db-bg-modal)',
+        border: '1px solid var(--db-border-subtle)',
         borderRadius: '0.75rem',
         width: '100%',
         maxWidth: '45rem',
-        maxHeight: '90vh',
-        overflowY: 'auto',
+        margin: 'auto',
         padding: '2rem',
       }}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
           <h2 style={{
             fontFamily: 'var(--font-display)',
-            color: 'var(--color-tan)',
+            color: 'var(--db-text)',
             fontSize: '1.25rem',
             fontWeight: 400,
             margin: 0,
@@ -144,7 +147,7 @@ export default function ListingModal({ listing, onSave, onClose }: ListingModalP
           </h2>
           <button onClick={onClose} style={{
             background: 'transparent', border: 'none',
-            color: 'rgba(223,201,166,0.4)', fontSize: '1.375rem', cursor: 'pointer',
+            color: 'var(--db-text-faint)', fontSize: '1.375rem', cursor: 'pointer',
           }}>×</button>
         </div>
 
@@ -299,9 +302,9 @@ export default function ListingModal({ listing, onSave, onClose }: ListingModalP
                 style={{
                   padding: '6px 14px',
                   borderRadius: '0.25rem',
-                  border: `1px solid ${form.languages.includes(lang) ? 'var(--accent-4)' : 'rgba(223,201,166,0.15)'}`,
+                  border: `1px solid ${form.languages.includes(lang) ? 'var(--accent-4)' : 'var(--db-border-subtle)'}`,
                   background: form.languages.includes(lang) ? 'rgba(190,154,86,0.15)' : 'transparent',
-                  color: form.languages.includes(lang) ? 'var(--accent-4)' : 'rgba(223,201,166,0.5)',
+                  color: form.languages.includes(lang) ? 'var(--accent-4)' : 'var(--db-text-faint)',
                   fontSize: '0.8125rem',
                   fontFamily: 'var(--font-sans)',
                   cursor: 'pointer',
@@ -320,7 +323,7 @@ export default function ListingModal({ listing, onSave, onClose }: ListingModalP
           <textarea style={{ ...inputStyle, height: '110px', resize: 'vertical' }}
             placeholder="Write the marketing pitch in your own voice. Include sensory detail — what guests see, smell, feel. What makes this experience unmissable?"
             value={form.description} onChange={e => set('description', e.target.value)} />
-          <span style={{ fontSize: '0.6875rem', color: 'rgba(223,201,166,0.3)', fontFamily: 'var(--font-sans)' }}>
+          <span style={{ fontSize: '0.6875rem', color: 'var(--db-text-ghost)', fontFamily: 'var(--font-sans)' }}>
             {form.description.trim().split(/\s+/).filter(Boolean).length} / 100 words
           </span>
         </div>
@@ -330,9 +333,9 @@ export default function ListingModal({ listing, onSave, onClose }: ListingModalP
           <button onClick={onClose} style={{
             padding: '10px 24px',
             background: 'transparent',
-            border: '1px solid rgba(223,201,166,0.2)',
+            border: '1px solid var(--db-border-subtle)',
             borderRadius: '0.25rem',
-            color: 'rgba(223,201,166,0.6)',
+            color: 'var(--db-text-muted)',
             fontSize: '0.875rem',
             fontFamily: 'var(--font-sans)',
             cursor: 'pointer',

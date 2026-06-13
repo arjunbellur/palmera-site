@@ -1,4 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap');
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('/fonts/GeistMono-VariableFont_wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-display: swap;
+}
 
 /* ============================================
    PALMERA — Global Styles
@@ -90,7 +95,7 @@ body {
   --accent-4: #be9a56;
   --font-display: 'Raveo Display', Arial, sans-serif;
   --font-serif: 'LT Superior Serif', Arial, sans-serif;
-  --font-sans: 'Instrument Sans', sans-serif;
+  --font-sans: 'Geist Mono', 'Courier New', monospace;
   --font-mono: 'Geist Mono', 'Geist Mono Variable', 'Courier New', monospace;
 }
 
@@ -142,8 +147,67 @@ body {
 }
 
 /* ============================================
+   Dashboard theme tokens — dark (default)
+   ============================================ */
+:root,
+[data-theme="dark"] {
+  --db-bg: #040404;
+  --db-bg-nav: #0a0a08;
+  --db-bg-modal: #0d0d0b;
+  --db-bg-card: rgba(255,255,255,0.04);
+  --db-bg-card-active: rgba(158,118,59,0.08);
+  --db-bg-card-hover: rgba(255,255,255,0.07);
+  --db-bg-card-active-hover: rgba(158,118,59,0.12);
+  --db-bg-input: rgba(255,255,255,0.05);
+  --db-bg-banner: rgba(158,118,59,0.06);
+  --db-text: #dfc9a6;
+  --db-text-muted: rgba(223,201,166,0.75);
+  --db-text-faint: rgba(223,201,166,0.45);
+  --db-text-ghost: rgba(223,201,166,0.28);
+  --db-border: rgba(190,154,86,0.15);
+  --db-border-gold: rgba(190,154,86,0.2);
+  --db-border-subtle: rgba(223,201,166,0.1);
+  --db-border-dashed: rgba(223,201,166,0.12);
+  --db-overlay: rgba(4,4,4,0.85);
+}
+
+/* Dashboard theme tokens — light */
+[data-theme="light"] {
+  --db-bg: #f5f0ea;
+  --db-bg-nav: #ffffff;
+  --db-bg-modal: #ffffff;
+  --db-bg-card: rgba(0,0,0,0.03);
+  --db-bg-card-active: rgba(158,118,59,0.06);
+  --db-bg-card-hover: rgba(0,0,0,0.055);
+  --db-bg-card-active-hover: rgba(158,118,59,0.11);
+  --db-bg-input: rgba(0,0,0,0.04);
+  --db-bg-banner: rgba(158,118,59,0.05);
+  --db-text: #2a2119;
+  --db-text-muted: rgba(42,33,25,0.72);
+  --db-text-faint: rgba(42,33,25,0.45);
+  --db-text-ghost: rgba(42,33,25,0.3);
+  --db-border: rgba(158,118,59,0.2);
+  --db-border-gold: rgba(158,118,59,0.25);
+  --db-border-subtle: rgba(42,33,25,0.1);
+  --db-border-dashed: rgba(42,33,25,0.1);
+  --db-overlay: rgba(0,0,0,0.6);
+}
+
+[data-theme="light"] input::placeholder,
+[data-theme="light"] textarea::placeholder {
+  color: rgba(42,33,25,0.35);
+}
+
+[data-theme="light"] select option {
+  background: #fff;
+  color: #2a2119;
+}
+
+/* ============================================
    Scrollbar
    ============================================ */
 ::-webkit-scrollbar { width: 3px; }
 ::-webkit-scrollbar-track { background: var(--bg-body); }
 ::-webkit-scrollbar-thumb { background: var(--accent-4); }
+
+[data-theme="light"] ::-webkit-scrollbar-track { background: var(--db-bg); }

@@ -66,14 +66,14 @@ export default function DocumentsPage() {
     <div>
       <div style={{ marginBottom: '2rem' }}>
         <p style={{ fontFamily: 'var(--font-sans)', color: 'rgba(190,154,86,0.8)', fontSize: '0.75rem', letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 0.5rem' }}>Legal Documents</p>
-        <h1 style={{ fontFamily: 'var(--font-display)', color: '#dfc9a6', fontSize: 'clamp(1.375rem, 3vw, 1.625rem)', fontWeight: 400, letterSpacing: '0.06em', margin: '0 0 0.375rem' }}>Verification Documents</h1>
-        <p style={{ fontFamily: 'var(--font-serif)', color: 'rgba(223,201,166,0.72)', fontSize: '0.875rem', margin: 0 }}>All documents required before payments go live. PDF, JPG, or PNG accepted.</p>
+        <h1 style={{ fontFamily: 'var(--font-display)', color: 'var(--db-text)', fontSize: 'clamp(1.375rem, 3vw, 1.625rem)', fontWeight: 400, letterSpacing: '0.06em', margin: '0 0 0.375rem' }}>Verification Documents</h1>
+        <p style={{ fontFamily: 'var(--font-serif)', color: 'var(--db-text-muted)', fontSize: '0.875rem', margin: 0 }}>All documents required before payments go live. PDF, JPG, or PNG accepted.</p>
       </div>
-      <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(223,201,166,0.08)', borderRadius: '0.5rem', padding: '1rem 1.25rem', marginBottom: '1.75rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        <div style={{ flex: 1, height: '0.25rem', background: 'rgba(223,201,166,0.1)', borderRadius: '0.125rem', overflow: 'hidden' }}>
+      <div style={{ background: 'var(--db-bg-card)', border: '1px solid var(--db-border-subtle)', borderRadius: '0.5rem', padding: '1rem 1.25rem', marginBottom: '1.75rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div style={{ flex: 1, height: '0.25rem', background: 'var(--db-border-subtle)', borderRadius: '0.125rem', overflow: 'hidden' }}>
           <div style={{ height: '100%', width: `${(uploadedCount / DOCUMENTS.length) * 100}%`, background: '#9e763b', transition: 'width 0.4s ease' }} />
         </div>
-        <span style={{ fontSize: '0.75rem', color: 'rgba(223,201,166,0.72)', fontFamily: 'var(--font-sans)', flexShrink: 0 }}>{uploadedCount} / {DOCUMENTS.length} uploaded</span>
+        <span style={{ fontSize: '0.75rem', color: 'var(--db-text-muted)', fontFamily: 'var(--font-sans)', flexShrink: 0 }}>{uploadedCount} / {DOCUMENTS.length} uploaded</span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.75rem' }}>
         {DOCUMENTS.map(doc => {
@@ -81,16 +81,16 @@ export default function DocumentsPage() {
           const progress = uploading[doc.field]
           const isUploading = progress !== undefined
           return (
-            <div key={doc.field} style={{ background: uploaded ? 'rgba(158,118,59,0.05)' : 'rgba(255,255,255,0.02)', border: `1px solid ${uploaded ? 'rgba(158,118,59,0.2)' : 'rgba(223,201,166,0.08)'}`, borderRadius: '0.5rem', padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <div style={{ width: '2rem', height: '2rem', borderRadius: '50%', background: uploaded ? 'rgba(158,118,59,0.15)' : 'rgba(223,201,166,0.05)', border: `1px solid ${uploaded ? 'rgba(158,118,59,0.3)' : 'rgba(223,201,166,0.1)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '0.875rem', color: uploaded ? '#9e763b' : 'rgba(223,201,166,0.4)' }}>
+            <div key={doc.field} style={{ background: uploaded ? 'var(--db-bg-card-active)' : 'var(--db-bg-card)', border: `1px solid ${uploaded ? 'rgba(158,118,59,0.2)' : 'var(--db-border-subtle)'}`, borderRadius: '0.5rem', padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{ width: '2rem', height: '2rem', borderRadius: '50%', background: uploaded ? 'rgba(158,118,59,0.15)' : 'var(--db-bg-card)', border: `1px solid ${uploaded ? 'rgba(158,118,59,0.3)' : 'var(--db-border-subtle)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '0.875rem', color: uploaded ? '#9e763b' : 'var(--db-text-faint)' }}>
                 {uploaded ? '✓' : '○'}
               </div>
               <div style={{ flex: 1 }}>
-                <p style={{ fontSize: '0.875rem', color: '#dfc9a6', fontFamily: 'var(--font-sans)', margin: '0 0 0.125rem' }}>{doc.label}</p>
-                <p style={{ fontSize: '0.75rem', color: 'rgba(223,201,166,0.6)', fontFamily: 'var(--font-sans)', margin: 0 }}>{uploaded ? `Uploaded: ${uploaded.name}` : doc.hint}</p>
-                {isUploading && <div style={{ marginTop: '0.375rem', height: '0.1875rem', background: 'rgba(223,201,166,0.1)', borderRadius: '0.125rem', overflow: 'hidden' }}><div style={{ height: '100%', width: `${progress}%`, background: '#be9a56', transition: 'width 0.2s' }} /></div>}
+                <p style={{ fontSize: '0.875rem', color: 'var(--db-text)', fontFamily: 'var(--font-sans)', margin: '0 0 0.125rem' }}>{doc.label}</p>
+                <p style={{ fontSize: '0.75rem', color: 'var(--db-text-muted)', fontFamily: 'var(--font-sans)', margin: 0 }}>{uploaded ? `Uploaded: ${uploaded.name}` : doc.hint}</p>
+                {isUploading && <div style={{ marginTop: '0.375rem', height: '0.1875rem', background: 'var(--db-border-subtle)', borderRadius: '0.125rem', overflow: 'hidden' }}><div style={{ height: '100%', width: `${progress}%`, background: '#be9a56', transition: 'width 0.2s' }} /></div>}
               </div>
-              <label style={{ padding: '0.4375rem 1rem', background: 'transparent', border: `1px solid ${uploaded ? 'rgba(223,201,166,0.15)' : 'rgba(223,201,166,0.22)'}`, borderRadius: '0.25rem', color: uploaded ? 'rgba(223,201,166,0.55)' : '#dfc9a6', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}>
+              <label style={{ padding: '0.4375rem 1rem', background: 'transparent', border: `1px solid ${uploaded ? 'var(--db-border-subtle)' : 'var(--db-border-gold)'}`, borderRadius: '0.25rem', color: uploaded ? 'var(--db-text-muted)' : 'var(--db-text)', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}>
                 {isUploading ? `${progress}%` : uploaded ? 'Replace' : 'Upload'}
                 <input type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ display: 'none' }} onChange={e => e.target.files?.[0] && handleUpload(doc.field, e.target.files[0])} />
               </label>
@@ -98,7 +98,7 @@ export default function DocumentsPage() {
           )
         })}
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(223,201,166,0.08)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', paddingTop: '0.5rem', borderTop: '1px solid var(--db-border-subtle)' }}>
         <button onClick={handleSave} disabled={saving || uploadedCount === 0}
           style={{ padding: '0.75rem 2rem', background: '#9e763b', border: 'none', borderRadius: '0.375rem', color: '#ebe8db', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', cursor: (saving || uploadedCount === 0) ? 'not-allowed' : 'pointer', opacity: (saving || uploadedCount === 0) ? 0.4 : 1 }}>
           {saving ? 'Saving...' : 'Save documents'}
