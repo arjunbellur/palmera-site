@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import type { ListingMode, AvailabilityType } from '@/lib/firestore'
 
 const CATEGORIES = [
   'Activities', 'Dining', 'Wellness', 'Lifestyle', 'Rentals',
@@ -23,6 +24,8 @@ const LANGUAGES = ['French', 'English', 'Wolof', 'Arabic', 'Spanish']
 
 export interface ListingData {
   id?: string
+  mode: ListingMode
+  providerName: string
   title: string
   category: string
   city: string
@@ -32,11 +35,18 @@ export interface ListingData {
   maxGuests: string
   basePrice: string
   pricingModel: string
+  availabilityType: AvailabilityType
+  eventDate: string
   availableDays: string
   timeSlots: string
   leadTime: string
   blackoutDates: string
   cancellationPolicy: string
+  requiresReservation: boolean
+  minGroupSize: string
+  maxGroupSize: string
+  advanceBookingDays: string
+  isHighlighted: boolean
   includes: string
   excludes: string
   highlights: string
@@ -46,15 +56,24 @@ export interface ListingData {
 }
 
 const empty: ListingData = {
+  mode: 'paid',
+  providerName: '',
   title: '', category: '', city: '', location: '', duration: '',
   minGuests: '', maxGuests: '', basePrice: '', pricingModel: '',
+  availabilityType: 'indefinite',
+  eventDate: '',
   availableDays: '', timeSlots: '', leadTime: '', blackoutDates: '',
-  cancellationPolicy: '', includes: '', excludes: '', highlights: '',
-  dressCode: '', languages: [], description: '',
+  cancellationPolicy: '',
+  requiresReservation: false,
+  minGroupSize: '', maxGroupSize: '', advanceBookingDays: '',
+  isHighlighted: false,
+  includes: '', excludes: '', highlights: '', dressCode: '',
+  languages: [], description: '',
 }
 
 interface ListingModalProps {
   listing?: ListingData
+  partnerBusinessName?: string
   onSave: (data: ListingData) => void
   onClose: () => void
 }
@@ -89,12 +108,34 @@ const rowStyle = {
   marginBottom: '1rem',
 }
 
-export default function ListingModal({ listing, onSave, onClose }: ListingModalProps) {
-  const [form, setForm] = useState<ListingData>(listing || empty)
+const dividerStyle = {
+  borderTop: '1px solid var(--db-border-subtle)',
+  margin: '1.25rem 0',
+}
+
+function normalizeMode(m: string): ListingMode {
+  return m === 'paid' ? 'paid' : 'reservation'
+}
+
+function normalizeAvailability(a: string): AvailabilityType {
+  if (a === 'temporary' || a === 'one_off') return 'temporary'
+  return 'indefinite'
+}
+
+export default function ListingModal({ listing, partnerBusinessName, onSave, onClose }: ListingModalProps) {
+  const [form, setForm] = useState<ListingData>(() => {
+    const base = listing
+      ? { ...empty, ...listing }
+      : { ...empty, providerName: partnerBusinessName || '' }
+    base.mode = normalizeMode(base.mode as string)
+    base.availabilityType = normalizeAvailability(base.availabilityType as string)
+    if (!base.providerName) base.providerName = partnerBusinessName || ''
+    return base
+  })
   const [saving, setSaving] = useState(false)
 
-  const set = (field: keyof ListingData, value: string | string[]) =>
-    setForm(prev => ({ ...prev, [field]: value }))
+  const set = (field: keyof ListingData, value: ListingData[keyof ListingData]) =>
+    setForm(prev => ({ ...prev, [field]: value } as ListingData))
 
   const toggleLanguage = (lang: string) => {
     const langs = form.languages.includes(lang)
@@ -103,12 +144,26 @@ export default function ListingModal({ listing, onSave, onClose }: ListingModalP
     set('languages', langs)
   }
 
+  const canSave = !!form.title && !!form.category && !!form.city && (form.mode !== 'paid' || !!form.basePrice)
+
   const handleSave = async () => {
-    if (!form.title || !form.category || !form.city || !form.basePrice) return
+    if (!canSave) return
     setSaving(true)
     await onSave(form)
     setSaving(false)
   }
+
+  const isPaid = form.mode === 'paid'
+  const isTemporary = form.availabilityType === 'temporary'
+
+  const pillBase = (active: boolean): React.CSSProperties => ({
+    flex: 1, padding: '9px 0',
+    background: active ? 'rgba(190,154,86,0.15)' : 'transparent',
+    border: 'none',
+    color: active ? '#be9a56' : 'var(--db-text-faint)',
+    fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.04em', cursor: 'pointer',
+    transition: 'all 0.15s',
+  })
 
   return (
     <div
@@ -151,10 +206,37 @@ export default function ListingModal({ listing, onSave, onClose }: ListingModalP
           }}>×</button>
         </div>
 
+        {/* Mode selector */}
+        <div style={{ marginBottom: '1.25rem' }}>
+          <label style={labelStyle}>Listing type *</label>
+          <div style={{ display: 'flex', borderRadius: '0.375rem', border: '1px solid var(--db-border-subtle)', overflow: 'hidden' }}>
+            {(['paid', 'reservation'] as ListingMode[]).map((m, i, arr) => (
+              <button key={m} onClick={() => set('mode', m)} style={{
+                ...pillBase(form.mode === m),
+                borderRight: i < arr.length - 1 ? '1px solid var(--db-border-subtle)' : 'none',
+              }}>
+                {m === 'paid' ? 'Paid' : 'Reservation'}
+              </button>
+            ))}
+          </div>
+          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6875rem', color: 'var(--db-text-ghost)', margin: '6px 0 0', lineHeight: 1.5 }}>
+            {isPaid ? 'Guest pays through Palmera at time of booking.' : 'Guest holds a spot — no upfront charge through Palmera.'}
+          </p>
+        </div>
+
+        {/* Provider name */}
+        <div style={{ marginBottom: '1rem' }}>
+          <label style={labelStyle}>Provider / brand name</label>
+          <input style={inputStyle} placeholder='e.g. "Sunset Terrace" or "La Villa Dakar"'
+            value={form.providerName} onChange={e => set('providerName', e.target.value)} />
+        </div>
+
+        <div style={dividerStyle} />
+
         {/* Title */}
         <div style={{ marginBottom: '1rem' }}>
           <label style={labelStyle}>Listing title *</label>
-          <input style={inputStyle} placeholder='e.g. "Sunset Yacht on Gorée Bay"'
+          <input style={inputStyle} placeholder='e.g. "Valentine&apos;s Dinner at the Terrace"'
             value={form.title} onChange={e => set('title', e.target.value)} />
         </div>
 
@@ -192,90 +274,160 @@ export default function ListingModal({ listing, onSave, onClose }: ListingModalP
           </div>
         </div>
 
+        {/* Pricing — paid mode only */}
+        {isPaid && (
+          <>
+            <div style={dividerStyle} />
+            <div style={rowStyle}>
+              <div>
+                <label style={labelStyle}>Base price (CFA) *</label>
+                <input style={inputStyle} type="number" placeholder="150000"
+                  value={form.basePrice} onChange={e => set('basePrice', e.target.value)} />
+              </div>
+              <div>
+                <label style={labelStyle}>Pricing model</label>
+                <select style={{ ...inputStyle, appearance: 'none' }}
+                  value={form.pricingModel} onChange={e => set('pricingModel', e.target.value)}>
+                  <option value="">Select model</option>
+                  {PRICING_MODELS.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </div>
+            </div>
+          </>
+        )}
+
         {/* Guests */}
         <div style={rowStyle}>
           <div>
-            <label style={labelStyle}>Min guests *</label>
+            <label style={labelStyle}>Min guests</label>
             <input style={inputStyle} type="number" min="1" placeholder="1"
               value={form.minGuests} onChange={e => set('minGuests', e.target.value)} />
           </div>
           <div>
-            <label style={labelStyle}>Max guests *</label>
+            <label style={labelStyle}>Max guests</label>
             <input style={inputStyle} type="number" min="1" placeholder="20"
               value={form.maxGuests} onChange={e => set('maxGuests', e.target.value)} />
           </div>
         </div>
 
-        {/* Pricing */}
-        <div style={rowStyle}>
-          <div>
-            <label style={labelStyle}>Base price (CFA) *</label>
-            <input style={inputStyle} type="number" placeholder="150000"
-              value={form.basePrice} onChange={e => set('basePrice', e.target.value)} />
+        <div style={dividerStyle} />
+
+        {/* Availability type */}
+        <div style={{ marginBottom: '1rem' }}>
+          <label style={labelStyle}>Availability</label>
+          <div style={{ display: 'flex', borderRadius: '0.25rem', border: '1px solid var(--db-border-subtle)', overflow: 'hidden' }}>
+            {(['indefinite', 'temporary'] as AvailabilityType[]).map((a, i, arr) => (
+              <button key={a} onClick={() => set('availabilityType', a)} style={{
+                ...pillBase(form.availabilityType === a),
+                fontSize: '0.75rem',
+                borderRight: i < arr.length - 1 ? '1px solid var(--db-border-subtle)' : 'none',
+              }}>
+                {a === 'indefinite' ? 'Indefinite' : 'Temporary'}
+              </button>
+            ))}
           </div>
-          <div>
-            <label style={labelStyle}>Pricing model *</label>
-            <select style={{ ...inputStyle, appearance: 'none' }}
-              value={form.pricingModel} onChange={e => set('pricingModel', e.target.value)}>
-              <option value="">Select model</option>
-              {PRICING_MODELS.map(m => <option key={m} value={m}>{m}</option>)}
-            </select>
-          </div>
+          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6875rem', color: 'var(--db-text-ghost)', margin: '6px 0 0', lineHeight: 1.5 }}>
+            {isTemporary ? "Tied to a specific event or date window (e.g. Valentine’s dinner, NYE party)." : "Always available — no end date (e.g. villa bookings, ongoing restaurant reservations)."}
+          </p>
         </div>
 
-        {/* Availability */}
-        <div style={rowStyle}>
-          <div>
-            <label style={labelStyle}>Available days</label>
-            <input style={inputStyle} placeholder='e.g. "Daily" / "Tue–Sat"'
-              value={form.availableDays} onChange={e => set('availableDays', e.target.value)} />
+        {/* Event date — temporary only */}
+        {isTemporary && (
+          <div style={{ ...rowStyle }}>
+            <div>
+              <label style={labelStyle}>Event date</label>
+              <input type="date" style={inputStyle}
+                value={form.eventDate} onChange={e => set('eventDate', e.target.value)} />
+            </div>
+            <div />
           </div>
+        )}
+
+        {/* Time slots + Lead time */}
+        <div style={rowStyle}>
           <div>
             <label style={labelStyle}>Time slots</label>
             <input style={inputStyle} placeholder='e.g. "9am, 2pm, 5pm"'
               value={form.timeSlots} onChange={e => set('timeSlots', e.target.value)} />
           </div>
-        </div>
-
-        {/* Lead time + Blackout */}
-        <div style={rowStyle}>
           <div>
             <label style={labelStyle}>Lead time required</label>
             <input style={inputStyle} placeholder='e.g. "48h" / "1 week"'
               value={form.leadTime} onChange={e => set('leadTime', e.target.value)} />
           </div>
+        </div>
+
+        {/* Blackout + Cancellation */}
+        <div style={rowStyle}>
           <div>
             <label style={labelStyle}>Blackout dates</label>
             <input style={inputStyle} placeholder="Holidays, off-season, private events"
               value={form.blackoutDates} onChange={e => set('blackoutDates', e.target.value)} />
           </div>
-        </div>
-
-        {/* Cancellation */}
-        <div style={{ marginBottom: '1rem' }}>
-          <label style={labelStyle}>Cancellation policy</label>
-          <select style={{ ...inputStyle, appearance: 'none' }}
-            value={form.cancellationPolicy} onChange={e => set('cancellationPolicy', e.target.value)}>
-            <option value="">Select policy</option>
-            {CANCELLATION_POLICIES.map(p => <option key={p} value={p}>{p}</option>)}
-          </select>
-        </div>
-
-        {/* Includes / Excludes */}
-        <div style={rowStyle}>
           <div>
-            <label style={labelStyle}>What&apos;s included (one per line)</label>
-            <textarea style={{ ...inputStyle, height: '90px', resize: 'vertical' }}
-              placeholder={"Food & drinks\nTransport\nGuide\nSnorkeling gear"}
-              value={form.includes} onChange={e => set('includes', e.target.value)} />
-          </div>
-          <div>
-            <label style={labelStyle}>Not included (one per line)</label>
-            <textarea style={{ ...inputStyle, height: '90px', resize: 'vertical' }}
-              placeholder={"Gratuity\nAlcohol\nPersonal expenses"}
-              value={form.excludes} onChange={e => set('excludes', e.target.value)} />
+            <label style={labelStyle}>Cancellation policy</label>
+            <select style={{ ...inputStyle, appearance: 'none' }}
+              value={form.cancellationPolicy} onChange={e => set('cancellationPolicy', e.target.value)}>
+              <option value="">Select policy</option>
+              {CANCELLATION_POLICIES.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
           </div>
         </div>
+
+        {/* Reservation config */}
+        <>
+          <div style={dividerStyle} />
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', cursor: 'pointer', marginBottom: '1rem' }}>
+            <input type="checkbox" checked={form.requiresReservation}
+              onChange={e => set('requiresReservation', e.target.checked)}
+              style={{ width: '1rem', height: '1rem', accentColor: '#be9a56', cursor: 'pointer' }} />
+            <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', color: 'var(--db-text-muted)' }}>Requires advance reservation</span>
+          </label>
+          {form.requiresReservation && (
+            <>
+              <div style={rowStyle}>
+                <div>
+                  <label style={labelStyle}>Min group size</label>
+                  <input style={inputStyle} type="number" min="1" placeholder="2"
+                    value={form.minGroupSize} onChange={e => set('minGroupSize', e.target.value)} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Max group size</label>
+                  <input style={inputStyle} type="number" min="1" placeholder="12"
+                    value={form.maxGroupSize} onChange={e => set('maxGroupSize', e.target.value)} />
+                </div>
+              </div>
+              <div style={{ ...rowStyle }}>
+                <div>
+                  <label style={labelStyle}>Advance booking window</label>
+                  <input style={inputStyle} placeholder='e.g. "72h" / "7 days"'
+                    value={form.advanceBookingDays} onChange={e => set('advanceBookingDays', e.target.value)} />
+                </div>
+                <div />
+              </div>
+            </>
+          )}
+        </>
+
+        <div style={dividerStyle} />
+
+        {/* Includes / Excludes — paid only */}
+        {isPaid && (
+          <div style={rowStyle}>
+            <div>
+              <label style={labelStyle}>What&apos;s included (one per line)</label>
+              <textarea style={{ ...inputStyle, height: '90px', resize: 'vertical' }}
+                placeholder={"Food & drinks\nTransport\nGuide\nSnorkeling gear"}
+                value={form.includes} onChange={e => set('includes', e.target.value)} />
+            </div>
+            <div>
+              <label style={labelStyle}>Not included (one per line)</label>
+              <textarea style={{ ...inputStyle, height: '90px', resize: 'vertical' }}
+                placeholder={"Gratuity\nAlcohol\nPersonal expenses"}
+                value={form.excludes} onChange={e => set('excludes', e.target.value)} />
+            </div>
+          </div>
+        )}
 
         {/* Highlights + Dress code */}
         <div style={rowStyle}>
@@ -343,7 +495,7 @@ export default function ListingModal({ listing, onSave, onClose }: ListingModalP
           }}>
             Cancel
           </button>
-          <button onClick={handleSave} disabled={saving || !form.title || !form.category || !form.city || !form.basePrice}
+          <button onClick={handleSave} disabled={saving || !canSave}
             style={{
               padding: '10px 28px',
               background: 'var(--accent-3)',
@@ -354,7 +506,7 @@ export default function ListingModal({ listing, onSave, onClose }: ListingModalP
               fontFamily: 'var(--font-sans)',
               cursor: saving ? 'wait' : 'pointer',
               letterSpacing: '0.06em',
-              opacity: (!form.title || !form.category || !form.city || !form.basePrice) ? 0.4 : 1,
+              opacity: !canSave ? 0.4 : 1,
             }}>
             {saving ? 'Saving...' : listing?.id ? 'Update Listing' : 'Save Listing'}
           </button>

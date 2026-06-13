@@ -11,6 +11,43 @@ import {
 } from 'firebase/firestore'
 import { db } from './firebase'
 
+// ── Listing types ─────────────────────────────────────────────────
+export type ListingMode = 'paid' | 'reservation'
+export type AvailabilityType = 'indefinite' | 'temporary'
+
+export interface Listing {
+  id?: string
+  mode: ListingMode
+  providerName: string
+  title: string
+  category: string
+  city: string
+  location: string
+  duration: string
+  minGuests: string
+  maxGuests: string
+  basePrice: string
+  pricingModel: string
+  availabilityType: AvailabilityType
+  eventDate: string
+  availableDays: string
+  timeSlots: string
+  leadTime: string
+  blackoutDates: string
+  cancellationPolicy: string
+  requiresReservation: boolean
+  minGroupSize: string
+  maxGroupSize: string
+  advanceBookingDays: string
+  isHighlighted: boolean
+  includes: string
+  excludes: string
+  highlights: string
+  dressCode: string
+  languages: string[]
+  description: string
+}
+
 // ── Partner profile ──────────────────────────────────────────────
 export const getPartner = async (uid: string) => {
   const ref = doc(db, 'partners', uid)

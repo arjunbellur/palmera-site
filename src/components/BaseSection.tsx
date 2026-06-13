@@ -4,24 +4,25 @@ import { useTranslations } from 'next-intl'
 import { onScrollFrame } from '@/lib/scroll-bus'
 import { useViewport } from '@/lib/use-viewport'
 
-// Photo config — clamp min values are sized for mobile (~375px), max for desktop (1280px+)
+// Photo config — 3 size tiers: L ≈24vw, M ≈15vw, S ≈9vw
+// Horizontal zones: far-edge (1-3vw), mid (8-14vw), inner (17-22vw)
 const PHOTOS = [
-  // Group 0: visible on entry, pushed below intro text on mobile via MOBILE_TOPS
-  { src: '/images/bas-van-den-eijkhof-w_O7qjB9ZVY-unsplash.jpg',    top: '26vh', left: '1vw',   w: 'clamp(68px,22vw,356px)', h: 'clamp(68px,22vw,356px)', speed: 0.1,  group: 0 },
-  { src: '/images/priscilla-du-preez-W3SEyZODn8U-unsplash-min.jpg', top: '24vh', right: '1vw',  w: 'clamp(62px,20vw,320px)', h: 'clamp(68px,22vw,356px)', speed: 0.1,  group: 0 },
-  { src: '/images/upgraded-points-uu5Z7cx2PdA-unsplash.jpg',        top: '62vh', left: '3vw',   w: 'clamp(58px,18vw,280px)', h: 'clamp(58px,18vw,280px)', speed: 0.08, group: 0 },
-  { src: '/images/aliunix-NI265AcvQZs-unsplash-1.jpg',              top: '62vh', right: '3vw',  w: 'clamp(58px,18vw,280px)', h: 'clamp(58px,18vw,280px)', speed: 0.08, group: 0 },
-  // Group 1 (Gather)
-  { src: '/images/ron-mcclenny-iqUSpwmvnw8-unsplash.jpg',           top: '38vh', left: '1vw',   w: 'clamp(54px,14vw,220px)', h: 'clamp(46px,11vw,180px)', speed: 0.12, group: 1 },
-  { src: '/images/gilles-de-muynck-PtJDCD4fTI4-unsplash.jpg',       top: '40vh', right: '1vw',  w: 'clamp(54px,14vw,220px)', h: 'clamp(54px,14vw,220px)', speed: 0.12, group: 1 },
-  { src: '/images/konrad-bachusz--tpKv0goE94-unsplash.jpg',         top: '60vh', left: '16vw',  w: 'clamp(58px,15vw,240px)', h: 'clamp(58px,15vw,240px)', speed: 0.1,  group: 1 },
-  { src: '/images/chaz-mcgregor-THXYw7ysYus-unsplash.jpg',          top: '62vh', right: '16vw', w: 'clamp(54px,14vw,220px)', h: 'clamp(58px,16vw,260px)', speed: 0.1,  group: 1 },
-  // Group 2 (Reserve)
-  { src: '/images/redcharlie-nf7W_hn6DKQ-unsplash-min.jpg',         top: '40vh', left: '1vw',   w: 'clamp(64px,20vw,320px)', h: 'clamp(64px,20vw,320px)', speed: 0.1,  group: 2 },
-  { src: '/images/haven-xie-IoTTc6Z5lTM-unsplash.jpg',              top: '38vh', right: '1vw',  w: 'clamp(60px,18vw,290px)', h: 'clamp(54px,15vw,240px)', speed: 0.1,  group: 2 },
-  // Group 3 (Commit)
-  { src: '/images/ed-wingate-ZMIdqdsbP2U-unsplash-min.jpg',         top: '56vh', left: '16vw',  w: 'clamp(50px,14vw,220px)', h: 'clamp(54px,16vw,240px)', speed: 0.025, group: 3 },
-  { src: '/images/bruno-ngarukiye-2qCs8eel2qI-unsplash.jpg',        top: '60vh', right: '16vw', w: 'clamp(46px,13vw,200px)', h: 'clamp(46px,13vw,190px)', speed: 0.025, group: 3 },
+  // Group 0: entry — L left, L right (top), S inner-left, S inner-right (bottom)
+  { src: '/images/bas-van-den-eijkhof-w_O7qjB9ZVY-unsplash.jpg',    top: '20vh', left: '2vw',   w: 'clamp(120px,23vw,360px)', h: 'clamp(140px,27vw,420px)', speed: 0.1,  group: 0 },
+  { src: '/images/priscilla-du-preez-W3SEyZODn8U-unsplash-min.jpg', top: '18vh', right: '2vw',  w: 'clamp(100px,19vw,295px)', h: 'clamp(120px,23vw,360px)', speed: 0.1,  group: 0 },
+  { src: '/images/upgraded-points-uu5Z7cx2PdA-unsplash.jpg',        top: '66vh', left: '14vw',  w: 'clamp(60px,9vw,140px)',   h: 'clamp(60px,9vw,140px)',   speed: 0.08, group: 0 },
+  { src: '/images/aliunix-NI265AcvQZs-unsplash-1.jpg',              top: '68vh', right: '12vw', w: 'clamp(65px,10vw,155px)',  h: 'clamp(65px,10vw,155px)',  speed: 0.08, group: 0 },
+  // Group 1 (Gather) — L far-left, M far-right, M inner-right (lower), S inner-left (lower)
+  { src: '/images/ron-mcclenny-iqUSpwmvnw8-unsplash.jpg',           top: '28vh', left: '1vw',   w: 'clamp(110px,21vw,320px)', h: 'clamp(90px,17vw,260px)',  speed: 0.12, group: 1 },
+  { src: '/images/chaz-mcgregor-THXYw7ysYus-unsplash.jpg',          top: '24vh', right: '2vw',  w: 'clamp(85px,14vw,215px)',  h: 'clamp(95px,16vw,250px)',  speed: 0.09, group: 1 },
+  { src: '/images/gilles-de-muynck-PtJDCD4fTI4-unsplash.jpg',       top: '58vh', right: '13vw', w: 'clamp(80px,13vw,200px)',  h: 'clamp(80px,13vw,200px)',  speed: 0.1,  group: 1 },
+  { src: '/images/konrad-bachusz--tpKv0goE94-unsplash.jpg',         top: '64vh', left: '17vw',  w: 'clamp(58px,8vw,125px)',   h: 'clamp(58px,8vw,125px)',   speed: 0.1,  group: 1 },
+  // Group 2 (Reserve) — L far-left, M far-right
+  { src: '/images/redcharlie-nf7W_hn6DKQ-unsplash-min.jpg',         top: '30vh', left: '2vw',   w: 'clamp(150px,26vw,395px)', h: 'clamp(150px,26vw,395px)', speed: 0.1,  group: 2 },
+  { src: '/images/haven-xie-IoTTc6Z5lTM-unsplash.jpg',              top: '32vh', right: '3vw',  w: 'clamp(100px,17vw,260px)', h: 'clamp(90px,15vw,230px)',  speed: 0.1,  group: 2 },
+  // Group 3 (Commit) — M inner-left, S inner-right
+  { src: '/images/ed-wingate-ZMIdqdsbP2U-unsplash-min.jpg',         top: '53vh', left: '13vw',  w: 'clamp(90px,15vw,230px)',  h: 'clamp(95px,16vw,245px)',  speed: 0.025, group: 3 },
+  { src: '/images/bruno-ngarukiye-2qCs8eel2qI-unsplash.jpg',        top: '58vh', right: '14vw', w: 'clamp(60px,9vw,140px)',   h: 'clamp(58px,9vw,138px)',   speed: 0.025, group: 3 },
 ]
 
 // Only group 0 top-row photos need a position shift on mobile (push below navbar/intro text)

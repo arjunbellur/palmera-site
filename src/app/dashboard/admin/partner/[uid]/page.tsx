@@ -77,6 +77,36 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
   return <h3 style={{ fontFamily: 'var(--font-serif)', color: 'var(--db-text)', fontSize: '0.9375rem', fontWeight: 400, margin: '1.75rem 0 1rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--db-border-subtle)' }}>{children}</h3>
 }
 
+function ModeBadge({ mode }: { mode?: string }) {
+  const isPaid = mode === 'paid'
+  const s = isPaid
+    ? { bg: 'rgba(190,154,86,0.12)', border: 'rgba(190,154,86,0.35)', color: '#be9a56', label: 'Paid' }
+    : { bg: 'rgba(223,201,166,0.08)', border: 'rgba(223,201,166,0.25)', color: '#dfc9a6', label: 'Reservation' }
+  return (
+    <span style={{
+      fontSize: '0.625rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.08em',
+      textTransform: 'uppercase', padding: '2px 8px', borderRadius: '2px',
+      border: `1px solid ${s.border}`, background: s.bg, color: s.color,
+    }}>
+      {s.label}
+    </span>
+  )
+}
+
+function EventBadge({ availabilityType }: { availabilityType?: string }) {
+  const isEvent = availabilityType === 'temporary' || availabilityType === 'one_off'
+  if (!isEvent) return null
+  return (
+    <span style={{
+      fontSize: '0.625rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.08em',
+      textTransform: 'uppercase', padding: '2px 8px', borderRadius: '2px',
+      border: '1px solid rgba(158,118,59,0.35)', background: 'rgba(158,118,59,0.1)', color: '#9e763b',
+    }}>
+      Event
+    </span>
+  )
+}
+
 export default function PartnerDetailPage({ params }: { params: Promise<{ uid: string }> }) {
   const { uid } = use(params)
   const router = useRouter()
@@ -241,7 +271,7 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ uid: s
             <Field label="Payout currency" value={partner.payoutCurrency as string} />
             <Field label="Payout frequency" value={partner.payoutFrequency as string} />
           </Grid>
-          {(partner.mobileMoneyProvider || partner.mobileMoneyNumber) && (
+          {!!(partner.mobileMoneyProvider || partner.mobileMoneyNumber) && (
             <>
               <SectionHeading>Mobile Money</SectionHeading>
               <Grid>
@@ -250,7 +280,7 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ uid: s
               </Grid>
             </>
           )}
-          {(partner.bankName || partner.accountNumber) && (
+          {!!(partner.bankName || partner.accountNumber) && (
             <>
               <SectionHeading>Bank Transfer</SectionHeading>
               <Grid>
@@ -260,7 +290,7 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ uid: s
               </Grid>
             </>
           )}
-          {(partner.stripeAccountHolderName || partner.stripeIban) && (
+          {!!(partner.stripeAccountHolderName || partner.stripeIban) && (
             <>
               <SectionHeading>Stripe (international)</SectionHeading>
               <Grid>
@@ -272,9 +302,9 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ uid: s
               </Grid>
             </>
           )}
-          {!partner.payoutMethod && !partner.stripeAccountHolderName && (
+          {!partner.payoutMethod && !partner.stripeAccountHolderName ? (
             <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', color: 'var(--db-text-ghost)', fontStyle: 'italic', marginTop: '0.5rem' }}>No payout info submitted yet.</p>
-          )}
+          ) : null}
         </div>
       )}
 
@@ -296,7 +326,7 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ uid: s
             <Field label="Cancellation rate" value={ops.cancellationRate} />
             <Field label="Special request handling" value={ops.specialRequestHandling} />
           </Grid>
-          {!ops.opsContactName && <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', color: 'var(--db-text-ghost)', fontStyle: 'italic', marginTop: '0.5rem' }}>No operations info submitted yet.</p>}
+          {!ops.opsContactName ? <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', color: 'var(--db-text-ghost)', fontStyle: 'italic', marginTop: '0.5rem' }}>No operations info submitted yet.</p> : null}
         </div>
       )}
 
@@ -305,40 +335,73 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ uid: s
         <div>
           {listings.length === 0 ? (
             <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', color: 'var(--db-text-ghost)', fontStyle: 'italic', marginTop: '0.5rem' }}>No listings created yet.</p>
-          ) : listings.map((l, i) => (
-            <div key={i} style={{ background: 'var(--db-bg-card)', border: '1px solid var(--db-border-subtle)', borderRadius: '0.5rem', padding: '1rem 1.25rem', marginBottom: '0.875rem' }}>
-              <p style={{ fontFamily: 'var(--font-serif)', color: 'var(--db-text)', fontSize: '0.9375rem', fontWeight: 400, margin: '0 0 0.875rem', letterSpacing: '0.02em' }}>{(l.title as string) || `Listing ${i + 1}`}</p>
-              <Grid>
-                <Field label="Category" value={l.category as string} />
-                <Field label="City" value={l.city as string} />
-                <Field label="Location" value={l.location as string} />
-                <Field label="Duration" value={l.duration as string} />
-                <Field label="Min guests" value={l.minGuests as string} />
-                <Field label="Max guests" value={l.maxGuests as string} />
-                <Field label="Base price (CFA)" value={l.basePrice ? `${parseInt(l.basePrice as string).toLocaleString()} CFA` : null} />
-                <Field label="Pricing model" value={l.pricingModel as string} />
-                <Field label="Available days" value={l.availableDays as string} />
-                <Field label="Time slots" value={l.timeSlots as string} />
-                <Field label="Lead time" value={l.leadTime as string} />
-                <Field label="Cancellation policy" value={l.cancellationPolicy as string} />
-                <Field label="Languages" value={Array.isArray(l.languages) ? (l.languages as string[]).join(', ') : l.languages as string} />
-                <Field label="Dress code" value={l.dressCode as string} />
-              </Grid>
-              {l.description && (
-                <div style={{ marginTop: '0.5rem' }}>
-                  <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.625rem', color: 'var(--db-text-faint)', letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 0.375rem' }}>Description</p>
-                  <p style={{ fontFamily: 'var(--font-serif)', fontSize: '0.875rem', color: 'var(--db-text-muted)', margin: 0, lineHeight: 1.6 }}>{l.description as string}</p>
-                </div>
-              )}
-              {(l.includes || l.excludes || l.highlights) && (
-                <Grid>
-                  <Field label="What's included" value={l.includes as string} />
-                  <Field label="What's excluded" value={l.excludes as string} />
-                  <Field label="Highlights" value={l.highlights as string} />
-                </Grid>
-              )}
-            </div>
-          ))}
+          ) : (() => {
+            const grouped = listings.reduce<Record<string, Record<string, unknown>[]>>((acc, l) => {
+              const key = (l.providerName as string) || (displayName as string) || 'Uncategorized'
+              if (!acc[key]) acc[key] = []
+              acc[key].push(l)
+              return acc
+            }, {})
+            const groupEntries = Object.entries(grouped)
+            return groupEntries.map(([provider, items]) => (
+              <div key={provider} style={{ marginBottom: '2rem' }}>
+                {groupEntries.length > 1 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.875rem' }}>
+                    <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6875rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--db-text-faint)', margin: 0 }}>{provider}</p>
+                    <div style={{ flex: 1, height: '1px', background: 'var(--db-border-subtle)' }} />
+                    <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6875rem', color: 'var(--db-text-ghost)' }}>{items.length}</span>
+                  </div>
+                )}
+                {items.map((l, i) => {
+                  const mode = (l.mode as string) || 'paid'
+                  const isPaid = mode === 'paid'
+                  return (
+                    <div key={i} style={{ background: 'var(--db-bg-card)', border: '1px solid var(--db-border-subtle)', borderRadius: '0.5rem', padding: '1rem 1.25rem', marginBottom: '0.875rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.875rem' }}>
+                        <ModeBadge mode={mode} />
+                        <p style={{ fontFamily: 'var(--font-serif)', color: 'var(--db-text)', fontSize: '0.9375rem', fontWeight: 400, margin: 0, letterSpacing: '0.02em' }}>{(l.title as string) || `Listing ${i + 1}`}</p>
+                      </div>
+                      <Grid>
+                        <Field label="Category" value={l.category as string} />
+                        <Field label="City" value={l.city as string} />
+                        <Field label="Location" value={l.location as string} />
+                        <Field label="Duration" value={l.duration as string} />
+                        <Field label="Min guests" value={l.minGuests as string} />
+                        <Field label="Max guests" value={l.maxGuests as string} />
+                        {isPaid && <Field label="Base price (CFA)" value={l.basePrice ? `${parseInt(l.basePrice as string).toLocaleString()} CFA` : null} />}
+                        {isPaid && <Field label="Pricing model" value={l.pricingModel as string} />}
+                        <Field label="Availability" value={
+                          l.availabilityType === 'temporary' || l.availabilityType === 'one_off'
+                            ? (l.eventDate as string) || 'Event'
+                            : 'Indefinite'
+                        } />
+                        {!!l.timeSlots && <Field label="Time slots" value={l.timeSlots as string} />}
+                        {!!l.leadTime && <Field label="Lead time" value={l.leadTime as string} />}
+                        <Field label="Cancellation policy" value={l.cancellationPolicy as string} />
+                        {!!(l.requiresReservation) && <Field label="Reservation required" value="Yes" />}
+                        {!!(l.requiresReservation) && !!(l.advanceBookingDays) && <Field label="Advance booking" value={l.advanceBookingDays as string} />}
+                        <Field label="Languages" value={Array.isArray(l.languages) ? (l.languages as string[]).join(', ') : l.languages as string} />
+                        <Field label="Dress code" value={l.dressCode as string} />
+                      </Grid>
+                      {!!l.description && (
+                        <div style={{ marginTop: '0.5rem' }}>
+                          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.625rem', color: 'var(--db-text-faint)', letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 0.375rem' }}>Description</p>
+                          <p style={{ fontFamily: 'var(--font-serif)', fontSize: '0.875rem', color: 'var(--db-text-muted)', margin: 0, lineHeight: 1.6 }}>{l.description as string}</p>
+                        </div>
+                      )}
+                      {!!(l.includes || l.excludes || l.highlights) && (
+                        <Grid>
+                          <Field label="What's included" value={l.includes as string} />
+                          <Field label="What's excluded" value={l.excludes as string} />
+                          <Field label="Highlights" value={l.highlights as string} />
+                        </Grid>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            ))
+          })()}
         </div>
       )}
 
@@ -377,7 +440,7 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ uid: s
       {/* ── Sign-off tab ── */}
       {tab === 'signoff' && (
         <div>
-          {signoff.signedAt ? (
+          {!!signoff.signedAt ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', background: 'rgba(158,118,59,0.08)', border: '1px solid rgba(158,118,59,0.25)', borderRadius: '0.5rem', padding: '0.875rem 1.25rem', marginBottom: '1.5rem' }}>
               <div style={{ width: '0.5rem', height: '0.5rem', borderRadius: '50%', background: '#9e763b', flexShrink: 0 }} />
               <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', color: '#be9a56', margin: 0 }}>

@@ -1,6 +1,68 @@
 'use client'
 import { useTranslations } from 'next-intl'
 import { useViewport } from '@/lib/use-viewport'
+import { useState, useEffect, useRef } from 'react'
+
+const MOCKS = [
+  { src: '/images/app-screen-2.png', alt: 'Splash screen',    rotateY: '-24deg' },
+  { src: '/images/app-screen-3.png', alt: 'Onboarding',       rotateY: '-8deg'  },
+  { src: '/images/app-screen-1.png', alt: 'Discover screen',  rotateY: '8deg'   },
+  { src: '/images/app-screen-4.png', alt: 'Journey screen',   rotateY: '24deg'  },
+]
+
+function MobileCarousel() {
+  const [active, setActive] = useState(0)
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const startTimer = () => {
+    if (timerRef.current) clearInterval(timerRef.current)
+    timerRef.current = setInterval(() => {
+      setActive(i => (i + 1) % MOCKS.length)
+    }, 2800)
+  }
+
+  useEffect(() => {
+    startTimer()
+    return () => { if (timerRef.current) clearInterval(timerRef.current) }
+  }, [])
+
+  const goTo = (i: number) => { setActive(i); startTimer() }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.25rem' }}>
+      {/* Phone frame with crossfade */}
+      <a href="https://form.typeform.com/to/xo1Bskym" target="_blank" rel="noopener noreferrer"
+        style={{ display: 'block', textDecoration: 'none', width: 'min(72vw, 260px)', position: 'relative' }}>
+        {MOCKS.map((m, i) => (
+          <img key={m.src} src={m.src} alt={m.alt} loading="lazy"
+            style={{
+              width: '100%', display: 'block',
+              position: i === 0 ? 'relative' : 'absolute',
+              top: 0, left: 0,
+              opacity: active === i ? 1 : 0,
+              transition: 'opacity 0.55s ease',
+              pointerEvents: active === i ? 'auto' : 'none',
+            }} />
+        ))}
+      </a>
+
+      {/* Dot indicators */}
+      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+        {MOCKS.map((_, i) => (
+          <button key={i} onClick={() => goTo(i)}
+            style={{
+              width: active === i ? '1.5rem' : '0.375rem',
+              height: '0.375rem',
+              borderRadius: '0.1875rem',
+              background: active === i ? '#be9a56' : 'rgba(235,232,219,0.25)',
+              border: 'none', padding: 0, cursor: 'pointer',
+              transition: 'all 0.3s ease',
+            }} />
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export default function Stats() {
   const t = useTranslations('stats')
@@ -28,14 +90,13 @@ export default function Stats() {
             </div>
           ))}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 'clamp(1rem,2vw,1.5rem)', alignItems: 'flex-end', maxWidth: 'min(48rem,100%)', margin: '0 auto' }}>
-          {[
-            { src: '/images/Unitru.png', alt: 'App mockup 1', rotateY: '-30deg' },
-            { src: '/images/Group-1.png', alt: 'App mockup 2', rotateY: '0deg' },
-            { src: '/images/Group-2.png', alt: 'App mockup 3', rotateY: '30deg' },
-          ].map((mock, idx) => {
-            if (isMobile && idx !== 1) return null
-            return (
+
+        {/* Mockups — desktop: 4-up with perspective, mobile: auto carousel */}
+        {isMobile ? (
+          <MobileCarousel />
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'clamp(0.5rem,1.5vw,1.25rem)', alignItems: 'flex-end', maxWidth: 'min(60rem,100%)', margin: '0 auto' }}>
+            {MOCKS.map(mock => (
               <a key={mock.src} href="https://form.typeform.com/to/xo1Bskym" target="_blank" rel="noopener noreferrer"
                 style={{ display: 'block', perspective: '62.5rem', textDecoration: 'none' }}>
                 <img src={mock.src} alt={mock.alt} loading="lazy"
@@ -43,9 +104,9 @@ export default function Stats() {
                   onMouseEnter={e => { (e.currentTarget as HTMLImageElement).style.transform = `translate3d(0, 1.25rem, 0) rotateY(${mock.rotateY})` }}
                   onMouseLeave={e => { (e.currentTarget as HTMLImageElement).style.transform = `translate3d(0, 3.125rem, 0) rotateY(${mock.rotateY})` }} />
               </a>
-            )
-          })}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   )
