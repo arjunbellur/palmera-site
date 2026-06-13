@@ -22,7 +22,7 @@ function ModeBadge({ mode }: { mode?: string }) {
 }
 
 function EventBadge({ availabilityType }: { availabilityType?: string }) {
-  const isEvent = availabilityType === 'temporary' || availabilityType === 'one_off'
+  const isEvent = availabilityType === 'one_time' || availabilityType === 'one_off' || availabilityType === 'temporary'
   if (!isEvent) return null
   return (
     <span style={{
@@ -186,7 +186,13 @@ export default function ListingsPage() {
                           <p style={{ fontSize: '0.8125rem', color: 'var(--db-text-muted)', fontFamily: 'var(--font-sans)', margin: '2px 0 0' }}>{listing.duration}</p>
                         </div>
                       )}
-                      {(listing.availabilityType === 'temporary' || (listing.availabilityType as string) === 'one_off') && listing.eventDate && (
+                      {(listing.availabilityType === 'scheduled') && listing.scheduledDays?.length > 0 && (
+                        <div>
+                          <span style={{ fontSize: '10px', color: 'var(--db-text-ghost)', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Days</span>
+                          <p style={{ fontSize: '0.8125rem', color: 'var(--db-text-muted)', fontFamily: 'var(--font-sans)', margin: '2px 0 0' }}>{listing.scheduledDays.join(', ')}</p>
+                        </div>
+                      )}
+                      {(listing.availabilityType === 'one_time' || (listing.availabilityType as string) === 'one_off' || (listing.availabilityType as string) === 'temporary') && listing.eventDate && (
                         <div>
                           <span style={{ fontSize: '10px', color: 'var(--db-text-ghost)', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Date</span>
                           <p style={{ fontSize: '0.8125rem', color: 'var(--db-text-muted)', fontFamily: 'var(--font-sans)', margin: '2px 0 0' }}>{listing.eventDate}</p>

@@ -13,7 +13,7 @@ import { db } from './firebase'
 
 // ── Listing types ─────────────────────────────────────────────────
 export type ListingMode = 'paid' | 'reservation'
-export type AvailabilityType = 'indefinite' | 'temporary'
+export type AvailabilityType = 'always' | 'scheduled' | 'one_time'
 
 export interface Listing {
   id?: string
@@ -29,6 +29,7 @@ export interface Listing {
   basePrice: string
   pricingModel: string
   availabilityType: AvailabilityType
+  scheduledDays: string[]
   eventDate: string
   availableDays: string
   timeSlots: string

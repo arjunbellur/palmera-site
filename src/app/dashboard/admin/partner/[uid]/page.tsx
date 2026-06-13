@@ -94,7 +94,7 @@ function ModeBadge({ mode }: { mode?: string }) {
 }
 
 function EventBadge({ availabilityType }: { availabilityType?: string }) {
-  const isEvent = availabilityType === 'temporary' || availabilityType === 'one_off'
+  const isEvent = availabilityType === 'one_time' || availabilityType === 'one_off' || availabilityType === 'temporary'
   if (!isEvent) return null
   return (
     <span style={{
@@ -371,9 +371,11 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ uid: s
                         {isPaid && <Field label="Base price (CFA)" value={l.basePrice ? `${parseInt(l.basePrice as string).toLocaleString()} CFA` : null} />}
                         {isPaid && <Field label="Pricing model" value={l.pricingModel as string} />}
                         <Field label="Availability" value={
-                          l.availabilityType === 'temporary' || l.availabilityType === 'one_off'
-                            ? (l.eventDate as string) || 'Event'
-                            : 'Indefinite'
+                          l.availabilityType === 'scheduled'
+                            ? (Array.isArray(l.scheduledDays) ? (l.scheduledDays as string[]).join(', ') : 'Scheduled')
+                            : l.availabilityType === 'one_time' || l.availabilityType === 'one_off' || l.availabilityType === 'temporary'
+                            ? (l.eventDate as string) || 'One-time'
+                            : 'Always'
                         } />
                         {!!l.timeSlots && <Field label="Time slots" value={l.timeSlots as string} />}
                         {!!l.leadTime && <Field label="Lead time" value={l.leadTime as string} />}

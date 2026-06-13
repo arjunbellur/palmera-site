@@ -22,6 +22,8 @@ const CANCELLATION_POLICIES = [
 
 const LANGUAGES = ['French', 'English', 'Wolof', 'Arabic', 'Spanish']
 
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
 export interface ListingData {
   id?: string
   mode: ListingMode
@@ -36,6 +38,7 @@ export interface ListingData {
   basePrice: string
   pricingModel: string
   availabilityType: AvailabilityType
+  scheduledDays: string[]
   eventDate: string
   availableDays: string
   timeSlots: string
@@ -60,8 +63,8 @@ const empty: ListingData = {
   providerName: '',
   title: '', category: '', city: '', location: '', duration: '',
   minGuests: '', maxGuests: '', basePrice: '', pricingModel: '',
-  availabilityType: 'indefinite',
-  eventDate: '',
+  availabilityType: 'always',
+  scheduledDays: [], eventDate: '',
   availableDays: '', timeSlots: '', leadTime: '', blackoutDates: '',
   cancellationPolicy: '',
   requiresReservation: false,
@@ -118,8 +121,9 @@ function normalizeMode(m: string): ListingMode {
 }
 
 function normalizeAvailability(a: string): AvailabilityType {
-  if (a === 'temporary' || a === 'one_off') return 'temporary'
-  return 'indefinite'
+  if (a === 'scheduled') return 'scheduled'
+  if (a === 'one_time' || a === 'one_off' || a === 'temporary') return 'one_time'
+  return 'always'
 }
 
 export default function ListingModal({ listing, partnerBusinessName, onSave, onClose }: ListingModalProps) {
@@ -136,6 +140,13 @@ export default function ListingModal({ listing, partnerBusinessName, onSave, onC
 
   const set = (field: keyof ListingData, value: ListingData[keyof ListingData]) =>
     setForm(prev => ({ ...prev, [field]: value } as ListingData))
+
+  const toggleDay = (day: string) => {
+    const days = form.scheduledDays.includes(day)
+      ? form.scheduledDays.filter(d => d !== day)
+      : [...form.scheduledDays, day]
+    set('scheduledDays', days)
+  }
 
   const toggleLanguage = (lang: string) => {
     const langs = form.languages.includes(lang)
@@ -154,7 +165,8 @@ export default function ListingModal({ listing, partnerBusinessName, onSave, onC
   }
 
   const isPaid = form.mode === 'paid'
-  const isTemporary = form.availabilityType === 'temporary'
+  const isScheduled = form.availabilityType === 'scheduled'
+  const isOneTime = form.availabilityType === 'one_time'
 
   const pillBase = (active: boolean): React.CSSProperties => ({
     flex: 1, padding: '9px 0',
@@ -316,23 +328,39 @@ export default function ListingModal({ listing, partnerBusinessName, onSave, onC
         <div style={{ marginBottom: '1rem' }}>
           <label style={labelStyle}>Availability</label>
           <div style={{ display: 'flex', borderRadius: '0.25rem', border: '1px solid var(--db-border-subtle)', overflow: 'hidden' }}>
-            {(['indefinite', 'temporary'] as AvailabilityType[]).map((a, i, arr) => (
+            {(['always', 'scheduled', 'one_time'] as AvailabilityType[]).map((a, i, arr) => (
               <button key={a} onClick={() => set('availabilityType', a)} style={{
                 ...pillBase(form.availabilityType === a),
                 fontSize: '0.75rem',
                 borderRight: i < arr.length - 1 ? '1px solid var(--db-border-subtle)' : 'none',
               }}>
-                {a === 'indefinite' ? 'Indefinite' : 'Temporary'}
+                {a === 'always' ? 'Always' : a === 'scheduled' ? 'Scheduled' : 'One-time'}
               </button>
             ))}
           </div>
-          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6875rem', color: 'var(--db-text-ghost)', margin: '6px 0 0', lineHeight: 1.5 }}>
-            {isTemporary ? "Tied to a specific event or date window (e.g. Valentine’s dinner, NYE party)." : "Always available — no end date (e.g. villa bookings, ongoing restaurant reservations)."}
-          </p>
         </div>
 
-        {/* Event date — temporary only */}
-        {isTemporary && (
+        {/* Scheduled — day checkboxes */}
+        {isScheduled && (
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={labelStyle}>Days available</label>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              {DAYS.map(d => (
+                <button key={d} onClick={() => toggleDay(d)} style={{
+                  padding: '5px 10px', borderRadius: '0.25rem',
+                  border: `1px solid ${form.scheduledDays.includes(d) ? '#be9a56' : 'var(--db-border-subtle)'}`,
+                  background: form.scheduledDays.includes(d) ? 'rgba(190,154,86,0.15)' : 'transparent',
+                  color: form.scheduledDays.includes(d) ? '#be9a56' : 'var(--db-text-faint)',
+                  fontSize: '0.75rem', fontFamily: 'var(--font-sans)', cursor: 'pointer',
+                  transition: 'all 0.15s',
+                }}>{d}</button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* One-time — date picker */}
+        {isOneTime && (
           <div style={{ ...rowStyle }}>
             <div>
               <label style={labelStyle}>Event date</label>
