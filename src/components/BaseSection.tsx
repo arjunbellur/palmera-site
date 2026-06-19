@@ -25,8 +25,21 @@ const PHOTOS = [
   { src: '/images/bruno-ngarukiye-2qCs8eel2qI-unsplash.jpg',        top: '58vh', right: '14vw', w: 'clamp(60px,9vw,140px)',   h: 'clamp(58px,9vw,138px)',   speed: 0.025, group: 3 },
 ]
 
-// Only group 0 top-row photos need a position shift on mobile (push below navbar/intro text)
-const MOBILE_TOPS: (string | null)[] = ['52vh', '50vh', null, null, null, null, null, null, null, null, null, null]
+// Mobile overrides — push all photos to far edges and lower tops to avoid covering center phrases
+const MOBILE_OVERRIDES: ({ top?: string; left?: string; right?: string; w?: string; h?: string } | null)[] = [
+  { top: '55vh', left: '1vw',  w: 'clamp(70px,16vw,120px)', h: 'clamp(80px,19vw,140px)' },  // group 0 left
+  { top: '52vh', right: '1vw', w: 'clamp(60px,13vw,100px)', h: 'clamp(70px,16vw,120px)' },  // group 0 right
+  { top: '72vh', left: '2vw',  w: 'clamp(44px,8vw,70px)',   h: 'clamp(44px,8vw,70px)'   },  // group 0 small left
+  { top: '74vh', right: '2vw', w: 'clamp(46px,9vw,75px)',   h: 'clamp(46px,9vw,75px)'   },  // group 0 small right
+  { top: '30vh', left: '1vw',  w: 'clamp(70px,15vw,115px)', h: 'clamp(56px,12vw,90px)'  },  // group 1 left
+  { top: '26vh', right: '1vw', w: 'clamp(55px,11vw,85px)',  h: 'clamp(62px,13vw,95px)'  },  // group 1 right
+  { top: '65vh', right: '2vw', w: 'clamp(52px,10vw,80px)',  h: 'clamp(52px,10vw,80px)'  },  // group 1 lower right
+  { top: '70vh', left: '2vw',  w: 'clamp(40px,7vw,60px)',   h: 'clamp(40px,7vw,60px)'   },  // group 1 lower left
+  { top: '32vh', left: '1vw',  w: 'clamp(80px,18vw,135px)', h: 'clamp(80px,18vw,135px)' },  // group 2 left
+  { top: '34vh', right: '1vw', w: 'clamp(60px,13vw,100px)', h: 'clamp(54px,12vw,90px)'  },  // group 2 right
+  { top: '60vh', left: '2vw',  w: 'clamp(58px,11vw,88px)',  h: 'clamp(62px,12vw,94px)'  },  // group 3 left
+  { top: '62vh', right: '2vw', w: 'clamp(40px,8vw,64px)',   h: 'clamp(40px,8vw,64px)'   },  // group 3 right
+]
 
 export default function BaseSection() {
   const t = useTranslations('base')
@@ -109,14 +122,19 @@ export default function BaseSection() {
       <div style={{ position: 'sticky', top: 0, height: '100vh', overflow: 'hidden', width: '100%' }}>
 
         {PHOTOS.map((p, i) => {
-          const top = (isMobile && MOBILE_TOPS[i]) ? MOBILE_TOPS[i]! : p.top
+          const ov = isMobile ? MOBILE_OVERRIDES[i] : null
+          const top   = ov?.top   ?? p.top
+          const w     = ov?.w     ?? p.w
+          const h     = ov?.h     ?? p.h
+          const left  = ov?.left  ?? (p as any).left  ?? undefined
+          const right = ov?.right ?? (p as any).right ?? undefined
           return (
             <div key={i} ref={el => { photoRefs.current[i] = el }}
               style={{
                 position: 'absolute', top,
-                ...((p as any).left  ? { left:  (p as any).left  } : {}),
-                ...((p as any).right ? { right: (p as any).right } : {}),
-                width: p.w, height: p.h,
+                ...(left  ? { left  } : {}),
+                ...(right ? { right } : {}),
+                width: w, height: h,
                 borderRadius: '8px',
                 overflow: 'hidden', willChange: 'transform, opacity', zIndex: 1,
               }}>
@@ -145,7 +163,9 @@ export default function BaseSection() {
           )}
         </div>
 
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 4, pointerEvents: 'none', gap: '16px' }}>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 4, pointerEvents: 'none', gap: '16px',
+          ...(isMobile ? { background: 'radial-gradient(ellipse 90% 28% at 50% 50%, rgba(240,236,226,0.72) 0%, transparent 100%)' } : {}),
+        }}>
           <div style={{ position: 'relative', height: '1.5rem', width: '100%', textAlign: 'center' }}>
             {PILLARS.map((p, i) => (
               <div key={p.label} ref={el => { labelRefs.current[i] = el }}
@@ -158,7 +178,7 @@ export default function BaseSection() {
             {PILLARS.map((p, i) => (
               <div key={p.text} ref={el => { headingRefs.current[i] = el }}
                 style={{ position: i === 0 ? 'relative' : 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transform: 'translateY(0.75rem)', willChange: 'opacity, transform' }}>
-                <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.75rem,5vw,4rem)', fontWeight: 400, letterSpacing: '-0.09375rem', lineHeight: 1.15, color: 'var(--color-dark)', margin: 0, padding: '0 clamp(1.5rem,4.5vw,2.5rem)', textAlign: 'center' }}>
+                <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.75rem,5vw,4rem)', fontWeight: 400, letterSpacing: '-0.09375rem', lineHeight: 1.15, color: 'var(--color-dark)', margin: 0, padding: '0 clamp(1.5rem,4.5vw,2.5rem)', textAlign: 'center', ...(isMobile ? { textShadow: '0 0 20px rgba(240,236,226,0.9), 0 0 40px rgba(240,236,226,0.6)' } : {}) }}>
                   {p.text}
                 </h2>
               </div>
