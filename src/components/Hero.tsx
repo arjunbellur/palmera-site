@@ -13,7 +13,7 @@ export default function Hero() {
     <section id="hero" style={{ position: 'relative', height: '100vh', minHeight: '37.5rem', overflow: 'hidden' }}>
       <video autoPlay muted loop playsInline preload="none"
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }}>
-        <source src="https://res.cloudinary.com/dgthehvgs/video/upload/v1781530969/palmera-hero.mp4" type="video/mp4" />
+        <source src="https://res.cloudinary.com/dgthehvgs/video/upload/v1781892852/palmera-hero.mp4" type="video/mp4" />
       </video>
       <div style={{ position: 'absolute', inset: 0, zIndex: 1, background: 'linear-gradient(to bottom, rgba(4,4,4,0.15) 0%, rgba(4,4,4,0.45) 70%, rgba(4,4,4,0.82) 100%)' }} />
       <div style={{ position: 'relative', zIndex: 2, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: 'clamp(4rem,5.5vw,5rem) clamp(1.25rem,4.5vw,2.5rem) clamp(2rem,3.5vw,3rem)' }}>
