@@ -71,7 +71,7 @@ export default function Navbar({ messages }: { messages: Record<string, string> 
   const PILL_BASE   = 'rgba(4,4,4,0.58)'
   const PILL_ACTIVE = 'rgba(4,4,4,0.78)'
   const navBg       = (section: string) => isActive(section) ? PILL_ACTIVE : PILL_BASE
-  const textCol     = (section: string) => isActive(section) ? tan : 'rgba(235,232,219,0.62)'
+  const textCol     = (section: string) => isActive(section) ? '#2a2119' : 'rgba(235,232,219,0.62)'
   const highlightBg = 'rgba(255,255,255,1)'
 
   const pill: React.CSSProperties = {
