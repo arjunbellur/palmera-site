@@ -15,14 +15,14 @@ const PHOTOS = [
   // Group 1 (Gather) — L far-left, M far-right, M inner-right (lower), S inner-left (lower)
   { src: '/images/ron-mcclenny-iqUSpwmvnw8-unsplash.jpg',           top: '28vh', left: '1vw',   w: 'clamp(110px,21vw,320px)', h: 'clamp(90px,17vw,260px)',  speed: 0.12, group: 1 },
   { src: '/images/chaz-mcgregor-THXYw7ysYus-unsplash.jpg',          top: '24vh', right: '2vw',  w: 'clamp(85px,14vw,215px)',  h: 'clamp(95px,16vw,250px)',  speed: 0.09, group: 1 },
-  { src: '/images/gilles-de-muynck-PtJDCD4fTI4-unsplash.jpg',       top: '58vh', right: '13vw', w: 'clamp(80px,13vw,200px)',  h: 'clamp(80px,13vw,200px)',  speed: 0.1,  group: 1 },
-  { src: '/images/konrad-bachusz--tpKv0goE94-unsplash.jpg',         top: '64vh', left: '17vw',  w: 'clamp(58px,8vw,125px)',   h: 'clamp(58px,8vw,125px)',   speed: 0.1,  group: 1 },
+  { src: '/images/gilles-de-muynck-PtJDCD4fTI4-unsplash.jpg',       top: '78vh', right: '2vw',  w: 'clamp(80px,13vw,200px)',  h: 'clamp(80px,13vw,200px)',  speed: 0.035, group: 1 },
+  { src: '/images/konrad-bachusz--tpKv0goE94-unsplash.jpg',         top: '82vh', left: '2vw',   w: 'clamp(58px,8vw,125px)',   h: 'clamp(58px,8vw,125px)',   speed: 0.035, group: 1 },
   // Group 2 (Reserve) — L far-left, M far-right
   { src: '/images/redcharlie-nf7W_hn6DKQ-unsplash-min.jpg',         top: '30vh', left: '2vw',   w: 'clamp(150px,26vw,395px)', h: 'clamp(150px,26vw,395px)', speed: 0.1,  group: 2 },
   { src: '/images/haven-xie-IoTTc6Z5lTM-unsplash.jpg',              top: '32vh', right: '3vw',  w: 'clamp(100px,17vw,260px)', h: 'clamp(90px,15vw,230px)',  speed: 0.1,  group: 2 },
   // Group 3 (Commit) — M inner-left, S inner-right
-  { src: '/images/ed-wingate-ZMIdqdsbP2U-unsplash-min.jpg',         top: '53vh', left: '13vw',  w: 'clamp(90px,15vw,230px)',  h: 'clamp(95px,16vw,245px)',  speed: 0.025, group: 3 },
-  { src: '/images/bruno-ngarukiye-2qCs8eel2qI-unsplash.jpg',        top: '58vh', right: '14vw', w: 'clamp(60px,9vw,140px)',   h: 'clamp(58px,9vw,138px)',   speed: 0.025, group: 3 },
+  { src: '/images/ed-wingate-ZMIdqdsbP2U-unsplash-min.jpg',         top: '74vh', left: '3vw',   w: 'clamp(90px,15vw,230px)',  h: 'clamp(95px,16vw,245px)',  speed: 0.01,  group: 3 },
+  { src: '/images/bruno-ngarukiye-2qCs8eel2qI-unsplash.jpg',        top: '76vh', right: '3vw',  w: 'clamp(60px,9vw,140px)',   h: 'clamp(58px,9vw,138px)',   speed: 0.01,  group: 3 },
 ]
 
 // Mobile overrides — push all photos to far edges and lower tops to avoid covering center phrases
