@@ -123,3 +123,13 @@ export const getAllPartners = async () => {
   const snap = await getDocs(collection(db, 'partners'))
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
 }
+
+// Permanently delete a partner application: its listings subcollection first
+// (deleting the parent doc alone would leave those orphaned), then the doc.
+// Admin-only — enforced by firestore.rules. Does not remove Storage uploads or
+// the Firebase Auth login (those must be cleared separately).
+export const deletePartner = async (uid: string) => {
+  const listingsSnap = await getDocs(collection(db, 'partners', uid, 'listings'))
+  await Promise.all(listingsSnap.docs.map((d) => deleteDoc(d.ref)))
+  await deleteDoc(doc(db, 'partners', uid))
+}

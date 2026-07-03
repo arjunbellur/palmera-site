@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { onAuthChange } from '@/lib/auth'
-import { getPartner, getListings } from '@/lib/firestore'
+import { getPartner, getListings, deletePartner } from '@/lib/firestore'
 
 const ADMIN_EMAILS = ['palmeraexp@gmail.com']
 
@@ -114,6 +114,9 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ uid: s
   const [listings, setListings] = useState<Record<string, unknown>[]>([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<Tab>('business')
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
 
   useEffect(() => {
     const unsub = onAuthChange(async (user) => {
@@ -128,6 +131,18 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ uid: s
     })
     return () => unsub()
   }, [router, uid])
+
+  const handleDelete = async () => {
+    setDeleting(true)
+    setDeleteError('')
+    try {
+      await deletePartner(uid)
+      router.replace('/dashboard/admin')
+    } catch {
+      setDeleteError('Could not delete this application. Please try again.')
+      setDeleting(false)
+    }
+  }
 
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '40vh' }}>
@@ -170,15 +185,52 @@ export default function PartnerDetailPage({ params }: { params: Promise<{ uid: s
       </a>
 
       {/* Header */}
-      <div style={{ marginBottom: '1.75rem' }}>
-        <p style={{ fontFamily: 'var(--font-sans)', color: 'rgba(190,154,86,0.8)', fontSize: '0.75rem', letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 0.375rem' }}>Partner Profile</p>
-        <h1 style={{ fontFamily: 'var(--font-display)', color: 'var(--db-text)', fontSize: 'clamp(1.25rem, 3vw, 1.5rem)', fontWeight: 400, letterSpacing: '0.06em', margin: '0 0 0.25rem' }}>{displayName}</h1>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', flexWrap: 'wrap' }}>
-          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: 'var(--db-text-faint)' }}>{partner.email as string}</span>
-          <span style={{ color: 'var(--db-border)', fontSize: '0.75rem' }}>·</span>
-          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: 'var(--db-text-faint)' }}>Joined {formatDate(partner.createdAt)}</span>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.75rem' }}>
+        <div>
+          <p style={{ fontFamily: 'var(--font-sans)', color: 'rgba(190,154,86,0.8)', fontSize: '0.75rem', letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 0.375rem' }}>Partner Profile</p>
+          <h1 style={{ fontFamily: 'var(--font-display)', color: 'var(--db-text)', fontSize: 'clamp(1.25rem, 3vw, 1.5rem)', fontWeight: 400, letterSpacing: '0.06em', margin: '0 0 0.25rem' }}>{displayName}</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', flexWrap: 'wrap' }}>
+            <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: 'var(--db-text-faint)' }}>{partner.email as string}</span>
+            <span style={{ color: 'var(--db-border)', fontSize: '0.75rem' }}>·</span>
+            <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: 'var(--db-text-faint)' }}>Joined {formatDate(partner.createdAt)}</span>
+          </div>
         </div>
+        <button onClick={() => { setDeleteError(''); setConfirmDelete(true) }}
+          style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '0.375rem', background: 'transparent', border: '1px solid rgba(224,112,112,0.4)', color: '#e07070', padding: '0.4375rem 0.875rem', borderRadius: '0.25rem', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.04em', cursor: 'pointer', transition: 'background 0.15s' }}
+          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(224,112,112,0.1)')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 3.5h10M5.5 3.5V2.5a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1M11 3.5l-.5 8a1 1 0 0 1-1 .9H4.5a1 1 0 0 1-1-.9L3 3.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          Delete application
+        </button>
       </div>
+
+      {/* Delete confirmation */}
+      {confirmDelete && (
+        <div onClick={() => { if (!deleting) setConfirmDelete(false) }}
+          style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ width: '100%', maxWidth: '26rem', background: 'var(--db-bg-card)', border: '1px solid var(--db-border)', borderRadius: '0.75rem', padding: '1.75rem' }}>
+            <h2 style={{ fontFamily: 'var(--font-serif)', color: 'var(--db-text)', fontSize: '1.125rem', fontWeight: 400, margin: '0 0 0.75rem' }}>Delete this application?</h2>
+            <p style={{ fontFamily: 'var(--font-sans)', color: 'var(--db-text-muted)', fontSize: '0.8125rem', lineHeight: 1.6, margin: '0 0 0.5rem' }}>
+              You&apos;re about to permanently delete <strong style={{ color: 'var(--db-text)' }}>{displayName}</strong>{partner.email ? ` (${partner.email as string})` : ''} and {listings.length} listing{listings.length === 1 ? '' : 's'}. This cannot be undone.
+            </p>
+            <p style={{ fontFamily: 'var(--font-sans)', color: 'var(--db-text-faint)', fontSize: '0.6875rem', lineHeight: 1.5, margin: '0 0 1.25rem' }}>
+              Removes the application record and its listings. Uploaded files and the login account are not affected.
+            </p>
+            {deleteError && <p style={{ fontSize: '0.75rem', color: '#e07070', fontFamily: 'var(--font-sans)', margin: '0 0 0.75rem' }}>{deleteError}</p>}
+            <div style={{ display: 'flex', gap: '0.625rem', justifyContent: 'flex-end' }}>
+              <button onClick={() => setConfirmDelete(false)} disabled={deleting}
+                style={{ background: 'transparent', border: '1px solid var(--db-border)', color: 'var(--db-text-muted)', padding: '0.5rem 1rem', borderRadius: '0.25rem', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', cursor: deleting ? 'default' : 'pointer' }}>
+                Cancel
+              </button>
+              <button onClick={handleDelete} disabled={deleting}
+                style={{ background: '#c0392b', border: 'none', color: '#fff', padding: '0.5rem 1rem', borderRadius: '0.25rem', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.02em', cursor: deleting ? 'wait' : 'pointer', opacity: deleting ? 0.7 : 1 }}>
+                {deleting ? 'Deleting…' : 'Delete permanently'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Section status chips */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.75rem' }}>

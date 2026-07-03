@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { onAuthChange } from '@/lib/auth'
 import { getPartner } from '@/lib/firestore'
@@ -21,17 +21,34 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
   const [sections, setSections] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
+  const [isTablet, setIsTablet] = useState(false)
   const [locale, setLocale] = useState('fr')
+  const [mobileHeaderH, setMobileHeaderH] = useState(112)
+  const mobileHeaderRef = useRef<HTMLDivElement>(null)
   const isLoginPage = pathname === '/dashboard'
 
   useEffect(() => {
-    const checkWidth = () => setIsMobile(window.innerWidth < 768)
+    const checkWidth = () => {
+      const w = window.innerWidth
+      setIsMobile(w < 768)
+      setIsTablet(w >= 768 && w < 1024)
+    }
     checkWidth()
     window.addEventListener('resize', checkWidth)
     const match = document.cookie.match(/locale=([^;]+)/)
     setLocale(match ? match[1] : 'fr')
     return () => window.removeEventListener('resize', checkWidth)
   }, [])
+
+  // Measure the fixed mobile header so page content clears it exactly, instead
+  // of relying on a hardcoded top padding that hides the top of the content.
+  useEffect(() => {
+    if (!isMobile) return
+    const measure = () => { if (mobileHeaderRef.current) setMobileHeaderH(mobileHeaderRef.current.offsetHeight) }
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [isMobile, email, locale, pathname])
 
   useEffect(() => {
     if (isLoginPage) { setLoading(false); return }
@@ -96,7 +113,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
   if (isMobile) {
     return (
       <div data-theme={theme} style={{ minHeight: '100vh', background: 'var(--db-bg)' }}>
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: 'var(--db-bg-nav)', borderBottom: '1px solid var(--db-border)' }}>
+        <div ref={mobileHeaderRef} style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: 'var(--db-bg-nav)', borderBottom: '1px solid var(--db-border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.875rem 1.25rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
               <img src="/images/PALMERA_cracked.png" alt="Palmera" width={28} height={28} style={{ objectFit: 'contain' }} />
@@ -122,7 +139,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
             })}
           </div>
         </div>
-        <main style={{ paddingTop: '7.5rem', padding: '7.5rem 1.25rem 2rem' }}>{children}</main>
+        <main style={{ padding: `calc(${mobileHeaderH}px + 1.25rem) 1.125rem 2.5rem` }}>{children}</main>
       </div>
     )
   }
@@ -131,7 +148,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
     <div data-theme={theme} style={{ minHeight: '100vh', background: 'var(--db-bg)' }}>
       <DashboardNav email={email} locale={locale} />
       <div style={{ display: 'flex', paddingTop: '4rem', minHeight: '100vh' }}>
-        <aside style={{ width: '13.75rem', flexShrink: 0, borderRight: '1px solid var(--db-border)', padding: '2rem 0', position: 'sticky', top: '4rem', height: 'calc(100vh - 4rem)', overflowY: 'auto', background: 'var(--db-bg)' }}>
+        <aside style={{ width: isTablet ? '11.5rem' : '13.75rem', flexShrink: 0, borderRight: '1px solid var(--db-border)', padding: '2rem 0', position: 'sticky', top: '4rem', height: 'calc(100vh - 4rem)', overflowY: 'auto', background: 'var(--db-bg)' }}>
           {NAV_ITEMS.map(item => {
             const active = pathname === item.href
             const status = getStatus(item.href)
@@ -146,7 +163,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
             )
           })}
         </aside>
-        <main style={{ flex: 1, padding: '2.5rem 3rem', maxWidth: '56.25rem' }}>{children}</main>
+        <main style={{ flex: 1, minWidth: 0, padding: isTablet ? '1.75rem 1.5rem' : '2.5rem 3rem', maxWidth: '56.25rem' }}>{children}</main>
       </div>
     </div>
   )
