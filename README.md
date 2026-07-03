@@ -1,6 +1,26 @@
-# Palmera — Next.js Site
+# Palmera — Website & Partner Dashboard
 
-Migrated from Webflow. Built with Next.js 14 App Router + Tailwind CSS. Deployable on Netlify (free tier).
+Palmera is an experiences marketplace for African cities (Dakar, Marrakesh, Lagos). This repo is a single **Next.js 16 (App Router)** app that contains two things:
+
+1. **The public marketing site** (`/`) — a scroll-driven, animated landing page (migrated from Webflow).
+2. **The partner onboarding dashboard** (`/dashboard`) — a Firebase-auth-gated portal where experience providers onboard, add listings, upload media, and sign off on terms.
+
+Built with Next.js 16, React 18, TypeScript, and Tailwind CSS. Deployable on Vercel or Netlify.
+
+---
+
+## Tech Stack
+
+| Concern | Tool |
+|---|---|
+| Framework | Next.js 16 (App Router, Turbopack) |
+| Language | TypeScript + React 18 |
+| Styling | Tailwind CSS 3 + CSS custom properties |
+| Auth & database | Firebase Auth + Cloud Firestore |
+| Media (video/images) | Cloudinary |
+| Animation | GSAP + Lenis (smooth scroll) |
+| i18n | next-intl (French default, English secondary) |
+| Hosting | Vercel or Netlify |
 
 ---
 
@@ -9,21 +29,42 @@ Migrated from Webflow. Built with Next.js 14 App Router + Tailwind CSS. Deployab
 ```
 src/
   app/
-    page.tsx          ← Homepage (all sections)
-    layout.tsx        ← Root layout + metadata
-    globals.css       ← Brand tokens, animations, base styles
+    page.tsx              ← Homepage (assembles all marketing sections)
+    layout.tsx            ← Root layout + metadata
+    globals.css           ← Brand tokens, animations, base styles
     partners/
-      page.tsx        ← Partner onboarding form (4-step)
-      layout.tsx      ← Partners page metadata
+      page.tsx            ← Public 4-step partner application form
+    dashboard/
+      page.tsx            ← Login / signup (Firebase Auth)
+      layout.tsx          ← Auth gate + sidebar nav + theme provider
+      home/               ← Onboarding overview + progress
+      profile/            ← Business profile + payout details
+      listings/           ← Experience listings (CRUD)
+      photos/             ← Media upload (Cloudinary)
+      operations/         ← Booking / confirmation preferences
+      documents/          ← Legal document upload
+      settings/           ← Terms & sign-off
+      admin/              ← Admin: all partners + per-partner review
   components/
-    Navbar.tsx        ← Sticky nav, scroll-aware, mobile hamburger
-    Hero.tsx          ← Full-screen video hero
-    PhotoMarquee.tsx  ← Dual-row auto-scroll image gallery
-    Destinations.tsx  ← Dakar / Marrakesh / Lagos cards
-    Services.tsx      ← 6-service grid
-    Stats.tsx         ← ∞ / 1 / 0 / 100% stats section
-    AppSection.tsx    ← App download + early access CTA
-    Footer.tsx        ← Logo marquee + copyright
+    Navbar.tsx / NavbarWrapper.tsx   ← Sticky, scroll-aware nav
+    Hero.tsx              ← Full-screen Cloudinary video hero
+    BaseSection.tsx       ← Intro / phrases section
+    Destinations.tsx      ← Dakar / Marrakesh / Lagos cards
+    Services.tsx          ← Service grid
+    Stats.tsx             ← Stats section
+    AppSection.tsx        ← App download + early-access CTA
+    Footer.tsx            ← Logo marquee + copyright
+    dashboard/            ← DashboardNav, SectionCard, ListingModal, PhotoUpload
+  lib/
+    firebase.ts           ← Firebase app init
+    auth.ts               ← signUp / signIn / logOut / onAuthChange
+    firestore.ts          ← Partner + listing data access
+    theme.tsx             ← Dashboard theme provider
+    scroll-bus.ts, use-viewport.ts
+messages/
+  fr.json, en.json        ← Marketing-site translations
+middleware.ts             ← Sets default locale cookie (fr)
+firestore.rules           ← Firestore security rules
 ```
 
 ---
@@ -36,121 +77,87 @@ npm run dev
 # → http://localhost:3000
 ```
 
----
-
-## Deploy to Netlify
-
-### Step 1 — Push to GitHub
-
-```bash
-git init
-git add .
-git commit -m "Initial commit — Palmera site"
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/palmera-site.git
-git push -u origin main
-```
-
-### Step 2 — Connect to Netlify
-
-1. Go to [netlify.com](https://netlify.com) → **Add new site** → **Import an existing project**
-2. Connect your GitHub account and select `palmera-site`
-3. Build settings are auto-detected from `netlify.toml`:
-   - **Build command:** `npm run build`
-   - **Publish directory:** `.next`
-4. Click **Deploy site**
-
-Netlify will give you a URL like `https://palmera-site.netlify.app` — you'll replace this with your custom domain next.
-
-### Step 3 — Add custom domain in Netlify
-
-1. In your Netlify site dashboard → **Domain settings** → **Add custom domain**
-2. Enter `palmeraexp.com` (or your domain)
-3. Netlify will show you two DNS records to add
+Create `.env.local` with your Firebase config (see [Environment Variables](#environment-variables)).
 
 ---
 
-## Connect GoDaddy Domain
+## Data Model (Firestore)
 
-After adding your domain in Netlify, go to **GoDaddy DNS Management** for your domain:
+- **`partners/{uid}`** — one document per partner account, created on signup. Holds profile fields plus a `sections` status map (`incomplete` / `in_progress` / `complete`) that drives the onboarding progress UI:
+  `basics`, `payouts`, `listings`, `photos`, `operations`, `documents`, `signoff`.
+- **`partners/{uid}/listings/{listingId}`** — subcollection of experiences the partner offers (pricing, availability, guest limits, inclusions, etc. — see the `Listing` type in `src/lib/firestore.ts`).
 
-### Option A — Point nameservers to Netlify (recommended)
+Security rules (`firestore.rules`): a partner can read/write only their own document and listings; **admins** (allow-listed by email) can read everyone's.
 
-1. In GoDaddy → **My Products** → find your domain → **DNS**
-2. Change **Nameservers** to custom:
-   - `dns1.p05.nsone.net`
-   - `dns2.p05.nsone.net`
-   - `dns3.p05.nsone.net`
-   - `dns4.p05.nsone.net`
-3. Save. Propagation takes up to 24 hours (usually under 2 hours)
+### Admin access
 
-### Option B — Keep GoDaddy DNS, add A record (alternative)
+Admin is gated by a hard-coded email allow-list in **two** places that must stay in sync:
+- `firestore.rules` (`isAdmin()`)
+- `src/app/dashboard/layout.tsx` (`ADMIN_EMAILS`)
 
-1. In GoDaddy DNS → **Add Record** → Type: **A**
-   - Name: `@`
-   - Value: `75.2.60.5` (Netlify's load balancer IP)
-   - TTL: 1 hour
-2. Add another A record for `www`:
-   - Name: `www`
-   - Value: `75.2.60.5`
-3. In Netlify domain settings → **Force HTTPS** → enable (free SSL via Let's Encrypt)
+Admin users are redirected to `/dashboard/admin` on login.
 
 ---
 
-## Partner Form — Connecting to a Backend
+## Internationalization
 
-The partner form at `/partners` currently calls `handleSubmit()` which sets a success state. To wire it to a real backend, replace the handler in `src/app/partners/page.tsx`:
+- Powered by **next-intl**. French (`fr`) is the default; English (`en`) is secondary.
+- `middleware.ts` sets a `locale` cookie (defaulting to `fr`) for visitors without one.
+- Marketing-site copy lives in `messages/fr.json` and `messages/en.json`.
+- Dashboard strings are currently inline translation maps within each dashboard file (not in `messages/`).
 
-### Option A — Netlify Forms (zero config, free)
+---
 
-Add `data-netlify="true"` to a hidden form element and use Netlify's form handling. No backend needed.
+## Media (Cloudinary)
 
-### Option B — Send to a Supabase table (recommended for Palmera)
+The hero video and partner photos are served from Cloudinary (cloud name `dgthehvgs`).
 
-```typescript
-import { createClient } from '@supabase/supabase-js'
+Hero delivery uses Cloudinary transformations for performance and reliable mobile autoplay:
+- `f_auto,q_auto,w_1280` — auto-format/quality + width cap (keeps the file small so iOS Safari autoplays it and it starts fast on cellular).
+- `so_0,...jpg` — first video frame used as the `poster` image.
 
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-
-const handleSubmit = async () => {
-  const { error } = await supabase
-    .from('partner_applications')
-    .insert([form])
-  
-  if (!error) setSubmitted(true)
-}
-```
-
-### Option C — Email via Resend
-
-```typescript
-await fetch('/api/partner-apply', {
-  method: 'POST',
-  body: JSON.stringify(form),
-})
-```
-
-Then create `src/app/api/partner-apply/route.ts` using Resend to email applications to your team.
+See `src/components/Hero.tsx`.
 
 ---
 
 ## Environment Variables
 
-Create `.env.local` for local development:
+Create `.env.local` for local development and set the same values in your host's
+environment settings (Vercel / Netlify):
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-RESEND_API_KEY=your_resend_key
+NEXT_PUBLIC_FIREBASE_API_KEY=...
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
+NEXT_PUBLIC_FIREBASE_APP_ID=...
 ```
 
-Add these same variables in **Netlify → Site settings → Environment variables**.
+> Check `src/lib/firebase.ts` for the exact variable names the app reads.
+
+---
+
+## Deployment
+
+The app deploys as a standard Next.js App Router project.
+
+- **Vercel** — import the repo; framework preset auto-detected. Add the environment
+  variables above in **Project → Settings → Environment Variables**.
+- **Netlify** — build settings are read from `netlify.toml`. Add the same environment
+  variables in **Site settings → Environment variables**.
+
+After deploying, remember to:
+1. Deploy the Firestore rules (`firestore.rules`) to your Firebase project.
+2. Add your production domain to Firebase Auth **Authorized domains**.
 
 ---
 
 ## Brand Tokens
 
-Defined in `tailwind.config.ts` and `globals.css`:
+Defined in `tailwind.config.ts` and `globals.css`. The marketing site uses the
+`--forest*` / `--gold*` / `--cream` palette; the dashboard uses a separate set of
+`--db-*` variables via the theme provider in `src/lib/theme.tsx`.
 
 | Token | Value | Use |
 |---|---|---|
@@ -159,13 +166,16 @@ Defined in `tailwind.config.ts` and `globals.css`:
 | `--gold` | `#C9A84C` | Primary accent, borders |
 | `--gold-light` | `#E4C97E` | Headlines, CTAs |
 | `--cream` | `#F5F0E8` | Body text |
-| Raveo Display + LT Superior Serif | Google Fonts | Display headings |
 
 ---
 
-## Pages
+## Routes
 
 | Route | Description |
 |---|---|
-| `/` | Homepage — full site migration |
-| `/partners` | Partner onboarding — 4-step application form |
+| `/` | Homepage — full marketing site |
+| `/partners` | Public partner application form (4-step) |
+| `/dashboard` | Partner login / signup |
+| `/dashboard/home` | Onboarding overview + progress |
+| `/dashboard/{profile,listings,photos,operations,documents,settings}` | Onboarding sections |
+| `/dashboard/admin` | Admin — partner review (allow-listed emails only) |
