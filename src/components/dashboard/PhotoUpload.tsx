@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import { storage } from '@/lib/firebase'
 
@@ -18,6 +18,13 @@ export default function PhotoUpload({ uid, label, fieldName, existingUrl, onUplo
   const [progress, setProgress] = useState(0)
   const [preview, setPreview] = useState(existingUrl || '')
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // The partner's saved photos load asynchronously (after getPartner resolves),
+  // so existingUrl arrives AFTER mount. Without this, the initial empty preview
+  // would stick and a saved photo would look like it vanished on refresh.
+  useEffect(() => {
+    if (!uploading) setPreview(existingUrl || '')
+  }, [existingUrl, uploading])
 
   const handleFile = (file: File) => {
     if (!file) return
