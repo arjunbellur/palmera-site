@@ -1,0 +1,231 @@
+// ─────────────────────────────────────────────────────────────────────────
+// PALMERA SHARED FIRESTORE SCHEMA — v3.2
+// Provider → Company → Experience(Listing) → Option, plus admin config.
+//
+// The dashboard AUTHORS `experiences`; the customer app (Samson) READS it — one
+// shared contract. This file is the single source of truth for the document
+// shapes both the data layer (firestore.ts) and the migration script build to.
+//
+// v3.2 = v3.1 + priceUnit, experiences languages/excludes/dressCode,
+//        companies businessType/logo/operations, and migrationArchive.
+// Full spec: the ratified plan + memory `schema-v3.1` (now v3.2).
+// ─────────────────────────────────────────────────────────────────────────
+import type { Timestamp } from 'firebase/firestore'
+
+/** Firestore Timestamp on read; may be a server sentinel on write. */
+type TS = Timestamp
+
+export const COLLECTIONS = {
+  providers: 'providers',
+  companies: 'companies',
+  experiences: 'experiences',
+  config: 'config',
+  countersignatures: 'countersignatures',
+  migrationArchive: 'migrationArchive',
+} as const
+
+// Subcollection / well-known doc ids
+export const SUB = {
+  privateAdmin: { col: 'private', doc: 'admin' },
+  options: 'options',
+} as const
+
+export const CONFIG_DOCS = {
+  markets: 'markets',
+  categories: 'categories',
+  policies: 'policies',
+} as const
+
+// ══════════════════════════════════════════════════════════════════════════
+// providers/{uid} — the person/account. Signs the agreement. App never reads.
+// ══════════════════════════════════════════════════════════════════════════
+export interface Signoff {
+  signedAt: string
+  signedBy: string
+  typedSignature: string
+  signatoryRole: string
+  agreementVersion: string
+  businessName: string
+}
+
+export interface Provider {
+  uid: string
+  email: string
+  fullName: string
+  role: string
+  primaryPhone: string
+  whatsapp: string
+  country: string                 // ISO alpha-2
+  onboardingStage: 'registered' | 'active' | 'complete'
+  signoff: Signoff | null         // create-once, immutable; one agreement covers all companies
+  createdAt: TS
+  updatedAt: TS
+}
+
+/** providers/{uid}/private/admin — provider reads, admin writes. */
+export interface ProviderPrivateAdmin {
+  status: 'active' | 'suspended'
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// companies/{companyId} — a business owned by a provider. Own commission window.
+// ══════════════════════════════════════════════════════════════════════════
+export type CompletenessKey = 'profile' | 'listings' | 'photos' | 'operations' | 'documents' | 'payouts'
+
+export interface Company {
+  id?: string
+  providerId: string              // FK → providers/{uid}; immutable
+  name: string                    // trading/display name → experiences.provider
+  legalName: string
+  businessType: string            // v3.2 (from old partner doc)
+  category: string                // config/categories id; default for its experiences
+  city: string                    // config/markets id; must be enabled
+  address: string
+  mapsLink: string | null
+  websiteOrSocial: string | null
+  phone: string
+  whatsapp: string
+  logo: string | null             // v3.2 (from old photos.providerLogo)
+  operations: Record<string, unknown> | null // v3.2 (old operations{} wholesale; app ignores)
+  completeness: Partial<Record<CompletenessKey, boolean>>
+  activatedAt: TS | null          // admin-only; starts THIS company's 12-mo 10% window
+  active: boolean                 // admin-only kill switch
+  createdAt: TS
+  updatedAt: TS
+}
+
+export interface PayoutVerification {
+  verified: boolean
+  recipientHash: string
+}
+
+/** companies/{companyId}/private/admin — provider reads own rate, admin writes. */
+export interface CompanyPrivateAdmin {
+  commissionRate: number          // e.g. 0.10 during this company's window
+  payoutMethod: string | null     // OPEN vocab (paydunya|paystack|wave|orange_money|bank_transfer|…)
+  payoutConfig: Record<string, unknown> | null   // never raw credentials; deferred
+  payoutVerification: PayoutVerification | null   // deferred
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// experiences/{id} — the shared listing. Dashboard authors, app reads.
+// ══════════════════════════════════════════════════════════════════════════
+export type ExperienceMode = 'paid' | 'reservation'
+export type PriceUnit = 'flat' | 'per_person'        // v3.2
+export type ConfirmationType = 'instant' | 'provider_confirmed'
+export type ScheduleType = 'one_time' | 'ongoing' | 'scheduled'
+export type ExperienceStatus = 'draft' | 'pending_review' | 'published' | 'unpublished' | 'archived'
+export type CancellationTier = 'flexible' | 'moderate' | 'strict'
+
+export interface CancellationPolicy {
+  tier: CancellationTier
+  customNotes: string | null
+  policyVersion: string
+}
+
+export interface Schedule {
+  days?: string[]
+  timeSlots?: string[]
+  leadTime?: string
+  blackoutDates?: string
+  advanceBookingDays?: string
+}
+
+export interface OptionGroup {
+  id: string
+  name: string
+  required: boolean
+  minSelect: number
+  maxSelect: number
+  allowQuantity: boolean
+  sortOrder: number
+}
+
+export interface Experience {
+  id?: string
+  providerId: string              // required, immutable — security anchor
+  companyId: string               // required, immutable — commission = this company's window
+  mode: ExperienceMode
+  price: number | null            // BASE, tax-inclusive int; >0 iff paid; null iff reservation
+  priceUnit: PriceUnit            // v3.2 — how BASE price applies
+  currency: string | null         // 'XOF' at launch; required if paid or any paid option
+  confirmationType: ConfirmationType
+  cancellationPolicy: CancellationPolicy
+  scheduleType: ScheduleType
+  eventDate: TS | null            // required iff one_time
+  schedule: Schedule | null
+  optionGroups: OptionGroup[]     // [] = simple experience
+  title: string
+  location: string
+  category: string                // config id; defaults from company; overridable; enabled
+  city: string                    // config id; enabled only
+  lat: number | null              // required at publish
+  lng: number | null
+  duration: string
+  guests: string                  // derived from min/maxGuests
+  minGuests: number
+  maxGuests: number
+  img: string                     // LISTING hero; required at publish
+  gallery: string[]
+  provider: string                // display = company.name (derived / fanout)
+  description: string
+  includes: string[]
+  highlights: string[]
+  languages: string[]             // v3.2, optional
+  excludes: string[]              // v3.2, optional
+  dressCode: string | null        // v3.2, optional
+  tag: string | null              // admin-only curation badge
+  active: boolean                 // always == (status == 'published')
+  status: ExperienceStatus        // 'published' admin-only; 'archived' terminal once booked
+  rating: number                  // server-only
+  reviews: number                 // server-only
+  needsReview?: string[]          // transient (migration): e.g. ['cancellationTier','photos','coords']
+  createdAt: TS
+  updatedAt: TS
+}
+
+/** experiences/{id}/options/{optionId} */
+export interface Option {
+  id?: string
+  groupId: string                 // → parent optionGroups.id
+  name: string
+  description: string
+  img: string | null              // v3.2 main/thumbnail
+  gallery: string[]               // v3.2
+  price: number                   // 0 = free; additive; tax-inclusive
+  maxQuantityPerBooking: number   // default 1
+  active: boolean
+  sortOrder: number
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// config/* — admin-owned reference data; all clients read; never hard-coded.
+// ══════════════════════════════════════════════════════════════════════════
+export interface MarketsConfig {
+  cities: { id: string; name: string; country: string; enabled: boolean }[]
+}
+export interface CategoriesConfig {
+  categories: { id: string; name: string; enabled: boolean }[]
+}
+export interface PolicyTier {
+  cancelDeadlineHours: number
+  fullRefundBeforeDeadline: boolean
+  partialRefundPct: number
+  noShowPolicy: string
+  reschedulingRules: string
+  feesRefundable: boolean
+}
+export interface PoliciesConfig {
+  tiers: Record<CancellationTier, PolicyTier>
+  version: string
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// migrationArchive/{uid} — admin-only; clients denied. The migration safety net.
+// ══════════════════════════════════════════════════════════════════════════
+export interface MigrationArchive {
+  migratedAt: TS
+  sourcePartner: Record<string, unknown>
+  sourceListings: Record<string, unknown>[]
+  unmappedFields: Record<string, unknown>
+}

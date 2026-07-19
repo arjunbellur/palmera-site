@@ -5,14 +5,88 @@ service cloud.firestore {
       return request.auth != null &&
         request.auth.token.email in ['palmeraexp@gmail.com'];
     }
+    function signedIn() { return request.auth != null; }
+    // Does an existing company doc belong to the caller?
+    function ownsCompany(companyId) {
+      return signedIn() &&
+        get(/databases/$(database)/documents/companies/$(companyId)).data.providerId == request.auth.uid;
+    }
+
+    // ── Config: reference data (markets, categories, policies, countersignatory).
+    //    Any signed-in user reads; only admin writes. Dashboard + app render from these.
+    match /config/{doc} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    // ── Countersignatures — admin writes; owner reads their own executed block.
+    match /countersignatures/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    // ── Migration archive — raw legacy data + KYC. NO client access at all
+    //    (only the Admin SDK, which bypasses rules, ever touches it).
+    match /migrationArchive/{uid} {
+      allow read, write: if false;
+    }
+
+    // ══ Schema v3.2 ══════════════════════════════════════════════════════════
+    // Providers (the person). Owner reads/writes own doc; admin reads all.
+    match /providers/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create: if signedIn() && request.auth.uid == uid;
+      allow update: if signedIn() && request.auth.uid == uid;
+      allow delete: if isAdmin();
+      // Admin-only subdoc (status). Owner may read; only admin writes.
+      match /private/{doc} {
+        allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+        allow write: if isAdmin();
+      }
+    }
+
+    // Companies (a business). Owner = the referenced provider.
+    match /companies/{companyId} {
+      allow read: if signedIn() && (resource.data.providerId == request.auth.uid || isAdmin());
+      allow create: if signedIn() && request.resource.data.providerId == request.auth.uid;
+      allow update: if signedIn() && (resource.data.providerId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+      match /private/{doc} {
+        // Owner reads own rate; only admin writes commission/payout/activation.
+        allow read: if signedIn() &&
+          (get(/databases/$(database)/documents/companies/$(companyId)).data.providerId == request.auth.uid || isAdmin());
+        allow write: if isAdmin();
+      }
+    }
+
+    // Experiences (shared listing). App reads published; owner/admin read all.
+    match /experiences/{id} {
+      allow read: if signedIn() &&
+        (resource.data.status == 'published' || resource.data.providerId == request.auth.uid || isAdmin());
+      // Create only for yourself AND only under a company you own.
+      allow create: if signedIn()
+        && request.resource.data.providerId == request.auth.uid
+        && ownsCompany(request.resource.data.companyId);
+      allow update: if signedIn() && (resource.data.providerId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+      // Options subcollection — readable with the listing; writable by the owner.
+      match /options/{optionId} {
+        allow read: if signedIn();
+        allow write: if signedIn() &&
+          (get(/databases/$(database)/documents/experiences/$(id)).data.providerId == request.auth.uid || isAdmin());
+      }
+    }
+
+    // ── Legacy partners/listings — kept live during the v3.2 migration; removed
+    //    at cutover once every consumer page is on the new collections.
     match /partners/{uid} {
-      allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
-      allow write: if request.auth != null && request.auth.uid == uid;
-      allow delete: if request.auth != null && isAdmin();
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow write: if signedIn() && request.auth.uid == uid;
+      allow delete: if isAdmin();
       match /listings/{listingId} {
-        allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
-        allow write: if request.auth != null && request.auth.uid == uid;
-        allow delete: if request.auth != null && isAdmin();
+        allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+        allow write: if signedIn() && request.auth.uid == uid;
+        allow delete: if isAdmin();
       }
     }
   }
