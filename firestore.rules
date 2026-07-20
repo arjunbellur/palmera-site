@@ -83,32 +83,31 @@ service cloud.firestore {
     match /experiences/{id} {
       allow read: if resource.data.status == 'published'
         || (signedIn() && (resource.data.providerId == request.auth.uid || isAdmin()));
-      // Create only for yourself AND only under a company you own. A provider
-      // cannot create a listing that's already published/curated/live —
-      // publishing is an admin action (invariant #1).
+      // Create only for yourself AND only under a company you own. The partner
+      // owns draft-vs-published for their OWN content, so publishing on create
+      // is allowed — but `active` must stay consistent with `status`, and the
+      // curation `tag` remains Palmera's alone.
       allow create: if signedIn()
         && request.resource.data.providerId == request.auth.uid
         && ownsCompany(request.resource.data.companyId)
-        && request.resource.data.get('status', 'draft') != 'published'
-        && request.resource.data.get('active', false) == false
+        && request.resource.data.get('active', false) == (request.resource.data.get('status', 'draft') == 'published')
         && request.resource.data.get('tag', null) == null;
-      // Admin may change anything (publish, tag, activate).
+      // Admin may change anything (publish, tag, curate).
       allow update: if signedIn() && isAdmin();
-      // Owner may edit their own listing's content, but the DATABASE — not just
-      // the UI — forbids self-publishing and self-curation:
-      //   • cannot move an unpublished listing to 'published'
-      //     (an already-published one may stay published while edited)
-      //   • cannot change `active`, `tag`, ownership, or server-owned counters.
+      // Owner may edit AND publish/unpublish their own listing. Still enforced
+      // by the database, not just the UI:
+      //   • `active` must always equal (status == 'published') — no listing that
+      //     is live-but-not-published, or published-but-invisible
+      //   • `tag` (curation badge) stays admin-only
+      //   • ownership is immutable and rating/reviews are server-owned
       allow update: if signedIn()
         && resource.data.providerId == request.auth.uid
         && keep('providerId')
         && keep('companyId')
-        && keep('active')
         && keep('tag')
         && keep('rating')
         && keep('reviews')
-        && (request.resource.data.get('status', 'draft') != 'published'
-            || resource.data.get('status', 'draft') == 'published');
+        && request.resource.data.get('active', false) == (request.resource.data.get('status', 'draft') == 'published');
       allow delete: if isAdmin();
       // Options subcollection — public read, same as the listing they belong to.
       // They carry no sensitive data (name, description, price, photos) and are

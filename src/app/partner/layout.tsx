@@ -48,13 +48,13 @@ function Shell({ children }: { children: React.ReactNode }) {
       if (ADMIN_EMAILS.includes(user.email || '')) { router.replace('/dashboard/admin'); return }
       setUid(user.uid); setEmail(user.email || '')
       const [p, all] = await Promise.all([getProvider(user.uid), getCompanies(user.uid)])
-      // GRADUATION GATE: the dashboard is for activated companies only. A partner
-      // whose companies are all still pending belongs in the onboarding portal.
-      const live = all.filter(c => c.active)
-      if (live.length === 0) { router.replace('/dashboard/home'); return }
-      setProvider(p); setCompanies(live)
+      // GRADUATION GATE (mirror of the /dashboard guard): the dashboard is for
+      // partners who have finished onboarding by publishing a listing. Anyone
+      // else belongs back in the onboarding portal.
+      if (p?.onboardingStage !== 'complete' || all.length === 0) { router.replace('/dashboard/home'); return }
+      setProvider(p); setCompanies(all)
       const stored = typeof window !== 'undefined' ? localStorage.getItem(STORE_KEY) : null
-      setCompanyIdState(live.some(c => c.id === stored) ? stored! : live[0].id!)
+      setCompanyIdState(all.some(c => c.id === stored) ? stored! : all[0].id!)
       setLoading(false)
     })
     return () => unsub()

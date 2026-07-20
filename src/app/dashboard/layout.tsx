@@ -59,12 +59,16 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
         setLoading(false)
         return
       }
-      // GRADUATION (hard cutover): once Palmera activates a company, this partner
-      // belongs in the dashboard at /partner, not the onboarding portal. The
-      // /partner layout applies the mirror-image guard, so the two can't loop.
-      const { getCompanies } = await import('@/lib/firestore')
-      const companies = await getCompanies(user.uid)
-      if (companies.some(c => c.active)) { router.replace('/partner'); return }
+      // GRADUATION (hard cutover): a partner who has published a listing has
+      // finished onboarding — their home is /partner now. Recorded on the
+      // provider, so unpublishing later can't drop them back into onboarding.
+      // The /partner layout applies the mirror guard, so the two can't loop.
+      // Exception: the company page itself, which shows the graduation moment
+      // right after publishing before handing off.
+      const { getProvider } = await import('@/lib/firestore')
+      const p = await getProvider(user.uid)
+      const onCompanyPage = pathname.startsWith('/dashboard/companies/')
+      if (p?.onboardingStage === 'complete' && !onCompanyPage) { router.replace('/partner'); return }
       setLoading(false)
     })
     return () => unsub()

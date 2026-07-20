@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation'
 import { onAuthChange } from '@/lib/auth'
 import {
   getCompany, updateCompany, getExperiencesByCompany, addExperience, updateExperience, deleteExperience,
-  getOptions, addOption, deleteOption,
+  getOptions, addOption, deleteOption, getProvider, updateProvider,
 } from '@/lib/firestore'
+import GraduationModal from '@/components/dashboard/GraduationModal'
 import CompanyForm, { type CompanyFormValues } from '@/components/dashboard/CompanyForm'
 import ExperienceModal from '@/components/dashboard/ExperienceModal'
 import ConfirmDialog from '@/components/dashboard/ConfirmDialog'
@@ -52,6 +53,7 @@ export default function CompanyPage({ params }: { params: Promise<{ companyId: s
   const [toDeleteExp, setToDeleteExp] = useState<Experience | null>(null)
   const [deletingExp, setDeletingExp] = useState(false)
 
+  const [graduating, setGraduating] = useState(false)
   const [ops, setOps] = useState<OpsForm>(EMPTY_OPS)
   const [savingOps, setSavingOps] = useState(false)
   const [savedOps, setSavedOps] = useState(false)
@@ -123,6 +125,17 @@ export default function CompanyPage({ params }: { params: Promise<{ companyId: s
     }
     await loadExperiences(uid)
     setShowExpModal(false); setEditingExp(undefined)
+
+    // GRADUATION: the first time a partner puts a listing live, onboarding is
+    // over. We record it on the provider (rather than deriving it from live
+    // listings) so unpublishing later can't demote them back into onboarding.
+    if (finalData.status === 'published') {
+      const p = await getProvider(uid)
+      if (p && p.onboardingStage !== 'complete') {
+        await updateProvider(uid, { onboardingStage: 'complete' })
+        setGraduating(true)
+      }
+    }
   }
 
   const handleDeleteExperience = async () => {
@@ -325,6 +338,10 @@ export default function CompanyPage({ params }: { params: Promise<{ companyId: s
         >
           You&apos;re about to permanently delete <strong style={{ color: 'var(--db-text)' }}>{toDeleteExp.title || 'this experience'}</strong>.
         </ConfirmDialog>
+      )}
+
+      {graduating && (
+        <GraduationModal companyName={company.name} onEnter={() => router.push('/partner')} />
       )}
     </div>
   )

@@ -294,10 +294,13 @@ export const getExperiencesByCompany = async (providerId: string, companyId: str
 }
 
 export const addExperience = async (data: Partial<Experience>) => {
+  // status/active are DEFAULTS, not overrides — a partner may publish straight
+  // from the editor. `active` always mirrors `status` (the rules enforce it).
+  const status = data.status ?? 'draft'
   return addDoc(collection(db, COLLECTIONS.experiences), {
     ...data,
-    active: false,
-    status: 'draft',
+    status,
+    active: status === 'published',
     rating: 0,
     reviews: 0,
     createdAt: serverTimestamp(),

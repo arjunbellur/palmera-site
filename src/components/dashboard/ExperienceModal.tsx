@@ -111,8 +111,17 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
   const updateOptionAt = (groupId: string, idx: number, patch: Partial<Option>) =>
     setGroups((g) => g.map((x) => (x.id === groupId ? { ...x, options: x.options.map((o, i) => (i === idx ? { ...o, ...patch } : o)) } : x)))
 
-  const handleSave = async () => {
-    if (!canSave) return
+  // What's still missing before this listing can go live in the customer app.
+  // Guests need to see it and find it, and know the cancellation terms.
+  const publishBlockers = [
+    !form.img && 'a photo',
+    (form.lat == null || form.lng == null) && 'map location',
+    !form.cancellationPolicy?.tier && 'cancellation policy',
+  ].filter(Boolean) as string[]
+  const canPublish = canSave && publishBlockers.length === 0
+
+  const handleSave = async (publish: boolean) => {
+    if (!canSave || (publish && !canPublish)) return
     setSaving(true)
     const optionGroups: OptionGroup[] = groups.map(({ options: _opts, ...g }) => g)
     const eventDate = isOneTime && eventDateStr
@@ -121,7 +130,12 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
     const schedule = isScheduled
       ? { ...(form.schedule || {}), timeSlots: timeSlotsInput.split(',').map((s) => s.trim()).filter(Boolean) }
       : form.schedule
-    await onSave({ ...form, eventDate, schedule, optionGroups, providerId, companyId }, groups)
+    // `active` must always mirror `status` — the security rule enforces it too.
+    const status: Experience['status'] = publish ? 'published' : (experience?.status === 'published' ? 'published' : 'draft')
+    await onSave(
+      { ...form, eventDate, schedule, optionGroups, providerId, companyId, status, active: status === 'published' },
+      groups,
+    )
     setSaving(false)
   }
 
@@ -373,10 +387,21 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
           ))}
         </div>
 
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+        {/* Publishing is the partner's own call — draft keeps it private, publish
+            puts it in the Palmera app. We say exactly what's missing rather than
+            just greying the button out. */}
+        {!canPublish && canSave && (
+          <p style={{ fontSize: '0.75rem', color: 'var(--db-text-faint)', fontFamily: 'var(--font-sans)', margin: '0 0 0.75rem', textAlign: 'right' }}>
+            To publish, add: {publishBlockers.join(', ')}
+          </p>
+        )}
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
           <button onClick={onClose} style={{ padding: '10px 24px', background: 'transparent', border: '1px solid var(--db-border-subtle)', borderRadius: '0.25rem', color: 'var(--db-text-muted)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>Cancel</button>
-          <button onClick={handleSave} disabled={!canSave || saving} style={{ padding: '10px 24px', background: canSave ? '#9e763b' : 'var(--db-bg-card)', border: 'none', borderRadius: '0.25rem', color: canSave ? '#ebe8db' : 'var(--db-text-ghost)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', cursor: canSave ? 'pointer' : 'not-allowed' }}>
-            {saving ? 'Saving…' : experience ? 'Save changes' : 'Create experience'}
+          <button onClick={() => handleSave(false)} disabled={!canSave || saving} style={{ padding: '10px 24px', background: 'transparent', border: '1px solid var(--db-border-gold)', borderRadius: '0.25rem', color: canSave ? 'var(--db-text)' : 'var(--db-text-ghost)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', cursor: canSave ? 'pointer' : 'not-allowed' }}>
+            {saving ? 'Saving…' : 'Save as draft'}
+          </button>
+          <button onClick={() => handleSave(true)} disabled={!canPublish || saving} title={canPublish ? '' : publishBlockers.join(', ')} style={{ padding: '10px 24px', background: canPublish ? '#9e763b' : 'var(--db-bg-card)', border: 'none', borderRadius: '0.25rem', color: canPublish ? '#ebe8db' : 'var(--db-text-ghost)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', cursor: canPublish ? 'pointer' : 'not-allowed' }}>
+            {saving ? 'Saving…' : experience?.status === 'published' ? 'Save & keep live' : 'Publish'}
           </button>
         </div>
       </div>
