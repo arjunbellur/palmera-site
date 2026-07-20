@@ -57,7 +57,11 @@ async function migrate() {
     const uid = pDoc.id
     const partner = pDoc.data() as Any
 
-    if ((await db.collection('providers').doc(uid).get()).exists) {
+    // Skip only if this uid was actually migrated (has a company from a prior
+    // run), NOT merely if a providers/{uid} doc exists — the dashboard's
+    // self-heal creates a bare empty provider doc on first login, which must
+    // never cause a real partner's data to be silently skipped here.
+    if ((await db.collection('companies').doc(uid).get()).exists) {
       console.log(`- skip ${uid} (already migrated)`); skipped++; continue
     }
 
@@ -95,15 +99,23 @@ async function migrate() {
     }
 
     // 3) company (deterministic id = uid → one company per migrated provider)
+    // The legacy partner doc never collected a business-level city (only each
+    // listing had one), so infer it from the first listing when possible;
+    // providers with zero listings get an empty city, same as any new signup.
     const companyId = uid
+    const inferredCity = toId(partner.city) || toId(listings[0]?.city)
     const company = {
       providerId: uid,
       name: s(partner.tradingName), legalName: s(partner.legalName),
       businessType: s(partner.businessType),
-      category: toId(partner.industryCategory), city: toId(partner.city),
+      category: toId(partner.industryCategory), city: inferredCity,
       address: s(partner.address), mapsLink: partner.mapsLink ?? null, websiteOrSocial: partner.websiteOrSocial ?? null,
       phone: s(partner.primaryPhone), whatsapp: s(partner.whatsapp),
       logo: photos.providerLogo ?? null,
+      heroPhoto: photos.heroPhoto ?? null,
+      gallery: Array.isArray(photos.gallery)
+        ? photos.gallery
+        : [photos.galleryPhoto1, photos.galleryPhoto2, photos.galleryPhoto3].filter(Boolean),
       operations: partner.operations ?? null,
       completeness: mapCompleteness(partner.sections as Any),
       activatedAt: null, active: false,

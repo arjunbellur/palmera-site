@@ -43,11 +43,21 @@ const policies = {
   },
 }
 
+// Palmera's fixed human countersignatory. Merged (not overwritten) so an
+// admin who later edits it through the UI isn't reset on the next seed run.
+const countersignatory = {
+  name: 'Jordan Dikoum',
+  title: 'CEO',
+  updatedByEmail: 'seed-config',
+  updatedAt: new Date().toISOString(),
+}
+
 async function main() {
   await db.doc('config/markets').set(markets)
   await db.doc('config/categories').set(categories)
   await db.doc('config/policies').set(policies)
-  console.log('✓ Seeded config/markets (dakar, saly enabled), config/categories, config/policies')
+  await db.doc('config/countersignatory').set(countersignatory, { merge: true })
+  console.log('✓ Seeded config/markets (dakar, saly enabled), config/categories, config/policies, config/countersignatory (Jordan Dikoum, CEO)')
 }
 
 main().then(() => process.exit(0)).catch((e) => { console.error(e); process.exit(1) })
