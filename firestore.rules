@@ -18,9 +18,11 @@ service cloud.firestore {
     }
 
     // ── Config: reference data (markets, categories, policies, countersignatory).
-    //    Any signed-in user reads; only admin writes. Dashboard + app render from these.
+    //    Reference data is PUBLIC so the customer app can render city/category
+    //    filters before a guest logs in. countersignatory (Palmera's signing
+    //    representative) stays signed-in only — it isn't customer-facing.
     match /config/{doc} {
-      allow read: if signedIn();
+      allow read: if doc != 'countersignatory' || signedIn();
       allow write: if isAdmin();
     }
 
@@ -74,10 +76,13 @@ service cloud.firestore {
       }
     }
 
-    // Experiences (shared listing). App reads published; owner/admin read all.
+    // Experiences (shared listing). PUBLISHED listings are public — the customer
+    // app lets guests browse before signing in. Everything unpublished (drafts,
+    // pending review, archived) stays visible only to its owner and admins.
+    // To require login for browsing later, add `signedIn() &&` to the first clause.
     match /experiences/{id} {
-      allow read: if signedIn() &&
-        (resource.data.status == 'published' || resource.data.providerId == request.auth.uid || isAdmin());
+      allow read: if resource.data.status == 'published'
+        || (signedIn() && (resource.data.providerId == request.auth.uid || isAdmin()));
       // Create only for yourself AND only under a company you own. A provider
       // cannot create a listing that's already published/curated/live —
       // publishing is an admin action (invariant #1).
@@ -105,9 +110,11 @@ service cloud.firestore {
         && (request.resource.data.get('status', 'draft') != 'published'
             || resource.data.get('status', 'draft') == 'published');
       allow delete: if isAdmin();
-      // Options subcollection — readable with the listing; writable by the owner.
+      // Options subcollection — public read, same as the listing they belong to.
+      // They carry no sensitive data (name, description, price, photos) and are
+      // meaningless without their parent experience.
       match /options/{optionId} {
-        allow read: if signedIn();
+        allow read: if true;
         allow write: if signedIn() &&
           (get(/databases/$(database)/documents/experiences/$(id)).data.providerId == request.auth.uid || isAdmin());
       }
