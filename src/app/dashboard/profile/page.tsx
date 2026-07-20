@@ -39,7 +39,6 @@ const INDUSTRY_CATEGORIES = [
 ]
 
 const MOBILE_MONEY_PROVIDERS = ['Wave', 'Orange Money', 'Free Money', 'MTN Mobile Money', 'Moov Money']
-const PAYOUT_FREQUENCIES = ['Per booking', 'Weekly', 'Monthly']
 const PAYOUT_CURRENCIES_WA = ['XOF', 'USD', 'EUR']
 const PAYOUT_CURRENCIES_STRIPE = ['EUR', 'USD', 'GBP']
 
@@ -55,14 +54,14 @@ export default function ProfilePage() {
   const [form, setForm] = useState({
     legalName: '', tradingName: '', businessType: '', country: '',
     registrationNumber: '', taxId: '', industryCategory: '', websiteOrSocial: '',
-    address: '', mapsLink: '', yearsInOperation: '',
+    address: '', mapsLink: '',
     ownerName: '', ownerDob: '', ownerNationality: '', ownerRole: '',
     ownerResidentialAddress: '', ownerPersonalTaxId: '',
     primaryPhone: '', whatsapp: '', email: '',
     payoutMethod: '', mobileMoneyProvider: '', mobileMoneyNumber: '',
     accountName: '', bankName: '', accountNumber: '', iban: '',
     stripeAccountHolderName: '', stripeBankName: '', stripeIban: '', stripeRouting: '',
-    payoutFrequency: '', payoutCurrency: 'XOF', stripeCurrency: 'EUR',
+    payoutCurrency: 'XOF', stripeCurrency: 'EUR',
   })
   const [beneficialOwners, setBeneficialOwners] = useState<BeneficialOwner[]>([])
   const set = (f: string, v: string) => { setForm(p => ({ ...p, [f]: v })); setErrors(p => { const n = { ...p }; delete n[f]; return n }) }
@@ -215,10 +214,6 @@ export default function ProfilePage() {
                 {INDUSTRY_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
               {errMsg('industryCategory')}
-            </div>
-            <div>
-              <label style={lbl}>Years in operation</label>
-              <input style={inp} type="number" min="0" placeholder="e.g. 5" value={form.yearsInOperation} onChange={e => set('yearsInOperation', e.target.value)} />
             </div>
           </div>
           <div style={{ marginBottom: '1rem' }}>
@@ -382,13 +377,6 @@ export default function ProfilePage() {
                   <div><label style={lbl}>IBAN</label><input style={inp} placeholder="If applicable" value={form.iban} onChange={e => set('iban', e.target.value)} /></div>
                 </div>
               )}
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={lbl}>Payout frequency</label>
-                <select style={sel} value={form.payoutFrequency} onChange={e => set('payoutFrequency', e.target.value)}>
-                  <option value="">Select frequency</option>
-                  {PAYOUT_FREQUENCIES.map(f => <option key={f} value={f}>{f}</option>)}
-                </select>
-              </div>
             </div>
           )}
 

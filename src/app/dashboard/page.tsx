@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { signIn, signUp, onAuthChange } from '@/lib/auth'
-import { createPartner } from '@/lib/firestore'
+import { createProvider } from '@/lib/firestore'
 import LanguageToggle from '@/components/LanguageToggle'
 
 // Read locale from cookie client-side
@@ -80,7 +80,7 @@ export default function DashboardPage() {
     if (password.length < 6) { setError(t('passwordShort')); return }
     setLoading(true)
     try {
-      if (mode === 'signup') { const cred = await signUp(email, password); await createPartner(cred.user.uid, email) }
+      if (mode === 'signup') { const cred = await signUp(email, password); await createProvider(cred.user.uid, email) }
       else await signIn(email, password)
       router.replace('/dashboard/home')
     } catch (e: unknown) {

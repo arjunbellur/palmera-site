@@ -2,7 +2,7 @@
 import { useRouter } from 'next/navigation'
 
 type Status = 'incomplete' | 'in_progress' | 'complete'
-type Priority = 'must_have' | 'first_month' | 'before_payments'
+type Priority = 'required' | 'optional'
 
 const statusConfig = {
   incomplete: { label: 'Not started', dot: 'var(--db-text-faint)' },
@@ -11,9 +11,8 @@ const statusConfig = {
 }
 
 const priorityConfig = {
-  must_have: { label: 'Required to list', color: '#be9a56', border: 'rgba(190,154,86,0.5)' },
-  first_month: { label: 'First month', color: 'var(--db-text)', border: 'var(--db-border-subtle)' },
-  before_payments: { label: 'Before payments', color: 'var(--db-text)', border: 'var(--db-border-subtle)' },
+  required: { label: 'Required', color: '#be9a56', border: 'rgba(190,154,86,0.5)' },
+  optional: { label: 'Optional · anytime', color: 'var(--db-text-muted)', border: 'var(--db-border-subtle)' },
 }
 
 export default function SectionCard({ title, description, status, priority, href, locked = false }: {

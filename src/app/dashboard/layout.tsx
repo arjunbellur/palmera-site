@@ -2,13 +2,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { onAuthChange } from '@/lib/auth'
-import { getPartner } from '@/lib/firestore'
 import { ThemeProvider, useTheme } from '@/lib/theme'
 import DashboardNav from '@/components/dashboard/DashboardNav'
 
 const NAV_LABELS: Record<string, Record<string, string>> = {
-  fr: { overview: 'Aperçu', profile: 'Profil Commercial', listings: 'Annonces', photos: 'Photos', operations: 'Opérations', documents: 'Documents', terms: 'Conditions & Signature' },
-  en: { overview: 'Overview', profile: 'Business Profile', listings: 'Listings', photos: 'Photos', operations: 'Operations', documents: 'Documents', terms: 'Terms & Sign-off' },
+  fr: { overview: 'Aperçu', account: 'Compte', agreement: 'Convention' },
+  en: { overview: 'Overview', account: 'Account', agreement: 'Agreement' },
 }
 
 const ADMIN_EMAILS = ['palmeraexp@gmail.com']
@@ -18,7 +17,6 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const { theme } = useTheme()
   const [email, setEmail] = useState('')
-  const [sections, setSections] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
   const [isTablet, setIsTablet] = useState(false)
@@ -61,8 +59,6 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
         setLoading(false)
         return
       }
-      const partner = await getPartner(user.uid)
-      if (partner?.sections) setSections(partner.sections)
       setLoading(false)
     })
     return () => unsub()
@@ -75,24 +71,13 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
     ? [{ href: '/dashboard/admin', label: 'Admin', short: 'Admin' }]
     : [
         { href: '/dashboard/home', label: labels.overview, short: labels.overview },
-        { href: '/dashboard/profile', label: labels.profile, short: locale === 'fr' ? 'Profil' : 'Profile' },
-        { href: '/dashboard/listings', label: labels.listings, short: labels.listings },
-        { href: '/dashboard/photos', label: labels.photos, short: labels.photos },
-        { href: '/dashboard/operations', label: labels.operations, short: labels.operations },
-        { href: '/dashboard/documents', label: labels.documents, short: locale === 'fr' ? 'Docs' : 'Docs' },
-        { href: '/dashboard/settings', label: labels.terms, short: locale === 'fr' ? 'Conditions' : 'Terms' },
+        { href: '/dashboard/account', label: labels.account, short: labels.account },
+        { href: '/dashboard/settings', label: labels.agreement, short: labels.agreement },
       ]
 
-  const getStatus = (href: string) => {
-    const key = href.split('/').pop() || ''
-    const map: Record<string, string> = {
-      profile: sections.basics === 'complete' && sections.payouts === 'complete' ? 'complete' : (sections.basics || sections.payouts) ? 'in_progress' : 'incomplete',
-      listings: sections.listings || 'incomplete', photos: sections.photos || 'incomplete',
-      operations: sections.operations || 'incomplete', documents: sections.documents || 'incomplete',
-      settings: sections.signoff || 'incomplete', home: 'none', admin: 'none',
-    }
-    return map[key] || 'incomplete'
-  }
+  // Company-scoped completeness now lives inside each company page, so the
+  // provider-level sidebar carries no per-item status dots.
+  const getStatus = (_href: string) => 'none'
 
   const dotColor = (status: string) => {
     if (status === 'complete') return '#9e763b'

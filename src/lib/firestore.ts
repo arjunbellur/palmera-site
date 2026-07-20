@@ -10,6 +10,7 @@ import {
   serverTimestamp,
   query,
   where,
+  orderBy,
 } from 'firebase/firestore'
 import { db } from './firebase'
 import {
@@ -17,6 +18,7 @@ import {
   type Provider, type ProviderPrivateAdmin,
   type Company, type CompanyPrivateAdmin,
   type Experience, type Option,
+  type Booking, type LedgerEntry, type Payout,
 } from './schema'
 
 // ── Listing types ─────────────────────────────────────────────────
@@ -216,6 +218,7 @@ export const createProvider = async (uid: string, email: string) => {
     primaryPhone: '',
     whatsapp: '',
     country: '',
+    logo: null,
     onboardingStage: 'registered',
     signoff: null,
     createdAt: serverTimestamp(),
@@ -250,7 +253,7 @@ export const createCompany = async (providerId: string, data: Partial<Company>) 
     providerId,
     name: '', legalName: '', businessType: '', category: '', city: '',
     address: '', mapsLink: null, websiteOrSocial: null, phone: '', whatsapp: '',
-    logo: null, operations: null, completeness: {},
+    logo: null, heroPhoto: null, gallery: [], operations: null, completeness: {},
     activatedAt: null, active: false,
     ...data,
     createdAt: serverTimestamp(),
@@ -306,6 +309,13 @@ export const updateExperience = async (id: string, data: Partial<Experience>) =>
   await updateDoc(doc(db, COLLECTIONS.experiences, id), { ...data, updatedAt: serverTimestamp() })
 }
 
+/** Owner-side delete: the experience plus every option under it. */
+export const deleteExperience = async (id: string) => {
+  const opts = await getDocs(collection(db, COLLECTIONS.experiences, id, SUB.options))
+  await Promise.all(opts.docs.map((o) => deleteDoc(o.ref)))
+  await deleteDoc(doc(db, COLLECTIONS.experiences, id))
+}
+
 // ── Options (subcollection of an experience) ────────────────────────────────
 export const getOptions = async (experienceId: string): Promise<Option[]> => {
   const snap = await getDocs(collection(db, COLLECTIONS.experiences, experienceId, SUB.options))
@@ -322,4 +332,122 @@ export const updateOption = async (experienceId: string, optionId: string, data:
 
 export const deleteOption = async (experienceId: string, optionId: string) => {
   await deleteDoc(doc(db, COLLECTIONS.experiences, experienceId, SUB.options, optionId))
+}
+
+// ── Admin (all-collection reads + admin-only writes) ────────────────────────
+// Reads here return every doc in the collection: rules allow it because
+// isAdmin() doesn't depend on the returned doc's own fields.
+export const getAllProviders = async (): Promise<Provider[]> => {
+  const snap = await getDocs(collection(db, COLLECTIONS.providers))
+  return snap.docs.map((d) => ({ ...(d.data() as Provider), uid: d.id }))
+}
+
+export const getAllCompanies = async (): Promise<Company[]> => {
+  const snap = await getDocs(collection(db, COLLECTIONS.companies))
+  return snap.docs.map((d) => ({ id: d.id, ...(d.data() as Company) }))
+}
+
+export const getAllExperiencesAdmin = async (): Promise<Experience[]> => {
+  const snap = await getDocs(collection(db, COLLECTIONS.experiences))
+  return snap.docs.map((d) => ({ id: d.id, ...(d.data() as Experience) }))
+}
+
+/** All experiences under one company — admin use (bypasses the providerId-anchored query). */
+export const getExperiencesByCompanyIdAdmin = async (companyId: string): Promise<Experience[]> => {
+  const q = query(collection(db, COLLECTIONS.experiences), where('companyId', '==', companyId))
+  const snap = await getDocs(q)
+  return snap.docs.map((d) => ({ id: d.id, ...(d.data() as Experience) }))
+}
+
+/** Admin-only: activation + commission window for one company. */
+export const activateCompany = async (companyId: string, commissionRate: number) => {
+  await updateDoc(doc(db, COLLECTIONS.companies, companyId), { activatedAt: serverTimestamp(), active: true, updatedAt: serverTimestamp() })
+  await setDoc(doc(db, COLLECTIONS.companies, companyId, SUB.privateAdmin.col, SUB.privateAdmin.doc),
+    { commissionRate, payoutMethod: null, payoutConfig: null, payoutVerification: null } satisfies CompanyPrivateAdmin, { merge: true })
+}
+
+export const updateCompanyAdminFields = async (companyId: string, data: Partial<CompanyPrivateAdmin>) => {
+  await setDoc(doc(db, COLLECTIONS.companies, companyId, SUB.privateAdmin.col, SUB.privateAdmin.doc), data, { merge: true })
+}
+
+export const setProviderStatus = async (uid: string, status: ProviderPrivateAdmin['status']) => {
+  await setDoc(doc(db, COLLECTIONS.providers, uid, SUB.privateAdmin.col, SUB.privateAdmin.doc), { status }, { merge: true })
+}
+
+/** Admin-only: publish/unpublish an experience and set its curation tag. */
+export const setExperienceStatus = async (id: string, status: Experience['status']) => {
+  await updateDoc(doc(db, COLLECTIONS.experiences, id), { status, active: status === 'published', updatedAt: serverTimestamp() })
+}
+
+export const setExperienceTag = async (id: string, tag: string | null) => {
+  await updateDoc(doc(db, COLLECTIONS.experiences, id), { tag, updatedAt: serverTimestamp() })
+}
+
+/** Admin-only: delete a company and everything under it (experiences + private subdoc). Provider doc is untouched — a provider may own other companies. */
+export const deleteCompanyCascade = async (companyId: string) => {
+  const exps = await getExperiencesByCompanyIdAdmin(companyId)
+  await Promise.all(exps.map(async (e) => {
+    const opts = await getDocs(collection(db, COLLECTIONS.experiences, e.id!, SUB.options))
+    await Promise.all(opts.docs.map((o) => deleteDoc(o.ref)))
+    await deleteDoc(doc(db, COLLECTIONS.experiences, e.id!))
+  }))
+  await deleteDoc(doc(db, COLLECTIONS.companies, companyId, SUB.privateAdmin.col, SUB.privateAdmin.doc)).catch(() => {})
+  await deleteDoc(doc(db, COLLECTIONS.companies, companyId))
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// v3.3 — reservations & money (READ-ONLY from the dashboard).
+// All queries are providerId-anchored so they pass the read rules, and degrade
+// to [] on error (rules not yet deployed / empty) so a page never crashes.
+// ══════════════════════════════════════════════════════════════════════════
+const rows = <T>(snap: { docs: { id: string; data: () => unknown }[] }): T[] =>
+  snap.docs.map((d) => ({ id: d.id, ...(d.data() as object) })) as T[]
+
+/** Reservations for a provider, newest scheduled first. Optional status filter. */
+export const getBookingsByProvider = async (uid: string, status?: Booking['status']): Promise<Booking[]> => {
+  try {
+    const clauses = [where('providerId', '==', uid), ...(status ? [where('status', '==', status)] : [])]
+    const snap = await getDocs(query(collection(db, COLLECTIONS.bookings), ...clauses, orderBy('scheduledFor', 'desc')))
+    return rows<Booking>(snap)
+  } catch { return [] }
+}
+
+/** Reservations scoped to one company (subset of the provider's). */
+export const getBookingsByCompany = async (uid: string, companyId: string): Promise<Booking[]> => {
+  try {
+    const snap = await getDocs(query(
+      collection(db, COLLECTIONS.bookings),
+      where('providerId', '==', uid), where('companyId', '==', companyId),
+      orderBy('scheduledFor', 'desc'),
+    ))
+    return rows<Booking>(snap)
+  } catch { return [] }
+}
+
+/** Ledger events for a provider, newest first. */
+export const getLedgerByProvider = async (uid: string): Promise<LedgerEntry[]> => {
+  try {
+    const snap = await getDocs(query(
+      collection(db, COLLECTIONS.ledger),
+      where('providerId', '==', uid), orderBy('createdAt', 'desc'),
+    ))
+    return rows<LedgerEntry>(snap)
+  } catch { return [] }
+}
+
+/** Current balance owed to a provider = Σ signed ledger amounts. */
+export const getBalanceByProvider = async (uid: string): Promise<number> => {
+  const entries = await getLedgerByProvider(uid)
+  return entries.reduce((sum, e) => sum + (e.amount || 0), 0)
+}
+
+/** Payout batches for a provider, newest scheduled first. */
+export const getPayoutsByProvider = async (uid: string): Promise<Payout[]> => {
+  try {
+    const snap = await getDocs(query(
+      collection(db, COLLECTIONS.payouts),
+      where('providerId', '==', uid), orderBy('scheduledFor', 'desc'),
+    ))
+    return rows<Payout>(snap)
+  } catch { return [] }
 }

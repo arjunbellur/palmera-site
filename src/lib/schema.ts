@@ -22,6 +22,12 @@ export const COLLECTIONS = {
   config: 'config',
   countersignatures: 'countersignatures',
   migrationArchive: 'migrationArchive',
+  // v3.3 — money & reservations layer. Bookings originate in the customer app
+  // (Samson) and are the CANONICAL contract below; the dashboard reads them and
+  // derives ledger + payouts. All three are provider/company-anchored for rules.
+  bookings: 'bookings',
+  ledger: 'ledger',
+  payouts: 'payouts',
 } as const
 
 // Subcollection / well-known doc ids
@@ -56,6 +62,7 @@ export interface Provider {
   primaryPhone: string
   whatsapp: string
   country: string                 // ISO alpha-2
+  logo: string | null             // provider-level mark/avatar (distinct from company.logo)
   onboardingStage: 'registered' | 'active' | 'complete'
   signoff: Signoff | null         // create-once, immutable; one agreement covers all companies
   createdAt: TS
@@ -86,6 +93,8 @@ export interface Company {
   phone: string
   whatsapp: string
   logo: string | null             // v3.2 (from old photos.providerLogo)
+  heroPhoto: string | null        // company hero/banner (old photos.heroPhoto — had no v3.2 home)
+  gallery: string[]               // company-level gallery (old photos.gallery — had no v3.2 home)
   operations: Record<string, unknown> | null // v3.2 (old operations{} wholesale; app ignores)
   completeness: Partial<Record<CompletenessKey, boolean>>
   activatedAt: TS | null          // admin-only; starts THIS company's 12-mo 10% window
@@ -228,4 +237,126 @@ export interface MigrationArchive {
   sourcePartner: Record<string, unknown>
   sourceListings: Record<string, unknown>[]
   unmappedFields: Record<string, unknown>
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// v3.3 — RESERVATIONS & MONEY  (CANONICAL CONTRACT — Samson's app conforms)
+//
+// bookings/{id} is written by the customer app at checkout and READ by the
+// dashboard. It is fully SNAPSHOTTED: the terms shown to a partner (and used to
+// compute what they're owed) are frozen at booking time, immune to later edits
+// of the experience, its price, or the company's commission rate. ledger/{id}
+// and payouts/{id} are DERIVED from bookings — a partner never writes any of
+// these; the dashboard renders them read-only.
+// ══════════════════════════════════════════════════════════════════════════
+
+/** A single option the guest picked, snapshotted (name+price frozen). */
+export interface BookingSelection {
+  optionId: string
+  groupId: string
+  name: string
+  price: number        // per-unit, at booking time
+  quantity: number
+}
+
+export type BookingStatus =
+  | 'pending'          // provider_confirmed listing, awaiting partner action
+  | 'confirmed'        // accepted (or instant-confirm)
+  | 'declined'         // partner declined
+  | 'cancelled'        // cancelled by guest/system (see cancellationPolicy)
+  | 'completed'        // experience delivered → eligible for payout
+  | 'no_show'          // guest didn't show
+
+export interface Booking {
+  id?: string
+  // ── Anchors (immutable; drive rules + partner queries) ──
+  experienceId: string
+  companyId: string
+  providerId: string
+  // ── Guest (minimal; no sensitive PII stored dashboard-side) ──
+  customerId: string          // app user uid
+  customerName: string        // display only
+  guestCount: number
+  // ── When ──
+  scheduledFor: TS            // the reserved date/time of the experience
+  // ── Snapshot of the listing terms at booking time ──
+  title: string
+  provider: string            // company display name, frozen
+  mode: ExperienceMode
+  priceUnit: PriceUnit
+  currency: string
+  confirmationType: ConfirmationType
+  basePrice: number | null    // frozen base (per priceUnit)
+  cancellationPolicy: CancellationPolicy   // RESOLVED tier terms, frozen
+  selections: BookingSelection[]
+  // ── Money (all ints, tax-inclusive, in `currency`) ──
+  bookingTotal: number        // base×unit + Σ(selection.price×qty)
+  commissionRate: number      // company's rate at booking time, frozen
+  commissionAmount: number    // round(bookingTotal × commissionRate)
+  payoutAmount: number        // bookingTotal − commissionAmount → owed to partner
+  // ── Lifecycle ──
+  status: BookingStatus
+  createdAt: TS
+  updatedAt: TS
+  confirmedAt: TS | null
+  cancelledAt: TS | null
+}
+
+export type LedgerEntryType =
+  | 'commission_earned'   // + credit to partner (a completed booking's payoutAmount)
+  | 'payout'              // − debit (funds sent to partner)
+  | 'refund'              // − reversal of a cancelled/refunded booking's credit
+  | 'clawback'            // − commission reclaim (see BPA clawback terms)
+  | 'adjustment'          // ± manual admin correction
+
+/**
+ * ledger/{id} — one immutable money event per row. Signed `amount`: positive
+ * increases what Palmera owes the partner, negative decreases it. The partner's
+ * balance = Σ amount over their company. Append-only; corrections are new rows.
+ */
+export interface LedgerEntry {
+  id?: string
+  companyId: string
+  providerId: string
+  bookingId: string | null    // null for manual adjustments
+  payoutId: string | null     // set once rolled into a payout batch
+  type: LedgerEntryType
+  amount: number              // signed int, in `currency`
+  currency: string
+  description: string
+  createdAt: TS
+}
+
+export type PayoutStatus = 'scheduled' | 'processing' | 'paid' | 'failed'
+
+/** A clawed-back booking inside a payout (BPA clawback), snapshotted. */
+export interface PayoutClawback {
+  bookingId: string
+  amount: number              // positive int withheld
+  reason: string
+}
+
+/**
+ * payouts/{id} — a biweekly payout batch for one company. Sums the eligible
+ * ledger credits for the period, minus clawbacks. Admin/CF writes; partner reads.
+ */
+export interface Payout {
+  id?: string
+  companyId: string
+  providerId: string
+  periodStart: TS
+  periodEnd: TS
+  status: PayoutStatus
+  currency: string
+  grossAmount: number         // Σ eligible credits in period
+  clawbacks: PayoutClawback[]
+  clawbackTotal: number       // Σ clawbacks.amount
+  netAmount: number           // grossAmount − clawbackTotal → actually sent
+  method: string | null       // snapshot of company payout method
+  ledgerEntryIds: string[]    // the credits settled by this batch
+  reference: string | null    // processor transaction id, once paid
+  scheduledFor: TS
+  paidAt: TS | null
+  createdAt: TS
+  updatedAt: TS
 }

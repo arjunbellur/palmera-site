@@ -13,8 +13,6 @@ const DOCUMENTS = [
   { field: 'ownerIdCopy', label: "Owner's government ID", hint: 'Passport or national ID card (CNI) — required for KYC' },
   { field: 'proofOfService', label: 'Proof of service', hint: 'Photos, certifications, or portfolio showing your experience offer' },
   { field: 'proofOfPayoutAccount', label: 'Proof of payout account', hint: 'Bank statement or mobile money screenshot — speeds KYC verification' },
-  { field: 'liabilityInsurance', label: 'Liability insurance policy', hint: 'Or written acknowledgment of liability acceptance' },
-  { field: 'partnershipAgreement', label: 'Signed Palmera partnership agreement', hint: 'Sent by Palmera upon review' },
 ]
 
 interface DocStatus { url: string; name: string; uploadedAt: string }
@@ -67,7 +65,7 @@ export default function DocumentsPage() {
       <div style={{ marginBottom: '2rem' }}>
         <p style={{ fontFamily: 'var(--font-sans)', color: 'rgba(190,154,86,0.8)', fontSize: '0.75rem', letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 0.5rem' }}>Legal Documents</p>
         <h1 style={{ fontFamily: 'var(--font-display)', color: 'var(--db-text)', fontSize: 'clamp(1.375rem, 3vw, 1.625rem)', fontWeight: 400, letterSpacing: '0.06em', margin: '0 0 0.375rem' }}>Verification Documents</h1>
-        <p style={{ fontFamily: 'var(--font-serif)', color: 'var(--db-text-muted)', fontSize: '0.875rem', margin: 0 }}>All documents required before payments go live. PDF, JPG, or PNG accepted.</p>
+        <p style={{ fontFamily: 'var(--font-serif)', color: 'var(--db-text-muted)', fontSize: '0.875rem', margin: 0 }}>Optional for now — these are needed later, when payout verification goes live. PDF, JPG, or PNG accepted.</p>
       </div>
       <div style={{ background: 'var(--db-bg-card)', border: '1px solid var(--db-border-subtle)', borderRadius: '0.5rem', padding: '1rem 1.25rem', marginBottom: '1.75rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
         <div style={{ flex: 1, height: '0.25rem', background: 'var(--db-border-subtle)', borderRadius: '0.125rem', overflow: 'hidden' }}>

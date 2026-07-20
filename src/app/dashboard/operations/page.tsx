@@ -16,7 +16,7 @@ export default function OperationsPage() {
   const [uid, setUid] = useState('')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [form, setForm] = useState({ opsContactName: '', opsContactWhatsapp: '', backupContactName: '', backupContactWhatsapp: '', notificationPreference: '', confirmationSpeed: '', noShowPolicy: '', cancellationRate: '', specialRequestHandling: '' })
+  const [form, setForm] = useState({ opsContactName: '', opsContactWhatsapp: '', notificationPreference: '', confirmationSpeed: '' })
   const set = (f: string, v: string) => setForm(p => ({ ...p, [f]: v }))
 
   useEffect(() => {
@@ -29,7 +29,7 @@ export default function OperationsPage() {
     return () => unsub()
   }, [router])
 
-  const isComplete = !!(form.opsContactName && form.opsContactWhatsapp && form.backupContactName && form.notificationPreference && form.confirmationSpeed && form.noShowPolicy)
+  const isComplete = !!(form.opsContactName && form.opsContactWhatsapp)
 
   const handleSave = async () => {
     setSaving(true)
@@ -46,29 +46,17 @@ export default function OperationsPage() {
         <p style={{ fontFamily: 'var(--font-serif)', color: 'var(--db-text-muted)', fontSize: '0.875rem', margin: 0 }}>How bookings flow once a guest reserves.</p>
       </div>
       <div style={{ background: 'var(--db-bg-banner)', border: '1px solid rgba(158,118,59,0.15)', borderRadius: '0.5rem', padding: '1rem 1.25rem', marginBottom: '2rem' }}>
-        <p style={{ fontSize: '0.8125rem', color: 'var(--db-text-muted)', fontFamily: 'var(--font-sans)', margin: 0, lineHeight: 1.6 }}>Standard Palmera operations: we send you bookings via WhatsApp, you confirm within 1 hour, we pay weekly via Wave. Please provide the contact of the person who actually runs day-to-day operations.</p>
+        <p style={{ fontSize: '0.8125rem', color: 'var(--db-text-muted)', fontFamily: 'var(--font-sans)', margin: 0, lineHeight: 1.6 }}>How bookings reach you: we send them via WhatsApp and you confirm quickly. Please give us the contact of the person who actually runs day-to-day operations.</p>
       </div>
       <h2 style={{ fontFamily: 'var(--font-serif)', color: 'var(--db-text)', fontSize: '1.0625rem', fontWeight: 400, margin: '0 0 1.25rem' }}>Booking contacts</h2>
       <div style={row}>
         <div><label style={lbl}>Operations contact name *</label><input style={inp} placeholder="Person who runs day-to-day operations" value={form.opsContactName} onChange={e => set('opsContactName', e.target.value)} /></div>
         <div><label style={lbl}>Operations contact WhatsApp *</label><input style={inp} placeholder="Direct WhatsApp number" value={form.opsContactWhatsapp} onChange={e => set('opsContactWhatsapp', e.target.value)} /></div>
       </div>
-      <div style={row}>
-        <div><label style={lbl}>Backup contact name *</label><input style={inp} placeholder="Used when primary is unreachable" value={form.backupContactName} onChange={e => set('backupContactName', e.target.value)} /></div>
-        <div><label style={lbl}>Backup WhatsApp</label><input style={inp} placeholder="Backup WhatsApp number" value={form.backupContactWhatsapp} onChange={e => set('backupContactWhatsapp', e.target.value)} /></div>
-      </div>
       <h2 style={{ fontFamily: 'var(--font-serif)', color: 'var(--db-text)', fontSize: '1.0625rem', fontWeight: 400, margin: '1.75rem 0 1.25rem' }}>Booking flow</h2>
       <div style={row}>
-        <div><label style={lbl}>Notification preference *</label><select style={{ ...inp, appearance: 'none' }} value={form.notificationPreference} onChange={e => set('notificationPreference', e.target.value)}><option value="">How should we notify you?</option>{NOTIFICATION_PREFS.map(p => <option key={p} value={p}>{p}</option>)}</select></div>
-        <div><label style={lbl}>Confirmation speed *</label><select style={{ ...inp, appearance: 'none' }} value={form.confirmationSpeed} onChange={e => set('confirmationSpeed', e.target.value)}><option value="">How quickly do you confirm?</option>{CONFIRMATION_SPEEDS.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
-      </div>
-      <div style={{ marginBottom: '1rem' }}><label style={lbl}>No-show policy *</label><input style={inp} placeholder="What happens when a guest doesn't arrive?" value={form.noShowPolicy} onChange={e => set('noShowPolicy', e.target.value)} /></div>
-      <h2 style={{ fontFamily: 'var(--font-serif)', color: 'var(--db-text)', fontSize: '1.0625rem', fontWeight: 400, margin: '1.75rem 0 1.25rem', display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-        Additional info <span style={{ fontSize: '0.625rem', color: 'var(--db-text-muted)', border: '1px solid var(--db-border-subtle)', padding: '0.125rem 0.5rem', borderRadius: '0.1875rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>First month</span>
-      </h2>
-      <div style={row}>
-        <div><label style={lbl}>Your cancellation rate</label><input style={inp} placeholder='e.g. "Rarely" / "Less than 5%"' value={form.cancellationRate} onChange={e => set('cancellationRate', e.target.value)} /></div>
-        <div><label style={lbl}>Special request handling</label><input style={inp} placeholder="Cakes, surprises, dietary needs — OK?" value={form.specialRequestHandling} onChange={e => set('specialRequestHandling', e.target.value)} /></div>
+        <div><label style={lbl}>Notification preference</label><select style={{ ...inp, appearance: 'none' }} value={form.notificationPreference} onChange={e => set('notificationPreference', e.target.value)}><option value="">How should we notify you?</option>{NOTIFICATION_PREFS.map(p => <option key={p} value={p}>{p}</option>)}</select></div>
+        <div><label style={lbl}>Confirmation speed</label><select style={{ ...inp, appearance: 'none' }} value={form.confirmationSpeed} onChange={e => set('confirmationSpeed', e.target.value)}><option value="">How quickly do you confirm?</option>{CONFIRMATION_SPEEDS.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--db-border-subtle)', marginTop: '0.5rem' }}>
         <button onClick={handleSave} disabled={saving}
