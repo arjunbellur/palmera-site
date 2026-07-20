@@ -70,6 +70,12 @@ function Shell({ children }: { children: React.ReactNode }) {
     document.cookie = `locale=${l}; path=/; max-age=31536000`
   }
 
+  const signOut = async () => {
+    const { logOut } = await import('@/lib/auth')
+    await logOut()
+    router.push('/dashboard')
+  }
+
   if (loading) return (
     <div data-theme={theme} style={{ minHeight: '100vh', background: 'var(--pf-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ width: '2rem', height: '2rem', border: '2px solid rgba(190,154,86,0.15)', borderTopColor: 'var(--pf-gold)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
@@ -124,7 +130,12 @@ function Shell({ children }: { children: React.ReactNode }) {
               <span style={{ fontFamily: 'var(--font-display)', color: 'var(--pf-head)', fontSize: '14px', letterSpacing: '0.12em' }}>PALMERA</span>
             </div>
             <nav style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>{NAV.map(n => navLink(n, false))}</nav>
-            <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid var(--pf-border)' }}>{CompanyPill}</div>
+            <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid var(--pf-border)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {CompanyPill}
+              <button onClick={signOut} style={{ display: 'flex', alignItems: 'center', gap: '9px', background: 'transparent', border: 'none', padding: '2px 0', cursor: 'pointer', color: 'var(--pf-faint)', fontFamily: 'var(--font-sans)', fontSize: '11.5px', letterSpacing: '0.04em' }}>
+                <span style={{ fontSize: '13px' }}>⎋</span> {L('signout')}
+              </button>
+            </div>
           </aside>
         )}
 
@@ -140,6 +151,11 @@ function Shell({ children }: { children: React.ReactNode }) {
               <button onClick={toggleTheme} aria-label="Toggle theme" style={{ width: '30px', height: '30px', borderRadius: '8px', border: '1px solid var(--pf-border)', background: 'transparent', color: 'var(--pf-gold)', cursor: 'pointer', fontSize: '12px' }}>
                 {theme === 'dark' ? '☾' : '☀'}
               </button>
+              {isMobile && (
+                <button onClick={signOut} aria-label={L('signout')} title={L('signout')} style={{ width: '30px', height: '30px', borderRadius: '8px', border: '1px solid var(--pf-border)', background: 'transparent', color: 'var(--pf-faint)', cursor: 'pointer', fontSize: '13px' }}>
+                  ⎋
+                </button>
+              )}
             </div>
           </header>
 
