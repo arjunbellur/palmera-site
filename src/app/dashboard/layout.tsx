@@ -59,6 +59,12 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
         setLoading(false)
         return
       }
+      // GRADUATION (hard cutover): once Palmera activates a company, this partner
+      // belongs in the dashboard at /partner, not the onboarding portal. The
+      // /partner layout applies the mirror-image guard, so the two can't loop.
+      const { getCompanies } = await import('@/lib/firestore')
+      const companies = await getCompanies(user.uid)
+      if (companies.some(c => c.active)) { router.replace('/partner'); return }
       setLoading(false)
     })
     return () => unsub()

@@ -169,6 +169,30 @@ body {
   --db-border-subtle: rgba(223,201,166,0.1);
   --db-border-dashed: rgba(223,201,166,0.12);
   --db-overlay: rgba(4,4,4,0.85);
+
+  /* Partner dashboard (/partner) — its own surface, per the Claude Design
+     mockup. Deliberately distinct from the --db-* onboarding tokens: a cooler,
+     bluer ground and a stronger border, so graduating feels like arriving
+     somewhere new rather than seeing the same shell with new tabs. */
+  --pf-bg: #06080f;
+  --pf-nav: #0a0e18;
+  --pf-card: rgba(150,172,220,0.05);
+  --pf-card-solid: #0d111c;
+  --pf-text: #dfc9a6;
+  --pf-head: #f0e2c4;
+  --pf-muted: rgba(223,201,166,0.75);
+  --pf-faint: rgba(223,201,166,0.45);
+  --pf-border: rgba(190,154,86,0.15);
+  --pf-border-strong: rgba(190,154,86,0.28);
+  --pf-gold: #be9a56;
+  --pf-gold-deep: #9e763b;
+  --pf-eyebrow: #be9a56;
+  --pf-green: #8fb07d;
+  --pf-green-soft: rgba(122,158,107,0.16);
+  --pf-success: #7a9e6b;
+  --pf-alert: #c47c7c;
+  --pf-sheet: #0d111c;
+  --pf-scrim: rgba(2,4,9,0.66);
 }
 
 /* Dashboard theme tokens — light */
@@ -191,6 +215,28 @@ body {
   --db-border-subtle: rgba(42,33,25,0.1);
   --db-border-dashed: rgba(42,33,25,0.1);
   --db-overlay: rgba(0,0,0,0.6);
+
+  /* Partner dashboard — light. Warmer paper than onboarding, and headings pick
+     up the deep green the mockup introduces for this surface. */
+  --pf-bg: #f4ecdb;
+  --pf-nav: #fffdf8;
+  --pf-card: rgba(120,84,30,0.045);
+  --pf-card-solid: #fffaf0;
+  --pf-text: #2a2119;
+  --pf-head: #1f4436;
+  --pf-muted: rgba(42,33,25,0.72);
+  --pf-faint: rgba(42,33,25,0.5);
+  --pf-border: rgba(158,118,59,0.2);
+  --pf-border-strong: rgba(158,118,59,0.34);
+  --pf-gold: #9e763b;
+  --pf-gold-deep: #7d5b2b;
+  --pf-eyebrow: #9a5f34;
+  --pf-green: #2c5a45;
+  --pf-green-soft: rgba(31,68,54,0.1);
+  --pf-success: #5f7f52;
+  --pf-alert: #b25f5f;
+  --pf-sheet: #fffdf8;
+  --pf-scrim: rgba(42,33,25,0.4);
 }
 
 [data-theme="light"] input::placeholder,

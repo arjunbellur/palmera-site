@@ -451,3 +451,16 @@ export const getPayoutsByProvider = async (uid: string): Promise<Payout[]> => {
     return rows<Payout>(snap)
   } catch { return [] }
 }
+
+/**
+ * Partner-side response to a booking request. Only 'confirmed' | 'declined',
+ * and only on a booking they own — enforced again in firestore.rules, which
+ * also freezes the money fields so a partner can't rewrite what they're owed.
+ */
+export const setBookingStatus = async (id: string, status: 'confirmed' | 'declined') => {
+  await updateDoc(doc(db, COLLECTIONS.bookings, id), {
+    status,
+    ...(status === 'confirmed' ? { confirmedAt: serverTimestamp() } : {}),
+    updatedAt: serverTimestamp(),
+  })
+}

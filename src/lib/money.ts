@@ -9,6 +9,23 @@ export function formatXOF(amount: number | null | undefined, currency = 'XOF'): 
   }
 }
 
+/**
+ * Grouped whole number with NO currency symbol — the partner dashboard renders
+ * the amount and a separate "XOF" suffix, so the two need to be independent.
+ * Uses a narrow no-break space (fr-FR grouping) e.g. 45 000.
+ */
+export function formatAmount(amount: number | null | undefined): string {
+  return new Intl.NumberFormat('fr-FR').format(Math.round(amount || 0))
+}
+
+/** A Firestore Timestamp, a JS Date, or an ISO string → a JS Date, or null. */
+export function toDate(value: unknown): Date | null {
+  if (!value) return null
+  const v = value as { toDate?: () => Date }
+  const d = typeof v?.toDate === 'function' ? v.toDate() : new Date(value as string | number | Date)
+  return isNaN(d.getTime()) ? null : d
+}
+
 /** A Firestore Timestamp, a JS Date, or an ISO string → a short readable date. */
 export function formatDate(value: unknown, withTime = false): string {
   if (!value) return '—'

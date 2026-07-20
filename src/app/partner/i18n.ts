@@ -1,0 +1,99 @@
+// Partner dashboard copy. French is the default — most partners work in FR.
+// French strings run longer than English, so layouts must not be tight to EN.
+export type Locale = 'fr' | 'en'
+
+const FR: Record<string, string> = {
+  nav_home: 'Accueil', nav_res: 'Réservations', nav_earn: 'Revenus', nav_list: 'Annonces', nav_set: 'Réglages',
+  switch_company: 'Changer d’établissement',
+
+  greeting: 'Bonjour', home_label: 'Tableau de bord', home_title: 'Votre activité',
+  home_intro: 'Vos réservations, vos revenus et vos annonces — en un coup d’œil.',
+  action_title: 'Réservations à confirmer', action_sub: 'En attente de votre réponse',
+  balance: 'Solde actuel', next_payout: 'Prochain versement', next_amt: 'Montant prévu',
+  lifetime: 'Versé à ce jour', upcoming: 'À venir', see_all: 'Tout voir',
+  home_empty_t: 'Aucune réservation pour l’instant',
+  home_empty_b: 'Dès qu’un client réservera l’une de vos expériences, elle apparaîtra ici avec la date, le nombre de personnes et ce que vous gagnez.',
+
+  res_label: 'Réservations', res_title: 'Vos réservations',
+  res_intro: 'Confirmez ou refusez les demandes, et suivez les réservations à venir.',
+  f_all: 'Toutes', f_pending: 'À confirmer', f_confirmed: 'Confirmées', f_done: 'Terminées',
+  res_empty_t: 'Rien à afficher', res_empty_b: 'Les réservations de vos expériences apparaîtront ici.',
+  instant: 'Confirmation immédiate', you_earn: 'Vous gagnez', total: 'Total', commission: 'Commission',
+  accept: 'Confirmer', decline: 'Refuser', guests: 'personnes', guest: 'personne',
+
+  earn_label: 'Revenus', earn_title: 'Revenus et versements',
+  earn_intro: 'Ce que vous avez gagné sur les réservations terminées, et les versements que Palmera vous envoie.',
+  comm_window: 'Période de commission', months_left: 'restants', window_ends: 'se termine le',
+  payout_hist: 'Historique des versements', ledger: 'Activité',
+  pay_empty_t: 'Aucun versement pour l’instant',
+  pay_empty_b: 'Palmera verse les paiements toutes les deux semaines. Vos versements apparaîtront ici dès vos premières réservations terminées.',
+  ledger_empty_t: 'Aucune activité',
+  ledger_empty_b: 'Chaque commission gagnée et chaque versement reçu seront détaillés ici.',
+  status_lbl: 'Statut',
+
+  list_label: 'Annonces', list_title: 'Vos expériences',
+  list_intro: 'Les expériences que vous proposez sur Palmera.',
+  new_listing: 'Nouvelle expérience', from: 'à partir de',
+  list_empty_t: 'Aucune expérience', list_empty_b: 'Ajoutez votre première expérience pour commencer à recevoir des réservations.',
+  st_published: 'En ligne', st_draft: 'Brouillon', st_pending: 'En révision', st_unpublished: 'Retirée', st_archived: 'Archivée',
+
+  set_label: 'Réglages', set_title: 'Réglages',
+  sec_account: 'Votre compte', sec_company: 'Établissement', sec_payout: 'Mode de versement',
+  sec_prefs: 'Préférences', sec_support: 'Aide', edit: 'Modifier',
+  lang_label: 'Langue', theme_label: 'Thème', theme_dark: 'Sombre', theme_light: 'Clair',
+  support_body: 'Une question sur vos réservations ou vos versements ? Notre équipe vous répond.',
+  contact: 'Nous contacter', signout: 'Se déconnecter',
+  payout_none_t: 'Aucun mode de versement',
+  payout_none_b: 'Nous vous contacterons pour configurer vos versements avant votre premier paiement.',
+  activated: 'Activé le',
+}
+
+const EN: Record<string, string> = {
+  nav_home: 'Home', nav_res: 'Reservations', nav_earn: 'Earnings', nav_list: 'Listings', nav_set: 'Settings',
+  switch_company: 'Switch company',
+
+  greeting: 'Welcome', home_label: 'Dashboard', home_title: 'Your activity',
+  home_intro: 'Your reservations, earnings and listings — at a glance.',
+  action_title: 'Reservations to confirm', action_sub: 'Waiting on your response',
+  balance: 'Current balance', next_payout: 'Next payout', next_amt: 'Expected amount',
+  lifetime: 'Paid to date', upcoming: 'Upcoming', see_all: 'See all',
+  home_empty_t: 'No reservations yet',
+  home_empty_b: 'As soon as a guest books one of your experiences, it will appear here with the date, party size, and what you earn.',
+
+  res_label: 'Reservations', res_title: 'Your reservations',
+  res_intro: 'Confirm or decline requests, and keep track of what’s coming up.',
+  f_all: 'All', f_pending: 'Needs response', f_confirmed: 'Confirmed', f_done: 'Completed',
+  res_empty_t: 'Nothing here yet', res_empty_b: 'Bookings for your experiences will appear here.',
+  instant: 'Instant confirm', you_earn: 'You earn', total: 'Total', commission: 'Commission',
+  accept: 'Confirm', decline: 'Decline', guests: 'guests', guest: 'guest',
+
+  earn_label: 'Earnings', earn_title: 'Earnings & payouts',
+  earn_intro: 'What you’ve earned from completed bookings, and the payouts Palmera sends you.',
+  comm_window: 'Commission window', months_left: 'left', window_ends: 'ends',
+  payout_hist: 'Payout history', ledger: 'Activity',
+  pay_empty_t: 'No payouts yet',
+  pay_empty_b: 'Palmera pays out every two weeks. Your payouts will appear here once your first completed bookings are settled.',
+  ledger_empty_t: 'No activity yet',
+  ledger_empty_b: 'Every commission you earn and every payout you receive will be itemized here.',
+  status_lbl: 'Status',
+
+  list_label: 'Listings', list_title: 'Your experiences',
+  list_intro: 'The experiences you offer on Palmera.',
+  new_listing: 'New experience', from: 'from',
+  list_empty_t: 'No experiences yet', list_empty_b: 'Add your first experience to start receiving bookings.',
+  st_published: 'Live', st_draft: 'Draft', st_pending: 'In review', st_unpublished: 'Unpublished', st_archived: 'Archived',
+
+  set_label: 'Settings', set_title: 'Settings',
+  sec_account: 'Your account', sec_company: 'Company', sec_payout: 'Payout method',
+  sec_prefs: 'Preferences', sec_support: 'Support', edit: 'Edit',
+  lang_label: 'Language', theme_label: 'Theme', theme_dark: 'Dark', theme_light: 'Light',
+  support_body: 'Questions about your reservations or payouts? Our team is here to help.',
+  contact: 'Contact us', signout: 'Sign out',
+  payout_none_t: 'No payout method yet',
+  payout_none_b: 'We’ll reach out to set up your payouts before your first payment.',
+  activated: 'Activated',
+}
+
+export function t(locale: Locale, key: string): string {
+  return (locale === 'en' ? EN : FR)[key] ?? key
+}

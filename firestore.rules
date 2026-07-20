@@ -131,6 +131,18 @@ service cloud.firestore {
     match /bookings/{id} {
       allow read: if signedIn() && (resource.data.providerId == request.auth.uid || isAdmin());
       allow write: if isAdmin();
+      // The partner may answer a request for THEIR OWN booking — confirm or
+      // decline a pending one, nothing else. Every money field is frozen, so a
+      // partner can never rewrite what they're owed, and the transition is
+      // one-way out of 'pending' (no un-declining, no self-completing).
+      allow update: if signedIn()
+        && resource.data.providerId == request.auth.uid
+        && resource.data.status == 'pending'
+        && request.resource.data.status in ['confirmed', 'declined']
+        && keep('providerId') && keep('companyId') && keep('experienceId')
+        && keep('bookingTotal') && keep('commissionRate')
+        && keep('commissionAmount') && keep('payoutAmount')
+        && keep('currency') && keep('scheduledFor') && keep('guestCount');
     }
 
     // ledger — derived money events. Owner reads own; only admin/server writes.
