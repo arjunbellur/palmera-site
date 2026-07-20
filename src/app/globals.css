@@ -195,6 +195,15 @@ body {
   --pf-scrim: rgba(2,4,9,0.66);
 }
 
+/* Partner dashboard micro-motion (from the Claude Design mockup): every screen
+   eases in, and bars grow from zero on first paint. */
+@keyframes pfIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes pfGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes pfWide { from { width: 0; } }
+.pf-in { animation: pfIn 0.4s ease; }
+.pf-bar { transform-origin: bottom; animation: pfGrow 0.6s cubic-bezier(0.22,1,0.36,1); }
+.pf-pill { animation: pfWide 0.7s cubic-bezier(0.22,1,0.36,1); }
+
 /* Dashboard theme tokens — light */
 [data-theme="light"] {
   --db-bg: #f5f0ea;

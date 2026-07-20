@@ -31,7 +31,7 @@ export default function SettingsScreen() {
   )
 
   return (
-    <div>
+    <div className="pf-in">
       <ScreenHeader label={L('set_label')} title={L('set_title')} />
 
       {/* Account */}

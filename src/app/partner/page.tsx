@@ -40,7 +40,7 @@ export default function PartnerHome() {
   const firstName = (provider?.fullName || '').trim().split(' ')[0]
 
   return (
-    <div>
+    <div className="pf-in">
       <ScreenHeader
         label={L('home_label')}
         title={firstName ? `${L('greeting')}, ${firstName}` : L('home_title')}
@@ -62,7 +62,7 @@ export default function PartnerHome() {
 
       {/* Metrics: balance leads full-width, the two smaller tiles sit beside it. */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 15rem), 1fr))', gap: '12px' }}>
-        <div style={{ ...card, gridColumn: '1 / -1', padding: '20px 22px', borderRadius: '18px' }}>
+        <div style={{ ...card, gridColumn: '1 / -1', padding: '20px 22px', borderRadius: '18px', background: 'linear-gradient(150deg, rgba(190,154,86,0.12), var(--pf-card))', borderColor: 'var(--pf-border-strong)' }}>
           <div style={{ ...eyebrow, fontSize: '10.5px', letterSpacing: '0.16em' }}>{L('balance')}</div>
           <div style={{ marginTop: '8px' }}><Money amount={formatAmount(balance)} size={46} /></div>
           <div style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-muted)', marginTop: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>

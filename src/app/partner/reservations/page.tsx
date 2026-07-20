@@ -57,7 +57,7 @@ export default function ReservationsScreen() {
   ]
 
   return (
-    <div>
+    <div className="pf-in">
       <ScreenHeader label={L('res_label')} title={L('res_title')} intro={L('res_intro')} />
 
       <div style={{ display: 'flex', gap: '7px', flexWrap: 'wrap', marginBottom: '16px' }}>

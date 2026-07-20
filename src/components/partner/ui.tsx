@@ -90,14 +90,19 @@ export function Chip({ children, tone = 'neutral' }: { children: ReactNode; tone
   )
 }
 
-/** Empty state — a first-class screen here, since a new partner sees these first. */
-export function EmptyState({ icon, title, body, action }: { icon: string; title: string; body: string; action?: ReactNode }) {
+/** Empty state — a first-class screen here, since a new partner sees these first.
+    Mockup idiom: the icon sits in a thin gold circle, and an optional mono chip
+    carries the one reassuring fact ("paid every two weeks"). */
+export function EmptyState({ icon, title, body, chip, action }: { icon: string; title: string; body: string; chip?: string; action?: ReactNode }) {
   return (
-    <div style={{ ...card, padding: '44px 26px', textAlign: 'center', borderStyle: 'dashed' }}>
-      <div style={{ fontSize: '22px', color: 'var(--pf-gold)', opacity: 0.75, marginBottom: '12px' }}>{icon}</div>
-      <p style={{ fontFamily: 'var(--font-display)', color: 'var(--pf-head)', fontSize: '1.125rem', fontWeight: 400, letterSpacing: '0.03em', margin: '0 0 8px' }}>{title}</p>
-      <p style={{ ...bodyText, fontSize: '0.875rem', margin: '0 auto', maxWidth: '26rem' }}>{body}</p>
-      {action && <div style={{ marginTop: '18px' }}>{action}</div>}
+    <div style={{ ...card, padding: '38px 22px', textAlign: 'center', borderRadius: '18px', borderStyle: 'dashed', borderColor: 'var(--pf-border-strong)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+      <div style={{ width: '54px', height: '54px', borderRadius: '50%', border: '1px solid var(--pf-border-strong)', display: 'grid', placeItems: 'center', color: 'var(--pf-gold)', fontSize: '22px' }}>{icon}</div>
+      <p style={{ fontFamily: 'var(--font-display)', color: 'var(--pf-head)', fontSize: '1.25rem', fontWeight: 400, letterSpacing: '0.03em', margin: 0 }}>{title}</p>
+      <p style={{ ...bodyText, fontSize: '0.875rem', margin: 0, maxWidth: '40ch' }}>{body}</p>
+      {chip && (
+        <span style={{ marginTop: '4px', fontFamily: 'var(--font-sans)', fontSize: '10.5px', letterSpacing: '0.08em', color: 'var(--pf-gold)', border: '1px solid var(--pf-border-strong)', borderRadius: '20px', padding: '7px 14px' }}>{chip}</span>
+      )}
+      {action && <div style={{ marginTop: '6px' }}>{action}</div>}
     </div>
   )
 }

@@ -73,7 +73,7 @@ export default function ListingsScreen() {
   }
 
   return (
-    <div>
+    <div className="pf-in">
       <ScreenHeader label={L('list_label')} title={L('list_title')} intro={L('list_intro')} />
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '14px' }}>
