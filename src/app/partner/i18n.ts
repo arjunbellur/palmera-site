@@ -4,7 +4,10 @@ export type Locale = 'fr' | 'en'
 
 const FR: Record<string, string> = {
   nav_home: 'Accueil', nav_res: 'Réservations', nav_earn: 'Revenus', nav_list: 'Annonces', nav_set: 'Réglages',
-  switch_company: 'Changer d’établissement',
+  switch_company: 'Vos établissements',
+  add_company: 'Ajouter un établissement',
+  your_logo: 'Votre logo',
+  logo_hint: 'Votre marque personnelle de partenaire. Chaque établissement a aussi son propre logo, visible par les clients.',
 
   greeting: 'Bonjour', home_label: 'Tableau de bord', home_title: 'Votre activité',
   home_intro: 'Vos réservations, vos revenus et vos annonces — en un coup d’œil.',
@@ -50,7 +53,10 @@ const FR: Record<string, string> = {
 
 const EN: Record<string, string> = {
   nav_home: 'Home', nav_res: 'Reservations', nav_earn: 'Earnings', nav_list: 'Listings', nav_set: 'Settings',
-  switch_company: 'Switch company',
+  switch_company: 'Your companies',
+  add_company: 'Add a company',
+  your_logo: 'Your logo',
+  logo_hint: 'Your personal mark as a partner. Each company also has its own logo, which is what guests see.',
 
   greeting: 'Welcome', home_label: 'Dashboard', home_title: 'Your activity',
   home_intro: 'Your reservations, earnings and listings — at a glance.',

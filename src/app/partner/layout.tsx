@@ -81,15 +81,18 @@ function Shell({ children }: { children: React.ReactNode }) {
   const L = (k: string) => t(locale, k)
   const initial = (company?.name || '?').trim().charAt(0).toUpperCase()
 
+  // Always opens the sheet — with one company it's how you ADD another.
   const CompanyPill = (
-    <button onClick={() => companies.length > 1 && setSwitcherOpen(true)}
-      style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'transparent', border: 'none', padding: 0, cursor: companies.length > 1 ? 'pointer' : 'default', textAlign: 'left' }}>
-      <span style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'var(--pf-green-soft)', color: 'var(--pf-gold)', display: 'grid', placeItems: 'center', fontFamily: 'var(--font-display)', fontSize: '15px', flexShrink: 0 }}>{initial}</span>
+    <button onClick={() => setSwitcherOpen(true)}
+      style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}>
+      <span style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'var(--pf-green-soft)', color: 'var(--pf-gold)', display: 'grid', placeItems: 'center', fontFamily: 'var(--font-display)', fontSize: '15px', flexShrink: 0, overflow: 'hidden' }}>
+        {company?.logo ? <img src={company.logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initial}
+      </span>
       <span style={{ minWidth: 0 }}>
         <span style={{ display: 'block', fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '13.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{company?.name || 'Company'}</span>
         <span style={{ display: 'block', fontFamily: 'var(--font-sans)', color: 'var(--pf-faint)', fontSize: '10.5px', textTransform: 'capitalize' }}>{company?.city || '—'}</span>
       </span>
-      {companies.length > 1 && <span style={{ color: 'var(--pf-faint)', fontSize: '11px' }}>⌄</span>}
+      <span style={{ color: 'var(--pf-faint)', fontSize: '11px' }}>⌄</span>
     </button>
   )
 
@@ -165,6 +168,12 @@ function Shell({ children }: { children: React.ReactNode }) {
                   {c.id === companyId && <span style={{ color: 'var(--pf-gold)' }}>✓</span>}
                 </button>
               ))}
+              {/* New companies are set up in the onboarding flow — that route
+                  stays reachable for graduated partners (guard exempts it). */}
+              <a href="/dashboard/companies/new" style={{ display: 'flex', alignItems: 'center', gap: '11px', padding: '11px 10px', marginTop: '4px', borderTop: '1px solid var(--pf-border)', textDecoration: 'none' }}>
+                <span style={{ width: '32px', height: '32px', borderRadius: '9px', border: '1px dashed var(--pf-border-strong)', color: 'var(--pf-gold)', display: 'grid', placeItems: 'center', fontSize: '15px' }}>+</span>
+                <span style={{ fontFamily: 'var(--font-sans)', color: 'var(--pf-gold)', fontSize: '12.5px', letterSpacing: '0.03em' }}>{L('add_company')}</span>
+              </a>
             </div>
           </div>
         )}

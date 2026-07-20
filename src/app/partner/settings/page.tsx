@@ -1,17 +1,21 @@
 'use client'
 export const dynamic = 'force-dynamic'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { usePartner } from '../PartnerContext'
 import { t } from '../i18n'
 import { useTheme } from '@/lib/theme'
 import { formatDate } from '@/lib/money'
+import { updateProvider } from '@/lib/firestore'
+import PhotoUpload from '@/components/dashboard/PhotoUpload'
 import { ScreenHeader, SectionTitle, card, eyebrow, GhostButton, bodyText } from '@/components/partner/ui'
 
 export default function SettingsScreen() {
   const router = useRouter()
-  const { provider, email, company, companies, locale, setLocale, setCompanyId } = usePartner()
+  const { uid, provider, email, company, companies, locale, setLocale, setCompanyId } = usePartner()
   const { theme, toggle } = useTheme()
   const L = (k: string) => t(locale, k)
+  const [logo, setLogo] = useState(provider?.logo || '')
 
   const signOut = async () => {
     const { logOut } = await import('@/lib/auth')
@@ -31,13 +35,24 @@ export default function SettingsScreen() {
       <ScreenHeader label={L('set_label')} title={L('set_title')} />
 
       {/* Account */}
-      <div style={{ ...card, display: 'flex', alignItems: 'center', gap: '14px' }}>
-        <span style={{ width: '46px', height: '46px', borderRadius: '13px', background: 'var(--pf-green-soft)', color: 'var(--pf-gold)', display: 'grid', placeItems: 'center', fontFamily: 'var(--font-display)', fontSize: '19px', flexShrink: 0, overflow: 'hidden' }}>
-          {provider?.logo ? <img src={provider.logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (provider?.fullName || email || '?').charAt(0).toUpperCase()}
-        </span>
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '15px' }}>{provider?.fullName || (locale === 'fr' ? 'Votre nom' : 'Your name')}</div>
-          <div style={{ ...eyebrow, marginTop: '4px', textTransform: 'none', letterSpacing: '0.03em' }}>{provider?.primaryPhone || '—'} · {email}</div>
+      <div style={card}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <span style={{ width: '46px', height: '46px', borderRadius: '13px', background: 'var(--pf-green-soft)', color: 'var(--pf-gold)', display: 'grid', placeItems: 'center', fontFamily: 'var(--font-display)', fontSize: '19px', flexShrink: 0, overflow: 'hidden' }}>
+            {logo ? <img src={logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (provider?.fullName || email || '?').charAt(0).toUpperCase()}
+          </span>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '15px' }}>{provider?.fullName || (locale === 'fr' ? 'Votre nom' : 'Your name')}</div>
+            <div style={{ ...eyebrow, marginTop: '4px', textTransform: 'none', letterSpacing: '0.03em' }}>{provider?.primaryPhone || '—'} · {email}</div>
+          </div>
+        </div>
+        <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid var(--pf-border)' }}>
+          <div style={{ ...eyebrow, marginBottom: '4px' }}>{L('your_logo')}</div>
+          <p style={{ ...bodyText, fontSize: '0.75rem', margin: '0 0 10px' }}>{L('logo_hint')}</p>
+          <div style={{ maxWidth: '18rem' }}>
+            <PhotoUpload uid={uid} label={L('your_logo')} fieldName="provider_logo" existingUrl={logo}
+              hint={locale === 'fr' ? 'Carré, PNG transparent de préférence' : 'Square, transparent PNG preferred'}
+              onUploaded={async (url) => { setLogo(url); await updateProvider(uid, { logo: url }) }} />
+          </div>
         </div>
       </div>
 
