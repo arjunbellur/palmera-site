@@ -97,7 +97,7 @@ export default function CompanyPage({ params }: { params: Promise<{ companyId: s
     const isPaid = data.mode === 'paid'
     const needsReview = [
       ...(!data.img ? ['photos'] : []),
-      ...(data.lat == null || data.lng == null ? ['coords'] : []),
+      ...(!data.mapsLink ? ['coords'] : []),
     ]
     const finalData: Partial<Experience> = {
       ...data,

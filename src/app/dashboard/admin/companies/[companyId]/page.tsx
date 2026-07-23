@@ -138,7 +138,7 @@ export default function AdminCompanyDetailPage({ params }: { params: Promise<{ c
   // Invariant #7: lat/lng, img, and cancellationPolicy are required at publish.
   const publishBlockers = (e: Experience): string[] => [
     ...(!e.img ? ['hero photo'] : []),
-    ...(e.lat == null || e.lng == null ? ['map coordinates'] : []),
+    ...(!e.mapsLink ? ['a Google Maps link'] : []),
     ...(!e.cancellationPolicy?.tier ? ['cancellation policy'] : []),
   ]
   const handlePublish = async (id: string, status: Experience['status']) => {

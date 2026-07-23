@@ -168,7 +168,8 @@ export interface Experience {
   location: string
   category: string                // config id; defaults from company; overridable; enabled
   city: string                    // config id; enabled only
-  lat: number | null              // required at publish
+  mapsLink: string | null         // Google Maps link — what the PARTNER enters; required at publish
+  lat: number | null              // derived from mapsLink when parseable; app's pin. Partners never type these.
   lng: number | null
   duration: string
   guests: string                  // derived from min/maxGuests

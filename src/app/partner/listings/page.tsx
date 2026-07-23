@@ -45,7 +45,7 @@ export default function ListingsScreen() {
     const isPaid = data.mode === 'paid'
     const needsReview = [
       ...(!data.img ? ['photos'] : []),
-      ...(data.lat == null || data.lng == null ? ['coords'] : []),
+      ...(!data.mapsLink ? ['coords'] : []),
     ]
     const finalData: Partial<Experience> = {
       ...data,

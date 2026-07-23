@@ -28,6 +28,29 @@ function toDateTimeInputs(ts: unknown): { date: string; time: string } {
 const LANGUAGES = ['French', 'English', 'Wolof', 'Arabic', 'Spanish']
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
+/**
+ * Pull coordinates out of a pasted Google Maps URL when they're present.
+ * Handles the common shapes: ".../@14.71,-17.46,15z", "?q=14.71,-17.46",
+ * and the place-detail "!3d14.71!4d-17.46". Short links (maps.app.goo.gl)
+ * carry no coordinates client-side — those parse as null and the app side
+ * resolves the link itself.
+ */
+function parseMapsLink(url: string): { lat: number; lng: number } | null {
+  const patterns = [
+    /@(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/,
+    /[?&]q=(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/,
+    /!3d(-?\d{1,3}\.\d+)!4d(-?\d{1,3}\.\d+)/,
+  ]
+  for (const p of patterns) {
+    const m = url.match(p)
+    if (m) {
+      const lat = parseFloat(m[1]); const lng = parseFloat(m[2])
+      if (Math.abs(lat) <= 90 && Math.abs(lng) <= 180) return { lat, lng }
+    }
+  }
+  return null
+}
+
 const inputStyle: React.CSSProperties = { width: '100%', background: 'var(--db-bg-input)', border: '1px solid var(--db-border-subtle)', borderRadius: '0.25rem', padding: '0.625rem 0.75rem', color: 'var(--db-text)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', outline: 'none', boxSizing: 'border-box' }
 const labelStyle: React.CSSProperties = { display: 'block', fontSize: '0.6875rem', color: 'var(--db-text-faint)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.375rem', fontFamily: 'var(--font-sans)' }
 const hintStyle: React.CSSProperties = { fontSize: '0.6875rem', color: 'var(--db-text-ghost)', fontFamily: 'var(--font-sans)', margin: '0.25rem 0 0', lineHeight: 1.5 }
@@ -79,7 +102,7 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
     cancellationPolicy: { tier: 'moderate', customNotes: null, policyVersion: 'v1' },
     scheduleType: 'ongoing', schedule: null, optionGroups: [],
     title: '', location: '', category: defaultCategory || '', city: defaultCity || '',
-    lat: null, lng: null, duration: '', minGuests: 1, maxGuests: 1,
+    mapsLink: null, lat: null, lng: null, duration: '', minGuests: 1, maxGuests: 1,
     img: '', gallery: [], description: '', includes: [], highlights: [],
     languages: [], excludes: [], dressCode: null,
     ...experience,
@@ -130,7 +153,7 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
 
   const publishBlockers = [
     !form.img && 'a photo',
-    (form.lat == null || form.lng == null) && 'map location',
+    !form.mapsLink && 'a Google Maps link',
     !form.cancellationPolicy?.tier && 'cancellation policy',
   ].filter(Boolean) as string[]
   const canPublish = canSave && publishBlockers.length === 0
@@ -290,12 +313,20 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
       </div>
 
       <div style={{ marginBottom: '1rem' }}>
-        <label style={labelStyle}>Map pin {(form.lat == null || form.lng == null) && <span style={{ color: '#e07070' }}>*needed to publish</span>}</label>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-          <input style={inputStyle} type="number" step="any" placeholder="Latitude" value={form.lat ?? ''} onChange={(e) => set('lat', e.target.value ? parseFloat(e.target.value) : null)} />
-          <input style={inputStyle} type="number" step="any" placeholder="Longitude" value={form.lng ?? ''} onChange={(e) => set('lng', e.target.value ? parseFloat(e.target.value) : null)} />
-        </div>
-        <p style={hintStyle}>This is where the app drops the pin guests navigate to. In Google Maps: press and hold the spot → the numbers appear at the top — copy them here.</p>
+        <label style={labelStyle}>Google Maps link {!form.mapsLink && <span style={{ color: '#e07070' }}>*needed to publish</span>}</label>
+        <input style={inputStyle} type="url" placeholder="Paste the Google Maps link to your spot"
+          value={form.mapsLink || ''}
+          onChange={(e) => {
+            const link = e.target.value.trim() || null
+            // Derive the app's map pin from the link when the URL carries
+            // coordinates; short links resolve app-side, so lat/lng may stay null.
+            const coords = link ? parseMapsLink(link) : null
+            setForm((p) => ({ ...p, mapsLink: link, lat: coords?.lat ?? (link ? p.lat : null), lng: coords?.lng ?? (link ? p.lng : null) }))
+          }} />
+        <p style={hintStyle}>
+          In Google Maps: find your spot → Share → Copy link, and paste it here. Guests use it to navigate.
+          {form.mapsLink && (form.lat != null ? ' ✓ Pin located.' : ' Link saved — the pin will be placed from it.')}
+        </p>
       </div>
     </>
   )
@@ -448,7 +479,7 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
         {needsReview.length > 0 && step === 0 && (
           <div style={{ background: 'rgba(224,112,112,0.08)', border: '1px solid rgba(224,112,112,0.3)', borderRadius: '0.375rem', padding: '0.75rem 1rem', marginBottom: '1.25rem' }}>
             <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: '#e07070', margin: 0 }}>
-              Migrated from your old listing — please finish: {needsReview.map((n) => n === 'cancellationTier' ? 'cancellation policy' : n === 'photos' ? 'photos' : n === 'coords' ? 'map location' : n).join(', ')}.
+              Migrated from your old listing — please finish: {needsReview.map((n) => n === 'cancellationTier' ? 'cancellation policy' : n === 'photos' ? 'photos' : n === 'coords' ? 'map link' : n).join(', ')}.
             </p>
           </div>
         )}
