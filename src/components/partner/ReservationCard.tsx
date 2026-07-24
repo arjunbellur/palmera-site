@@ -10,17 +10,18 @@ const STATUS: Record<BookingStatus, { key: string; tone: Tone }> = {
   completed: { key: 'f_done', tone: 'neutral' },
   declined: { key: 'decline', tone: 'alert' },
   cancelled: { key: 'st_unpublished', tone: 'neutral' },
-  no_show: { key: 'st_unpublished', tone: 'alert' },
+  no_show: { key: 'st_noshow', tone: 'alert' },
 }
 
 export default function ReservationCard({
-  booking: b, locale, compact = false, onAccept, onDecline, busy,
+  booking: b, locale, compact = false, onAccept, onDecline, onNoShow, busy,
 }: {
   booking: Booking
   locale: Locale
   compact?: boolean
   onAccept?: (b: Booking) => void
   onDecline?: (b: Booking) => void
+  onNoShow?: (b: Booking) => void
   busy?: boolean
 }) {
   const L = (k: string) => t(locale, k)
@@ -29,6 +30,8 @@ export default function ReservationCard({
   const time = when ? when.toLocaleTimeString(locale === 'fr' ? 'fr-FR' : 'en-GB', { hour: '2-digit', minute: '2-digit' }) : '—'
   const guestsLabel = `${b.guestCount} ${b.guestCount === 1 ? L('guest') : L('guests')}`
   const showActions = b.status === 'pending' && (onAccept || onDecline)
+  // No-show is only claimable AFTER the reserved time — mirrors the rule.
+  const showNoShow = !!onNoShow && b.status === 'confirmed' && !!when && when.getTime() < Date.now()
 
   return (
     <div style={{ ...card, padding: compact ? '14px 16px' : '16px 18px' }}>
@@ -69,6 +72,11 @@ export default function ReservationCard({
             style={{ flex: 1, padding: '9px 16px', background: 'var(--pf-gold-deep)', border: 'none', borderRadius: '10px', color: '#ebe8db', fontFamily: 'var(--font-sans)', fontSize: '12.5px', letterSpacing: '0.04em', cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.6 : 1 }}>
             {L('accept')}
           </button>
+        </div>
+      )}
+      {showNoShow && (
+        <div style={{ marginTop: '12px' }}>
+          <GhostButton tone="alert" onClick={() => !busy && onNoShow?.(b)}>{L('mark_noshow')}</GhostButton>
         </div>
       )}
     </div>

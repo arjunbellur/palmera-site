@@ -32,10 +32,17 @@ export default function PartnerHome() {
   const lifetime = payouts.filter(p => p.status === 'paid').reduce((s, p) => s + (p.netAmount || 0), 0)
   const next = payouts.find(p => p.status === 'scheduled' || p.status === 'processing')
   const pending = bookings.filter(b => b.status === 'pending')
-  const upcoming = bookings
+  const upcomingAll = bookings
     .filter(b => ['pending', 'confirmed'].includes(b.status) && (toDate(b.scheduledFor)?.getTime() ?? 0) >= Date.now())
     .sort((a, b) => (toDate(a.scheduledFor)?.getTime() ?? 0) - (toDate(b.scheduledFor)?.getTime() ?? 0))
-    .slice(0, 4)
+  const upcoming = upcomingAll.slice(0, 4)
+
+  // Jordan's priority: what's happening TODAY, before any money numbers.
+  const today = new Date()
+  const isToday = (d: Date | null) => !!d && d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear()
+  const todayCount = bookings.filter(b => ['pending', 'confirmed'].includes(b.status) && isToday(toDate(b.scheduledFor))).length
+  const nextRes = upcomingAll[0]
+  const nextResWhen = nextRes ? toDate(nextRes.scheduledFor) : null
 
   const firstName = (provider?.fullName || '').trim().split(' ')[0]
 
@@ -59,6 +66,28 @@ export default function PartnerHome() {
           </div>
         </a>
       )}
+
+      {/* Today first — a partner opening the app wants operations, then money. */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+        <div style={card}>
+          <div style={eyebrow}>{L('today_res')}</div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: '27px', color: 'var(--pf-text)', marginTop: '6px' }}>
+            {todayCount}
+            <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-muted)', marginLeft: '6px' }}>
+              {todayCount === 1 ? (locale === 'fr' ? 'réservation' : 'reservation') : (locale === 'fr' ? 'réservations' : 'reservations')}
+            </span>
+          </div>
+        </div>
+        <div style={card}>
+          <div style={eyebrow}>{L('next_res')}</div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: nextRes ? '18px' : '27px', color: 'var(--pf-text)', marginTop: '6px', lineHeight: 1.25 }}>
+            {nextRes && nextResWhen
+              ? <>{formatDate(nextResWhen)} · {nextResWhen.toLocaleTimeString(locale === 'fr' ? 'fr-FR' : 'en-GB', { hour: '2-digit', minute: '2-digit' })}</>
+              : '—'}
+          </div>
+          {nextRes && <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-faint)', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nextRes.title}</div>}
+        </div>
+      </div>
 
       {/* Metrics: balance leads full-width, the two smaller tiles sit beside it. */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 15rem), 1fr))', gap: '12px' }}>

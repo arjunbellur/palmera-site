@@ -18,7 +18,7 @@ import {
   type Provider, type ProviderPrivateAdmin,
   type Company, type CompanyPrivateAdmin,
   type Experience, type Option,
-  type Booking, type LedgerEntry, type Payout,
+  type Booking, type LedgerEntry, type Payout, type CompanyPayoutProfile,
 } from './schema'
 
 // ── Listing types ─────────────────────────────────────────────────
@@ -460,10 +460,26 @@ export const getPayoutsByProvider = async (uid: string): Promise<Payout[]> => {
  * and only on a booking they own — enforced again in firestore.rules, which
  * also freezes the money fields so a partner can't rewrite what they're owed.
  */
-export const setBookingStatus = async (id: string, status: 'confirmed' | 'declined') => {
+export const setBookingStatus = async (id: string, status: 'confirmed' | 'declined' | 'no_show') => {
   await updateDoc(doc(db, COLLECTIONS.bookings, id), {
     status,
     ...(status === 'confirmed' ? { confirmedAt: serverTimestamp() } : {}),
+    updatedAt: serverTimestamp(),
+  })
+}
+
+// ── Partner payout details (companies/{id}/private/payout) ──────────────────
+// Owner-entered in dashboard Settings; owner read/write, admin read (rules).
+export const getPayoutProfile = async (companyId: string): Promise<CompanyPayoutProfile | null> => {
+  try {
+    const snap = await getDoc(doc(db, COLLECTIONS.companies, companyId, SUB.privatePayout.col, SUB.privatePayout.doc))
+    return snap.exists() ? (snap.data() as CompanyPayoutProfile) : null
+  } catch { return null }
+}
+
+export const setPayoutProfile = async (companyId: string, data: Omit<CompanyPayoutProfile, 'updatedAt'>) => {
+  await setDoc(doc(db, COLLECTIONS.companies, companyId, SUB.privatePayout.col, SUB.privatePayout.doc), {
+    ...data,
     updatedAt: serverTimestamp(),
   })
 }

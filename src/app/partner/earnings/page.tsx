@@ -59,6 +59,27 @@ export default function EarningsScreen() {
   const ends = activated ? new Date(activated.getFullYear() + 1, activated.getMonth(), activated.getDate()) : null
   const monthsLeft = ends ? Math.max(0, Math.ceil((ends.getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 30.44))) : null
 
+  // ── Next-payout breakdown: ledger money not yet rolled into a batch ──
+  const unsettled = ledger.filter(e => !e.payoutId)
+  const pendingGross = unsettled.filter(e => e.type === 'commission_earned' && e.amount > 0).reduce((s, e) => s + e.amount, 0)
+  const pendingDeductions = unsettled.filter(e => e.amount < 0).reduce((s, e) => s + e.amount, 0)
+  const pendingNet = pendingGross + pendingDeductions
+
+  const downloadCsv = () => {
+    const header = 'date,type,description,amount,currency,bookingId,payoutId'
+    const rows = ledger.map(e => {
+      const d = toDate(e.createdAt)
+      const cells = [d ? d.toISOString().slice(0, 10) : '', e.type, `"${(e.description || '').replace(/"/g, '""')}"`, e.amount, e.currency || 'XOF', e.bookingId || '', e.payoutId || '']
+      return cells.join(',')
+    })
+    const blob = new Blob([[header, ...rows].join('\n')], { type: 'text/csv;charset=utf-8' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `palmera-statement-${(company?.name || 'company').replace(/\W+/g, '-').toLowerCase()}.csv`
+    a.click()
+    URL.revokeObjectURL(a.href)
+  }
+
   // ── Monthly earnings, last 6 months, from commission credits ──
   const now = new Date()
   const months = Array.from({ length: 6 }, (_, i) => {
@@ -117,6 +138,27 @@ export default function EarningsScreen() {
           </div>
         </div>
       </div>
+
+      {/* Next-payout breakdown — Jordan: transparency on gross vs deductions. */}
+      {unsettled.length > 0 && (
+        <div style={{ ...card, marginTop: '12px' }}>
+          <div style={{ ...eyebrow, marginBottom: '10px' }}>{L('breakdown_title')}</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid var(--pf-border)', fontFamily: 'var(--font-sans)', fontSize: '12.5px' }}>
+            <span style={{ color: 'var(--pf-muted)' }}>{L('gross')}</span>
+            <span style={{ color: 'var(--pf-success)' }}>+{formatAmount(pendingGross)}</span>
+          </div>
+          {pendingDeductions !== 0 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid var(--pf-border)', fontFamily: 'var(--font-sans)', fontSize: '12.5px' }}>
+              <span style={{ color: 'var(--pf-muted)' }}>{L('refunds')}</span>
+              <span style={{ color: 'var(--pf-alert)' }}>−{formatAmount(Math.abs(pendingDeductions))}</span>
+            </div>
+          )}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '9px 0 0' }}>
+            <span style={{ ...eyebrow }}>{L('net_due')}</span>
+            <Money amount={formatAmount(pendingNet)} size={22} />
+          </div>
+        </div>
+      )}
 
       {/* Charts — real data only; before the first booking the empty states below carry. */}
       {hasData && (
@@ -184,7 +226,11 @@ export default function EarningsScreen() {
         </div>
       )}
 
-      <SectionTitle>{L('ledger')}</SectionTitle>
+      <SectionTitle action={ledger.length > 0 ? (
+        <button onClick={downloadCsv} style={{ background: 'transparent', border: '1px solid var(--pf-border-strong)', borderRadius: '10px', padding: '7px 13px', color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '11px', letterSpacing: '0.04em', cursor: 'pointer' }}>
+          ↓ {L('download_csv')}
+        </button>
+      ) : undefined}>{L('ledger')}</SectionTitle>
       {ledger.length === 0 ? (
         <EmptyState icon="◷" title={L('ledger_empty_t')} body={L('ledger_empty_b')} />
       ) : (

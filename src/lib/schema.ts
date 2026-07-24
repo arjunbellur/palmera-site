@@ -33,6 +33,7 @@ export const COLLECTIONS = {
 // Subcollection / well-known doc ids
 export const SUB = {
   privateAdmin: { col: 'private', doc: 'admin' },
+  privatePayout: { col: 'private', doc: 'payout' },
   options: 'options',
 } as const
 
@@ -106,6 +107,21 @@ export interface Company {
 export interface PayoutVerification {
   verified: boolean
   recipientHash: string
+}
+
+/**
+ * companies/{companyId}/private/payout — the PARTNER's own payout details,
+ * entered by them in dashboard Settings (Jordan: "biggest omission"). Owner
+ * read/write, admin read. Mobile-money numbers / bank references only — never
+ * card numbers or credentials. Distinct from private/admin (admin-only).
+ */
+export interface CompanyPayoutProfile {
+  method: 'wave' | 'orange_money' | 'bank_transfer'
+  accountName: string             // account holder / registered name
+  phone: string | null            // mobile money number (wave / orange_money)
+  bankName: string | null         // bank_transfer only
+  accountRef: string | null       // IBAN / account number reference
+  updatedAt: TS
 }
 
 /** companies/{companyId}/private/admin — provider reads own rate, admin writes. */
