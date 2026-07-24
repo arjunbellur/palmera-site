@@ -64,6 +64,13 @@ const FR: Record<string, string> = {
   po_save: 'Enregistrer', po_saved: '✓ Enregistré',
   sec_contact: 'Contact & horaires', hours_label: 'Horaires d’ouverture',
   hours_ph: 'ex. « Mar–Dim, 10h–23h »', phone_label: 'Téléphone', whatsapp_label: 'WhatsApp',
+  co_name: 'Nom commercial', co_legal: 'Raison sociale', co_category: 'Catégorie',
+  co_city: 'Ville', co_address: 'Adresse', co_maps: 'Lien Google Maps',
+  co_web: 'Site web ou réseaux', co_photos: 'Photos de l’établissement',
+  co_hero: 'Photo de couverture', co_logo: 'Logo', co_gallery: 'Galerie',
+  co_photos_hint: 'Ce que les clients voient dans l’app. Les envois sont enregistrés automatiquement.',
+  ops_name: 'Contact opérations', ops_wa: 'WhatsApp opérations',
+  select: 'Sélectionner', cancel: 'Annuler',
 }
 
 const EN: Record<string, string> = {
@@ -128,6 +135,13 @@ const EN: Record<string, string> = {
   po_save: 'Save', po_saved: '✓ Saved',
   sec_contact: 'Contact & hours', hours_label: 'Business hours',
   hours_ph: 'e.g. "Tue–Sun, 10am–11pm"', phone_label: 'Phone', whatsapp_label: 'WhatsApp',
+  co_name: 'Business name', co_legal: 'Legal name', co_category: 'Category',
+  co_city: 'City', co_address: 'Address', co_maps: 'Google Maps link',
+  co_web: 'Website or social', co_photos: 'Company photos',
+  co_hero: 'Hero photo', co_logo: 'Logo', co_gallery: 'Gallery',
+  co_photos_hint: 'What guests see in the app. Uploads save automatically.',
+  ops_name: 'Operations contact', ops_wa: 'Operations WhatsApp',
+  select: 'Select', cancel: 'Cancel',
 }
 
 export function t(locale: Locale, key: string): string {

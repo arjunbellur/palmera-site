@@ -6,21 +6,34 @@ import { usePartner } from '../PartnerContext'
 import { t } from '../i18n'
 import { useTheme } from '@/lib/theme'
 import { formatDate } from '@/lib/money'
-import { updateProvider, updateCompany, getPayoutProfile, setPayoutProfile } from '@/lib/firestore'
+import { updateProvider, updateCompany, getPayoutProfile, setPayoutProfile, getExperiencesByCompany, updateExperience } from '@/lib/firestore'
+import { getEnabledCategories, getEnabledCities } from '@/lib/config'
 import type { CompanyPayoutProfile } from '@/lib/schema'
 import PhotoUpload from '@/components/dashboard/PhotoUpload'
+import GalleryUpload from '@/components/dashboard/GalleryUpload'
 import { ScreenHeader, SectionTitle, card, eyebrow, GhostButton, bodyText } from '@/components/partner/ui'
 
 const inputStyle: React.CSSProperties = { width: '100%', background: 'var(--pf-card)', border: '1px solid var(--pf-border)', borderRadius: '10px', padding: '9px 13px', color: 'var(--pf-text)', fontFamily: 'var(--font-sans)', fontSize: '12.5px', outline: 'none', boxSizing: 'border-box' }
 
 type PoMethod = CompanyPayoutProfile['method']
 
+const EMPTY_CO = { name: '', legalName: '', category: '', city: '', address: '', mapsLink: '', websiteOrSocial: '' }
+
 export default function SettingsScreen() {
   const router = useRouter()
-  const { uid, provider, email, company, companies, locale, setLocale, setCompanyId } = usePartner()
+  const { uid, provider, email, company, companies, locale, setLocale, setCompanyId, refresh } = usePartner()
   const { theme, toggle } = useTheme()
   const L = (k: string) => t(locale, k)
   const [logo, setLogo] = useState(provider?.logo || '')
+
+  // Company profile editing — the onboarding info a graduated partner could
+  // no longer reach anywhere (Jordan's catch).
+  const [coEditing, setCoEditing] = useState(false)
+  const [coSaving, setCoSaving] = useState(false)
+  const [coSaved, setCoSaved] = useState(false)
+  const [coForm, setCoForm] = useState(EMPTY_CO)
+  const [cats, setCats] = useState<{ id: string; name: string }[]>([])
+  const [cities, setCities] = useState<{ id: string; name: string }[]>([])
 
   // Payout details — the partner's own, per company (Jordan: biggest omission).
   const [poEditing, setPoEditing] = useState(false)
@@ -31,8 +44,13 @@ export default function SettingsScreen() {
   const [poLoaded, setPoLoaded] = useState<CompanyPayoutProfile | null>(null)
 
   // Contact & hours — light operational info Jordan asked for.
-  const [contact, setContact] = useState({ phone: '', whatsapp: '', hours: '' })
+  const [contact, setContact] = useState({ phone: '', whatsapp: '', hours: '', opsName: '', opsWa: '' })
   const [contactSaved, setContactSaved] = useState(false)
+
+  useEffect(() => {
+    getEnabledCategories().then(setCats)
+    getEnabledCities().then(setCities)
+  }, [])
 
   useEffect(() => {
     if (!company?.id) return
@@ -40,12 +58,51 @@ export default function SettingsScreen() {
       setPoLoaded(p)
       if (p) setPo({ method: p.method, accountName: p.accountName || '', phone: p.phone || '', bankName: p.bankName || '', accountRef: p.accountRef || '' })
     })
+    const ops = (company.operations as Record<string, unknown>) || {}
     setContact({
       phone: company.phone || '',
       whatsapp: company.whatsapp || '',
-      hours: String((company.operations as Record<string, unknown>)?.businessHours || ''),
+      hours: String(ops.businessHours || ''),
+      opsName: String(ops.opsContactName || ''),
+      opsWa: String(ops.opsContactWhatsapp || ''),
     })
+    setCoForm({
+      name: company.name || '', legalName: company.legalName || '',
+      category: company.category || '', city: company.city || '',
+      address: company.address || '', mapsLink: company.mapsLink || '',
+      websiteOrSocial: company.websiteOrSocial || '',
+    })
+    setCoEditing(false)
   }, [company?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const saveCompany = async () => {
+    if (!company?.id || !coForm.name.trim()) return
+    setCoSaving(true)
+    const renamed = coForm.name.trim() !== (company.name || '')
+    await updateCompany(company.id, {
+      name: coForm.name.trim(), legalName: coForm.legalName.trim(),
+      category: coForm.category, city: coForm.city,
+      address: coForm.address.trim(),
+      mapsLink: coForm.mapsLink.trim() || null,
+      websiteOrSocial: coForm.websiteOrSocial.trim() || null,
+    })
+    // Rename fanout: experiences carry a denormalized display name the app
+    // shows; without Cloud Functions we update the company's own listings here.
+    if (renamed) {
+      const exps = await getExperiencesByCompany(uid, company.id)
+      await Promise.all(exps.map(e => updateExperience(e.id!, { provider: coForm.name.trim() })))
+    }
+    await refresh()
+    setCoSaving(false); setCoEditing(false)
+    setCoSaved(true); setTimeout(() => setCoSaved(false), 2500)
+  }
+
+  // Company photos auto-persist on upload, then refresh so the pill updates.
+  const persistCoPhotos = async (patch: Record<string, unknown>) => {
+    if (!company?.id) return
+    await updateCompany(company.id, patch)
+    await refresh()
+  }
 
   const isMobileMoney = po.method !== 'bank_transfer'
   const poComplete = !!po.accountName && (isMobileMoney ? !!po.phone : !!(po.bankName && po.accountRef))
@@ -67,8 +124,14 @@ export default function SettingsScreen() {
     if (!company?.id) return
     await updateCompany(company.id, {
       phone: contact.phone.trim(), whatsapp: contact.whatsapp.trim(),
-      operations: { ...((company.operations as Record<string, unknown>) || {}), businessHours: contact.hours.trim() },
+      operations: {
+        ...((company.operations as Record<string, unknown>) || {}),
+        businessHours: contact.hours.trim(),
+        opsContactName: contact.opsName.trim(),
+        opsContactWhatsapp: contact.opsWa.trim(),
+      },
     })
+    await refresh()
     setContactSaved(true); setTimeout(() => setContactSaved(false), 2500)
   }
 
@@ -114,20 +177,96 @@ export default function SettingsScreen() {
         </div>
       </div>
 
-      {/* Company */}
-      <SectionTitle>{L('sec_company')}</SectionTitle>
+      {/* Company — view, or full onboarding-profile edit (Jordan's catch). */}
+      <SectionTitle action={coSaved ? <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-success)' }}>{L('po_saved')}</span> : undefined}>
+        {L('sec_company')}
+      </SectionTitle>
+      {!coEditing ? (
+        <div style={card}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+            <div style={{ fontFamily: 'var(--font-display)', color: 'var(--pf-head)', fontSize: '1.0625rem', letterSpacing: '0.03em' }}>{company?.name}</div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <GhostButton onClick={() => setCoEditing(true)}>{L('edit')}</GhostButton>
+              {companies.length > 1 && (
+                <GhostButton onClick={() => setCompanyId(companies.find(c => c.id !== company?.id)?.id || company!.id!)}>{L('switch_company')}</GhostButton>
+              )}
+            </div>
+          </div>
+          <div style={{ marginTop: '10px' }}>
+            {row(L('co_city'), cities.find(c => c.id === company?.city)?.name || company?.city || '')}
+            {row(L('co_category'), cats.find(c => c.id === company?.category)?.name || company?.category || '')}
+            {row(L('co_address'), company?.address || '')}
+            {row(L('activated'), company?.activatedAt ? formatDate(company.activatedAt) : '—')}
+            {row(L('comm_window'), '10%')}
+          </div>
+        </div>
+      ) : (
+        <div style={card}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 13rem), 1fr))', gap: '10px', marginBottom: '10px' }}>
+            <div>
+              <div style={{ ...eyebrow, marginBottom: '5px' }}>{L('co_name')} *</div>
+              <input style={inputStyle} value={coForm.name} onChange={e => setCoForm(f => ({ ...f, name: e.target.value }))} />
+            </div>
+            <div>
+              <div style={{ ...eyebrow, marginBottom: '5px' }}>{L('co_legal')}</div>
+              <input style={inputStyle} value={coForm.legalName} onChange={e => setCoForm(f => ({ ...f, legalName: e.target.value }))} />
+            </div>
+            <div>
+              <div style={{ ...eyebrow, marginBottom: '5px' }}>{L('co_category')}</div>
+              <select style={{ ...inputStyle, appearance: 'none' }} value={coForm.category} onChange={e => setCoForm(f => ({ ...f, category: e.target.value }))}>
+                <option value="">{L('select')}</option>
+                {cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <div style={{ ...eyebrow, marginBottom: '5px' }}>{L('co_city')}</div>
+              <select style={{ ...inputStyle, appearance: 'none' }} value={coForm.city} onChange={e => setCoForm(f => ({ ...f, city: e.target.value }))}>
+                <option value="">{L('select')}</option>
+                {cities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <div style={{ ...eyebrow, marginBottom: '5px' }}>{L('co_address')}</div>
+              <input style={inputStyle} value={coForm.address} onChange={e => setCoForm(f => ({ ...f, address: e.target.value }))} />
+            </div>
+            <div>
+              <div style={{ ...eyebrow, marginBottom: '5px' }}>{L('co_maps')}</div>
+              <input style={inputStyle} type="url" value={coForm.mapsLink} onChange={e => setCoForm(f => ({ ...f, mapsLink: e.target.value }))} />
+            </div>
+            <div>
+              <div style={{ ...eyebrow, marginBottom: '5px' }}>{L('co_web')}</div>
+              <input style={inputStyle} value={coForm.websiteOrSocial} onChange={e => setCoForm(f => ({ ...f, websiteOrSocial: e.target.value }))} />
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button onClick={saveCompany} disabled={coSaving || !coForm.name.trim()}
+              style={{ padding: '9px 18px', background: coForm.name.trim() ? 'var(--pf-gold-deep)' : 'var(--pf-card)', border: 'none', borderRadius: '10px', color: coForm.name.trim() ? '#ebe8db' : 'var(--pf-faint)', fontFamily: 'var(--font-sans)', fontSize: '12.5px', cursor: coForm.name.trim() && !coSaving ? 'pointer' : 'not-allowed', opacity: coSaving ? 0.6 : 1 }}>
+              {coSaving ? '…' : L('po_save')}
+            </button>
+            <GhostButton onClick={() => setCoEditing(false)}>{L('cancel')}</GhostButton>
+          </div>
+        </div>
+      )}
+
+      {/* Company photos — hero, logo, gallery; auto-persist on upload. */}
+      <SectionTitle>{L('co_photos')}</SectionTitle>
       <div style={card}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-          <div style={{ fontFamily: 'var(--font-display)', color: 'var(--pf-head)', fontSize: '1.0625rem', letterSpacing: '0.03em' }}>{company?.name}</div>
-          {companies.length > 1 && (
-            <GhostButton onClick={() => setCompanyId(companies.find(c => c.id !== company?.id)?.id || company!.id!)}>{L('switch_company')}</GhostButton>
-          )}
+        <p style={{ ...bodyText, fontSize: '0.75rem', margin: '0 0 12px' }}>{L('co_photos_hint')}</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 14rem), 1fr))', gap: '12px', marginBottom: '14px' }}>
+          <div>
+            <div style={{ ...eyebrow, marginBottom: '6px' }}>{L('co_hero')}</div>
+            <PhotoUpload uid={uid} label={L('co_hero')} fieldName={`company_${company?.id}_hero`} existingUrl={company?.heroPhoto || ''}
+              onUploaded={(url) => persistCoPhotos({ heroPhoto: url })} />
+          </div>
+          <div>
+            <div style={{ ...eyebrow, marginBottom: '6px' }}>{L('co_logo')}</div>
+            <PhotoUpload uid={uid} label={L('co_logo')} fieldName={`company_${company?.id}_logo`} existingUrl={company?.logo || ''}
+              hint={locale === 'fr' ? 'Carré, PNG transparent de préférence' : 'Square, transparent PNG preferred'}
+              onUploaded={(url) => persistCoPhotos({ logo: url })} />
+          </div>
         </div>
-        <div style={{ marginTop: '10px' }}>
-          {row(locale === 'fr' ? 'Ville' : 'City', company?.city || '')}
-          {row(L('activated'), company?.activatedAt ? formatDate(company.activatedAt) : '—')}
-          {row(L('comm_window'), '10%')}
-        </div>
+        <div style={{ ...eyebrow, marginBottom: '6px' }}>{L('co_gallery')}</div>
+        <GalleryUpload uid={uid} value={company?.gallery || []} onChange={(urls) => persistCoPhotos({ gallery: urls })} />
       </div>
 
       {/* Payout details — owner-entered, per company. */}
@@ -211,6 +350,14 @@ export default function SettingsScreen() {
           <div>
             <div style={{ ...eyebrow, marginBottom: '5px' }}>{L('whatsapp_label')}</div>
             <input style={inputStyle} value={contact.whatsapp} onChange={e => setContact(c => ({ ...c, whatsapp: e.target.value }))} />
+          </div>
+          <div>
+            <div style={{ ...eyebrow, marginBottom: '5px' }}>{L('ops_name')}</div>
+            <input style={inputStyle} placeholder={locale === 'fr' ? 'Qui gère les réservations au quotidien' : 'Who handles bookings day-to-day'} value={contact.opsName} onChange={e => setContact(c => ({ ...c, opsName: e.target.value }))} />
+          </div>
+          <div>
+            <div style={{ ...eyebrow, marginBottom: '5px' }}>{L('ops_wa')}</div>
+            <input style={inputStyle} value={contact.opsWa} onChange={e => setContact(c => ({ ...c, opsWa: e.target.value }))} />
           </div>
         </div>
         <div style={{ marginBottom: '12px' }}>

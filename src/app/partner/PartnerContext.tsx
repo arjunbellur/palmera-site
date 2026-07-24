@@ -12,6 +12,8 @@ export interface PartnerCtx {
   setCompanyId: (id: string) => void
   locale: 'fr' | 'en'
   setLocale: (l: 'fr' | 'en') => void
+  /** Refetch provider + companies after an edit, keeping the selected company. */
+  refresh: () => Promise<void>
 }
 
 export const PartnerContext = createContext<PartnerCtx | null>(null)

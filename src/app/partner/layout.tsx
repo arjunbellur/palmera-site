@@ -65,6 +65,13 @@ function Shell({ children }: { children: React.ReactNode }) {
     localStorage.setItem(STORE_KEY, id)
     setSwitcherOpen(false)
   }
+
+  const refresh = async () => {
+    if (!uid) return
+    const [p, all] = await Promise.all([getProvider(uid), getCompanies(uid)])
+    setProvider(p)
+    setCompanies(all)
+  }
   const setLocale = (l: Locale) => {
     setLocaleState(l)
     document.cookie = `locale=${l}; path=/; max-age=31536000`
@@ -121,7 +128,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <PartnerContext.Provider value={{ uid, email, provider, companies, company, setCompanyId, locale, setLocale }}>
+    <PartnerContext.Provider value={{ uid, email, provider, companies, company, setCompanyId, locale, setLocale, refresh }}>
       <div data-theme={theme} style={{ minHeight: '100vh', background: 'var(--pf-bg)', display: 'flex' }}>
         {!isMobile && (
           <aside style={{ width: '236px', flexShrink: 0, background: 'var(--pf-nav)', borderRight: '1px solid var(--pf-border)', padding: '22px 16px', position: 'sticky', top: 0, height: '100vh', display: 'flex', flexDirection: 'column', gap: '20px' }}>
