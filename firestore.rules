@@ -113,7 +113,9 @@ service cloud.firestore {
         && keep('rating')
         && keep('reviews')
         && request.resource.data.get('active', false) == (request.resource.data.get('status', 'draft') == 'published');
-      allow delete: if isAdmin();
+      // Owner may delete their own listing. Once real bookings reference
+      // experiences, revisit: block deletes with future bookings server-side.
+      allow delete: if isAdmin() || (signedIn() && resource.data.providerId == request.auth.uid);
       // Options subcollection — public read, same as the listing they belong to.
       // They carry no sensitive data (name, description, price, photos) and are
       // meaningless without their parent experience.

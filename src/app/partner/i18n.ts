@@ -84,6 +84,9 @@ const FR: Record<string, string> = {
   ops_name: 'Contact opérations', ops_wa: 'WhatsApp opérations',
   select: 'Sélectionner', cancel: 'Annuler',
   dup: 'Dupliquer', dup_copy: 'copie',
+  del: 'Supprimer', del_title: 'Supprimer cette expérience ?',
+  del_note: 'L’expérience et ses options seront supprimées définitivement. Cette action est irréversible.',
+  del_confirm: 'Supprimer définitivement', del_busy: 'Suppression…',
   np_title: 'Notifications', np_hint: 'Par email pour l’instant — SMS à venir.',
   np_bookings: 'Nouvelles réservations', np_payouts: 'Versements', np_marketing: 'Actualités Palmera',
 }
@@ -170,6 +173,9 @@ const EN: Record<string, string> = {
   ops_name: 'Operations contact', ops_wa: 'Operations WhatsApp',
   select: 'Select', cancel: 'Cancel',
   dup: 'Duplicate', dup_copy: 'copy',
+  del: 'Delete', del_title: 'Delete this experience?',
+  del_note: 'The experience and its options will be permanently removed. This cannot be undone.',
+  del_confirm: 'Delete permanently', del_busy: 'Deleting…',
   np_title: 'Notifications', np_hint: 'Email for now — SMS coming later.',
   np_bookings: 'New bookings', np_payouts: 'Payouts', np_marketing: 'Palmera updates',
 }

@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react'
 import { usePartner } from '../PartnerContext'
 import { t } from '../i18n'
 import {
-  getExperiencesByCompany, addExperience, updateExperience, getOptions, addOption, deleteOption,
+  getExperiencesByCompany, addExperience, updateExperience, deleteExperience, getOptions, addOption, deleteOption,
 } from '@/lib/firestore'
+import ConfirmDialog from '@/components/dashboard/ConfirmDialog'
 import type { Experience, ExperienceStatus, Option, OptionGroup } from '@/lib/schema'
 import { formatAmount } from '@/lib/money'
 import { ScreenHeader, EmptyState, PrimaryButton, card, eyebrow, Chip, type Tone } from '@/components/partner/ui'
@@ -36,6 +37,16 @@ export default function ListingsScreen() {
   const openNew = () => { setEditing(undefined); setEditingOptions([]); setShowModal(true) }
   const openEdit = async (e: Experience) => {
     setEditing(e); setEditingOptions(await getOptions(e.id!)); setShowModal(true)
+  }
+
+  const [toDelete, setToDelete] = useState<Experience | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  const handleDelete = async () => {
+    if (!toDelete?.id) return
+    setDeleting(true)
+    await deleteExperience(toDelete.id)
+    setToDelete(null); setDeleting(false)
+    await load()
   }
 
   // Duplicate: a full copy (options included) saved as a DRAFT — never
@@ -110,10 +121,16 @@ export default function ListingsScreen() {
             const s = STATUS[e.status] ?? STATUS.draft
             return (
               <div key={e.id} onClick={() => openEdit(e)} role="button" tabIndex={0} style={{ ...card, textAlign: 'left', cursor: 'pointer', padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-                <button onClick={(ev) => { ev.stopPropagation(); duplicate(e) }} title={L('dup')}
-                  style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 2, padding: '5px 10px', borderRadius: '8px', border: '1px solid var(--pf-border-strong)', background: 'var(--pf-sheet)', color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '10.5px', cursor: 'pointer', opacity: dupBusyId === e.id ? 0.5 : 1 }}>
-                  {dupBusyId === e.id ? '…' : `⧉ ${L('dup')}`}
-                </button>
+                <div style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 2, display: 'flex', gap: '6px' }}>
+                  <button onClick={(ev) => { ev.stopPropagation(); duplicate(e) }} title={L('dup')}
+                    style={{ padding: '5px 10px', borderRadius: '8px', border: '1px solid var(--pf-border-strong)', background: 'var(--pf-sheet)', color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '10.5px', cursor: 'pointer', opacity: dupBusyId === e.id ? 0.5 : 1 }}>
+                    {dupBusyId === e.id ? '…' : `⧉ ${L('dup')}`}
+                  </button>
+                  <button onClick={(ev) => { ev.stopPropagation(); setToDelete(e) }} title={L('del')}
+                    style={{ padding: '5px 10px', borderRadius: '8px', border: '1px solid rgba(196,124,124,0.4)', background: 'var(--pf-sheet)', color: 'var(--pf-alert)', fontFamily: 'var(--font-sans)', fontSize: '10.5px', cursor: 'pointer' }}>
+                    ✕
+                  </button>
+                </div>
                 <div style={{ height: '110px', background: e.img ? `center/cover url(${e.img})` : 'var(--pf-card-solid)', display: 'grid', placeItems: 'center' }}>
                   {!e.img && <span style={{ ...eyebrow, opacity: 0.6 }}>{locale === 'fr' ? 'Sans photo' : 'No photo'}</span>}
                 </div>
@@ -134,6 +151,20 @@ export default function ListingsScreen() {
             )
           })}
         </div>
+      )}
+
+      {toDelete && (
+        <ConfirmDialog
+          title={L('del_title')}
+          note={L('del_note')}
+          confirmLabel={L('del_confirm')}
+          busyLabel={L('del_busy')}
+          busy={deleting}
+          onConfirm={handleDelete}
+          onCancel={() => setToDelete(null)}
+        >
+          <strong style={{ color: 'var(--pf-text)' }}>{toDelete.title || 'Untitled'}</strong>
+        </ConfirmDialog>
       )}
 
       {showModal && company && (
