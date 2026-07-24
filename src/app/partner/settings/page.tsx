@@ -373,6 +373,28 @@ export default function SettingsScreen() {
         </div>
       </div>
 
+      {/* Notification preferences — stored on the provider; email-only today. */}
+      <SectionTitle>{L('np_title')}</SectionTitle>
+      <div style={card}>
+        <p style={{ ...bodyText, fontSize: '0.75rem', margin: '0 0 6px' }}>{L('np_hint')}</p>
+        {(['bookings', 'payouts', 'marketing'] as const).map((k, i) => {
+          const on = provider?.notificationPrefs?.[k] ?? true
+          return (
+            <div key={k} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px', padding: '10px 0', borderTop: i === 0 ? 'none' : '1px solid var(--pf-border)' }}>
+              <span style={eyebrow}>{L(`np_${k}`)}</span>
+              <button onClick={async () => {
+                await updateProvider(uid, { notificationPrefs: { ...(provider?.notificationPrefs || {}), [k]: !on } })
+                await refresh()
+              }}
+                aria-pressed={on}
+                style={{ width: '38px', height: '22px', borderRadius: '999px', border: '1px solid var(--pf-border-strong)', background: on ? 'var(--pf-gold-deep)' : 'var(--pf-card)', position: 'relative', cursor: 'pointer', padding: 0 }}>
+                <span style={{ position: 'absolute', top: '2px', left: on ? '18px' : '2px', width: '16px', height: '16px', borderRadius: '50%', background: on ? '#ebe8db' : 'var(--pf-faint)', transition: 'left 0.15s ease' }} />
+              </button>
+            </div>
+          )
+        })}
+      </div>
+
       {/* Preferences */}
       <SectionTitle>{L('sec_prefs')}</SectionTitle>
       <div style={card}>

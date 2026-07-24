@@ -14,7 +14,7 @@ const STATUS: Record<BookingStatus, { key: string; tone: Tone }> = {
 }
 
 export default function ReservationCard({
-  booking: b, locale, compact = false, onAccept, onDecline, onNoShow, busy,
+  booking: b, locale, compact = false, onAccept, onDecline, onNoShow, onOpen, busy,
 }: {
   booking: Booking
   locale: Locale
@@ -22,6 +22,8 @@ export default function ReservationCard({
   onAccept?: (b: Booking) => void
   onDecline?: (b: Booking) => void
   onNoShow?: (b: Booking) => void
+  /** Open the detail view. The info area becomes clickable; buttons still win. */
+  onOpen?: (b: Booking) => void
   busy?: boolean
 }) {
   const L = (k: string) => t(locale, k)
@@ -35,6 +37,7 @@ export default function ReservationCard({
 
   return (
     <div style={{ ...card, padding: compact ? '14px 16px' : '16px 18px' }}>
+      <div onClick={() => onOpen?.(b)} style={{ cursor: onOpen ? 'pointer' : 'default' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
         <span style={eyebrow}>{b.title ? '' : ''}{(b as unknown as { category?: string }).category || ''}</span>
         {b.confirmationType === 'instant' && <Chip tone="green">● {L('instant')}</Chip>}
@@ -63,6 +66,7 @@ export default function ReservationCard({
             <div>{L('commission')} −{formatAmount(b.commissionAmount)}</div>
           </div>
         )}
+      </div>
       </div>
 
       {showActions && (

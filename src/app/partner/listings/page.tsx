@@ -38,6 +38,27 @@ export default function ListingsScreen() {
     setEditing(e); setEditingOptions(await getOptions(e.id!)); setShowModal(true)
   }
 
+  // Duplicate: a full copy (options included) saved as a DRAFT — never
+  // straight to published, so a copy can't silently go live.
+  const [dupBusyId, setDupBusyId] = useState('')
+  const duplicate = async (e: Experience) => {
+    if (!e.id || dupBusyId) return
+    setDupBusyId(e.id)
+    const { id: _id, createdAt: _c, updatedAt: _u, ...rest } = e as Experience & { createdAt?: unknown; updatedAt?: unknown }
+    const ref = await addExperience({
+      ...rest,
+      title: `${e.title} (${L('dup_copy')})`,
+      status: 'draft', active: false, tag: null, rating: 0, reviews: 0,
+    })
+    const opts = await getOptions(e.id)
+    for (const o of opts) {
+      const { id: _oid, ...orest } = o
+      await addOption(ref.id, orest)
+    }
+    setDupBusyId('')
+    await load()
+  }
+
   // Mirrors the onboarding save path so both surfaces write identical documents.
   const handleSave = async (data: Partial<Experience>, groups: (OptionGroup & { options: Option[] })[]) => {
     if (!company?.id) return
@@ -88,7 +109,11 @@ export default function ListingsScreen() {
           {items.map(e => {
             const s = STATUS[e.status] ?? STATUS.draft
             return (
-              <button key={e.id} onClick={() => openEdit(e)} style={{ ...card, textAlign: 'left', cursor: 'pointer', padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              <div key={e.id} onClick={() => openEdit(e)} role="button" tabIndex={0} style={{ ...card, textAlign: 'left', cursor: 'pointer', padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                <button onClick={(ev) => { ev.stopPropagation(); duplicate(e) }} title={L('dup')}
+                  style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 2, padding: '5px 10px', borderRadius: '8px', border: '1px solid var(--pf-border-strong)', background: 'var(--pf-sheet)', color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '10.5px', cursor: 'pointer', opacity: dupBusyId === e.id ? 0.5 : 1 }}>
+                  {dupBusyId === e.id ? '…' : `⧉ ${L('dup')}`}
+                </button>
                 <div style={{ height: '110px', background: e.img ? `center/cover url(${e.img})` : 'var(--pf-card-solid)', display: 'grid', placeItems: 'center' }}>
                   {!e.img && <span style={{ ...eyebrow, opacity: 0.6 }}>{locale === 'fr' ? 'Sans photo' : 'No photo'}</span>}
                 </div>
@@ -105,7 +130,7 @@ export default function ListingsScreen() {
                     <div style={{ marginTop: '8px' }}><Chip tone="alert">{locale === 'fr' ? 'À compléter' : 'Needs'}: {e.needsReview!.join(', ')}</Chip></div>
                   )}
                 </div>
-              </button>
+              </div>
             )
           })}
         </div>

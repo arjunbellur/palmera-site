@@ -3,10 +3,10 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import { usePartner } from './PartnerContext'
 import { t } from './i18n'
-import { getBookingsByCompany, getLedgerByProvider, getPayoutsByProvider } from '@/lib/firestore'
-import type { Booking, LedgerEntry, Payout } from '@/lib/schema'
+import { getBookingsByCompany, getLedgerByProvider, getPayoutsByProvider, getExperiencesByCompany, getPayoutProfile } from '@/lib/firestore'
+import type { Booking, Experience, LedgerEntry, Payout } from '@/lib/schema'
 import { formatAmount, formatDate, toDate } from '@/lib/money'
-import { ScreenHeader, StatTile, Money, EmptyState, SectionTitle, card, eyebrow, Chip } from '@/components/partner/ui'
+import { ScreenHeader, StatTile, Money, EmptyState, SectionTitle, card, eyebrow } from '@/components/partner/ui'
 import ReservationCard from '@/components/partner/ReservationCard'
 
 export default function PartnerHome() {
@@ -15,16 +15,21 @@ export default function PartnerHome() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [ledger, setLedger] = useState<LedgerEntry[]>([])
   const [payouts, setPayouts] = useState<Payout[]>([])
+  const [experiences, setExperiences] = useState<Experience[]>([])
+  const [hasPayoutProfile, setHasPayoutProfile] = useState(true)
 
   useEffect(() => {
     if (!uid || !company?.id) return
     ;(async () => {
-      const [b, l, p] = await Promise.all([
+      const [b, l, p, e, pp] = await Promise.all([
         getBookingsByCompany(uid, company.id!), getLedgerByProvider(uid), getPayoutsByProvider(uid),
+        getExperiencesByCompany(uid, company.id!), getPayoutProfile(company.id!),
       ])
       setBookings(b)
-      setLedger(l.filter(e => e.companyId === company.id))
+      setLedger(l.filter(x => x.companyId === company.id))
       setPayouts(p.filter(x => x.companyId === company.id))
+      setExperiences(e)
+      setHasPayoutProfile(!!pp)
     })()
   }, [uid, company?.id])
 
@@ -54,18 +59,42 @@ export default function PartnerHome() {
         intro={L('home_intro')}
       />
 
-      {pending.length > 0 && (
-        <a href="/partner/reservations" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px', ...card, background: 'var(--pf-green-soft)', borderColor: 'var(--pf-border-strong)', textDecoration: 'none', marginBottom: '14px' }}>
-          <div>
-            <div style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '14.5px' }}>{L('action_title')}</div>
-            <div style={{ ...eyebrow, marginTop: '5px' }}>{L('action_sub')}</div>
+      {/* Pending actions — Jordan: "what do I need to do next?" answered first.
+          Every row is a link straight to where it gets fixed. */}
+      {(() => {
+        const incompleteListings = experiences.filter(e => (e.needsReview?.length ?? 0) > 0 || e.status === 'draft').length
+        const items = [
+          ...(pending.length > 0 ? [{ href: '/partner/reservations', label: `${pending.length} ${L('pa_pending_res')}`, count: pending.length }] : []),
+          ...(incompleteListings > 0 ? [{ href: '/partner/listings', label: `${incompleteListings} ${L('pa_incomplete_listing')}`, count: incompleteListings }] : []),
+          ...(!hasPayoutProfile ? [{ href: '/partner/settings', label: L('pa_missing_payout'), count: 0 }] : []),
+        ]
+        if (items.length === 0) return null
+        return (
+          <div style={{ ...card, background: 'var(--pf-green-soft)', borderColor: 'var(--pf-border-strong)', marginBottom: '14px', padding: '14px 16px' }}>
+            <div style={{ ...eyebrow, marginBottom: '8px' }}>{L('pa_title')}</div>
+            {items.map(it => (
+              <a key={it.href + it.label} href={it.href} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '7px 0', textDecoration: 'none', borderTop: '1px solid var(--pf-border)' }}>
+                <span style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '13.5px' }}>{it.label}</span>
+                <span style={{ color: 'var(--pf-gold)', fontSize: '13px' }}>→</span>
+              </a>
+            ))}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Chip tone="gold">{pending.length}</Chip>
-            <span style={{ color: 'var(--pf-gold)' }}>→</span>
-          </div>
-        </a>
-      )}
+        )
+      })()}
+
+      {/* Quick actions — saves the hunt for common tasks. */}
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '14px' }}>
+        {[
+          { href: '/partner/listings', label: `+ ${L('qa_new')}` },
+          { href: '/partner/reservations', label: L('qa_res') },
+          { href: '/partner/settings', label: L('qa_company') },
+          { href: 'mailto:palmeraexp@gmail.com', label: L('qa_support') },
+        ].map(a => (
+          <a key={a.label} href={a.href} style={{ padding: '8px 15px', borderRadius: '999px', border: '1px solid var(--pf-border-strong)', color: 'var(--pf-gold)', textDecoration: 'none', fontFamily: 'var(--font-sans)', fontSize: '11.5px', letterSpacing: '0.03em', background: 'transparent' }}>
+            {a.label}
+          </a>
+        ))}
+      </div>
 
       {/* Today first — a partner opening the app wants operations, then money. */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>

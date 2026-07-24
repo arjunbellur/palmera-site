@@ -64,6 +64,8 @@ export interface Provider {
   whatsapp: string
   country: string                 // ISO alpha-2
   logo: string | null             // provider-level mark/avatar (distinct from company.logo)
+  /** Notification opt-ins (email today; SMS later). Absent = all on. */
+  notificationPrefs?: { bookings?: boolean; payouts?: boolean; marketing?: boolean }
   onboardingStage: 'registered' | 'active' | 'complete'
   signoff: Signoff | null         // create-once, immutable; one agreement covers all companies
   createdAt: TS
@@ -293,6 +295,10 @@ export interface Booking {
   // ── Guest (minimal; no sensitive PII stored dashboard-side) ──
   customerId: string          // app user uid
   customerName: string        // display only
+  customerPhone?: string | null   // optional — shown in the reservation detail view
+  customerEmail?: string | null   // optional
+  specialRequests?: string | null // guest note at booking, optional
+  paymentStatus?: 'paid' | 'unpaid' | 'refunded' | null // app-set; reservation-mode bookings are 'unpaid'
   guestCount: number
   // ── When ──
   scheduledFor: TS            // the reserved date/time of the experience

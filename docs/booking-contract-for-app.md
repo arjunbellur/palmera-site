@@ -24,6 +24,10 @@ already made.
 | `providerId` | string | FK → `providers/{uid}` — **partner's read anchor; must be exact** |
 | `customerId` | string | app user uid |
 | `customerName` | string | display only — no other guest PII dashboard-side |
+| `customerPhone` | string \| null | OPTIONAL — shown in the partner's reservation detail view |
+| `customerEmail` | string \| null | OPTIONAL — same |
+| `specialRequests` | string \| null | OPTIONAL — guest note at booking |
+| `paymentStatus` | `'paid' \| 'unpaid' \| 'refunded'` \| null | OPTIONAL — reservation-mode bookings are `'unpaid'` |
 | `guestCount` | int | |
 | `scheduledFor` | Timestamp | reserved date/time of the experience |
 | `title` | string | snapshot of experience.title |

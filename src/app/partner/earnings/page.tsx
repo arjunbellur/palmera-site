@@ -38,6 +38,7 @@ export default function EarningsScreen() {
   const [ledger, setLedger] = useState<LedgerEntry[]>([])
   const [payouts, setPayouts] = useState<Payout[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
+  const [period, setPeriod] = useState<'all' | 'month' | 'last' | '30'>('all')
 
   useEffect(() => {
     if (!uid || !company?.id) return
@@ -59,8 +60,22 @@ export default function EarningsScreen() {
   const ends = activated ? new Date(activated.getFullYear() + 1, activated.getMonth(), activated.getDate()) : null
   const monthsLeft = ends ? Math.max(0, Math.ceil((ends.getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 30.44))) : null
 
+  // ── Period filter (applies to the itemized Activity list only — balances
+  //    and the payout breakdown are always all-time; a partial balance lies). ──
+  const inPeriod = (e: LedgerEntry) => {
+    if (period === 'all') return true
+    const d = toDate(e.createdAt); if (!d) return false
+    const now = new Date()
+    if (period === '30') return now.getTime() - d.getTime() <= 30 * 86400_000
+    if (period === 'month') return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
+    const lm = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    return d.getFullYear() === lm.getFullYear() && d.getMonth() === lm.getMonth()
+  }
+  const shownLedger = ledger.filter(inPeriod)
+
   // ── Next-payout breakdown: ledger money not yet rolled into a batch ──
   const unsettled = ledger.filter(e => !e.payoutId)
+  const pendingBookings = unsettled.filter(e => e.type === 'commission_earned' && e.bookingId).length
   const pendingGross = unsettled.filter(e => e.type === 'commission_earned' && e.amount > 0).reduce((s, e) => s + e.amount, 0)
   const pendingDeductions = unsettled.filter(e => e.amount < 0).reduce((s, e) => s + e.amount, 0)
   const pendingNet = pendingGross + pendingDeductions
@@ -144,7 +159,7 @@ export default function EarningsScreen() {
         <div style={{ ...card, marginTop: '12px' }}>
           <div style={{ ...eyebrow, marginBottom: '10px' }}>{L('breakdown_title')}</div>
           <div style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid var(--pf-border)', fontFamily: 'var(--font-sans)', fontSize: '12.5px' }}>
-            <span style={{ color: 'var(--pf-muted)' }}>{L('gross')}</span>
+            <span style={{ color: 'var(--pf-muted)' }}>{L('gross')}{pendingBookings > 0 && ` · ${pendingBookings} ${L('bookings_n')}`}</span>
             <span style={{ color: 'var(--pf-success)' }}>+{formatAmount(pendingGross)}</span>
           </div>
           {pendingDeductions !== 0 && (
@@ -231,12 +246,24 @@ export default function EarningsScreen() {
           ↓ {L('download_csv')}
         </button>
       ) : undefined}>{L('ledger')}</SectionTitle>
+      {ledger.length > 0 && (
+        <div style={{ display: 'flex', gap: '7px', flexWrap: 'wrap', marginBottom: '10px' }}>
+          {([['all', 'ef_all'], ['month', 'ef_month'], ['last', 'ef_last'], ['30', 'ef_30']] as const).map(([k, label]) => (
+            <button key={k} onClick={() => setPeriod(k)}
+              style={{ padding: '6px 12px', borderRadius: '999px', cursor: 'pointer', fontFamily: 'var(--font-sans)', fontSize: '11px', border: `1px solid ${period === k ? 'var(--pf-border-strong)' : 'var(--pf-border)'}`, background: period === k ? 'var(--pf-card)' : 'transparent', color: period === k ? 'var(--pf-gold)' : 'var(--pf-faint)' }}>
+              {L(label)}
+            </button>
+          ))}
+        </div>
+      )}
       {ledger.length === 0 ? (
         <EmptyState icon="◷" title={L('ledger_empty_t')} body={L('ledger_empty_b')} />
+      ) : shownLedger.length === 0 ? (
+        <div style={{ ...card, textAlign: 'center', fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--pf-faint)' }}>—</div>
       ) : (
         <div style={listCard}>
-          {ledger.map((e, i) => (
-            <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '13px 18px', borderBottom: i < ledger.length - 1 ? '1px solid var(--pf-border)' : 'none' }}>
+          {shownLedger.map((e, i) => (
+            <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '13px 18px', borderBottom: i < shownLedger.length - 1 ? '1px solid var(--pf-border)' : 'none' }}>
               <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: LEDGER_DOT[e.type] || 'var(--pf-faint)', flexShrink: 0 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: 'var(--font-serif)', fontSize: '14px', color: 'var(--pf-text)' }}>{e.description}</div>
