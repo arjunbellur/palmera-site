@@ -62,13 +62,17 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
       // GRADUATION (hard cutover): a partner who has published a listing has
       // finished onboarding — their home is /partner now. Recorded on the
       // provider, so unpublishing later can't drop them back into onboarding.
-      // The /partner layout applies the mirror guard, so the two can't loop.
+      //
+      // BOTH conditions must hold or the mirror guards ping-pong: /partner
+      // bounces anyone with zero companies back here, so a graduated account
+      // whose companies were deleted (admin cleanup — Jordan's white-screen
+      // loop) must be allowed to STAY in onboarding and rebuild.
       // Exception: the company page itself, which shows the graduation moment
       // right after publishing before handing off.
-      const { getProvider } = await import('@/lib/firestore')
-      const p = await getProvider(user.uid)
+      const { getProvider, getCompanies } = await import('@/lib/firestore')
+      const [p, companies] = await Promise.all([getProvider(user.uid), getCompanies(user.uid)])
       const onCompanyPage = pathname.startsWith('/dashboard/companies/')
-      if (p?.onboardingStage === 'complete' && !onCompanyPage) { router.replace('/partner'); return }
+      if (p?.onboardingStage === 'complete' && companies.length > 0 && !onCompanyPage) { router.replace('/partner'); return }
       setLoading(false)
     })
     return () => unsub()
