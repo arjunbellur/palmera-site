@@ -6,15 +6,15 @@ import { onAuthChange } from '@/lib/auth'
 import {
   getCompany, getProvider, getCompanyAdmin, getExperiencesByCompanyIdAdmin,
   activateCompany, updateCompanyAdminFields, updateCompany, setExperienceStatus, setExperienceTag,
-  deleteCompanyCascade, getCountersignature, setCountersignature, getCountersignatory, setCountersignatory,
-  getProviderAdmin, setProviderStatus,
+  deleteCompanyCascade, deleteProviderAccountCascade, getCountersignature, setCountersignature, getCountersignatory, setCountersignatory,
+  getProviderAdmin, setProviderStatus, getPayoutProfile,
   type Countersignature, type Countersignatory,
 } from '@/lib/firestore'
 import ConfirmDialog from '@/components/dashboard/ConfirmDialog'
 import AgreementDocument from '@/components/dashboard/AgreementDocument'
 import CompanyForm, { type CompanyFormValues } from '@/components/dashboard/CompanyForm'
 import { getAgreement, formatAgreementDate, PALMERA_SIGNATORY, AGREEMENT_VERSION } from '@/lib/partner-agreement'
-import type { Company, Provider, CompanyPrivateAdmin, Experience } from '@/lib/schema'
+import type { Company, Provider, CompanyPrivateAdmin, CompanyPayoutProfile, Experience } from '@/lib/schema'
 
 const ADMIN_EMAILS = ['palmeraexp@gmail.com']
 type Tab = 'overview' | 'experiences' | 'signoff' | 'admin'
@@ -56,6 +56,9 @@ export default function AdminCompanyDetailPage({ params }: { params: Promise<{ c
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
+  const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false)
+  const [deletingAccount, setDeletingAccount] = useState(false)
+  const [payoutProfile, setPayoutProfile] = useState<CompanyPayoutProfile | null>(null)
 
   const [rateInput, setRateInput] = useState('10')
   const [savingRate, setSavingRate] = useState(false)
@@ -82,11 +85,13 @@ export default function AdminCompanyDetailPage({ params }: { params: Promise<{ c
   const load = async () => {
     const c = await getCompany(companyId)
     if (!c) { router.replace('/dashboard/admin'); return }
-    const [p, ca, exps, cs, sig, pa] = await Promise.all([
+    const [p, ca, exps, cs, sig, pa, pp] = await Promise.all([
       getProvider(c.providerId), getCompanyAdmin(companyId), getExperiencesByCompanyIdAdmin(companyId),
       getCountersignature(c.providerId), getCountersignatory(), getProviderAdmin(c.providerId),
+      getPayoutProfile(companyId),
     ])
     setCompany(c); setProvider(p); setCompanyAdmin(ca); setExperiences(exps)
+    setPayoutProfile(pp)
     setCountersign(cs); setSignatory(sig)
     setAccountStatus(pa?.status || 'active')
     if (ca?.commissionRate != null) setRateInput(String(Math.round(ca.commissionRate * 100)))
@@ -160,6 +165,13 @@ export default function AdminCompanyDetailPage({ params }: { params: Promise<{ c
     try { await deleteCompanyCascade(companyId); router.replace('/dashboard/admin') }
     catch { setDeleteError('Could not delete this company. Please try again.'); setDeleting(false) }
   }
+
+  const handleDeleteAccount = async () => {
+    if (!company) return
+    setDeletingAccount(true); setDeleteError('')
+    try { await deleteProviderAccountCascade(company.providerId); router.replace('/dashboard/admin') }
+    catch { setDeleteError('Could not delete this account. Please try again.'); setDeletingAccount(false); setConfirmDeleteAccount(false) }
+  }
   const handleSaveRep = async () => {
     if (!repName.trim() || !repTitle.trim()) return
     setSavingRep(true); setCountersignError('')
@@ -218,6 +230,10 @@ export default function AdminCompanyDetailPage({ params }: { params: Promise<{ c
             <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: 'var(--db-text-faint)' }}>{provider?.email}</span>
             <span style={{ color: 'var(--db-border)', fontSize: '0.75rem' }}>·</span>
             <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: accountStatus === 'suspended' ? '#e07070' : '#9e763b' }}>{accountStatus === 'suspended' ? 'Account suspended' : 'Account active'}</span>
+            <span style={{ color: 'var(--db-border)', fontSize: '0.75rem' }}>·</span>
+            <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: provider?.onboardingStage === 'complete' ? '#9e763b' : 'var(--db-text-faint)' }}>
+              {provider?.onboardingStage === 'complete' ? 'Graduated — partner dashboard' : 'In onboarding'}
+            </span>
           </div>
         </div>
         <button onClick={() => { setDeleteError(''); setConfirmDelete(true) }}
@@ -232,6 +248,13 @@ export default function AdminCompanyDetailPage({ params }: { params: Promise<{ c
           error={deleteError} confirmLabel="Delete permanently" busyLabel="Deleting…" busy={deleting}
           onConfirm={handleDelete} onCancel={() => setConfirmDelete(false)}>
           You&apos;re about to permanently delete <strong style={{ color: 'var(--db-text)' }}>{company.name}</strong> and {experiences.length} experience(s). This cannot be undone.
+        </ConfirmDialog>
+      )}
+      {confirmDeleteAccount && (
+        <ConfirmDialog title="Delete this entire partner account?" note="Removes ALL of this provider's companies, listings, payout details, countersignature, and the provider record. Their login is NOT deleted — signing in again starts a fresh, blank account."
+          error={deleteError} confirmLabel="Delete entire account" busyLabel="Deleting…" busy={deletingAccount}
+          onConfirm={handleDeleteAccount} onCancel={() => setConfirmDeleteAccount(false)}>
+          You&apos;re about to erase <strong style={{ color: 'var(--db-text)' }}>{provider?.fullName || provider?.email}</strong> — every company and listing they have. This cannot be undone.
         </ConfirmDialog>
       )}
       {confirmCountersign && signatory && (
@@ -414,9 +437,34 @@ export default function AdminCompanyDetailPage({ params }: { params: Promise<{ c
               </button>
             )}
           </div>
-          {companyAdmin?.payoutMethod === null && (
-            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: 'var(--db-text-ghost)', fontStyle: 'italic', marginTop: '1rem' }}>Payout method not yet set up (Phase 4).</p>
+          <SectionHeading>Partner payout details</SectionHeading>
+          {payoutProfile ? (
+            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', color: 'var(--db-text-muted)', margin: 0 }}>
+              {payoutProfile.method === 'wave' ? 'Wave' : payoutProfile.method === 'orange_money' ? 'Orange Money' : 'Bank transfer'}
+              {' — '}{payoutProfile.accountName}
+              {' · '}{payoutProfile.method === 'bank_transfer' ? `${payoutProfile.bankName} · ${payoutProfile.accountRef}` : payoutProfile.phone}
+            </p>
+          ) : (
+            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', color: 'var(--db-text-ghost)', fontStyle: 'italic', margin: 0 }}>
+              Not provided yet — the partner adds this in their dashboard Settings. No payouts can be sent until it exists.
+            </p>
           )}
+
+          <SectionHeading>Danger zone</SectionHeading>
+          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', color: 'var(--db-text-muted)', margin: '0 0 1rem', lineHeight: 1.6 }}>
+            <strong style={{ color: 'var(--db-text)' }}>Delete company</strong> removes this business and its listings; the provider keeps their account and any other companies.
+            {' '}<strong style={{ color: 'var(--db-text)' }}>Delete entire account</strong> erases everything this provider has — all companies, listings, payout details, and their signed-agreement countersignature. Their Firebase login itself can&apos;t be removed from here; if they sign in again they start from a blank account.
+          </p>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <button onClick={() => { setDeleteError(''); setConfirmDelete(true) }}
+              style={{ padding: '0.625rem 1.25rem', background: 'transparent', border: '1px solid rgba(224,112,112,0.4)', borderRadius: '0.375rem', color: '#e07070', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>
+              Delete company
+            </button>
+            <button onClick={() => { setDeleteError(''); setConfirmDeleteAccount(true) }}
+              style={{ padding: '0.625rem 1.25rem', background: 'rgba(224,112,112,0.12)', border: '1px solid rgba(224,112,112,0.5)', borderRadius: '0.375rem', color: '#e07070', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>
+              Delete entire partner account
+            </button>
+          </div>
         </div>
       )}
     </div>

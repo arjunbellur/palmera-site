@@ -386,7 +386,9 @@ export const setExperienceTag = async (id: string, tag: string | null) => {
   await updateDoc(doc(db, COLLECTIONS.experiences, id), { tag, updatedAt: serverTimestamp() })
 }
 
-/** Admin-only: delete a company and everything under it (experiences + private subdoc). Provider doc is untouched — a provider may own other companies. */
+/** Admin-only: delete a company and everything under it (experiences, options,
+ * and the ENTIRE private subcollection — admin + payout + any future docs).
+ * Provider doc is untouched — a provider may own other companies. */
 export const deleteCompanyCascade = async (companyId: string) => {
   const exps = await getExperiencesByCompanyIdAdmin(companyId)
   await Promise.all(exps.map(async (e) => {
@@ -394,8 +396,27 @@ export const deleteCompanyCascade = async (companyId: string) => {
     await Promise.all(opts.docs.map((o) => deleteDoc(o.ref)))
     await deleteDoc(doc(db, COLLECTIONS.experiences, e.id!))
   }))
-  await deleteDoc(doc(db, COLLECTIONS.companies, companyId, SUB.privateAdmin.col, SUB.privateAdmin.doc)).catch(() => {})
+  const priv = await getDocs(collection(db, COLLECTIONS.companies, companyId, SUB.privateAdmin.col))
+  await Promise.all(priv.docs.map((d) => deleteDoc(d.ref)))
   await deleteDoc(doc(db, COLLECTIONS.companies, companyId))
+}
+
+/**
+ * Admin-only: delete the ENTIRE partner account's Firestore footprint —
+ * every company (full cascade), the countersignature, the provider's private
+ * subcollection, and the provider doc itself.
+ *
+ * What this CANNOT do from the browser: remove the Firebase Auth login or
+ * Storage uploads. The login survives; on next sign-in the self-heal creates
+ * a fresh provider doc, so the account restarts onboarding from zero.
+ */
+export const deleteProviderAccountCascade = async (uid: string) => {
+  const companies = await getCompanies(uid)
+  for (const c of companies) await deleteCompanyCascade(c.id!)
+  await deleteDoc(doc(db, 'countersignatures', uid)).catch(() => {})
+  const priv = await getDocs(collection(db, COLLECTIONS.providers, uid, SUB.privateAdmin.col))
+  await Promise.all(priv.docs.map((d) => deleteDoc(d.ref)))
+  await deleteDoc(doc(db, COLLECTIONS.providers, uid))
 }
 
 // ══════════════════════════════════════════════════════════════════════════
