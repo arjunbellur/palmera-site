@@ -2,7 +2,7 @@
 export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { signIn, signUp, onAuthChange } from '@/lib/auth'
+import { signIn, signUp, onAuthChange, resetPassword } from '@/lib/auth'
 import { createProvider } from '@/lib/firestore'
 import LanguageToggle from '@/components/LanguageToggle'
 
@@ -33,6 +33,9 @@ const T: Record<string, Record<string, string>> = {
     error: "Une erreur s'est produite. Veuillez réessayer.",
     partnerPortal: 'Portail Partenaire',
     backHome: 'Accueil',
+    forgot: 'Mot de passe oublié ?',
+    resetSent: 'Si un compte existe avec cet email, un lien de réinitialisation vient d’être envoyé. Vérifiez votre boîte mail.',
+    resetNeedEmail: 'Saisissez d’abord votre adresse e-mail ci-dessus.',
   },
   en: {
     welcome: 'Welcome back', createAccount: 'Create your account', email: 'Email address',
@@ -50,6 +53,9 @@ const T: Record<string, Record<string, string>> = {
     error: 'Something went wrong. Please try again.',
     partnerPortal: 'Partner Portal',
     backHome: 'Home',
+    forgot: 'Forgot password?',
+    resetSent: 'If an account exists with this email, a reset link has just been sent. Check your inbox.',
+    resetNeedEmail: 'Enter your email address above first.',
   }
 }
 
@@ -62,8 +68,16 @@ export default function DashboardPage() {
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState('')
+  const [info, setInfo] = useState('')
   const [loading, setLoading] = useState(false)
   const [checking, setChecking] = useState(true)
+
+  const handleForgot = async () => {
+    setError(''); setInfo('')
+    if (!email.trim()) { setError(t('resetNeedEmail')); return }
+    try { await resetPassword(email.trim()) } catch { /* same message either way — no account probing */ }
+    setInfo(t('resetSent'))
+  }
 
   useEffect(() => {
     const unsub = onAuthChange(async (user) => {
@@ -130,7 +144,16 @@ export default function DashboardPage() {
           <input style={inp} type="email" placeholder={t('email')} value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSubmit()} />
           <input style={inp} type="password" placeholder={t('password')} value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSubmit()} />
           {mode === 'signup' && <input style={inp} type="password" placeholder={t('confirmPassword')} value={confirm} onChange={e => setConfirm(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSubmit()} />}
+          {mode === 'login' && (
+            <div style={{ textAlign: 'right', margin: '-0.25rem 0 0.75rem' }}>
+              <button onClick={handleForgot}
+                style={{ background: 'none', border: 'none', color: 'var(--db-text-faint)', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
+                {t('forgot')}
+              </button>
+            </div>
+          )}
           {error && <p style={{ fontSize: '0.8125rem', color: '#e07070', fontFamily: 'var(--font-sans)', margin: '-0.25rem 0 0.75rem' }}>{error}</p>}
+          {info && <p style={{ fontSize: '0.8125rem', color: '#9e763b', fontFamily: 'var(--font-sans)', margin: '-0.25rem 0 0.75rem', lineHeight: 1.5 }}>{info}</p>}
           <button onClick={handleSubmit} disabled={loading}
             style={{ width: '100%', padding: '0.875rem', background: '#9e763b', border: 'none', borderRadius: '0.375rem', color: '#ebe8db', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.08em', cursor: loading ? 'wait' : 'pointer', marginBottom: '1.25rem', opacity: loading ? 0.7 : 1, transition: 'background 0.2s' }}
             onMouseEnter={e => { if (!loading) (e.target as HTMLButtonElement).style.background = '#be9a56' }}

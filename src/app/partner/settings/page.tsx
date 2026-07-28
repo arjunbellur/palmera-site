@@ -6,6 +6,7 @@ import { usePartner } from '../PartnerContext'
 import { t } from '../i18n'
 import { useTheme } from '@/lib/theme'
 import { formatDate } from '@/lib/money'
+import { changePassword } from '@/lib/auth'
 import { updateProvider, updateCompany, getPayoutProfile, setPayoutProfile, getExperiencesByCompany, updateExperience } from '@/lib/firestore'
 import { getEnabledCategories, getEnabledCities } from '@/lib/config'
 import type { CompanyPayoutProfile } from '@/lib/schema'
@@ -46,6 +47,30 @@ export default function SettingsScreen() {
   // Contact & hours — light operational info Jordan asked for.
   const [contact, setContact] = useState({ phone: '', whatsapp: '', hours: '', opsName: '', opsWa: '' })
   const [contactSaved, setContactSaved] = useState(false)
+
+  // Change password — reauthenticates with the current one, then updates.
+  const [pwOpen, setPwOpen] = useState(false)
+  const [pw, setPw] = useState({ current: '', next: '', confirm: '' })
+  const [pwBusy, setPwBusy] = useState(false)
+  const [pwMsg, setPwMsg] = useState<{ ok: boolean; text: string } | null>(null)
+
+  const savePassword = async () => {
+    setPwMsg(null)
+    if (pw.next.length < 6) { setPwMsg({ ok: false, text: L('pw_short') }); return }
+    if (pw.next !== pw.confirm) { setPwMsg({ ok: false, text: L('pw_mismatch') }); return }
+    setPwBusy(true)
+    try {
+      await changePassword(pw.current, pw.next)
+      setPw({ current: '', next: '', confirm: '' })
+      setPwOpen(false)
+      setPwMsg({ ok: true, text: L('pw_saved') })
+      setTimeout(() => setPwMsg(null), 3000)
+    } catch (e: unknown) {
+      const code = (e as { code?: string })?.code
+      setPwMsg({ ok: false, text: code === 'auth/wrong-password' || code === 'auth/invalid-credential' ? L('pw_wrong') : L('pw_error') })
+    }
+    setPwBusy(false)
+  }
 
   useEffect(() => {
     getEnabledCategories().then(setCats)
@@ -175,6 +200,43 @@ export default function SettingsScreen() {
               onUploaded={async (url) => { setLogo(url); await updateProvider(uid, { logo: url }) }} />
           </div>
         </div>
+      </div>
+
+      {/* Password */}
+      <SectionTitle action={pwMsg?.ok ? <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-success)' }}>{pwMsg.text}</span> : undefined}>
+        {L('pw_title')}
+      </SectionTitle>
+      <div style={card}>
+        {!pwOpen ? (
+          <GhostButton onClick={() => { setPwOpen(true); setPwMsg(null) }}>{L('pw_change')}</GhostButton>
+        ) : (
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 13rem), 1fr))', gap: '10px', marginBottom: '12px' }}>
+              <div>
+                <div style={{ ...eyebrow, marginBottom: '5px' }}>{L('pw_current')}</div>
+                <input style={inputStyle} type="password" autoComplete="current-password" value={pw.current} onChange={e => setPw(p => ({ ...p, current: e.target.value }))} />
+              </div>
+              <div>
+                <div style={{ ...eyebrow, marginBottom: '5px' }}>{L('pw_new')}</div>
+                <input style={inputStyle} type="password" autoComplete="new-password" value={pw.next} onChange={e => setPw(p => ({ ...p, next: e.target.value }))} />
+              </div>
+              <div>
+                <div style={{ ...eyebrow, marginBottom: '5px' }}>{L('pw_confirm')}</div>
+                <input style={inputStyle} type="password" autoComplete="new-password" value={pw.confirm} onChange={e => setPw(p => ({ ...p, confirm: e.target.value }))} />
+              </div>
+            </div>
+            {pwMsg && !pwMsg.ok && (
+              <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--pf-alert)', margin: '0 0 10px' }}>{pwMsg.text}</p>
+            )}
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={savePassword} disabled={pwBusy || !pw.current || !pw.next || !pw.confirm}
+                style={{ padding: '9px 18px', background: pw.current && pw.next && pw.confirm ? 'var(--pf-gold-deep)' : 'var(--pf-card)', border: 'none', borderRadius: '10px', color: pw.current && pw.next && pw.confirm ? '#ebe8db' : 'var(--pf-faint)', fontFamily: 'var(--font-sans)', fontSize: '12.5px', cursor: pwBusy ? 'wait' : 'pointer', opacity: pwBusy ? 0.6 : 1 }}>
+                {L('po_save')}
+              </button>
+              <GhostButton onClick={() => { setPwOpen(false); setPw({ current: '', next: '', confirm: '' }); setPwMsg(null) }}>{L('cancel')}</GhostButton>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Company — view, or full onboarding-profile edit (Jordan's catch). */}

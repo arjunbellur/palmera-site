@@ -91,6 +91,11 @@ const FR: Record<string, string> = {
   del_confirm: 'Supprimer définitivement', del_busy: 'Suppression…',
   np_title: 'Notifications', np_hint: 'Par email pour l’instant — SMS à venir.',
   np_bookings: 'Nouvelles réservations', np_payouts: 'Versements', np_marketing: 'Actualités Palmera',
+  pw_title: 'Mot de passe', pw_change: 'Modifier le mot de passe',
+  pw_current: 'Mot de passe actuel', pw_new: 'Nouveau mot de passe', pw_confirm: 'Confirmer le nouveau mot de passe',
+  pw_saved: '✓ Mot de passe modifié', pw_mismatch: 'Les mots de passe ne correspondent pas.',
+  pw_short: 'Au moins 6 caractères.', pw_wrong: 'Mot de passe actuel incorrect.',
+  pw_error: 'Impossible de modifier le mot de passe. Réessayez.',
 }
 
 const EN: Record<string, string> = {
@@ -182,6 +187,11 @@ const EN: Record<string, string> = {
   del_confirm: 'Delete permanently', del_busy: 'Deleting…',
   np_title: 'Notifications', np_hint: 'Email for now — SMS coming later.',
   np_bookings: 'New bookings', np_payouts: 'Payouts', np_marketing: 'Palmera updates',
+  pw_title: 'Password', pw_change: 'Change password',
+  pw_current: 'Current password', pw_new: 'New password', pw_confirm: 'Confirm new password',
+  pw_saved: '✓ Password changed', pw_mismatch: 'Passwords do not match.',
+  pw_short: 'At least 6 characters.', pw_wrong: 'Current password is incorrect.',
+  pw_error: 'Could not change password. Try again.',
 }
 
 export function t(locale: Locale, key: string): string {

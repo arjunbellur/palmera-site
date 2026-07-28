@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { onAuthChange } from '@/lib/auth'
 import { getProvider, createProvider, updateProvider } from '@/lib/firestore'
+import { changePassword } from '@/lib/auth'
 import PhotoUpload from '@/components/dashboard/PhotoUpload'
 import { useLocale } from '@/lib/use-locale'
 import type { Provider } from '@/lib/schema'
@@ -22,6 +23,11 @@ const STR = {
     logoHint: 'Facultatif — votre marque personnelle de partenaire. Chaque établissement a aussi son propre logo, visible par les clients sur ses annonces.',
     logoUploadHint: 'Carré, PNG transparent de préférence',
     save: 'Enregistrer', saving: 'Enregistrement…', saved: '✓ Enregistré',
+    pwTitle: 'Mot de passe', pwChange: 'Modifier le mot de passe',
+    pwCurrent: 'Mot de passe actuel', pwNew: 'Nouveau mot de passe', pwConfirm: 'Confirmer le nouveau mot de passe',
+    pwSaved: '✓ Mot de passe modifié', pwMismatch: 'Les mots de passe ne correspondent pas.',
+    pwShort: 'Au moins 6 caractères.', pwWrong: 'Mot de passe actuel incorrect.',
+    pwError: 'Impossible de modifier le mot de passe. Réessayez.', cancel: 'Annuler',
   },
   en: {
     eyebrow: 'Account', title: 'Your account',
@@ -36,6 +42,11 @@ const STR = {
     logoHint: 'Optional — your own mark as a partner. Each company also has its own logo, which is what guests see on its listings.',
     logoUploadHint: 'Square, transparent PNG preferred',
     save: 'Save changes', saving: 'Saving…', saved: '✓ Saved',
+    pwTitle: 'Password', pwChange: 'Change password',
+    pwCurrent: 'Current password', pwNew: 'New password', pwConfirm: 'Confirm new password',
+    pwSaved: '✓ Password changed', pwMismatch: 'Passwords do not match.',
+    pwShort: 'At least 6 characters.', pwWrong: 'Current password is incorrect.',
+    pwError: 'Could not change password. Try again.', cancel: 'Cancel',
   },
 }
 
@@ -103,6 +114,28 @@ export default function AccountPage() {
     setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 2500)
   }
 
+  // Change password — reauth with the current one, then update.
+  const [pwOpen, setPwOpen] = useState(false)
+  const [pw, setPw] = useState({ current: '', next: '', confirm: '' })
+  const [pwBusy, setPwBusy] = useState(false)
+  const [pwMsg, setPwMsg] = useState<{ ok: boolean; text: string } | null>(null)
+
+  const savePassword = async () => {
+    setPwMsg(null)
+    if (pw.next.length < 6) { setPwMsg({ ok: false, text: s.pwShort }); return }
+    if (pw.next !== pw.confirm) { setPwMsg({ ok: false, text: s.pwMismatch }); return }
+    setPwBusy(true)
+    try {
+      await changePassword(pw.current, pw.next)
+      setPw({ current: '', next: '', confirm: '' }); setPwOpen(false)
+      setPwMsg({ ok: true, text: s.pwSaved }); setTimeout(() => setPwMsg(null), 3000)
+    } catch (e: unknown) {
+      const code = (e as { code?: string })?.code
+      setPwMsg({ ok: false, text: code === 'auth/wrong-password' || code === 'auth/invalid-credential' ? s.pwWrong : s.pwError })
+    }
+    setPwBusy(false)
+  }
+
   if (loading) return null
 
   return (
@@ -164,6 +197,40 @@ export default function AccountPage() {
             hint={s.logoUploadHint}
             onUploaded={async (url) => { setLogo(url); await updateProvider(uid, { logo: url }) }} />
         </div>
+      </div>
+
+      {/* Password */}
+      <div style={{ margin: '0 0 1.75rem', padding: '1rem 1.25rem', background: 'var(--db-bg-card)', border: '1px solid var(--db-border-subtle)', borderRadius: '0.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+          <label style={{ ...lbl, marginBottom: 0 }}>{s.pwTitle}</label>
+          {pwMsg?.ok && <span style={{ fontSize: '0.75rem', color: '#9e763b', fontFamily: 'var(--font-sans)' }}>{pwMsg.text}</span>}
+          {!pwOpen && (
+            <button onClick={() => { setPwOpen(true); setPwMsg(null) }}
+              style={{ background: 'transparent', border: '1px solid var(--db-border-gold)', borderRadius: '0.375rem', color: 'var(--db-text-muted)', padding: '0.4375rem 0.875rem', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>
+              {s.pwChange}
+            </button>
+          )}
+        </div>
+        {pwOpen && (
+          <div style={{ marginTop: '0.875rem' }}>
+            <div style={{ ...row, marginBottom: '0.75rem' }}>
+              <div><label style={lbl}>{s.pwCurrent}</label><input style={inp} type="password" autoComplete="current-password" value={pw.current} onChange={e => setPw(p => ({ ...p, current: e.target.value }))} /></div>
+              <div><label style={lbl}>{s.pwNew}</label><input style={inp} type="password" autoComplete="new-password" value={pw.next} onChange={e => setPw(p => ({ ...p, next: e.target.value }))} /></div>
+              <div><label style={lbl}>{s.pwConfirm}</label><input style={inp} type="password" autoComplete="new-password" value={pw.confirm} onChange={e => setPw(p => ({ ...p, confirm: e.target.value }))} /></div>
+            </div>
+            {pwMsg && !pwMsg.ok && <p style={{ fontSize: '0.75rem', color: '#e07070', fontFamily: 'var(--font-sans)', margin: '0 0 0.75rem' }}>{pwMsg.text}</p>}
+            <div style={{ display: 'flex', gap: '0.625rem' }}>
+              <button onClick={savePassword} disabled={pwBusy || !pw.current || !pw.next || !pw.confirm}
+                style={{ padding: '0.5625rem 1.25rem', background: pw.current && pw.next && pw.confirm ? '#9e763b' : 'var(--db-bg-card)', border: 'none', borderRadius: '0.375rem', color: pw.current && pw.next && pw.confirm ? '#ebe8db' : 'var(--db-text-ghost)', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', cursor: pwBusy ? 'wait' : 'pointer', opacity: pwBusy ? 0.6 : 1 }}>
+                {s.save}
+              </button>
+              <button onClick={() => { setPwOpen(false); setPw({ current: '', next: '', confirm: '' }); setPwMsg(null) }}
+                style={{ padding: '0.5625rem 1rem', background: 'transparent', border: '1px solid var(--db-border-subtle)', borderRadius: '0.375rem', color: 'var(--db-text-muted)', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>
+                {s.cancel}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
