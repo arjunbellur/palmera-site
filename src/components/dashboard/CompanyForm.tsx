@@ -1,7 +1,33 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { getEnabledCategories, getEnabledCities } from '@/lib/config'
+import { useLocale } from '@/lib/use-locale'
 import type { Company } from '@/lib/schema'
+
+const STR = {
+  fr: {
+    name: 'Nom commercial *', namePh: 'ex. Yuma Lodge',
+    legal: 'Raison sociale *', legalPh: 'Entité juridique enregistrée',
+    type: 'Forme juridique', typePh: 'ex. SARL, entreprise individuelle',
+    category: 'Catégorie *', city: 'Ville *', select: 'Sélectionner',
+    address: 'Adresse', addressPh: 'Rue, quartier',
+    maps: 'Lien Google Maps', web: 'Site web / réseaux', webPh: 'Site web ou Instagram',
+    phone: 'Téléphone de l’établissement', phonePh: 'Numéro de contact',
+    whatsapp: 'WhatsApp de l’établissement', whatsappPh: 'WhatsApp pour les réservations',
+    saving: 'Enregistrement…',
+  },
+  en: {
+    name: 'Business name *', namePh: 'e.g. Yuma Lodge',
+    legal: 'Legal name *', legalPh: 'Registered legal entity',
+    type: 'Business type', typePh: 'e.g. SARL, sole proprietor',
+    category: 'Category *', city: 'City *', select: 'Select',
+    address: 'Address', addressPh: 'Street, neighbourhood',
+    maps: 'Google Maps link', web: 'Website / social', webPh: 'Website or Instagram',
+    phone: 'Business phone', phonePh: 'Business contact number',
+    whatsapp: 'Business WhatsApp', whatsappPh: 'WhatsApp for bookings',
+    saving: 'Saving…',
+  },
+}
 
 type Opt = { id: string; name: string }
 
@@ -24,6 +50,7 @@ interface CompanyFormProps {
 }
 
 export default function CompanyForm({ initial, saving, submitLabel, onSubmit }: CompanyFormProps) {
+  const s = STR[useLocale()]
   const [form, setForm] = useState<CompanyFormValues>(() => ({
     ...EMPTY,
     ...(initial ? {
@@ -47,41 +74,41 @@ export default function CompanyForm({ initial, saving, submitLabel, onSubmit }: 
   return (
     <div>
       <div style={row}>
-        <div><label style={lbl}>Business name *</label><input style={inp} placeholder="e.g. Yuma Lodge" value={form.name} onChange={e => set('name', e.target.value)} /></div>
-        <div><label style={lbl}>Legal name *</label><input style={inp} placeholder="Registered legal entity" value={form.legalName} onChange={e => set('legalName', e.target.value)} /></div>
+        <div><label style={lbl}>{s.name}</label><input style={inp} placeholder={s.namePh} value={form.name} onChange={e => set('name', e.target.value)} /></div>
+        <div><label style={lbl}>{s.legal}</label><input style={inp} placeholder={s.legalPh} value={form.legalName} onChange={e => set('legalName', e.target.value)} /></div>
       </div>
       <div style={row}>
-        <div><label style={lbl}>Business type</label><input style={inp} placeholder="e.g. SARL, sole proprietor" value={form.businessType} onChange={e => set('businessType', e.target.value)} /></div>
+        <div><label style={lbl}>{s.type}</label><input style={inp} placeholder={s.typePh} value={form.businessType} onChange={e => set('businessType', e.target.value)} /></div>
         <div>
-          <label style={lbl}>Category *</label>
+          <label style={lbl}>{s.category}</label>
           <select style={{ ...inp, appearance: 'none' }} value={form.category} onChange={e => set('category', e.target.value)}>
-            <option value="">Select category</option>
+            <option value="">{s.select}</option>
             {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </div>
       </div>
       <div style={row}>
         <div>
-          <label style={lbl}>City *</label>
+          <label style={lbl}>{s.city}</label>
           <select style={{ ...inp, appearance: 'none' }} value={form.city} onChange={e => set('city', e.target.value)}>
-            <option value="">Select city</option>
+            <option value="">{s.select}</option>
             {cities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </div>
-        <div><label style={lbl}>Address</label><input style={inp} placeholder="Street, neighbourhood" value={form.address} onChange={e => set('address', e.target.value)} /></div>
+        <div><label style={lbl}>{s.address}</label><input style={inp} placeholder={s.addressPh} value={form.address} onChange={e => set('address', e.target.value)} /></div>
       </div>
       <div style={row}>
-        <div><label style={lbl}>Google Maps link</label><input style={inp} placeholder="https://maps.app.goo.gl/…" value={form.mapsLink} onChange={e => set('mapsLink', e.target.value)} /></div>
-        <div><label style={lbl}>Website / social</label><input style={inp} placeholder="Website or Instagram" value={form.websiteOrSocial} onChange={e => set('websiteOrSocial', e.target.value)} /></div>
+        <div><label style={lbl}>{s.maps}</label><input style={inp} placeholder="https://maps.app.goo.gl/…" value={form.mapsLink} onChange={e => set('mapsLink', e.target.value)} /></div>
+        <div><label style={lbl}>{s.web}</label><input style={inp} placeholder={s.webPh} value={form.websiteOrSocial} onChange={e => set('websiteOrSocial', e.target.value)} /></div>
       </div>
       <div style={row}>
-        <div><label style={lbl}>Business phone</label><input style={inp} placeholder="Business contact number" value={form.phone} onChange={e => set('phone', e.target.value)} /></div>
-        <div><label style={lbl}>Business WhatsApp</label><input style={inp} placeholder="WhatsApp for bookings" value={form.whatsapp} onChange={e => set('whatsapp', e.target.value)} /></div>
+        <div><label style={lbl}>{s.phone}</label><input style={inp} placeholder={s.phonePh} value={form.phone} onChange={e => set('phone', e.target.value)} /></div>
+        <div><label style={lbl}>{s.whatsapp}</label><input style={inp} placeholder={s.whatsappPh} value={form.whatsapp} onChange={e => set('whatsapp', e.target.value)} /></div>
       </div>
 
       <button onClick={() => canSave && onSubmit(form)} disabled={!canSave}
         style={{ marginTop: '0.75rem', padding: '0.8125rem 2.25rem', background: canSave ? '#9e763b' : 'var(--db-bg-card)', border: `1px solid ${canSave ? 'transparent' : 'var(--db-border-subtle)'}`, borderRadius: '0.375rem', color: canSave ? '#ebe8db' : 'var(--db-text-ghost)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', cursor: canSave ? 'pointer' : 'not-allowed' }}>
-        {saving ? 'Saving…' : submitLabel}
+        {saving ? s.saving : submitLabel}
       </button>
     </div>
   )

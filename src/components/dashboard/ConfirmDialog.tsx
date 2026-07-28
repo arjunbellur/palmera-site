@@ -1,5 +1,11 @@
 'use client'
 import React from 'react'
+import { useLocale } from '@/lib/use-locale'
+
+const STR = {
+  fr: { cancel: 'Annuler', confirm: 'Confirmer', busy: 'En cours…' },
+  en: { cancel: 'Cancel', confirm: 'Confirm', busy: 'Working…' },
+}
 
 interface ConfirmDialogProps {
   title: string
@@ -23,12 +29,15 @@ export default function ConfirmDialog({
   children,
   note,
   error,
-  confirmLabel = 'Confirm',
-  busyLabel = 'Working…',
+  confirmLabel,
+  busyLabel,
   busy = false,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const s = STR[useLocale()]
+  const confirmText = confirmLabel || s.confirm
+  const busyText = busyLabel || s.busy
   return (
     <div
       onClick={() => { if (!busy) onCancel() }}
@@ -50,14 +59,14 @@ export default function ConfirmDialog({
             disabled={busy}
             style={{ background: 'transparent', border: '1px solid var(--db-border)', color: 'var(--db-text-muted)', padding: '0.5rem 1rem', borderRadius: '0.25rem', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', cursor: busy ? 'default' : 'pointer' }}
           >
-            Cancel
+            {s.cancel}
           </button>
           <button
             onClick={onConfirm}
             disabled={busy}
             style={{ background: '#c0392b', border: 'none', color: '#fff', padding: '0.5rem 1rem', borderRadius: '0.25rem', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.02em', cursor: busy ? 'wait' : 'pointer', opacity: busy ? 0.7 : 1 }}
           >
-            {busy ? busyLabel : confirmLabel}
+            {busy ? busyText : confirmText}
           </button>
         </div>
       </div>

@@ -13,12 +13,70 @@ import ExperienceModal from '@/components/dashboard/ExperienceModal'
 import ConfirmDialog from '@/components/dashboard/ConfirmDialog'
 import PhotoUpload from '@/components/dashboard/PhotoUpload'
 import GalleryUpload from '@/components/dashboard/GalleryUpload'
+import { useLocale } from '@/lib/use-locale'
 import type { Company, Experience, Option, OptionGroup } from '@/lib/schema'
 
 // Company-scoped sections. No Documents tab: KYC/compliance documents are
 // deliberately NOT stored live (archive-only) — see docs + migration script.
 const TABS = ['Profile', 'Experiences', 'Photos', 'Operations'] as const
 type Tab = typeof TABS[number]
+
+const STR = {
+  fr: {
+    back: 'Aperçu', eyebrow: 'Établissement', untitled: 'Établissement sans nom',
+    tabs: { Profile: 'Profil', Experiences: 'Expériences', Photos: 'Photos', Operations: 'Opérations' } as Record<Tab, string>,
+    save: 'Enregistrer', saved: '✓ Enregistré', saving: 'Enregistrement…',
+    addExp: '+ Ajouter une expérience', noExpTitle: 'Aucune expérience pour l’instant',
+    noExpBody: 'Ajoutez les expériences que propose cet établissement.',
+    addFirstExp: '+ Ajouter votre première expérience',
+    needs: 'À compléter', edit: 'Modifier', del: 'Supprimer',
+    stLabels: { draft: 'Brouillon', pending_review: 'En révision', published: 'En ligne', unpublished: 'Retirée', archived: 'Archivée' } as Record<string, string>,
+    delTitle: 'Supprimer cette expérience ?',
+    delNote: 'L’expérience et ses options seront supprimées. Cette action est irréversible.',
+    delConfirm: 'Supprimer définitivement', delBusy: 'Suppression…',
+    delBody: 'Vous êtes sur le point de supprimer définitivement',
+    delThis: 'cette expérience',
+    photosIntro: 'L’image de cet établissement sur Palmera. Les envois sont enregistrés automatiquement.',
+    hero: 'Photo de couverture', logo: 'Logo de l’établissement',
+    heroHint: 'Paysage 16:9, min 1600×900px, sans filigrane', logoHint: 'Carré, PNG transparent de préférence',
+    gallery: 'Galerie',
+    galleryHint: 'Des photos du lieu ou de l’activité en général. Les photos d’une expérience précise vont sur cette expérience.',
+    opsIntro: 'Comment les réservations vous parviennent. Indiquez la personne qui gère les opérations au quotidien.',
+    opsName: 'Contact opérations *', opsNamePh: 'Personne qui gère le quotidien',
+    opsWa: 'WhatsApp opérations *', opsWaPh: 'Numéro WhatsApp direct',
+    notifPref: 'Préférence de notification', notifPh: 'Comment vous prévenir ?',
+    confSpeed: 'Rapidité de confirmation', confPh: 'En combien de temps confirmez-vous ?',
+    prefLabels: { 'WhatsApp message': 'Message WhatsApp', 'SMS': 'SMS', 'Email': 'Email', 'Phone call': 'Appel téléphonique' } as Record<string, string>,
+    speedLabels: { 'Real-time': 'En temps réel', 'Within 1 hour': 'Sous 1 heure', 'Same day': 'Le jour même', 'Within 24 hours': 'Sous 24 heures' } as Record<string, string>,
+  },
+  en: {
+    back: 'Overview', eyebrow: 'Company', untitled: 'Untitled company',
+    tabs: { Profile: 'Profile', Experiences: 'Experiences', Photos: 'Photos', Operations: 'Operations' } as Record<Tab, string>,
+    save: 'Save changes', saved: '✓ Saved', saving: 'Saving…',
+    addExp: '+ Add experience', noExpTitle: 'No experiences yet',
+    noExpBody: 'Add the experiences this company offers.',
+    addFirstExp: '+ Add your first experience',
+    needs: 'Needs', edit: 'Edit', del: 'Delete',
+    stLabels: { draft: 'Draft', pending_review: 'In review', published: 'Live', unpublished: 'Unpublished', archived: 'Archived' } as Record<string, string>,
+    delTitle: 'Delete this experience?',
+    delNote: 'Removes the experience and its options. This cannot be undone.',
+    delConfirm: 'Delete permanently', delBusy: 'Deleting…',
+    delBody: "You're about to permanently delete",
+    delThis: 'this experience',
+    photosIntro: 'How this company appears on Palmera. Uploads save automatically.',
+    hero: 'Hero photo', logo: 'Company logo',
+    heroHint: 'Landscape 16:9, min 1600×900px, no watermarks', logoHint: 'Square, transparent PNG preferred',
+    gallery: 'Gallery',
+    galleryHint: 'Photos of the venue or business overall. Photos of a specific experience belong on that experience.',
+    opsIntro: 'How bookings reach you once a guest reserves. Give us the person who actually runs day-to-day operations.',
+    opsName: 'Operations contact name *', opsNamePh: 'Person who runs day-to-day operations',
+    opsWa: 'Operations contact WhatsApp *', opsWaPh: 'Direct WhatsApp number',
+    notifPref: 'Notification preference', notifPh: 'How should we notify you?',
+    confSpeed: 'Confirmation speed', confPh: 'How quickly do you confirm?',
+    prefLabels: { 'WhatsApp message': 'WhatsApp message', 'SMS': 'SMS', 'Email': 'Email', 'Phone call': 'Phone call' } as Record<string, string>,
+    speedLabels: { 'Real-time': 'Real-time', 'Within 1 hour': 'Within 1 hour', 'Same day': 'Same day', 'Within 24 hours': 'Within 24 hours' } as Record<string, string>,
+  },
+}
 
 // Shape carried over wholesale from the legacy operations{} map.
 interface OpsForm extends Record<string, unknown> {
@@ -38,6 +96,7 @@ const opsInput: React.CSSProperties = { width: '100%', background: 'var(--db-bg-
 export default function CompanyPage({ params }: { params: Promise<{ companyId: string }> }) {
   const { companyId } = use(params)
   const router = useRouter()
+  const s = STR[useLocale()]
   const [uid, setUid] = useState('')
   const [company, setCompany] = useState<Company | null>(null)
   const [loading, setLoading] = useState(true)
@@ -182,26 +241,26 @@ export default function CompanyPage({ params }: { params: Promise<{ companyId: s
     <div>
       <a href="/dashboard/home" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', textDecoration: 'none', color: 'var(--db-text-faint)', fontFamily: 'var(--font-sans)', fontSize: '0.6875rem', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '1.5rem' }}>
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M7.5 2L3.5 6L7.5 10" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" /></svg>
-        Overview
+        {s.back}
       </a>
       <div style={{ marginBottom: '1.75rem' }}>
-        <p style={{ fontFamily: 'var(--font-sans)', color: 'rgba(190,154,86,0.8)', fontSize: '0.75rem', letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 0.375rem' }}>Company</p>
-        <h1 style={{ fontFamily: 'var(--font-display)', color: 'var(--db-text)', fontSize: 'clamp(1.25rem, 3vw, 1.5rem)', fontWeight: 400, letterSpacing: '0.06em', margin: 0 }}>{company.name || 'Untitled company'}</h1>
+        <p style={{ fontFamily: 'var(--font-sans)', color: 'rgba(190,154,86,0.8)', fontSize: '0.75rem', letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 0.375rem' }}>{s.eyebrow}</p>
+        <h1 style={{ fontFamily: 'var(--font-display)', color: 'var(--db-text)', fontSize: 'clamp(1.25rem, 3vw, 1.5rem)', fontWeight: 400, letterSpacing: '0.06em', margin: 0 }}>{company.name || s.untitled}</h1>
       </div>
 
       <div style={{ display: 'flex', overflowX: 'auto', borderBottom: '1px solid var(--db-border-subtle)', marginBottom: '1.75rem', scrollbarWidth: 'none' }}>
         {TABS.map(tb => (
           <button key={tb} onClick={() => setTab(tb)}
             style={{ flexShrink: 0, padding: '0.625rem 1.25rem', background: 'transparent', border: 'none', borderBottom: tab === tb ? '2px solid #be9a56' : '2px solid transparent', color: tab === tb ? '#be9a56' : 'var(--db-text-muted)', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.04em', cursor: 'pointer', marginBottom: '-1px' }}>
-            {tb}
+            {s.tabs[tb]}
           </button>
         ))}
       </div>
 
       {tab === 'Profile' && (
         <>
-          <CompanyForm initial={company} submitLabel="Save changes" saving={saving} onSubmit={handleSubmit} />
-          {saved && <p style={{ fontSize: '0.8125rem', color: '#be9a56', fontFamily: 'var(--font-sans)', marginTop: '0.75rem' }}>✓ Saved</p>}
+          <CompanyForm initial={company} submitLabel={s.save} saving={saving} onSubmit={handleSubmit} />
+          {saved && <p style={{ fontSize: '0.8125rem', color: '#be9a56', fontFamily: 'var(--font-sans)', marginTop: '0.75rem' }}>{s.saved}</p>}
         </>
       )}
 
@@ -209,14 +268,14 @@ export default function CompanyPage({ params }: { params: Promise<{ companyId: s
         <div>
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1.25rem' }}>
             <button onClick={openNewExperience} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0.625rem 1.25rem', background: '#9e763b', border: 'none', borderRadius: '6px', color: '#ebe8db', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', cursor: 'pointer' }}>
-              + Add experience
+              {s.addExp}
             </button>
           </div>
           {loadingExp ? null : experiences.length === 0 ? (
             <div style={{ background: 'var(--db-bg-card)', border: '1px dashed var(--db-border-dashed)', borderRadius: '0.625rem', padding: '3rem 2rem', textAlign: 'center' }}>
-              <p style={{ fontFamily: 'var(--font-serif)', color: 'var(--db-text-faint)', fontSize: '1.0625rem', margin: '0 0 0.5rem' }}>No experiences yet</p>
-              <p style={{ fontFamily: 'var(--font-sans)', color: 'var(--db-text-ghost)', fontSize: '0.8125rem', margin: '0 0 1.5rem' }}>Add the experiences this company offers.</p>
-              <button onClick={openNewExperience} style={{ padding: '10px 24px', background: 'transparent', border: '1px solid var(--db-border-subtle)', borderRadius: '6px', color: 'var(--db-text)', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>+ Add your first experience</button>
+              <p style={{ fontFamily: 'var(--font-serif)', color: 'var(--db-text-faint)', fontSize: '1.0625rem', margin: '0 0 0.5rem' }}>{s.noExpTitle}</p>
+              <p style={{ fontFamily: 'var(--font-sans)', color: 'var(--db-text-ghost)', fontSize: '0.8125rem', margin: '0 0 1.5rem' }}>{s.noExpBody}</p>
+              <button onClick={openNewExperience} style={{ padding: '10px 24px', background: 'transparent', border: '1px solid var(--db-border-subtle)', borderRadius: '6px', color: 'var(--db-text)', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>{s.addFirstExp}</button>
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 18rem), 1fr))', gap: '1rem' }}>
@@ -224,17 +283,17 @@ export default function CompanyPage({ params }: { params: Promise<{ companyId: s
                 <div key={e.id} style={{ background: 'var(--db-bg-card)', border: '1px solid var(--db-border-subtle)', borderRadius: '0.5rem', padding: '1.25rem 1.375rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '0.625rem' }}>
                     <h3 style={{ fontFamily: 'var(--font-serif)', color: 'var(--db-text)', fontSize: '0.9375rem', fontWeight: 500, margin: 0 }}>{e.title || 'Untitled'}</h3>
-                    <span style={{ flexShrink: 0, fontSize: '0.625rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', textTransform: 'uppercase', padding: '2px 8px', borderRadius: '2px', border: '1px solid var(--db-border-subtle)', color: 'var(--db-text-muted)' }}>{e.status}</span>
+                    <span style={{ flexShrink: 0, fontSize: '0.625rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', textTransform: 'uppercase', padding: '2px 8px', borderRadius: '2px', border: '1px solid var(--db-border-subtle)', color: 'var(--db-text-muted)' }}>{s.stLabels[e.status] || e.status}</span>
                   </div>
                   {(e.needsReview?.length ?? 0) > 0 && (
-                    <p style={{ fontSize: '0.6875rem', color: '#e07070', fontFamily: 'var(--font-sans)', margin: '0 0 0.625rem' }}>Needs: {e.needsReview!.join(', ')}</p>
+                    <p style={{ fontSize: '0.6875rem', color: '#e07070', fontFamily: 'var(--font-sans)', margin: '0 0 0.625rem' }}>{s.needs}: {e.needsReview!.join(', ')}</p>
                   )}
                   <p style={{ fontSize: '0.75rem', color: 'var(--db-text-faint)', fontFamily: 'var(--font-sans)', margin: '0 0 1rem', textTransform: 'capitalize' }}>
                     {[e.category, e.city].filter(Boolean).join(' · ') || '—'}{e.price != null ? ` · ${e.price.toLocaleString()} XOF` : ''}
                   </p>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button onClick={() => openEditExperience(e)} style={{ background: 'transparent', border: '1px solid var(--db-border-subtle)', borderRadius: '4px', color: 'var(--db-text-faint)', fontSize: '0.6875rem', fontFamily: 'var(--font-sans)', padding: '4px 10px', cursor: 'pointer' }}>Edit</button>
-                    <button onClick={() => setToDeleteExp(e)} style={{ background: 'transparent', border: '1px solid rgba(224,112,112,0.2)', borderRadius: '4px', color: 'rgba(224,112,112,0.7)', fontSize: '0.6875rem', fontFamily: 'var(--font-sans)', padding: '4px 10px', cursor: 'pointer' }}>Delete</button>
+                    <button onClick={() => openEditExperience(e)} style={{ background: 'transparent', border: '1px solid var(--db-border-subtle)', borderRadius: '4px', color: 'var(--db-text-faint)', fontSize: '0.6875rem', fontFamily: 'var(--font-sans)', padding: '4px 10px', cursor: 'pointer' }}>{s.edit}</button>
+                    <button onClick={() => setToDeleteExp(e)} style={{ background: 'transparent', border: '1px solid rgba(224,112,112,0.2)', borderRadius: '4px', color: 'rgba(224,112,112,0.7)', fontSize: '0.6875rem', fontFamily: 'var(--font-sans)', padding: '4px 10px', cursor: 'pointer' }}>{s.del}</button>
                   </div>
                 </div>
               ))}
@@ -246,25 +305,25 @@ export default function CompanyPage({ params }: { params: Promise<{ companyId: s
       {tab === 'Photos' && (
         <div>
           <p style={{ fontFamily: 'var(--font-serif)', color: 'var(--db-text-muted)', fontSize: '0.875rem', margin: '0 0 1.5rem' }}>
-            How this company appears on Palmera. Uploads save automatically.
+            {s.photosIntro}
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 16rem), 1fr))', gap: '1.25rem', marginBottom: '1.75rem' }}>
             <div>
-              <label style={photoLabel}>Hero photo {!company.heroPhoto && <span style={{ color: '#be9a56' }}>*</span>}</label>
-              <PhotoUpload uid={uid} label="Hero photo" fieldName={`company_${companyId}_hero`} existingUrl={company.heroPhoto || ''}
-                hint="Landscape 16:9, min 1600×900px, no watermarks"
+              <label style={photoLabel}>{s.hero} {!company.heroPhoto && <span style={{ color: '#be9a56' }}>*</span>}</label>
+              <PhotoUpload uid={uid} label={s.hero} fieldName={`company_${companyId}_hero`} existingUrl={company.heroPhoto || ''}
+                hint={s.heroHint}
                 onUploaded={(url) => persistPhotos({ heroPhoto: url })} />
             </div>
             <div>
-              <label style={photoLabel}>Company logo {!company.logo && <span style={{ color: '#be9a56' }}>*</span>}</label>
-              <PhotoUpload uid={uid} label="Company logo" fieldName={`company_${companyId}_logo`} existingUrl={company.logo || ''}
-                hint="Square, transparent PNG preferred"
+              <label style={photoLabel}>{s.logo} {!company.logo && <span style={{ color: '#be9a56' }}>*</span>}</label>
+              <PhotoUpload uid={uid} label={s.logo} fieldName={`company_${companyId}_logo`} existingUrl={company.logo || ''}
+                hint={s.logoHint}
                 onUploaded={(url) => persistPhotos({ logo: url })} />
             </div>
           </div>
-          <label style={photoLabel}>Gallery</label>
+          <label style={photoLabel}>{s.gallery}</label>
           <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6875rem', color: 'var(--db-text-ghost)', margin: '0 0 0.625rem' }}>
-            Photos of the venue or business overall. Photos of a specific experience belong on that experience.
+            {s.galleryHint}
           </p>
           <GalleryUpload uid={uid} value={company.gallery || []} onChange={(urls) => persistPhotos({ gallery: urls })} />
         </div>
@@ -273,42 +332,42 @@ export default function CompanyPage({ params }: { params: Promise<{ companyId: s
       {tab === 'Operations' && (
         <div>
           <p style={{ fontFamily: 'var(--font-serif)', color: 'var(--db-text-muted)', fontSize: '0.875rem', margin: '0 0 1.5rem' }}>
-            How bookings reach you once a guest reserves. Give us the person who actually runs day-to-day operations.
+            {s.opsIntro}
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 14rem), 1fr))', gap: '1rem', marginBottom: '1rem' }}>
             <div>
-              <label style={opsLabel}>Operations contact name *</label>
-              <input style={opsInput} placeholder="Person who runs day-to-day operations" value={ops.opsContactName}
+              <label style={opsLabel}>{s.opsName}</label>
+              <input style={opsInput} placeholder={s.opsNamePh} value={ops.opsContactName}
                 onChange={(e) => setOps(p => ({ ...p, opsContactName: e.target.value }))} />
             </div>
             <div>
-              <label style={opsLabel}>Operations contact WhatsApp *</label>
-              <input style={opsInput} placeholder="Direct WhatsApp number" value={ops.opsContactWhatsapp}
+              <label style={opsLabel}>{s.opsWa}</label>
+              <input style={opsInput} placeholder={s.opsWaPh} value={ops.opsContactWhatsapp}
                 onChange={(e) => setOps(p => ({ ...p, opsContactWhatsapp: e.target.value }))} />
             </div>
             <div>
-              <label style={opsLabel}>Notification preference</label>
+              <label style={opsLabel}>{s.notifPref}</label>
               <select style={{ ...opsInput, appearance: 'none' }} value={ops.notificationPreference}
                 onChange={(e) => setOps(p => ({ ...p, notificationPreference: e.target.value }))}>
-                <option value="">How should we notify you?</option>
-                {NOTIFICATION_PREFS.map(p => <option key={p} value={p}>{p}</option>)}
+                <option value="">{s.notifPh}</option>
+                {NOTIFICATION_PREFS.map(p => <option key={p} value={p}>{s.prefLabels[p]}</option>)}
               </select>
             </div>
             <div>
-              <label style={opsLabel}>Confirmation speed</label>
+              <label style={opsLabel}>{s.confSpeed}</label>
               <select style={{ ...opsInput, appearance: 'none' }} value={ops.confirmationSpeed}
                 onChange={(e) => setOps(p => ({ ...p, confirmationSpeed: e.target.value }))}>
-                <option value="">How quickly do you confirm?</option>
-                {CONFIRMATION_SPEEDS.map(s => <option key={s} value={s}>{s}</option>)}
+                <option value="">{s.confPh}</option>
+                
               </select>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
             <button onClick={handleSaveOps} disabled={savingOps}
               style={{ padding: '0.625rem 1.5rem', background: '#9e763b', border: 'none', borderRadius: '0.375rem', color: '#ebe8db', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', cursor: savingOps ? 'default' : 'pointer', opacity: savingOps ? 0.6 : 1 }}>
-              {savingOps ? 'Saving…' : 'Save changes'}
+              {savingOps ? s.saving : s.save}
             </button>
-            {savedOps && <span style={{ fontSize: '0.8125rem', color: '#be9a56', fontFamily: 'var(--font-sans)' }}>✓ Saved</span>}
+            {savedOps && <span style={{ fontSize: '0.8125rem', color: '#be9a56', fontFamily: 'var(--font-sans)' }}>{s.saved}</span>}
           </div>
         </div>
       )}
@@ -328,15 +387,15 @@ export default function CompanyPage({ params }: { params: Promise<{ companyId: s
 
       {toDeleteExp && (
         <ConfirmDialog
-          title="Delete this experience?"
-          note="Removes the experience and its options. This cannot be undone."
-          confirmLabel="Delete permanently"
-          busyLabel="Deleting…"
+          title={s.delTitle}
+          note={s.delNote}
+          confirmLabel={s.delConfirm}
+          busyLabel={s.delBusy}
           busy={deletingExp}
           onConfirm={handleDeleteExperience}
           onCancel={() => setToDeleteExp(null)}
         >
-          You&apos;re about to permanently delete <strong style={{ color: 'var(--db-text)' }}>{toDeleteExp.title || 'this experience'}</strong>.
+          {s.delBody} <strong style={{ color: 'var(--db-text)' }}>{toDeleteExp.title || s.delThis}</strong>.
         </ConfirmDialog>
       )}
 
