@@ -66,7 +66,14 @@
     "emailPlaceholder": "Email address",
     "thanks": "Thank you! Your submission has been received!",
     "copyright": "© 2026 Palmera. Where Leisure Lives.",
-    "partner": "Partner with us"
+    "partner": "Partner with us",
+    "legalHeading": "Legal",
+    "legalTerms": "Terms of Service",
+    "legalPrivacy": "Privacy Policy",
+    "legalRefunds": "Refunds & Cancellations",
+    "legalCookies": "Cookie Policy",
+    "legalAi": "AI Policy",
+    "legalDmca": "DMCA & Copyright"
   },
   "dashboard": {
     "login": {

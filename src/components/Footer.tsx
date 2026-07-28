@@ -35,7 +35,23 @@ export default function Footer() {
           ))}
         </div>
       </div>
-      <div style={{ maxWidth: '75rem', margin: '0 auto', padding: 'clamp(1.25rem,2vw,1.75rem) clamp(1.5rem,4.5vw,2.5rem)', borderTop: '1px solid rgba(42,33,25,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+      {/* Legal — the app links to these same /legal/* URLs */}
+      <div style={{ maxWidth: '75rem', margin: '0 auto', padding: 'clamp(1.25rem,2vw,1.75rem) clamp(1.5rem,4.5vw,2.5rem) 0.25rem', borderTop: '1px solid rgba(42,33,25,0.1)', display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.625rem 1.375rem' }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.12em', color: 'rgba(42,33,25,0.4)', textTransform: 'uppercase' }}>{t('legalHeading')}</span>
+        {([
+          ['/legal/terms', 'legalTerms'],
+          ['/legal/privacy', 'legalPrivacy'],
+          ['/legal/refunds', 'legalRefunds'],
+          ['/legal/cookies', 'legalCookies'],
+          ['/legal/ai-policy', 'legalAi'],
+          ['/legal/dmca', 'legalDmca'],
+        ] as const).map(([href, key]) => (
+          <Link key={href} href={href} style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', color: 'rgba(42,33,25,0.55)', textDecoration: 'none', letterSpacing: '0.04em' }}>
+            {t(key)}
+          </Link>
+        ))}
+      </div>
+      <div style={{ maxWidth: '75rem', margin: '0 auto', padding: 'clamp(1rem,1.5vw,1.25rem) clamp(1.5rem,4.5vw,2.5rem)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
         <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', letterSpacing: '0.08em', color: 'rgba(42,33,25,0.5)', textTransform: 'uppercase', margin: 0 }}>{t('copyright')}</p>
         <div style={{ display: 'flex', gap: '1.5rem' }}>
           <Link href="/dashboard" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', color: 'rgba(42,33,25,0.5)', textDecoration: 'none', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{t('partner')}</Link>

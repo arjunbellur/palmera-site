@@ -66,7 +66,14 @@
     "emailPlaceholder": "Adresse e-mail",
     "thanks": "Merci ! Votre soumission a été reçue !",
     "copyright": "© 2026 Palmera. Où le loisir vit.",
-    "partner": "Devenir partenaire"
+    "partner": "Devenir partenaire",
+    "legalHeading": "Mentions légales",
+    "legalTerms": "Conditions d’utilisation",
+    "legalPrivacy": "Politique de confidentialité",
+    "legalRefunds": "Remboursements & annulations",
+    "legalCookies": "Politique de cookies",
+    "legalAi": "Politique IA",
+    "legalDmca": "DMCA & droits d’auteur"
   },
   "dashboard": {
     "login": {
