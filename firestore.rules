@@ -87,6 +87,7 @@ service cloud.firestore {
     // To require login for browsing later, add `signedIn() &&` to the first clause.
     match /experiences/{id} {
       allow read: if resource.data.status == 'published'
+        || resource.data.get('active', false) == true
         || (signedIn() && (resource.data.providerId == request.auth.uid || isAdmin()));
       // Create only for yourself AND only under a company you own. The partner
       // owns draft-vs-published for their OWN content, so publishing on create
@@ -137,6 +138,11 @@ service cloud.firestore {
     match /bookings/{id} {
       allow read: if signedIn() && (resource.data.providerId == request.auth.uid || isAdmin());
       allow write: if isAdmin();
+      // Customer app (Samson, 2026-07-27): a member reads + creates their OWN
+      // bookings from the client SDK. ⚠ Money fields are client-authored under
+      // this rule — needs server-side validation before real payments.
+      allow read:   if signedIn() && resource.data.customerId == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.customerId == request.auth.uid;
       // The partner may answer a request for THEIR OWN booking — confirm or
       // decline a pending one, nothing else. Every money field is frozen, so a
       // partner can never rewrite what they're owed, and the transition is
@@ -173,6 +179,57 @@ service cloud.firestore {
     match /payouts/{id} {
       allow read: if signedIn() && (resource.data.providerId == request.auth.uid || isAdmin());
       allow write: if isAdmin();
+    }
+
+    // ══ CUSTOMER-APP USER DATA (Samson, 2026-07-27) ═══════════════════════════
+    // Social layer: profiles, friends, moments, chat, points. Kept verbatim from
+    // his deploy so repo == live. Review notes are inline (⚠) — behavior changes
+    // go through Samson, not silently here.
+    match /profiles/{uid} {
+      allow read:            if signedIn();
+      allow create, update:  if signedIn() && request.auth.uid == uid;
+      allow delete:          if signedIn() && request.auth.uid == uid;
+    }
+    // favorites/{uid}_{expId}
+    match /favorites/{fid} {
+      allow read:   if signedIn();
+      allow write:  if signedIn() && request.resource.data.user_id == request.auth.uid;
+      allow delete: if signedIn();  // ⚠ any user can delete anyone's favorite
+    }
+    // moments — create your own; any signed-in user reads the feed.
+    match /moments/{mid} {
+      allow read:            if signedIn();
+      allow create:          if signedIn() && request.resource.data.user_id == request.auth.uid;
+      allow update, delete:  if signedIn() && resource.data.user_id == request.auth.uid;
+    }
+    // friends/{me}_{friend}
+    match /friends/{edge} {
+      allow read:            if signedIn();
+      allow create:          if signedIn() && request.resource.data.user_id == request.auth.uid;
+      allow update, delete:  if signedIn() && resource.data.user_id == request.auth.uid;
+    }
+    match /notifications/{nid} {
+      allow read, update: if signedIn() && resource.data.user_id == request.auth.uid;
+      allow create:       if signedIn();  // ⚠ anyone can notify anyone (spam vector)
+    }
+    // reviews — public read; signed-in users create their own.
+    match /reviews/{rid} {
+      allow read:   if true;
+      allow create: if signedIn() && request.resource.data.user_id == request.auth.uid;
+    }
+    // points_ledger — ⚠ read is ALL users (not "your own"), and users write
+    // their own rows → self-granted points. Needs server-side issuance.
+    match /points_ledger/{pid} {
+      allow read:  if signedIn();
+      allow write: if signedIn() && request.resource.data.user_id == request.auth.uid;
+    }
+    // chat — ⚠ no membership check: every signed-in user can read all threads
+    // and messages. Fine for closed testing; must scope before launch.
+    match /chat_threads/{tid}  { allow read, create, update: if signedIn(); }
+    match /chat_members/{cmid} { allow read, create: if signedIn(); }
+    match /chat_messages/{mid} {
+      allow read:   if signedIn();
+      allow create: if signedIn() && request.resource.data.user_id == request.auth.uid;
     }
 
     // ── Legacy partners/listings — kept live during the v3.2 migration; removed
