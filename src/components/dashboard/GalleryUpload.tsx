@@ -2,6 +2,12 @@
 import { useRef, useState } from 'react'
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import { storage } from '@/lib/firebase'
+import { useLocale } from '@/lib/use-locale'
+
+const GSTR = {
+  fr: { uploading: 'Envoi de', add: 'Ajouter des photos', multi: 'Sélection multiple possible' },
+  en: { uploading: 'Uploading', add: 'Add photos', multi: 'Select multiple at once' },
+}
 
 interface GalleryUploadProps {
   uid: string
@@ -16,6 +22,7 @@ interface GalleryUploadProps {
  * customer app's experiences.gallery). Reorder-free for now; remove per item.
  */
 export default function GalleryUpload({ uid, value, onChange, max = 12 }: GalleryUploadProps) {
+  const gs = GSTR[useLocale()]
   const [inFlight, setInFlight] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -57,14 +64,14 @@ export default function GalleryUpload({ uid, value, onChange, max = 12 }: Galler
           <button onClick={() => inputRef.current?.click()}
             style={{ ...tile, borderStyle: 'dashed', color: 'var(--db-text-faint)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.25rem', fontFamily: 'var(--font-sans)', fontSize: '0.75rem' }}>
             <span style={{ fontSize: '1.375rem', lineHeight: 1 }}>＋</span>
-            {inFlight > 0 ? `Uploading ${inFlight}…` : 'Add photos'}
+            {inFlight > 0 ? `${gs.uploading} ${inFlight}…` : gs.add}
           </button>
         )}
       </div>
       <input ref={inputRef} type="file" accept="image/*" multiple style={{ display: 'none' }}
         onChange={e => { handleFiles(e.target.files); e.target.value = '' }} />
       <p style={{ fontSize: '0.6875rem', color: 'var(--db-text-ghost)', fontFamily: 'var(--font-sans)', margin: '0.625rem 0 0' }}>
-        Select multiple at once · {value.length}/{max}
+        {gs.multi} · {value.length}/{max}
       </p>
     </div>
   )

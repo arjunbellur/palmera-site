@@ -230,7 +230,7 @@ export default function EarningsScreen() {
                   {formatDate(p.periodStart)} – {formatDate(p.periodEnd)}
                 </div>
                 <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: PAYOUT_COLOR[p.status], marginTop: '3px' }}>
-                  {p.status}{p.clawbackTotal > 0 && ` · −${formatAmount(p.clawbackTotal)}`}
+                  {L(({ scheduled: 'ps_scheduled', processing: 'ps_processing', paid: 'ps_paid', failed: 'ps_failed' } as const)[p.status])}{p.clawbackTotal > 0 && ` · −${formatAmount(p.clawbackTotal)}`}
                 </div>
               </div>
               <div style={{ fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--pf-text)' }}>

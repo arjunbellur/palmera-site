@@ -2,6 +2,12 @@
 import { useState, useRef, useEffect } from 'react'
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import { storage } from '@/lib/firebase'
+import { useLocale } from '@/lib/use-locale'
+
+const STR = {
+  fr: { replace: 'Cliquez pour remplacer', uploading: 'Envoi', drop: 'Cliquez ou glissez une photo' },
+  en: { replace: 'Click to replace', uploading: 'Uploading', drop: 'Click or drag to upload' },
+}
 
 interface PhotoUploadProps {
   uid: string
@@ -14,6 +20,7 @@ interface PhotoUploadProps {
 }
 
 export default function PhotoUpload({ uid, label, fieldName, existingUrl, onUploaded, hint }: PhotoUploadProps) {
+  const s = STR[useLocale()]
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [preview, setPreview] = useState(existingUrl || '')
@@ -64,19 +71,19 @@ export default function PhotoUpload({ uid, label, fieldName, existingUrl, onUplo
         {preview ? (
           <>
             <img src={preview} alt={label} style={{ maxHeight: '7.5rem', maxWidth: '100%', borderRadius: '0.25rem', objectFit: 'cover' }} />
-            <span style={{ fontSize: '0.6875rem', color: 'var(--accent-4)', fontFamily: 'var(--font-sans)' }}>Click to replace</span>
+            <span style={{ fontSize: '0.6875rem', color: 'var(--accent-4)', fontFamily: 'var(--font-sans)' }}>{s.replace}</span>
           </>
         ) : uploading ? (
           <>
             <div style={{ width: '100%', height: '0.25rem', background: 'var(--db-border-subtle)', borderRadius: '2px', overflow: 'hidden', maxWidth: '200px' }}>
               <div style={{ height: '100%', width: `${progress}%`, background: 'var(--accent-4)', transition: 'width 0.2s' }} />
             </div>
-            <span style={{ fontSize: '0.75rem', color: 'var(--db-text-faint)', fontFamily: 'var(--font-sans)' }}>Uploading {progress}%</span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--db-text-faint)', fontFamily: 'var(--font-sans)' }}>{s.uploading} {progress}%</span>
           </>
         ) : (
           <>
             <span style={{ fontSize: '1.5rem', color: 'var(--db-text-ghost)' }}>↑</span>
-            <span style={{ fontSize: '0.8125rem', color: 'var(--db-text-faint)', fontFamily: 'var(--font-sans)' }}>Click or drag to upload</span>
+            <span style={{ fontSize: '0.8125rem', color: 'var(--db-text-faint)', fontFamily: 'var(--font-sans)' }}>{s.drop}</span>
             {hint && <span style={{ fontSize: '0.6875rem', color: 'var(--db-text-ghost)', fontFamily: 'var(--font-sans)' }}>{hint}</span>}
           </>
         )}

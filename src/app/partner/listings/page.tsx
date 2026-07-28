@@ -139,7 +139,7 @@ export default function ListingsScreen() {
                     <span style={{ ...eyebrow, textTransform: 'capitalize' }}>{e.category || '—'}</span>
                     <Chip tone={s.tone}>{L(s.key)}</Chip>
                   </div>
-                  <div style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '14.5px', marginBottom: '6px' }}>{e.title || 'Untitled'}</div>
+                  <div style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '14.5px', marginBottom: '6px' }}>{e.title || L('untitled')}</div>
                   <div style={{ fontFamily: 'var(--font-sans)', fontSize: '11.5px', color: 'var(--pf-muted)' }}>
                     {e.price != null ? `${L('from')} ${formatAmount(e.price)} XOF` : (locale === 'fr' ? 'Sur réservation' : 'Reservation only')}
                   </div>
@@ -163,7 +163,7 @@ export default function ListingsScreen() {
           onConfirm={handleDelete}
           onCancel={() => setToDelete(null)}
         >
-          <strong style={{ color: 'var(--pf-text)' }}>{toDelete.title || 'Untitled'}</strong>
+          <strong style={{ color: 'var(--pf-text)' }}>{toDelete.title || L('untitled')}</strong>
         </ConfirmDialog>
       )}
 

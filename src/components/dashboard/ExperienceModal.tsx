@@ -1,5 +1,7 @@
 'use client'
-// The listing editor, restructured as a guided 4-step flow.
+// The listing editor, restructured as a guided 4-step flow. Fully bilingual —
+// French first (most partners work in French); stored VALUES stay canonical
+// (day keys, language names, tier ids) while display labels localize.
 //
 // CONTEXT THAT SHAPES THIS UI: Palmera's customer app is a GROUP booking app —
 // friends book an experience together and split the cost. Two consequences:
@@ -12,6 +14,7 @@ import { useEffect, useState } from 'react'
 import PhotoUpload from './PhotoUpload'
 import GalleryUpload from './GalleryUpload'
 import { getEnabledCategories, getEnabledCities, getPolicies } from '@/lib/config'
+import { useLocale } from '@/lib/use-locale'
 import type { Experience, OptionGroup, Option, CancellationTier, ExperienceMode, PriceUnit, ConfirmationType, ScheduleType } from '@/lib/schema'
 
 type Opt = { id: string; name: string }
@@ -25,8 +28,119 @@ function toDateTimeInputs(ts: unknown): { date: string; time: string } {
   const pad = (n: number) => String(n).padStart(2, '0')
   return { date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`, time: `${pad(d.getHours())}:${pad(d.getMinutes())}` }
 }
+
+// Stored values are canonical (English keys) — only the labels localize.
 const LANGUAGES = ['French', 'English', 'Wolof', 'Arabic', 'Spanish']
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+const M = {
+  fr: {
+    steps: [
+      { title: 'L’essentiel', sub: 'Qu’est-ce que c’est, et à quel prix ?' },
+      { title: 'Où & quand', sub: 'Comment les clients le trouvent, et quand ça a lieu' },
+      { title: 'Photos & description', sub: 'Ce que les clients voient dans l’app' },
+      { title: 'Détails de réservation', sub: 'Confirmation, annulation et extras' },
+    ],
+    editTitle: 'Modifier l’expérience', newTitle: 'Nouvelle expérience',
+    migrated: 'Migré depuis votre ancienne annonce — à compléter :',
+    nr_cancel: 'politique d’annulation', nr_photos: 'photos', nr_coords: 'lien Google Maps',
+    name: 'Nom de l’expérience *', namePh: 'ex. « Tour en jetski au coucher du soleil »',
+    category: 'Catégorie *', city: 'Ville *', select: 'Sélectionner',
+    howPay: 'Comment les clients paient-ils ?', payApp: 'Paiement dans l’app', payFree: 'Réservation gratuite',
+    payHintPaid: 'Les clients paient à la réservation — le total est partagé entre les amis du groupe.',
+    payHintFree: 'Les clients réservent sans payer — ex. une table ou une entrée. Vous pouvez quand même facturer des extras plus loin.',
+    price: 'Prix (XOF) *', priceIs: 'Ce prix s’applique', perGroup: 'Au groupe entier', perPerson: 'Par personne',
+    minGroup: 'Groupe minimum', maxGroup: 'Groupe maximum',
+    partyHint: 'Palmera est fait pour réserver entre amis — c’est la taille de groupe que vous pouvez accueillir.',
+    preview: 'Ce que les clients verront',
+    previewLine: (n: number, total: string, each: string) => <>Un groupe de {n} amis paie <strong style={{ color: 'var(--db-text)' }}>{total} XOF</strong> — soit environ <strong style={{ color: 'var(--db-text)' }}>{each} XOF chacun</strong> une fois partagé dans l’app.</>,
+    when: 'Quand peut-on réserver ?', anytime: 'À tout moment', setDays: 'Jours & horaires fixes', oneOff: 'Événement unique',
+    daysRun: 'Jours d’ouverture', startTimes: 'Heures de début', slotsPh: 'ex. « 9h, 14h, 17h »',
+    dayLabels: { Mon: 'Lun', Tue: 'Mar', Wed: 'Mer', Thu: 'Jeu', Fri: 'Ven', Sat: 'Sam', Sun: 'Dim' } as Record<string, string>,
+    eventDate: 'Date de l’événement', startTime: 'Heure de début',
+    where: 'Où est-ce ? (nom du lieu)', wherePh: 'ex. « Plage de Ngor »',
+    duration: 'Combien de temps ça dure ?', durationPh: 'ex. « 2 heures »',
+    maps: 'Lien Google Maps', needPub: '*requis pour publier',
+    mapsPh: 'Collez le lien Google Maps de votre lieu',
+    mapsHint: 'Dans Google Maps : trouvez votre lieu → Partager → Copier le lien, puis collez-le ici. Les clients l’utilisent pour s’y rendre.',
+    pinOk: ' ✓ Position localisée.', pinPending: ' Lien enregistré — la position sera placée à partir du lien.',
+    mainPhoto: 'Photo principale', photoHint: 'C’est la première photo que voient les clients — soignez-la.',
+    morePhotos: 'Autres photos',
+    describe: 'Décrivez-la à un client', describePh: 'Que vont-ils faire ? Qu’est-ce qui la rend spéciale ?',
+    included: 'Ce qui est inclus (un par ligne)', includedPh: 'Gilets de sauvetage\nBoissons',
+    notIncluded: 'Non inclus (un par ligne)', notIncludedPh: 'Transport\nRepas',
+    highlights: 'Points forts (un par ligne)', dress: 'Tenue exigée (si besoin)', dressPh: 'ex. « Chic décontracté »',
+    langs: 'Langues parlées par votre équipe',
+    langLabels: { French: 'Français', English: 'Anglais', Wolof: 'Wolof', Arabic: 'Arabe', Spanish: 'Espagnol' } as Record<string, string>,
+    whenBooks: 'Quand un groupe réserve', instant: 'Confirmé instantanément', approve: 'J’approuve chaque réservation',
+    cancelPolicy: 'Politique d’annulation', confirmTier: '— à confirmer',
+    tierLabels: { flexible: 'Flexible', moderate: 'Modérée', strict: 'Stricte' } as Record<string, string>,
+    notesPh: 'Autre chose à savoir pour les clients (facultatif)',
+    addons: 'Options & choix', addChoice: '+ Ajouter un choix',
+    addonsHint: <>Facultatif. Chaque « choix » est une question posée au client à la réservation — ex. <em>Placement</em> (Bord de ring 15 000 / Standard 5 000) ou <em>Extras</em> (Formule boissons 8 000). Les prix s’ajoutent au total que le groupe partage.</>,
+    noAddons: 'Aucune option — les clients réservent simplement au prix de base.',
+    choosing: 'Que choisissent les clients ?', choosingPh: 'ex. « Placement », « Type de chambre », « Extras »',
+    mustChoose: 'Choix obligatoire', several: 'Quantité multiple', remove: 'Retirer',
+    optNamePh: 'ex. « Bord de ring »', optPricePh: '+ Prix (XOF)', optMaxPh: 'Max par réservation',
+    optDescPh: 'Courte description (facultatif)', photo: 'Photo', addAnswer: '+ Ajouter une réponse',
+    toPublish: 'Pour publier, ajoutez :', blockPhoto: 'une photo', blockMaps: 'un lien Google Maps', blockCancel: 'la politique d’annulation',
+    back: '← Retour', next: 'Suivant →', saveDraft: 'Enregistrer le brouillon',
+    saving: 'Enregistrement…', keepLive: 'Enregistrer (reste en ligne)', publish: 'Publier',
+  },
+  en: {
+    steps: [
+      { title: 'The basics', sub: 'What is it, and what does it cost?' },
+      { title: 'When & where', sub: 'How guests find it and when it runs' },
+      { title: 'Photos & story', sub: 'What guests see in the app' },
+      { title: 'Booking details', sub: 'Confirmation, cancellation, and extras' },
+    ],
+    editTitle: 'Edit experience', newTitle: 'New experience',
+    migrated: 'Migrated from your old listing — please finish:',
+    nr_cancel: 'cancellation policy', nr_photos: 'photos', nr_coords: 'Google Maps link',
+    name: 'Name of the experience *', namePh: 'e.g. "Sunset Jetski Tour"',
+    category: 'Category *', city: 'City *', select: 'Select',
+    howPay: 'How do guests pay?', payApp: 'Pay in the app', payFree: 'Free to reserve',
+    payHintPaid: 'Guests pay when they book — the total is split between the friends in the group.',
+    payHintFree: 'Guests reserve a spot without paying — e.g. a table or entry. You can still charge for extras below.',
+    price: 'Price (XOF) *', priceIs: 'This price is', perGroup: 'For the whole group', perPerson: 'Per person',
+    minGroup: 'Smallest group', maxGroup: 'Largest group',
+    partyHint: 'Palmera is built for friends booking together — this is the party size you can host.',
+    preview: 'What guests will see',
+    previewLine: (n: number, total: string, each: string) => <>A group of {n} friends pays <strong style={{ color: 'var(--db-text)' }}>{total} XOF</strong> — about <strong style={{ color: 'var(--db-text)' }}>{each} XOF each</strong> when they split it in the app.</>,
+    when: 'When can guests book this?', anytime: 'Any time', setDays: 'Set days & times', oneOff: 'One-off event',
+    daysRun: 'Days it runs', startTimes: 'Start times', slotsPh: 'e.g. "9am, 2pm, 5pm"',
+    dayLabels: { Mon: 'Mon', Tue: 'Tue', Wed: 'Wed', Thu: 'Thu', Fri: 'Fri', Sat: 'Sat', Sun: 'Sun' } as Record<string, string>,
+    eventDate: 'Event date', startTime: 'Start time',
+    where: 'Where is it? (name of the place)', wherePh: 'e.g. "Plage de Ngor"',
+    duration: 'How long does it last?', durationPh: 'e.g. "2 hours"',
+    maps: 'Google Maps link', needPub: '*needed to publish',
+    mapsPh: 'Paste the Google Maps link to your spot',
+    mapsHint: 'In Google Maps: find your spot → Share → Copy link, and paste it here. Guests use it to navigate.',
+    pinOk: ' ✓ Pin located.', pinPending: ' Link saved — the pin will be placed from it.',
+    mainPhoto: 'Main photo', photoHint: 'This is the photo guests see first — make it count.',
+    morePhotos: 'More photos',
+    describe: 'Describe it to a guest', describePh: 'What will they do? What makes it special?',
+    included: "What's included (one per line)", includedPh: 'Life jackets\nDrinks',
+    notIncluded: 'Not included (one per line)', notIncludedPh: 'Transport\nMeals',
+    highlights: 'Highlights (one per line)', dress: 'Dress code (if any)', dressPh: 'e.g. "Smart casual"',
+    langs: 'Languages your team speaks',
+    langLabels: { French: 'French', English: 'English', Wolof: 'Wolof', Arabic: 'Arabic', Spanish: 'Spanish' } as Record<string, string>,
+    whenBooks: 'When a group books', instant: 'Confirmed instantly', approve: 'I approve each booking',
+    cancelPolicy: 'Cancellation policy', confirmTier: '— please confirm',
+    tierLabels: { flexible: 'Flexible', moderate: 'Moderate', strict: 'Strict' } as Record<string, string>,
+    notesPh: 'Anything else guests should know (optional)',
+    addons: 'Add-ons & choices', addChoice: '+ Add a choice',
+    addonsHint: <>Optional. Each “choice” is one question guests answer when booking — e.g. <em>Seating</em> (Ringside 15 000 / Standard 5 000) or <em>Extras</em> (Drinks package 8 000). Prices are added to the total the group splits.</>,
+    noAddons: 'No add-ons — guests just book at the base price.',
+    choosing: 'What are guests choosing?', choosingPh: 'e.g. "Seating", "Room type", "Extras"',
+    mustChoose: 'Must choose one', several: 'Can take several', remove: 'Remove',
+    optNamePh: 'e.g. "Ringside"', optPricePh: '+ Price (XOF)', optMaxPh: 'Max per booking',
+    optDescPh: 'Short description (optional)', photo: 'Photo', addAnswer: '+ Add an answer',
+    toPublish: 'To publish, add:', blockPhoto: 'a photo', blockMaps: 'a Google Maps link', blockCancel: 'cancellation policy',
+    back: '← Back', next: 'Next →', saveDraft: 'Save as draft',
+    saving: 'Saving…', keepLive: 'Save & keep live', publish: 'Publish',
+  },
+}
 
 /**
  * Pull coordinates out of a pasted Google Maps URL when they're present.
@@ -81,16 +195,8 @@ const emptyOption = (groupId: string): Option & { _isNew?: boolean } => ({
 
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR').format(Math.round(n))
 
-// The four steps a partner walks through, in the order they'd tell a friend
-// about their business: what it is → when it happens → how it looks → the fine print.
-const STEPS = [
-  { title: 'The basics', sub: 'What is it, and what does it cost?' },
-  { title: 'When & where', sub: 'How guests find it and when it runs' },
-  { title: 'Photos & story', sub: 'What guests see in the app' },
-  { title: 'Booking details', sub: 'Confirmation, cancellation, and extras' },
-]
-
 export default function ExperienceModal({ providerId, companyId, defaultCategory, defaultCity, experience, existingOptions, onSave, onClose }: ExperienceModalProps) {
+  const T = M[useLocale()]
   const [categories, setCategories] = useState<Opt[]>([])
   const [cities, setCities] = useState<Opt[]>([])
   const [tierHours, setTierHours] = useState<Partial<Record<CancellationTier, number>>>({})
@@ -152,9 +258,9 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
     setGroups((g) => g.map((x) => (x.id === groupId ? { ...x, options: x.options.map((o, i) => (i === idx ? { ...o, ...patch } : o)) } : x)))
 
   const publishBlockers = [
-    !form.img && 'a photo',
-    !form.mapsLink && 'a Google Maps link',
-    !form.cancellationPolicy?.tier && 'cancellation policy',
+    !form.img && T.blockPhoto,
+    !form.mapsLink && T.blockMaps,
+    !form.cancellationPolicy?.tier && T.blockCancel,
   ].filter(Boolean) as string[]
   const canPublish = canSave && publishBlockers.length === 0
 
@@ -196,53 +302,51 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
   const stepBasics = (
     <>
       <div style={{ marginBottom: '1rem' }}>
-        <label style={labelStyle}>Name of the experience *</label>
-        <input style={inputStyle} placeholder='e.g. "Sunset Jetski Tour"' value={form.title} onChange={(e) => set('title', e.target.value)} />
+        <label style={labelStyle}>{T.name}</label>
+        <input style={inputStyle} placeholder={T.namePh} value={form.title} onChange={(e) => set('title', e.target.value)} />
       </div>
 
       <div style={rowStyle}>
         <div>
-          <label style={labelStyle}>Category *</label>
+          <label style={labelStyle}>{T.category}</label>
           <select style={{ ...inputStyle, appearance: 'none' }} value={form.category} onChange={(e) => set('category', e.target.value)}>
-            <option value="">Select category</option>
+            <option value="">{T.select}</option>
             {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </div>
         <div>
-          <label style={labelStyle}>City *</label>
+          <label style={labelStyle}>{T.city}</label>
           <select style={{ ...inputStyle, appearance: 'none' }} value={form.city} onChange={(e) => set('city', e.target.value)}>
-            <option value="">Select city</option>
+            <option value="">{T.select}</option>
             {cities.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </div>
       </div>
 
       <div style={{ marginBottom: '1rem' }}>
-        <label style={labelStyle}>How do guests pay?</label>
+        <label style={labelStyle}>{T.howPay}</label>
         <div style={pillRow}>
           {(['paid', 'reservation'] as ExperienceMode[]).map((m, i, arr) => (
             <button key={m} onClick={() => set('mode', m)} style={{ ...pillBase(form.mode === m), borderRight: i < arr.length - 1 ? '1px solid var(--db-border-subtle)' : 'none' }}>
-              {m === 'paid' ? 'Pay in the app' : 'Free to reserve'}
+              {m === 'paid' ? T.payApp : T.payFree}
             </button>
           ))}
         </div>
-        <p style={hintStyle}>
-          {isPaid ? 'Guests pay when they book — the total is split between the friends in the group.' : 'Guests reserve a spot without paying — e.g. a table or entry. You can still charge for extras below.'}
-        </p>
+        <p style={hintStyle}>{isPaid ? T.payHintPaid : T.payHintFree}</p>
       </div>
 
       {isPaid && (
         <div style={rowStyle}>
           <div>
-            <label style={labelStyle}>Price (XOF) *</label>
+            <label style={labelStyle}>{T.price}</label>
             <input style={inputStyle} type="number" value={form.price ?? ''} onChange={(e) => set('price', e.target.value ? parseInt(e.target.value) : null)} />
           </div>
           <div>
-            <label style={labelStyle}>This price is</label>
+            <label style={labelStyle}>{T.priceIs}</label>
             <div style={pillRow}>
               {(['per_person', 'flat'] as PriceUnit[]).map((u, i, arr) => (
                 <button key={u} onClick={() => set('priceUnit', u)} style={{ ...pillBase(form.priceUnit === u), fontSize: '0.75rem', borderRight: i < arr.length - 1 ? '1px solid var(--db-border-subtle)' : 'none' }}>
-                  {u === 'flat' ? 'For the whole group' : 'Per person'}
+                  {u === 'flat' ? T.perGroup : T.perPerson}
                 </button>
               ))}
             </div>
@@ -251,18 +355,17 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
       )}
 
       <div style={rowStyle}>
-        <div><label style={labelStyle}>Smallest group</label><input style={inputStyle} type="number" min="1" value={form.minGuests} onChange={(e) => set('minGuests', parseInt(e.target.value) || 1)} /></div>
-        <div><label style={labelStyle}>Largest group</label><input style={inputStyle} type="number" min="1" value={form.maxGuests} onChange={(e) => set('maxGuests', parseInt(e.target.value) || 1)} /></div>
+        <div><label style={labelStyle}>{T.minGroup}</label><input style={inputStyle} type="number" min="1" value={form.minGuests} onChange={(e) => set('minGuests', parseInt(e.target.value) || 1)} /></div>
+        <div><label style={labelStyle}>{T.maxGroup}</label><input style={inputStyle} type="number" min="1" value={form.maxGuests} onChange={(e) => set('maxGuests', parseInt(e.target.value) || 1)} /></div>
       </div>
-      <p style={{ ...hintStyle, margin: '-0.5rem 0 1rem' }}>Palmera is built for friends booking together — this is the party size you can host.</p>
+      <p style={{ ...hintStyle, margin: '-0.5rem 0 1rem' }}>{T.partyHint}</p>
 
       {/* What a group actually pays — the partner sees their pricing the way guests will. */}
       {isPaid && !!form.price && (
         <div style={{ background: 'var(--db-bg-banner)', border: '1px solid var(--db-border-gold)', borderRadius: '0.5rem', padding: '0.875rem 1rem' }}>
-          <p style={{ fontSize: '0.6875rem', color: '#be9a56', letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: 'var(--font-sans)', margin: '0 0 0.375rem' }}>What guests will see</p>
+          <p style={{ fontSize: '0.6875rem', color: '#be9a56', letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: 'var(--font-sans)', margin: '0 0 0.375rem' }}>{T.preview}</p>
           <p style={{ fontSize: '0.8125rem', color: 'var(--db-text-muted)', fontFamily: 'var(--font-sans)', margin: 0, lineHeight: 1.6 }}>
-            A group of {exampleParty} friends pays <strong style={{ color: 'var(--db-text)' }}>{fmt(exampleTotal)} XOF</strong>
-            {' '}— about <strong style={{ color: 'var(--db-text)' }}>{fmt(perFriend)} XOF each</strong> when they split it in the app.
+            {T.previewLine(exampleParty, fmt(exampleTotal), fmt(perFriend))}
           </p>
         </div>
       )}
@@ -272,11 +375,11 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
   const stepWhenWhere = (
     <>
       <div style={{ marginBottom: '1rem' }}>
-        <label style={labelStyle}>When can guests book this?</label>
+        <label style={labelStyle}>{T.when}</label>
         <div style={pillRow}>
           {(['ongoing', 'scheduled', 'one_time'] as ScheduleType[]).map((a, i, arr) => (
             <button key={a} onClick={() => set('scheduleType', a)} style={{ ...pillBase(form.scheduleType === a), fontSize: '0.75rem', borderRight: i < arr.length - 1 ? '1px solid var(--db-border-subtle)' : 'none' }}>
-              {a === 'ongoing' ? 'Any time' : a === 'scheduled' ? 'Set days & times' : 'One-off event'}
+              {a === 'ongoing' ? T.anytime : a === 'scheduled' ? T.setDays : T.oneOff}
             </button>
           ))}
         </div>
@@ -284,37 +387,37 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
 
       {isScheduled && (
         <div style={{ marginBottom: '1rem' }}>
-          <label style={labelStyle}>Days it runs</label>
+          <label style={labelStyle}>{T.daysRun}</label>
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
             {DAYS.map((d) => (
-              <button key={d} onClick={() => toggleDay(d)} style={{ padding: '5px 10px', borderRadius: '0.25rem', border: `1px solid ${form.schedule?.days?.includes(d) ? '#be9a56' : 'var(--db-border-subtle)'}`, background: form.schedule?.days?.includes(d) ? 'rgba(190,154,86,0.15)' : 'transparent', color: form.schedule?.days?.includes(d) ? '#be9a56' : 'var(--db-text-faint)', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>{d}</button>
+              <button key={d} onClick={() => toggleDay(d)} style={{ padding: '5px 10px', borderRadius: '0.25rem', border: `1px solid ${form.schedule?.days?.includes(d) ? '#be9a56' : 'var(--db-border-subtle)'}`, background: form.schedule?.days?.includes(d) ? 'rgba(190,154,86,0.15)' : 'transparent', color: form.schedule?.days?.includes(d) ? '#be9a56' : 'var(--db-text-faint)', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>{T.dayLabels[d]}</button>
             ))}
           </div>
-          <label style={labelStyle}>Start times</label>
-          <input style={inputStyle} placeholder='e.g. "9am, 2pm, 5pm"' value={timeSlotsInput} onChange={(e) => setTimeSlotsInput(e.target.value)} />
+          <label style={labelStyle}>{T.startTimes}</label>
+          <input style={inputStyle} placeholder={T.slotsPh} value={timeSlotsInput} onChange={(e) => setTimeSlotsInput(e.target.value)} />
         </div>
       )}
       {isOneTime && (
         <div style={rowStyle}>
           <div>
-            <label style={labelStyle}>Event date</label>
+            <label style={labelStyle}>{T.eventDate}</label>
             <input type="date" style={inputStyle} value={eventDateStr} onChange={(e) => setEventDateStr(e.target.value)} />
           </div>
           <div>
-            <label style={labelStyle}>Start time</label>
+            <label style={labelStyle}>{T.startTime}</label>
             <input type="time" style={inputStyle} value={eventTimeStr} onChange={(e) => setEventTimeStr(e.target.value)} />
           </div>
         </div>
       )}
 
       <div style={rowStyle}>
-        <div><label style={labelStyle}>Where is it? (name of the place)</label><input style={inputStyle} placeholder='e.g. "Plage de Ngor"' value={form.location} onChange={(e) => set('location', e.target.value)} /></div>
-        <div><label style={labelStyle}>How long does it last?</label><input style={inputStyle} placeholder='e.g. "2 hours"' value={form.duration} onChange={(e) => set('duration', e.target.value)} /></div>
+        <div><label style={labelStyle}>{T.where}</label><input style={inputStyle} placeholder={T.wherePh} value={form.location} onChange={(e) => set('location', e.target.value)} /></div>
+        <div><label style={labelStyle}>{T.duration}</label><input style={inputStyle} placeholder={T.durationPh} value={form.duration} onChange={(e) => set('duration', e.target.value)} /></div>
       </div>
 
       <div style={{ marginBottom: '1rem' }}>
-        <label style={labelStyle}>Google Maps link {!form.mapsLink && <span style={{ color: '#e07070' }}>*needed to publish</span>}</label>
-        <input style={inputStyle} type="url" placeholder="Paste the Google Maps link to your spot"
+        <label style={labelStyle}>{T.maps} {!form.mapsLink && <span style={{ color: '#e07070' }}>{T.needPub}</span>}</label>
+        <input style={inputStyle} type="url" placeholder={T.mapsPh}
           value={form.mapsLink || ''}
           onChange={(e) => {
             const link = e.target.value.trim() || null
@@ -324,8 +427,8 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
             setForm((p) => ({ ...p, mapsLink: link, lat: coords?.lat ?? (link ? p.lat : null), lng: coords?.lng ?? (link ? p.lng : null) }))
           }} />
         <p style={hintStyle}>
-          In Google Maps: find your spot → Share → Copy link, and paste it here. Guests use it to navigate.
-          {form.mapsLink && (form.lat != null ? ' ✓ Pin located.' : ' Link saved — the pin will be placed from it.')}
+          {T.mapsHint}
+          {form.mapsLink && (form.lat != null ? T.pinOk : T.pinPending)}
         </p>
       </div>
     </>
@@ -334,31 +437,31 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
   const stepPhotos = (
     <>
       <div style={{ marginBottom: '1rem' }}>
-        <label style={labelStyle}>Main photo {!form.img && <span style={{ color: '#e07070' }}>*needed to publish</span>}</label>
-        <PhotoUpload uid={providerId} label="Main photo" fieldName={`experience_${experience?.id || 'new'}_hero`} existingUrl={form.img} onUploaded={(url) => set('img', url)} hint="This is the photo guests see first — make it count." />
+        <label style={labelStyle}>{T.mainPhoto} {!form.img && <span style={{ color: '#e07070' }}>{T.needPub}</span>}</label>
+        <PhotoUpload uid={providerId} label={T.mainPhoto} fieldName={`experience_${experience?.id || 'new'}_hero`} existingUrl={form.img} onUploaded={(url) => set('img', url)} hint={T.photoHint} />
       </div>
       <div style={{ marginBottom: '1.25rem' }}>
-        <label style={labelStyle}>More photos</label>
+        <label style={labelStyle}>{T.morePhotos}</label>
         <GalleryUpload uid={providerId} value={form.gallery || []} onChange={(urls) => set('gallery', urls)} />
       </div>
 
       <div style={{ marginBottom: '1rem' }}>
-        <label style={labelStyle}>Describe it to a guest</label>
-        <textarea style={{ ...inputStyle, height: '90px', resize: 'vertical' }} placeholder="What will they do? What makes it special?" value={form.description} onChange={(e) => set('description', e.target.value)} />
+        <label style={labelStyle}>{T.describe}</label>
+        <textarea style={{ ...inputStyle, height: '90px', resize: 'vertical' }} placeholder={T.describePh} value={form.description} onChange={(e) => set('description', e.target.value)} />
       </div>
       <div style={rowStyle}>
-        <div><label style={labelStyle}>What&apos;s included (one per line)</label><textarea style={{ ...inputStyle, height: '80px', resize: 'vertical' }} placeholder={'Life jackets\nDrinks'} value={(form.includes || []).join('\n')} onChange={(e) => set('includes', linesToArray(e.target.value))} /></div>
-        <div><label style={labelStyle}>Not included (one per line)</label><textarea style={{ ...inputStyle, height: '80px', resize: 'vertical' }} placeholder={'Transport\nMeals'} value={(form.excludes || []).join('\n')} onChange={(e) => set('excludes', linesToArray(e.target.value))} /></div>
+        <div><label style={labelStyle}>{T.included}</label><textarea style={{ ...inputStyle, height: '80px', resize: 'vertical' }} placeholder={T.includedPh} value={(form.includes || []).join('\n')} onChange={(e) => set('includes', linesToArray(e.target.value))} /></div>
+        <div><label style={labelStyle}>{T.notIncluded}</label><textarea style={{ ...inputStyle, height: '80px', resize: 'vertical' }} placeholder={T.notIncludedPh} value={(form.excludes || []).join('\n')} onChange={(e) => set('excludes', linesToArray(e.target.value))} /></div>
       </div>
       <div style={rowStyle}>
-        <div><label style={labelStyle}>Highlights (one per line)</label><textarea style={{ ...inputStyle, height: '70px', resize: 'vertical' }} value={(form.highlights || []).join('\n')} onChange={(e) => set('highlights', linesToArray(e.target.value))} /></div>
-        <div><label style={labelStyle}>Dress code (if any)</label><input style={inputStyle} placeholder='e.g. "Smart casual"' value={form.dressCode || ''} onChange={(e) => set('dressCode', e.target.value || null)} /></div>
+        <div><label style={labelStyle}>{T.highlights}</label><textarea style={{ ...inputStyle, height: '70px', resize: 'vertical' }} value={(form.highlights || []).join('\n')} onChange={(e) => set('highlights', linesToArray(e.target.value))} /></div>
+        <div><label style={labelStyle}>{T.dress}</label><input style={inputStyle} placeholder={T.dressPh} value={form.dressCode || ''} onChange={(e) => set('dressCode', e.target.value || null)} /></div>
       </div>
       <div style={{ marginBottom: '0.5rem' }}>
-        <label style={labelStyle}>Languages your team speaks</label>
+        <label style={labelStyle}>{T.langs}</label>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           {LANGUAGES.map((lang) => (
-            <button key={lang} onClick={() => toggleLanguage(lang)} style={{ padding: '6px 14px', borderRadius: '0.25rem', border: `1px solid ${form.languages?.includes(lang) ? '#be9a56' : 'var(--db-border-subtle)'}`, background: form.languages?.includes(lang) ? 'rgba(190,154,86,0.15)' : 'transparent', color: form.languages?.includes(lang) ? '#be9a56' : 'var(--db-text-faint)', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>{lang}</button>
+            <button key={lang} onClick={() => toggleLanguage(lang)} style={{ padding: '6px 14px', borderRadius: '0.25rem', border: `1px solid ${form.languages?.includes(lang) ? '#be9a56' : 'var(--db-border-subtle)'}`, background: form.languages?.includes(lang) ? 'rgba(190,154,86,0.15)' : 'transparent', color: form.languages?.includes(lang) ? '#be9a56' : 'var(--db-text-faint)', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>{T.langLabels[lang]}</button>
           ))}
         </div>
       </div>
@@ -368,26 +471,26 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
   const stepBooking = (
     <>
       <div style={{ marginBottom: '1rem' }}>
-        <label style={labelStyle}>When a group books</label>
+        <label style={labelStyle}>{T.whenBooks}</label>
         <div style={pillRow}>
           {(['instant', 'provider_confirmed'] as ConfirmationType[]).map((c, i, arr) => (
             <button key={c} onClick={() => set('confirmationType', c)} style={{ ...pillBase(form.confirmationType === c), fontSize: '0.75rem', borderRight: i < arr.length - 1 ? '1px solid var(--db-border-subtle)' : 'none' }}>
-              {c === 'instant' ? 'Confirmed instantly' : 'I approve each booking'}
+              {c === 'instant' ? T.instant : T.approve}
             </button>
           ))}
         </div>
       </div>
 
       <div style={{ marginBottom: '1.25rem' }}>
-        <label style={labelStyle}>Cancellation policy {needsReview.includes('cancellationTier') && <span style={{ color: '#e07070' }}>— please confirm</span>}</label>
+        <label style={labelStyle}>{T.cancelPolicy} {needsReview.includes('cancellationTier') && <span style={{ color: '#e07070' }}>{T.confirmTier}</span>}</label>
         <div style={{ ...pillRow, marginBottom: '0.625rem' }}>
           {CANCELLATION_TIERS.map((t, i, arr) => (
-            <button key={t} onClick={() => setCancelTier(t)} style={{ ...pillBase(form.cancellationPolicy?.tier === t), fontSize: '0.75rem', textTransform: 'capitalize', borderRight: i < arr.length - 1 ? '1px solid var(--db-border-subtle)' : 'none' }}>
-              {t}{tierHours[t] != null ? ` (${tierHours[t]}h)` : ''}
+            <button key={t} onClick={() => setCancelTier(t)} style={{ ...pillBase(form.cancellationPolicy?.tier === t), fontSize: '0.75rem', borderRight: i < arr.length - 1 ? '1px solid var(--db-border-subtle)' : 'none' }}>
+              {T.tierLabels[t]}{tierHours[t] != null ? ` (${tierHours[t]}h)` : ''}
             </button>
           ))}
         </div>
-        <input style={inputStyle} placeholder="Anything else guests should know (optional)" value={form.cancellationPolicy?.customNotes || ''}
+        <input style={inputStyle} placeholder={T.notesPh} value={form.cancellationPolicy?.customNotes || ''}
           onChange={(e) => setForm((p) => ({ ...p, cancellationPolicy: { tier: p.cancellationPolicy?.tier || 'moderate', customNotes: e.target.value || null, policyVersion: p.cancellationPolicy?.policyVersion || 'v1' } }))} />
       </div>
 
@@ -395,27 +498,25 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
           UI — in this product, "group" means the guests' party. */}
       <div>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', marginBottom: '0.375rem' }}>
-          <label style={{ ...labelStyle, marginBottom: 0 }}>Add-ons &amp; choices</label>
-          <button onClick={addGroup} style={{ flexShrink: 0, background: 'transparent', border: '1px solid var(--db-border-gold)', borderRadius: '0.25rem', color: '#be9a56', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', padding: '0.3125rem 0.75rem', cursor: 'pointer' }}>+ Add a choice</button>
+          <label style={{ ...labelStyle, marginBottom: 0 }}>{T.addons}</label>
+          <button onClick={addGroup} style={{ flexShrink: 0, background: 'transparent', border: '1px solid var(--db-border-gold)', borderRadius: '0.25rem', color: '#be9a56', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', padding: '0.3125rem 0.75rem', cursor: 'pointer' }}>{T.addChoice}</button>
         </div>
-        <p style={{ ...hintStyle, margin: '0 0 0.875rem' }}>
-          Optional. Each “choice” is one question guests answer when booking — e.g. <em>Seating</em> (Ringside 15 000 / Standard 5 000) or <em>Extras</em> (Drinks package 8 000). Prices are added to the total the group splits.
-        </p>
-        {groups.length === 0 && <p style={{ fontSize: '0.75rem', color: 'var(--db-text-ghost)', fontStyle: 'italic', fontFamily: 'var(--font-sans)' }}>No add-ons — guests just book at the base price.</p>}
+        <p style={{ ...hintStyle, margin: '0 0 0.875rem' }}>{T.addonsHint}</p>
+        {groups.length === 0 && <p style={{ fontSize: '0.75rem', color: 'var(--db-text-ghost)', fontStyle: 'italic', fontFamily: 'var(--font-sans)' }}>{T.noAddons}</p>}
         {groups.map((g) => (
           <div key={g.id} style={{ background: 'var(--db-bg-card)', border: '1px solid var(--db-border-subtle)', borderRadius: '0.5rem', padding: '1rem', marginBottom: '0.875rem' }}>
             <div style={{ display: 'flex', gap: '0.625rem', marginBottom: '0.75rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
               <div style={{ flex: 1, minWidth: '10rem' }}>
-                <label style={labelStyle}>What are guests choosing?</label>
-                <input style={inputStyle} placeholder='e.g. "Seating", "Room type", "Extras"' value={g.name} onChange={(e) => updateGroup(g.id, { name: e.target.value })} />
+                <label style={labelStyle}>{T.choosing}</label>
+                <input style={inputStyle} placeholder={T.choosingPh} value={g.name} onChange={(e) => updateGroup(g.id, { name: e.target.value })} />
               </div>
               <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: 'var(--db-text-muted)', fontFamily: 'var(--font-sans)', paddingBottom: '0.6875rem', cursor: 'pointer' }}>
-                <input type="checkbox" checked={g.required} onChange={(e) => updateGroup(g.id, { required: e.target.checked, minSelect: e.target.checked ? 1 : 0 })} style={{ accentColor: '#be9a56' }} /> Must choose one
+                <input type="checkbox" checked={g.required} onChange={(e) => updateGroup(g.id, { required: e.target.checked, minSelect: e.target.checked ? 1 : 0 })} style={{ accentColor: '#be9a56' }} /> {T.mustChoose}
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: 'var(--db-text-muted)', fontFamily: 'var(--font-sans)', paddingBottom: '0.6875rem', cursor: 'pointer' }}>
-                <input type="checkbox" checked={g.allowQuantity} onChange={(e) => updateGroup(g.id, { allowQuantity: e.target.checked })} style={{ accentColor: '#be9a56' }} /> Can take several
+                <input type="checkbox" checked={g.allowQuantity} onChange={(e) => updateGroup(g.id, { allowQuantity: e.target.checked })} style={{ accentColor: '#be9a56' }} /> {T.several}
               </label>
-              <button onClick={() => removeGroup(g.id)} style={{ background: 'transparent', border: '1px solid rgba(224,112,112,0.35)', color: '#e07070', borderRadius: '0.25rem', padding: '0.375rem 0.625rem', fontSize: '0.6875rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>Remove</button>
+              <button onClick={() => removeGroup(g.id)} style={{ background: 'transparent', border: '1px solid rgba(224,112,112,0.35)', color: '#e07070', borderRadius: '0.25rem', padding: '0.375rem 0.625rem', fontSize: '0.6875rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>{T.remove}</button>
             </div>
 
             {g.options.map((o, i) => {
@@ -423,25 +524,25 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
               return (
               <div key={i} style={{ border: '1px solid var(--db-border-subtle)', borderRadius: '0.375rem', padding: '0.625rem', marginBottom: '0.5rem' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: '0.5rem', alignItems: 'center' }}>
-                  <input style={inputStyle} placeholder='e.g. "Ringside"' value={o.name} onChange={(e) => updateOptionAt(g.id, i, { name: e.target.value })} />
-                  <input style={inputStyle} type="number" placeholder="+ Price (XOF)" value={o.price} onChange={(e) => updateOptionAt(g.id, i, { price: parseInt(e.target.value) || 0 })} />
-                  <input style={inputStyle} type="number" min="1" placeholder="Max per booking" value={o.maxQuantityPerBooking} onChange={(e) => updateOptionAt(g.id, i, { maxQuantityPerBooking: parseInt(e.target.value) || 1 })} />
+                  <input style={inputStyle} placeholder={T.optNamePh} value={o.name} onChange={(e) => updateOptionAt(g.id, i, { name: e.target.value })} />
+                  <input style={inputStyle} type="number" placeholder={T.optPricePh} value={o.price} onChange={(e) => updateOptionAt(g.id, i, { price: parseInt(e.target.value) || 0 })} />
+                  <input style={inputStyle} type="number" min="1" placeholder={T.optMaxPh} value={o.maxQuantityPerBooking} onChange={(e) => updateOptionAt(g.id, i, { maxQuantityPerBooking: parseInt(e.target.value) || 1 })} />
                   <button onClick={() => removeOption(g.id, i)} style={{ background: 'transparent', border: 'none', color: '#e07070', fontSize: '1rem', cursor: 'pointer', padding: '0 0.5rem' }}>×</button>
                 </div>
-                <input style={{ ...inputStyle, marginTop: '0.5rem' }} placeholder="Short description (optional)" value={o.description || ''} onChange={(e) => updateOptionAt(g.id, i, { description: e.target.value })} />
+                <input style={{ ...inputStyle, marginTop: '0.5rem' }} placeholder={T.optDescPh} value={o.description || ''} onChange={(e) => updateOptionAt(g.id, i, { description: e.target.value })} />
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 10rem), 1fr))', gap: '0.75rem', marginTop: '0.5rem' }}>
                   <div>
-                    <label style={{ ...labelStyle, fontSize: '0.6875rem' }}>Photo</label>
-                    <PhotoUpload uid={providerId} label="Photo" fieldName={`option_${optKey}_hero`} existingUrl={o.img || ''} onUploaded={(url) => updateOptionAt(g.id, i, { img: url })} />
+                    <label style={{ ...labelStyle, fontSize: '0.6875rem' }}>{T.photo}</label>
+                    <PhotoUpload uid={providerId} label={T.photo} fieldName={`option_${optKey}_hero`} existingUrl={o.img || ''} onUploaded={(url) => updateOptionAt(g.id, i, { img: url })} />
                   </div>
                   <div>
-                    <label style={{ ...labelStyle, fontSize: '0.6875rem' }}>More photos</label>
+                    <label style={{ ...labelStyle, fontSize: '0.6875rem' }}>{T.morePhotos}</label>
                     <GalleryUpload uid={providerId} value={o.gallery || []} onChange={(urls) => updateOptionAt(g.id, i, { gallery: urls })} />
                   </div>
                 </div>
               </div>
             )})}
-            <button onClick={() => addOption(g.id)} style={{ background: 'transparent', border: 'none', color: '#be9a56', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', textDecoration: 'underline', cursor: 'pointer', padding: 0, marginTop: '0.25rem' }}>+ Add an answer</button>
+            <button onClick={() => addOption(g.id)} style={{ background: 'transparent', border: 'none', color: '#be9a56', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', textDecoration: 'underline', cursor: 'pointer', padding: 0, marginTop: '0.25rem' }}>{T.addAnswer}</button>
           </div>
         ))}
       </div>
@@ -449,7 +550,7 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
   )
 
   const stepBodies = [stepBasics, stepWhenWhere, stepPhotos, stepBooking]
-  const isLast = step === STEPS.length - 1
+  const isLast = step === T.steps.length - 1
   // Step 0 holds every required-to-save field; later steps can't be reached without it.
   const canNext = step > 0 || canSave
 
@@ -459,10 +560,10 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
           <div>
             <h2 style={{ fontFamily: 'var(--font-display)', color: 'var(--db-text)', fontSize: '1.25rem', fontWeight: 400, margin: '0 0 0.25rem', letterSpacing: '0.06em' }}>
-              {experience ? 'Edit experience' : 'New experience'}
+              {experience ? T.editTitle : T.newTitle}
             </h2>
             <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: 'var(--db-text-faint)', margin: 0 }}>
-              {STEPS[step].title} — {STEPS[step].sub}
+              {T.steps[step].title} — {T.steps[step].sub}
             </p>
           </div>
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--db-text-faint)', fontSize: '1.375rem', cursor: 'pointer', lineHeight: 1 }}>×</button>
@@ -470,7 +571,7 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
 
         {/* Step indicator — clickable once the basics are valid. */}
         <div style={{ display: 'flex', gap: '6px', marginBottom: '1.5rem' }}>
-          {STEPS.map((s, i) => (
+          {T.steps.map((s, i) => (
             <button key={s.title} onClick={() => (i === 0 || canSave) && setStep(i)} title={s.title}
               style={{ flex: 1, height: '3px', borderRadius: '2px', border: 'none', padding: 0, cursor: 'pointer', background: i === step ? '#be9a56' : i < step ? 'rgba(190,154,86,0.45)' : 'var(--db-border-subtle)' }} />
           ))}
@@ -479,7 +580,7 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
         {needsReview.length > 0 && step === 0 && (
           <div style={{ background: 'rgba(224,112,112,0.08)', border: '1px solid rgba(224,112,112,0.3)', borderRadius: '0.375rem', padding: '0.75rem 1rem', marginBottom: '1.25rem' }}>
             <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: '#e07070', margin: 0 }}>
-              Migrated from your old listing — please finish: {needsReview.map((n) => n === 'cancellationTier' ? 'cancellation policy' : n === 'photos' ? 'photos' : n === 'coords' ? 'map link' : n).join(', ')}.
+              {T.migrated} {needsReview.map((n) => n === 'cancellationTier' ? T.nr_cancel : n === 'photos' ? T.nr_photos : n === 'coords' ? T.nr_coords : n).join(', ')}.
             </p>
           </div>
         )}
@@ -489,26 +590,26 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
         {/* Footer: navigate the steps; save/publish available from any step once valid. */}
         {isLast && !canPublish && canSave && (
           <p style={{ fontSize: '0.75rem', color: 'var(--db-text-faint)', fontFamily: 'var(--font-sans)', margin: '1rem 0 0', textAlign: 'right' }}>
-            To publish, add: {publishBlockers.join(', ')}
+            {T.toPublish} {publishBlockers.join(', ')}
           </p>
         )}
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.25rem', flexWrap: 'wrap' }}>
           <div>
             {step > 0 && (
-              <button onClick={() => setStep(step - 1)} style={{ padding: '10px 20px', background: 'transparent', border: '1px solid var(--db-border-subtle)', borderRadius: '0.25rem', color: 'var(--db-text-muted)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>← Back</button>
+              <button onClick={() => setStep(step - 1)} style={{ padding: '10px 20px', background: 'transparent', border: '1px solid var(--db-border-subtle)', borderRadius: '0.25rem', color: 'var(--db-text-muted)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>{T.back}</button>
             )}
           </div>
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
             <button onClick={() => handleSave(false)} disabled={!canSave || saving} style={{ padding: '10px 20px', background: 'transparent', border: '1px solid var(--db-border-gold)', borderRadius: '0.25rem', color: canSave ? 'var(--db-text)' : 'var(--db-text-ghost)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', cursor: canSave ? 'pointer' : 'not-allowed' }}>
-              {saving ? 'Saving…' : 'Save as draft'}
+              {saving ? T.saving : T.saveDraft}
             </button>
             {!isLast ? (
               <button onClick={() => canNext && setStep(step + 1)} disabled={!canNext} style={{ padding: '10px 24px', background: canNext ? '#9e763b' : 'var(--db-bg-card)', border: 'none', borderRadius: '0.25rem', color: canNext ? '#ebe8db' : 'var(--db-text-ghost)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', cursor: canNext ? 'pointer' : 'not-allowed' }}>
-                Next →
+                {T.next}
               </button>
             ) : (
               <button onClick={() => handleSave(true)} disabled={!canPublish || saving} title={canPublish ? '' : publishBlockers.join(', ')} style={{ padding: '10px 24px', background: canPublish ? '#9e763b' : 'var(--db-bg-card)', border: 'none', borderRadius: '0.25rem', color: canPublish ? '#ebe8db' : 'var(--db-text-ghost)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', cursor: canPublish ? 'pointer' : 'not-allowed' }}>
-                {saving ? 'Saving…' : experience?.status === 'published' ? 'Save & keep live' : 'Publish'}
+                {saving ? T.saving : experience?.status === 'published' ? T.keepLive : T.publish}
               </button>
             )}
           </div>
