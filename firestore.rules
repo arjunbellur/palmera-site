@@ -143,6 +143,15 @@ service cloud.firestore {
       // this rule — needs server-side validation before real payments.
       allow read:   if signedIn() && resource.data.customerId == request.auth.uid;
       allow create: if signedIn() && request.resource.data.customerId == request.auth.uid;
+      // …and may UPDATE their own booking (payment state lands on the booking
+      // doc after create; cancelling their own reservation). Anchors and money
+      // stay frozen. Without this rule the app's payment writes were denied —
+      // which is what produced the orphan payment-only docs.
+      allow update: if signedIn()
+        && resource.data.customerId == request.auth.uid
+        && keep('customerId') && keep('providerId') && keep('companyId') && keep('experienceId')
+        && keep('bookingTotal') && keep('commissionRate')
+        && keep('commissionAmount') && keep('payoutAmount');
       // The partner may answer a request for THEIR OWN booking — confirm or
       // decline a pending one, nothing else. Every money field is frozen, so a
       // partner can never rewrite what they're owed, and the transition is
@@ -154,7 +163,8 @@ service cloud.firestore {
         && keep('providerId') && keep('companyId') && keep('experienceId')
         && keep('bookingTotal') && keep('commissionRate')
         && keep('commissionAmount') && keep('payoutAmount')
-        && keep('currency') && keep('scheduledFor') && keep('guestCount');
+        && keep('currency') && keep('scheduledFor') && keep('guestCount')
+        && keep('payment');
       // …and may mark a CONFIRMED booking no-show, but only after its
       // scheduled time has passed. One-way; money fields stay frozen; a
       // partner can never mark 'completed' (that's what triggers their credit).
@@ -166,7 +176,8 @@ service cloud.firestore {
         && keep('providerId') && keep('companyId') && keep('experienceId')
         && keep('bookingTotal') && keep('commissionRate')
         && keep('commissionAmount') && keep('payoutAmount')
-        && keep('currency') && keep('scheduledFor') && keep('guestCount');
+        && keep('currency') && keep('scheduledFor') && keep('guestCount')
+        && keep('payment');
     }
 
     // ledger — derived money events. Owner reads own; only admin/server writes.

@@ -433,7 +433,12 @@ export const getBookingsByProvider = async (uid: string, status?: Booking['statu
     const clauses = [where('providerId', '==', uid), ...(status ? [where('status', '==', status)] : [])]
     const snap = await getDocs(query(collection(db, COLLECTIONS.bookings), ...clauses, orderBy('scheduledFor', 'desc')))
     return rows<Booking>(snap)
-  } catch { return [] }
+  } catch (e) {
+    // A failed query must be LOUD — a missing index looks identical to an
+    // empty list otherwise (root cause of the invisible-reservations bug).
+    console.error('getBookingsByProvider query failed:', e)
+    return []
+  }
 }
 
 /** Reservations scoped to one company (subset of the provider's). */
@@ -445,7 +450,12 @@ export const getBookingsByCompany = async (uid: string, companyId: string): Prom
       orderBy('scheduledFor', 'desc'),
     ))
     return rows<Booking>(snap)
-  } catch { return [] }
+  } catch (e) {
+    // A failed query must be LOUD — a missing index looks identical to an
+    // empty list otherwise (root cause of the invisible-reservations bug).
+    console.error('getBookingsByCompany query failed:', e)
+    return []
+  }
 }
 
 /** Ledger events for a provider, newest first. */
@@ -456,7 +466,12 @@ export const getLedgerByProvider = async (uid: string): Promise<LedgerEntry[]> =
       where('providerId', '==', uid), orderBy('createdAt', 'desc'),
     ))
     return rows<LedgerEntry>(snap)
-  } catch { return [] }
+  } catch (e) {
+    // A failed query must be LOUD — a missing index looks identical to an
+    // empty list otherwise (root cause of the invisible-reservations bug).
+    console.error('getLedgerByProvider query failed:', e)
+    return []
+  }
 }
 
 /** Current balance owed to a provider = Σ signed ledger amounts. */
@@ -473,7 +488,12 @@ export const getPayoutsByProvider = async (uid: string): Promise<Payout[]> => {
       where('providerId', '==', uid), orderBy('scheduledFor', 'desc'),
     ))
     return rows<Payout>(snap)
-  } catch { return [] }
+  } catch (e) {
+    // A failed query must be LOUD — a missing index looks identical to an
+    // empty list otherwise (root cause of the invisible-reservations bug).
+    console.error('getPayoutsByProvider query failed:', e)
+    return []
+  }
 }
 
 /**

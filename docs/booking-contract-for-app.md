@@ -106,6 +106,44 @@ A biweekly payout batch for one company.
 
 ---
 
+## Payment state (PayDunya etc.) — ON the booking doc, never separate
+
+Write processor state to `bookings/{id}.payment` (a map on the SAME doc the
+booking lives in), not to a new document:
+
+```
+payment: { provider: 'paydunya', amountXof: 12000, status: 'pending'|'completed'|'failed', token: '…' }
+```
+
+The security rules now allow the customer to UPDATE their own booking
+(anchors + money fields stay frozen) — the earlier permission gap that forced
+payment writes into orphan docs is fixed. The partner can never modify
+`payment`.
+
+## Reservation mode (`mode: 'reservation'`) — the free flow
+
+- **No payment step at all.** Do not create PayDunya sessions, do not write a
+  `payment` map. `bookingTotal` is 0 (plus any paid add-ons — if add-ons are
+  selected the booking IS paid and follows the paid flow).
+- Button copy: **"Confirm"**, never "Confirm & Pay".
+- Set `paymentStatus: 'unpaid'`.
+- Award Palmera Points app-side on confirmation as designed.
+- Solo paid bookings: don't render split-payment progress ("1/1 payments
+  collected") when there is exactly one payer.
+
+## ⚠ Required Firestore indexes (why bookings were invisible)
+
+The dashboard reads bookings with composite queries; without these indexes
+Firestore throws FAILED_PRECONDITION and the partner sees an empty list.
+The canonical list lives in `firestore.indexes.json` (repo root):
+
+- `bookings(providerId ↑, scheduledFor ↓)` — partner reservations list
+- `bookings(providerId ↑, companyId ↑, scheduledFor ↓)` — company-scoped
+- `bookings(customerId ↑, createdAt ↓)` — the app's own "my bookings"
+- `ledger(providerId ↑, createdAt ↓)` · `payouts(providerId ↑, scheduledFor ↓)`
+
+If the app adds a new composite query, add its index here FIRST.
+
 ## Open items to confirm with Samson
 1. **Same Firebase project?** The dashboard reads `bookings` from *its* Firebase
    (`palmera-platform`). If the app writes to a different project, we need a sync

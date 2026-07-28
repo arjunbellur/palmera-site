@@ -13,7 +13,8 @@
     "backfill:photos": "tsx scripts/backfill-company-photos.ts",
     "backfill:provider": "tsx scripts/backfill-experience-provider.ts",
     "audit:legacy": "tsx scripts/audit-legacy-fields.ts",
-    "rules:deploy": "tsx scripts/deploy-rules.ts"
+    "rules:deploy": "tsx scripts/deploy-rules.ts",
+    "indexes:deploy": "tsx scripts/deploy-indexes.ts"
   },
   "dependencies": {
     "firebase": "^12.14.0",

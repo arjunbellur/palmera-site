@@ -299,6 +299,9 @@ export interface Booking {
   customerEmail?: string | null   // optional
   specialRequests?: string | null // guest note at booking, optional
   paymentStatus?: 'paid' | 'unpaid' | 'refunded' | null // app-set; reservation-mode bookings are 'unpaid'
+  /** Processor state (PayDunya etc.), written by the APP onto the booking doc
+   * itself — never as a separate doc. Absent for mode='reservation'. */
+  payment?: { provider: string; amountXof: number; status: string; token?: string | null; updatedAt?: TS } | null
   guestCount: number
   // ── When ──
   scheduledFor: TS            // the reserved date/time of the experience
