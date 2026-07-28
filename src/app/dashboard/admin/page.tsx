@@ -2,7 +2,7 @@
 export const dynamic = 'force-dynamic'
 import { useEffect, useState, useCallback } from 'react'
 import { onAuthChange } from '@/lib/auth'
-import { getAllCompanies, getAllProviders, getAllExperiencesAdmin, getProviderAdmin, deleteCompanyCascade } from '@/lib/firestore'
+import { getAllCompanies, getAllProviders, getAllExperiencesAdmin, getProviderAdmin, deleteCompanyCascade, deleteProviderAccountCascade } from '@/lib/firestore'
 import { useViewport } from '@/lib/use-viewport'
 import ConfirmDialog from '@/components/dashboard/ConfirmDialog'
 import type { Company, Provider } from '@/lib/schema'
@@ -33,6 +33,8 @@ export default function AdminPage() {
   const [toDelete, setToDelete] = useState<Company | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
+  const [toDeleteProvider, setToDeleteProvider] = useState<Provider | null>(null)
+  const [deletingProvider, setDeletingProvider] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -68,8 +70,27 @@ export default function AdminPage() {
     }
   }
 
+  const handleDeleteProvider = async () => {
+    if (!toDeleteProvider) return
+    setDeletingProvider(true); setDeleteError('')
+    try {
+      await deleteProviderAccountCascade(toDeleteProvider.uid)
+      setToDeleteProvider(null); setDeletingProvider(false)
+      await load()
+    } catch {
+      setDeleteError('Could not delete this account. Please try again.'); setDeletingProvider(false)
+    }
+  }
+
   const totalSuspended = companies.filter((c) => accountStatus[c.providerId] === 'suspended').length
   const totalNotActivated = companies.filter((c) => !c.activatedAt).length
+
+  // Accounts invisible to the companies list: providers who own no company —
+  // fresh signups who stopped early, or accounts whose companies were deleted.
+  // Without this section they'd be unreachable (and undeletable) from the UI.
+  const companylessProviders = Object.values(providers)
+    .filter((p) => !companies.some((c) => c.providerId === p.uid))
+    .filter((p) => !ADMIN_EMAILS.includes(p.email))
 
   // Account status (active/suspended) is the headline badge — it's whether the
   // partner can use the dashboard at all. Commission activation (company.active)
@@ -234,6 +255,49 @@ export default function AdminPage() {
             )
           })}
         </div>
+      )}
+
+      {/* Providers with no company — invisible in the list above, but real
+          accounts (abandoned signups, or companies deleted by an admin). */}
+      {companylessProviders.length > 0 && (
+        <div style={{ marginTop: '2.5rem' }}>
+          <h2 style={{ fontFamily: 'var(--font-serif)', color: 'var(--db-text)', fontSize: '1rem', fontWeight: 400, margin: '0 0 0.375rem' }}>Accounts without a company</h2>
+          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: 'var(--db-text-faint)', margin: '0 0 1rem' }}>
+            Signed up but never created a company, or their companies were deleted. Their login still works — deleting the account here wipes their data; next sign-in starts fresh.
+          </p>
+          <div style={{ border: '1px solid var(--db-border)', borderRadius: '0.5rem', overflow: 'hidden' }}>
+            {companylessProviders.map((p, i) => (
+              <div key={p.uid} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap', padding: '0.875rem 1.25rem', borderBottom: i < companylessProviders.length - 1 ? '1px solid var(--db-border-subtle)' : 'none' }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', color: 'var(--db-text)' }}>{p.fullName || p.email}</div>
+                  <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6875rem', color: 'var(--db-text-faint)' }}>
+                    {p.email} · {p.onboardingStage === 'complete' ? 'graduated' : p.onboardingStage || 'registered'}
+                    {p.signoff ? ` · agreement signed ${formatDate(p.signoff.signedAt)}` : ' · agreement not signed'}
+                  </div>
+                </div>
+                <button onClick={() => { setDeleteError(''); setToDeleteProvider(p) }}
+                  style={{ flexShrink: 0, background: 'transparent', border: '1px solid rgba(224,112,112,0.4)', color: '#e07070', padding: '0.3125rem 0.75rem', borderRadius: '0.25rem', fontSize: '0.6875rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>
+                  Delete account
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {toDeleteProvider && (
+        <ConfirmDialog
+          title="Delete this partner account?"
+          note="Removes the provider record, any remaining data, and their signed-agreement countersignature. Their login is NOT deleted — signing in again starts a fresh, blank account."
+          error={deleteError}
+          confirmLabel="Delete account"
+          busyLabel="Deleting…"
+          busy={deletingProvider}
+          onConfirm={handleDeleteProvider}
+          onCancel={() => setToDeleteProvider(null)}
+        >
+          You&apos;re about to erase <strong style={{ color: 'var(--db-text)' }}>{toDeleteProvider.fullName || toDeleteProvider.email}</strong>. This cannot be undone.
+        </ConfirmDialog>
       )}
 
       {toDelete && (
