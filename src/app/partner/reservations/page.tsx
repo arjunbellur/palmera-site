@@ -6,7 +6,7 @@ import { t } from '../i18n'
 import { getBookingsByCompany, setBookingStatus } from '@/lib/firestore'
 import type { Booking } from '@/lib/schema'
 import { toDate } from '@/lib/money'
-import { ScreenHeader, EmptyState, Chip, Money, eyebrow, GhostButton } from '@/components/partner/ui'
+import { ScreenHeader, EmptyState, Chip, Money, eyebrow, GhostButton, Skeleton } from '@/components/partner/ui'
 import ReservationCard from '@/components/partner/ReservationCard'
 import { formatAmount, formatDate } from '@/lib/money'
 
@@ -23,12 +23,19 @@ export default function ReservationsScreen() {
   const [detail, setDetail] = useState<Booking | null>(null)
   const [busyId, setBusyId] = useState('')
   const [error, setError] = useState('')
+  const [loaded, setLoaded] = useState(false)
 
   const load = async () => {
     if (!uid || !company?.id) return
     setBookings(await getBookingsByCompany(uid, company.id))
+    setLoaded(true)
   }
   useEffect(() => { load() /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [uid, company?.id])
+
+  // Deep link from Home's Today tile: /partner/reservations?f=today
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('f') === 'today') setDatePreset('today')
+  }, [])
 
   const respond = async (b: Booking, status: 'confirmed' | 'declined' | 'no_show') => {
     if (!b.id) return
@@ -126,19 +133,47 @@ export default function ReservationsScreen() {
         <div style={{ padding: '11px 14px', borderRadius: '10px', background: 'rgba(196,124,124,0.12)', border: '1px solid rgba(196,124,124,0.3)', color: 'var(--pf-alert)', fontFamily: 'var(--font-sans)', fontSize: '12px', marginBottom: '12px' }}>{error}</div>
       )}
 
-      {shown.length === 0 ? (
+      {!loaded ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 22rem), 1fr))', gap: '12px' }}>
+          <Skeleton height="150px" /><Skeleton height="150px" /><Skeleton height="150px" />
+        </div>
+      ) : shown.length === 0 ? (
         <EmptyState icon="◷" title={L('res_empty_t')} body={L('res_empty_b')} />
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 22rem), 1fr))', gap: '12px' }}>
-          {shown.map(b => (
-            <ReservationCard key={b.id} booking={b} locale={locale}
-              busy={busyId === b.id}
-              onOpen={setDetail}
-              onAccept={x => respond(x, 'confirmed')}
-              onDecline={x => respond(x, 'declined')}
-              onNoShow={x => respond(x, 'no_show')} />
-          ))}
-        </div>
+        // Grouped by day (Airbnb host pattern) — partners read their bookings
+        // like a service sheet: Today, Tomorrow, then dated sections.
+        (() => {
+          const now = new Date()
+          const tm = new Date(now); tm.setDate(now.getDate() + 1)
+          const dayLabel = (d: Date | null) => {
+            if (!d) return '—'
+            if (sameDay(d, now)) return L('dp_today')
+            if (sameDay(d, tm)) return L('dp_tomorrow')
+            return d.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
+          }
+          const groups: { label: string; items: Booking[] }[] = []
+          for (const b of shown) {
+            const label = dayLabel(toDate(b.scheduledFor))
+            const g = groups[groups.length - 1]
+            if (g && g.label === label) g.items.push(b)
+            else groups.push({ label, items: [b] })
+          }
+          return groups.map(g => (
+            <div key={g.label} style={{ marginBottom: '18px' }}>
+              <div style={{ ...eyebrow, color: 'var(--pf-eyebrow)', margin: '0 0 8px', textTransform: 'capitalize' }}>{g.label}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 22rem), 1fr))', gap: '12px' }}>
+                {g.items.map(b => (
+                  <ReservationCard key={b.id} booking={b} locale={locale}
+                    busy={busyId === b.id}
+                    onOpen={setDetail}
+                    onAccept={x => respond(x, 'confirmed')}
+                    onDecline={x => respond(x, 'declined')}
+                    onNoShow={x => respond(x, 'no_show')} />
+                ))}
+              </div>
+            </div>
+          ))
+        })()
       )}
 
       {/* Detail drawer — everything we know about one booking, in one place. */}

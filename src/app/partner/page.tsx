@@ -6,7 +6,7 @@ import { t } from './i18n'
 import { getBookingsByCompany, getLedgerByProvider, getPayoutsByProvider, getExperiencesByCompany, getPayoutProfile } from '@/lib/firestore'
 import type { Booking, Experience, LedgerEntry, Payout } from '@/lib/schema'
 import { formatAmount, formatDate, toDate } from '@/lib/money'
-import { ScreenHeader, StatTile, Money, EmptyState, SectionTitle, card, eyebrow } from '@/components/partner/ui'
+import { ScreenHeader, StatTile, Money, EmptyState, SectionTitle, Skeleton, card, eyebrow } from '@/components/partner/ui'
 import ReservationCard from '@/components/partner/ReservationCard'
 
 export default function PartnerHome() {
@@ -17,6 +17,7 @@ export default function PartnerHome() {
   const [payouts, setPayouts] = useState<Payout[]>([])
   const [experiences, setExperiences] = useState<Experience[]>([])
   const [hasPayoutProfile, setHasPayoutProfile] = useState(true)
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     if (!uid || !company?.id) return
@@ -30,6 +31,7 @@ export default function PartnerHome() {
       setPayouts(p.filter(x => x.companyId === company.id))
       setExperiences(e)
       setHasPayoutProfile(!!pp)
+      setLoaded(true)
     })()
   }, [uid, company?.id])
 
@@ -97,16 +99,22 @@ export default function PartnerHome() {
       </div>
 
       {/* Today first — a partner opening the app wants operations, then money. */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
-        <div style={card}>
+      {!loaded && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+          <Skeleton height="86px" /><Skeleton height="86px" />
+        </div>
+      )}
+      {loaded && <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+        <a href="/partner/reservations?f=today" style={{ ...card, textDecoration: 'none', display: 'block' }}>
           <div style={eyebrow}>{L('today_res')}</div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: '27px', color: 'var(--pf-text)', marginTop: '6px' }}>
             {todayCount}
             <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-muted)', marginLeft: '6px' }}>
               {todayCount === 1 ? (locale === 'fr' ? 'réservation' : 'reservation') : (locale === 'fr' ? 'réservations' : 'reservations')}
             </span>
+            <span style={{ color: 'var(--pf-gold)', fontSize: '13px', marginLeft: '8px' }}>→</span>
           </div>
-        </div>
+        </a>
         <div style={card}>
           <div style={eyebrow}>{L('next_res')}</div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: nextRes ? '18px' : '27px', color: 'var(--pf-text)', marginTop: '6px', lineHeight: 1.25 }}>
@@ -116,7 +124,7 @@ export default function PartnerHome() {
           </div>
           {nextRes && <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-faint)', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nextRes.title}</div>}
         </div>
-      </div>
+      </div>}
 
       {/* Metrics: balance leads full-width, the two smaller tiles sit beside it. */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 15rem), 1fr))', gap: '12px' }}>

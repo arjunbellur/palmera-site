@@ -46,7 +46,10 @@ export default function ReservationCard({
 
       <div style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: compact ? '14.5px' : '15.5px', marginBottom: '3px' }}>{b.title}</div>
       {!compact && b.customerName && (
-        <div style={{ ...eyebrow, marginBottom: '8px' }}>{b.customerName}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '8px' }}>
+          <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'var(--pf-green-soft)', color: 'var(--pf-gold)', display: 'grid', placeItems: 'center', fontFamily: 'var(--font-display)', fontSize: '11px', flexShrink: 0 }}>{b.customerName.trim().charAt(0).toUpperCase()}</span>
+          <span style={eyebrow}>{b.customerName}</span>
+        </div>
       )}
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontFamily: 'var(--font-sans)', fontSize: '11.5px', color: 'var(--pf-muted)', marginTop: '6px' }}>

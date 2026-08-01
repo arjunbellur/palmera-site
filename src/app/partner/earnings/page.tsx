@@ -9,7 +9,7 @@ import { t } from '../i18n'
 import { getBookingsByCompany, getLedgerByProvider, getPayoutsByProvider } from '@/lib/firestore'
 import type { Booking, LedgerEntry, LedgerEntryType, Payout, PayoutStatus } from '@/lib/schema'
 import { formatAmount, formatDate, toDate } from '@/lib/money'
-import { ScreenHeader, Money, EmptyState, SectionTitle, card, eyebrow } from '@/components/partner/ui'
+import { ScreenHeader, Money, EmptyState, SectionTitle, Skeleton, card, eyebrow } from '@/components/partner/ui'
 
 const PAYOUT_COLOR: Record<PayoutStatus, string> = {
   scheduled: 'var(--pf-gold)', processing: 'var(--pf-gold)', paid: 'var(--pf-success)', failed: 'var(--pf-alert)',
@@ -39,6 +39,7 @@ export default function EarningsScreen() {
   const [payouts, setPayouts] = useState<Payout[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
   const [period, setPeriod] = useState<'all' | 'month' | 'last' | '30'>('all')
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     if (!uid || !company?.id) return
@@ -49,6 +50,7 @@ export default function EarningsScreen() {
       setLedger(l.filter(e => e.companyId === company.id))
       setPayouts(p.filter(x => x.companyId === company.id))
       setBookings(b)
+      setLoaded(true)
     })()
   }, [uid, company?.id])
 
@@ -125,6 +127,8 @@ export default function EarningsScreen() {
     <div className="pf-in">
       <ScreenHeader label={L('earn_label')} title={L('earn_title')} intro={L('earn_intro')} />
 
+      {!loaded && <><Skeleton height="120px" style={{ marginBottom: '12px' }} /><Skeleton height="220px" /></>}
+      {loaded && <>
       {/* Hero: gradient balance card with circled stats. */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 14rem), 1fr))', gap: '12px' }}>
         <div style={{ gridColumn: '1 / -1', padding: '24px', borderRadius: '18px', background: 'linear-gradient(150deg, rgba(190,154,86,0.12), var(--pf-card))', border: '1px solid var(--pf-border-strong)', display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '22px' }}>
@@ -276,6 +280,7 @@ export default function EarningsScreen() {
           ))}
         </div>
       )}
+      </>}
     </div>
   )
 }

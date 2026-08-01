@@ -127,6 +127,11 @@ export function GhostButton({ children, onClick, tone = 'neutral' }: { children:
   )
 }
 
+/** Shimmer placeholder shaped like the content it's waiting for. */
+export function Skeleton({ height, style }: { height: string | number; style?: CSSProperties }) {
+  return <div className="pf-skel" style={{ height, ...style }} />
+}
+
 export function SectionTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', margin: '28px 0 12px' }}>

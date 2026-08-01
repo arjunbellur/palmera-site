@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { onAuthChange } from '@/lib/auth'
 import { ThemeProvider, useTheme } from '@/lib/theme'
-import { getProvider, getCompanies } from '@/lib/firestore'
+import { getProvider, getCompanies, getBookingsByCompany } from '@/lib/firestore'
 import type { Company, Provider } from '@/lib/schema'
 import { PartnerContext } from './PartnerContext'
 import { t, type Locale } from './i18n'
@@ -33,6 +33,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
   const [switcherOpen, setSwitcherOpen] = useState(false)
+  const [pendingCount, setPendingCount] = useState(0)
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 900)
@@ -66,6 +67,11 @@ function Shell({ children }: { children: React.ReactNode }) {
     localStorage.setItem(STORE_KEY, id)
     setSwitcherOpen(false)
   }
+
+  useEffect(() => {
+    if (!uid || !companyId) return
+    getBookingsByCompany(uid, companyId).then((bs) => setPendingCount(bs.filter((b) => b.status === 'pending').length))
+  }, [uid, companyId])
 
   const refresh = async () => {
     if (!uid) return
@@ -122,8 +128,17 @@ function Shell({ children }: { children: React.ReactNode }) {
         color: active ? 'var(--pf-gold)' : 'var(--pf-faint)',
         borderTop: mobile ? `2px solid ${active ? 'var(--pf-gold)' : 'transparent'}` : undefined,
       }}>
-        <span style={{ fontSize: mobile ? '15px' : '13px', lineHeight: 1 }}>{item.icon}</span>
+        <span style={{ fontSize: mobile ? '15px' : '13px', lineHeight: 1, position: 'relative' }}>
+          {item.icon}
+          {/* Attention badge — the partner learns they're needed WITHOUT visiting the tab. */}
+          {item.key === 'nav_res' && pendingCount > 0 && mobile && (
+            <span style={{ position: 'absolute', top: '-4px', right: '-8px', minWidth: '14px', height: '14px', borderRadius: '999px', background: 'var(--pf-gold)', color: '#0a0e18', fontSize: '9px', fontFamily: 'var(--font-sans)', display: 'grid', placeItems: 'center', padding: '0 3px', lineHeight: 1 }}>{pendingCount}</span>
+          )}
+        </span>
         <span style={{ fontFamily: 'var(--font-sans)', fontSize: mobile ? '9.5px' : '12.5px', letterSpacing: '0.04em', marginTop: mobile ? '5px' : 0 }}>{L(item.key)}</span>
+        {item.key === 'nav_res' && pendingCount > 0 && !mobile && (
+          <span style={{ marginLeft: 'auto', minWidth: '18px', height: '18px', borderRadius: '999px', background: 'var(--pf-gold)', color: '#0a0e18', fontSize: '10px', fontFamily: 'var(--font-sans)', display: 'grid', placeItems: 'center', padding: '0 5px' }}>{pendingCount}</span>
+        )}
       </a>
     )
   }

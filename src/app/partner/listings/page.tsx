@@ -9,7 +9,7 @@ import {
 import ConfirmDialog from '@/components/dashboard/ConfirmDialog'
 import type { Experience, ExperienceStatus, Option, OptionGroup } from '@/lib/schema'
 import { formatAmount } from '@/lib/money'
-import { ScreenHeader, EmptyState, PrimaryButton, card, eyebrow, Chip, type Tone } from '@/components/partner/ui'
+import { ScreenHeader, EmptyState, PrimaryButton, Skeleton, card, eyebrow, Chip, type Tone } from '@/components/partner/ui'
 import ExperienceModal from '@/components/dashboard/ExperienceModal'
 
 const STATUS: Record<ExperienceStatus, { key: string; tone: Tone }> = {
@@ -27,10 +27,12 @@ export default function ListingsScreen() {
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<Experience | undefined>()
   const [editingOptions, setEditingOptions] = useState<Option[]>([])
+  const [loaded, setLoaded] = useState(false)
 
   const load = async () => {
     if (!uid || !company?.id) return
     setItems(await getExperiencesByCompany(uid, company.id))
+    setLoaded(true)
   }
   useEffect(() => { load() /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [uid, company?.id])
 
@@ -91,7 +93,11 @@ export default function ListingsScreen() {
         <PrimaryButton onClick={openNew}>+ {L('new_listing')}</PrimaryButton>
       </div>
 
-      {items.length === 0 ? (
+      {!loaded ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 17rem), 1fr))', gap: '12px' }}>
+          <Skeleton height="210px" /><Skeleton height="210px" /><Skeleton height="210px" />
+        </div>
+      ) : items.length === 0 ? (
         <EmptyState icon="▦" title={L('list_empty_t')} body={L('list_empty_b')}
           action={<PrimaryButton onClick={openNew}>+ {L('new_listing')}</PrimaryButton>} />
       ) : (
