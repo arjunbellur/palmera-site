@@ -3,7 +3,11 @@
 export type Locale = 'fr' | 'en'
 
 const FR: Record<string, string> = {
-  nav_home: 'Accueil', nav_res: 'Réservations', nav_earn: 'Revenus', nav_list: 'Annonces', nav_set: 'Réglages',
+  nav_home: 'Accueil', nav_res: 'Réservations', nav_earn: 'Revenus', nav_list: 'Annonces', nav_msg: 'Messages', nav_set: 'Réglages',
+  msg_label: 'Messages', msg_title: 'Messagerie',
+  msg_soon: 'Bientôt disponible',
+  msg_empty_t: 'Discutez avec vos clients',
+  msg_empty_b: 'Bientôt, les clients pourront vous écrire directement — questions avant de réserver, demandes particulières, coordination le jour J. Tout se passera ici.',
   switch_company: 'Vos établissements',
   add_company: 'Ajouter un établissement',
   your_logo: 'Votre logo',
@@ -100,7 +104,11 @@ const FR: Record<string, string> = {
 }
 
 const EN: Record<string, string> = {
-  nav_home: 'Home', nav_res: 'Reservations', nav_earn: 'Earnings', nav_list: 'Listings', nav_set: 'Settings',
+  nav_home: 'Home', nav_res: 'Reservations', nav_earn: 'Earnings', nav_list: 'Listings', nav_msg: 'Messages', nav_set: 'Settings',
+  msg_label: 'Messages', msg_title: 'Inbox',
+  msg_soon: 'Coming soon',
+  msg_empty_t: 'Chat with your guests',
+  msg_empty_b: 'Soon, guests will be able to message you directly — questions before booking, special requests, day-of coordination. It will all live here.',
   switch_company: 'Your companies',
   add_company: 'Add a company',
   your_logo: 'Your logo',
