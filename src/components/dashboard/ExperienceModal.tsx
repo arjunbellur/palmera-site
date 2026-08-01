@@ -47,8 +47,17 @@ const M = {
     name: 'Nom de l’expérience *', namePh: 'ex. « Tour en jetski au coucher du soleil »',
     category: 'Catégorie *', city: 'Ville *', select: 'Sélectionner',
     howPay: 'Comment les clients paient-ils ?', payApp: 'Paiement dans l’app', payFree: 'Réservation gratuite',
-    payHintPaid: 'Les clients paient à la réservation — le total est partagé entre les amis du groupe.',
-    payHintFree: 'Les clients réservent sans payer — ex. une table ou une entrée. Vous pouvez quand même facturer des extras plus loin.',
+    payAppDesc: 'Le groupe paie à la réservation et partage le total dans l’app.',
+    payFreeDesc: 'Réserver une table ou une entrée, sans paiement. Les extras restent possibles.',
+    perPersonDesc: 'Le prix × le nombre de personnes.',
+    perGroupDesc: 'Un seul prix, quelle que soit la taille du groupe.',
+    anytimeDesc: 'Réservable n’importe quel jour.',
+    setDaysDesc: 'Des jours et heures fixes chaque semaine.',
+    oneOffDesc: 'Une date unique — un événement.',
+    instantDesc: 'Le client est confirmé immédiatement.',
+    approveDesc: 'Vous acceptez ou refusez chaque demande.',
+    cancelDesc: (h: number | undefined) => h != null ? `Annulation gratuite jusqu’à ${h}h avant.` : '',
+    changeLater: 'Modifiable à tout moment',
     price: 'Prix (XOF) *', priceIs: 'Ce prix s’applique', perGroup: 'Au groupe entier', perPerson: 'Par personne',
     minGroup: 'Groupe minimum', maxGroup: 'Groupe maximum',
     partyHint: 'Palmera est fait pour réserver entre amis — c’est la taille de groupe que vous pouvez accueillir.',
@@ -109,8 +118,17 @@ const M = {
     name: 'Name of the experience *', namePh: 'e.g. "Sunset Jetski Tour"',
     category: 'Category *', city: 'City *', select: 'Select',
     howPay: 'How do guests pay?', payApp: 'Pay in the app', payFree: 'Free to reserve',
-    payHintPaid: 'Guests pay when they book — the total is split between the friends in the group.',
-    payHintFree: 'Guests reserve a spot without paying — e.g. a table or entry. You can still charge for extras below.',
+    payAppDesc: 'The group pays at booking and splits the total in the app.',
+    payFreeDesc: 'Reserve a table or a spot, no payment. Extras still possible.',
+    perPersonDesc: 'The price × the number of people.',
+    perGroupDesc: 'One price, whatever the group size.',
+    anytimeDesc: 'Bookable any day.',
+    setDaysDesc: 'Fixed days and times each week.',
+    oneOffDesc: 'A single date — an event.',
+    instantDesc: 'The guest is confirmed immediately.',
+    approveDesc: 'You accept or decline each request.',
+    cancelDesc: (h: number | undefined) => h != null ? `Free cancellation up to ${h}h before.` : '',
+    changeLater: 'You can change this later',
     price: 'Price (XOF) *', priceIs: 'This price is', perGroup: 'For the whole group', perPerson: 'Per person',
     minGroup: 'Smallest group', maxGroup: 'Largest group',
     partyHint: 'Palmera is built for friends booking together — this is the party size you can host.',
@@ -223,6 +241,42 @@ const emptyOption = (groupId: string): Option & { _isNew?: boolean } => ({
 
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR').format(Math.round(n))
 
+/** Airbnb-style choice cards: big tap targets that EXPLAIN each option in a
+ * sentence, replacing skinny segmented pills that only named them. */
+function ChoiceCards<T extends string>({ value, onChange, options }: {
+  value: T | undefined
+  onChange: (v: T) => void
+  options: { v: T; icon: string; label: string; desc?: string }[]
+}) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 11rem), 1fr))', gap: '0.625rem' }}>
+      {options.map((o) => {
+        const active = value === o.v
+        return (
+          <button key={o.v} onClick={() => onChange(o.v)}
+            style={{ textAlign: 'left', padding: '0.875rem 1rem', borderRadius: '0.5rem', cursor: 'pointer', transition: 'border-color 0.15s, background 0.15s', border: `1.5px solid ${active ? '#be9a56' : 'var(--db-border-subtle)'}`, background: active ? 'rgba(190,154,86,0.1)' : 'var(--db-bg-card)' }}>
+            <div style={{ fontSize: '1rem', marginBottom: '0.375rem', color: active ? '#be9a56' : 'var(--db-text-faint)' }}>{o.icon}</div>
+            <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', color: active ? '#be9a56' : 'var(--db-text)', marginBottom: o.desc ? '0.25rem' : 0 }}>{o.label}</div>
+            {o.desc && <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6875rem', color: 'var(--db-text-ghost)', lineHeight: 1.45 }}>{o.desc}</div>}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+/** − n + stepper — counts are tapped, never typed (mobile-first). */
+function Stepper({ value, min = 1, onChange }: { value: number; min?: number; onChange: (v: number) => void }) {
+  const btn: React.CSSProperties = { width: '2.25rem', height: '2.25rem', borderRadius: '50%', border: '1px solid var(--db-border-gold)', background: 'transparent', color: 'var(--db-text)', fontSize: '1.125rem', cursor: 'pointer', lineHeight: 1 }
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+      <button onClick={() => onChange(Math.max(min, value - 1))} disabled={value <= min} style={{ ...btn, opacity: value <= min ? 0.35 : 1, cursor: value <= min ? 'default' : 'pointer' }}>−</button>
+      <span style={{ fontFamily: 'var(--font-display)', color: 'var(--db-text)', fontSize: '1.25rem', minWidth: '2rem', textAlign: 'center' }}>{value}</span>
+      <button onClick={() => onChange(value + 1)} style={btn}>+</button>
+    </div>
+  )
+}
+
 export default function ExperienceModal({ providerId, companyId, defaultCategory, defaultCity, experience, existingOptions, onSave, onClose }: ExperienceModalProps) {
   const T = M[useLocale()]
   const [categories, setCategories] = useState<Opt[]>([])
@@ -327,12 +381,6 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
   ].filter(Boolean) as string[]
   const groupInverted = (form.maxGuests ?? 0) < (form.minGuests ?? 1)
 
-  const pillBase = (active: boolean): React.CSSProperties => ({
-    flex: 1, padding: '9px 0', background: active ? 'rgba(190,154,86,0.15)' : 'transparent', border: 'none',
-    color: active ? '#be9a56' : 'var(--db-text-faint)', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.04em', cursor: 'pointer',
-  })
-  const pillRow: React.CSSProperties = { display: 'flex', borderRadius: '0.375rem', border: '1px solid var(--db-border-subtle)', overflow: 'hidden' }
-
   const needsReview = experience?.needsReview || []
 
   // Live pricing example — the listing seen the way the APP works: a group of
@@ -370,14 +418,10 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
 
       <div style={{ marginBottom: '1rem' }}>
         <label style={labelStyle}>{T.howPay}</label>
-        <div style={pillRow}>
-          {(['paid', 'reservation'] as ExperienceMode[]).map((m, i, arr) => (
-            <button key={m} onClick={() => set('mode', m)} style={{ ...pillBase(form.mode === m), borderRight: i < arr.length - 1 ? '1px solid var(--db-border-subtle)' : 'none' }}>
-              {m === 'paid' ? T.payApp : T.payFree}
-            </button>
-          ))}
-        </div>
-        <p style={hintStyle}>{isPaid ? T.payHintPaid : T.payHintFree}</p>
+        <ChoiceCards value={form.mode} onChange={(m) => set('mode', m)} options={[
+          { v: 'paid' as ExperienceMode, icon: '◆', label: T.payApp, desc: T.payAppDesc },
+          { v: 'reservation' as ExperienceMode, icon: '○', label: T.payFree, desc: T.payFreeDesc },
+        ]} />
       </div>
 
       {isPaid && (
@@ -388,20 +432,17 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
           </div>
           <div>
             <label style={labelStyle}>{T.priceIs}</label>
-            <div style={pillRow}>
-              {(['per_person', 'flat'] as PriceUnit[]).map((u, i, arr) => (
-                <button key={u} onClick={() => set('priceUnit', u)} style={{ ...pillBase(form.priceUnit === u), fontSize: '0.75rem', borderRight: i < arr.length - 1 ? '1px solid var(--db-border-subtle)' : 'none' }}>
-                  {u === 'flat' ? T.perGroup : T.perPerson}
-                </button>
-              ))}
-            </div>
+            <ChoiceCards value={form.priceUnit} onChange={(u) => set('priceUnit', u)} options={[
+              { v: 'per_person' as PriceUnit, icon: '◍', label: T.perPerson, desc: T.perPersonDesc },
+              { v: 'flat' as PriceUnit, icon: '◎', label: T.perGroup, desc: T.perGroupDesc },
+            ]} />
           </div>
         </div>
       )}
 
       <div style={rowStyle}>
-        <div><label style={labelStyle}>{T.minGroup}</label><input style={inputStyle} type="number" min="1" value={form.minGuests} onChange={(e) => set('minGuests', parseInt(e.target.value) || 1)} /></div>
-        <div><label style={labelStyle}>{T.maxGroup}</label><input style={inputStyle} type="number" min="1" value={form.maxGuests} onChange={(e) => set('maxGuests', parseInt(e.target.value) || 1)} /></div>
+        <div><label style={labelStyle}>{T.minGroup}</label><Stepper value={form.minGuests || 1} onChange={(v) => set('minGuests', v)} /></div>
+        <div><label style={labelStyle}>{T.maxGroup}</label><Stepper value={form.maxGuests || 1} onChange={(v) => set('maxGuests', v)} /></div>
       </div>
       <p style={{ ...hintStyle, margin: '-0.5rem 0 1rem' }}>{T.partyHint}</p>
       {groupInverted && (
@@ -424,13 +465,11 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
     <>
       <div style={{ marginBottom: '1rem' }}>
         <label style={labelStyle}>{T.when}</label>
-        <div style={pillRow}>
-          {(['ongoing', 'scheduled', 'one_time'] as ScheduleType[]).map((a, i, arr) => (
-            <button key={a} onClick={() => set('scheduleType', a)} style={{ ...pillBase(form.scheduleType === a), fontSize: '0.75rem', borderRight: i < arr.length - 1 ? '1px solid var(--db-border-subtle)' : 'none' }}>
-              {a === 'ongoing' ? T.anytime : a === 'scheduled' ? T.setDays : T.oneOff}
-            </button>
-          ))}
-        </div>
+        <ChoiceCards value={form.scheduleType} onChange={(a) => set('scheduleType', a)} options={[
+          { v: 'ongoing' as ScheduleType, icon: '∞', label: T.anytime, desc: T.anytimeDesc },
+          { v: 'scheduled' as ScheduleType, icon: '▤', label: T.setDays, desc: T.setDaysDesc },
+          { v: 'one_time' as ScheduleType, icon: '✦', label: T.oneOff, desc: T.oneOffDesc },
+        ]} />
       </div>
 
       {isScheduled && (
@@ -520,23 +559,19 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
     <>
       <div style={{ marginBottom: '1rem' }}>
         <label style={labelStyle}>{T.whenBooks}</label>
-        <div style={pillRow}>
-          {(['instant', 'provider_confirmed'] as ConfirmationType[]).map((c, i, arr) => (
-            <button key={c} onClick={() => set('confirmationType', c)} style={{ ...pillBase(form.confirmationType === c), fontSize: '0.75rem', borderRight: i < arr.length - 1 ? '1px solid var(--db-border-subtle)' : 'none' }}>
-              {c === 'instant' ? T.instant : T.approve}
-            </button>
-          ))}
-        </div>
+        <ChoiceCards value={form.confirmationType} onChange={(c) => set('confirmationType', c)} options={[
+          { v: 'instant' as ConfirmationType, icon: '⚡', label: T.instant, desc: T.instantDesc },
+          { v: 'provider_confirmed' as ConfirmationType, icon: '✓', label: T.approve, desc: T.approveDesc },
+        ]} />
       </div>
 
       <div style={{ marginBottom: '1.25rem' }}>
         <label style={labelStyle}>{T.cancelPolicy} {needsReview.includes('cancellationTier') && <span style={{ color: '#e07070' }}>{T.confirmTier}</span>}</label>
-        <div style={{ ...pillRow, marginBottom: '0.625rem' }}>
-          {CANCELLATION_TIERS.map((t, i, arr) => (
-            <button key={t} onClick={() => setCancelTier(t)} style={{ ...pillBase(form.cancellationPolicy?.tier === t), fontSize: '0.75rem', borderRight: i < arr.length - 1 ? '1px solid var(--db-border-subtle)' : 'none' }}>
-              {T.tierLabels[t]}{tierHours[t] != null ? ` (${tierHours[t]}h)` : ''}
-            </button>
-          ))}
+        <div style={{ marginBottom: '0.625rem' }}>
+          <ChoiceCards value={form.cancellationPolicy?.tier} onChange={(t) => setCancelTier(t)} options={CANCELLATION_TIERS.map((t) => ({
+            v: t, icon: t === 'flexible' ? '◌' : t === 'moderate' ? '◑' : '●',
+            label: T.tierLabels[t], desc: T.cancelDesc(tierHours[t]),
+          }))} />
         </div>
         <input style={inputStyle} placeholder={T.notesPh} value={form.cancellationPolicy?.customNotes || ''}
           onChange={(e) => setForm((p) => ({ ...p, cancellationPolicy: { tier: p.cancellationPolicy?.tier || 'moderate', customNotes: e.target.value || null, policyVersion: p.cancellationPolicy?.policyVersion || 'v1' } }))} />
@@ -622,8 +657,9 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
   const canNext = step > 0 || canSave
 
   return (
-    <div data-lenis-prevent style={{ position: 'fixed', inset: 0, background: 'var(--db-overlay)', zIndex: 200, overflowY: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px' }}>
-      <div style={{ background: 'var(--db-bg-modal)', border: '1px solid var(--db-border-subtle)', borderRadius: '0.75rem', width: '100%', maxWidth: '46rem', margin: 'auto', padding: 'clamp(1.25rem, 4vw, 2rem)' }}>
+    <div data-lenis-prevent style={{ position: 'fixed', inset: 0, background: 'var(--db-overlay)', zIndex: 200, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+      <div style={{ background: 'var(--db-bg-modal)', border: '1px solid var(--db-border-subtle)', borderRadius: '0.75rem', width: '100%', maxWidth: '46rem', maxHeight: 'calc(100vh - 40px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div data-lenis-prevent style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 'clamp(1.25rem, 4vw, 2rem)', paddingBottom: '1rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
           <div>
             <h2 style={{ fontFamily: 'var(--font-display)', color: 'var(--db-text)', fontSize: '1.25rem', fontWeight: 400, margin: '0 0 0.25rem', letterSpacing: '0.06em' }}>
@@ -653,23 +689,28 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
         )}
 
         {stepBodies[step]}
+      </div>
 
-        {/* Footer: navigate the steps; save/publish available from any step once valid. */}
+      {/* Footer: ALWAYS visible (Airbnb-style fixed band) — navigation must
+          never scroll away on a long step. */}
+      <div style={{ flexShrink: 0, borderTop: '1px solid var(--db-border-subtle)', padding: '0.875rem clamp(1.25rem, 4vw, 2rem)', background: 'var(--db-bg-modal)' }}>
         {isLast && !canPublish && canSave && (
-          <p style={{ fontSize: '0.75rem', color: 'var(--db-text-faint)', fontFamily: 'var(--font-sans)', margin: '1rem 0 0', textAlign: 'right' }}>
+          <p style={{ fontSize: '0.75rem', color: 'var(--db-text-faint)', fontFamily: 'var(--font-sans)', margin: '0 0 0.625rem', textAlign: 'right' }}>
             {T.toPublish} {publishBlockers.join(', ')}
           </p>
         )}
         {step === 0 && missingBasics.length > 0 && (
-          <p style={{ fontSize: '0.75rem', color: 'var(--db-text-faint)', fontFamily: 'var(--font-sans)', margin: '1rem 0 0', textAlign: 'right' }}>
+          <p style={{ fontSize: '0.75rem', color: 'var(--db-text-faint)', fontFamily: 'var(--font-sans)', margin: '0 0 0.625rem', textAlign: 'right' }}>
             {T.toContinue} {missingBasics.join(', ')}
           </p>
         )}
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.25rem', flexWrap: 'wrap' }}>
-          <div>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
             {step > 0 && (
               <button onClick={() => setStep(step - 1)} style={{ padding: '10px 20px', background: 'transparent', border: '1px solid var(--db-border-subtle)', borderRadius: '0.25rem', color: 'var(--db-text-muted)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>{T.back}</button>
             )}
+            {/* Airbnb-style reassurance: nothing here is a commitment. */}
+            <span style={{ fontSize: '0.6875rem', color: 'var(--db-text-ghost)', fontFamily: 'var(--font-sans)' }}>{T.changeLater}</span>
           </div>
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
             {experience?.status === 'published' && (
@@ -692,6 +733,7 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
             )}
           </div>
         </div>
+      </div>
       </div>
     </div>
   )
