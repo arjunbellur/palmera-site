@@ -2,7 +2,7 @@
 
 Living tracker for the two-sided integration. Update this whenever either
 side ships something that touches the shared surface (schema, rules,
-indexes, collections). Last updated: 2026-08-01.
+indexes, collections). Last updated: 2026-08-01 (indexes live, sync VERIFIED end-to-end at the query layer).
 
 ## Ground rules (agreed direction — confirm with Samson)
 1. **`firestore.rules` in this repo is the single source of truth.** Rule
@@ -39,8 +39,8 @@ indexes, collections). Last updated: 2026-08-01.
 ## Open items by owner
 | # | Item | Owner | Status |
 |---|---|---|---|
-| 1 | Create 5 composite indexes (console links) | **Arjun** | pending — additive, safe regardless of Samson's concurrent work |
-| 2 | Verify dashboard query returns Jordan's booking post-index | us | after #1 |
+| 1 | Create 5 composite indexes (console links) | **Arjun** | ✅ done 2026-08-01 — all 5 Enabled |
+| 2 | Verify dashboard query returns Jordan's booking post-index | us | ✅ verified — 7 reservations return (provider + company-scoped), customer my-bookings works |
 | 3 | Point payment writes at the booking's own doc id | **Samson** | rule gap fixed our side; his code change pending |
 | 4 | Confirm the 8 orphan payment docs are abandoned → we wipe | **Samson** confirm, us delete | pending |
 | 5 | Free-reservation flow (no payment, "Confirm", points) | **Samson** | spec now in contract doc |
