@@ -350,6 +350,7 @@ export default function CompanyPage({ params }: { params: Promise<{ companyId: s
         <ExperienceModal
           providerId={uid}
           companyId={companyId}
+          companyName={company.name}
           defaultCategory={company.category}
           defaultCity={company.city}
           experience={editingExp}

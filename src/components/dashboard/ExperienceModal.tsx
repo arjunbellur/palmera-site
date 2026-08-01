@@ -36,11 +36,21 @@ const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const M = {
   fr: {
     steps: [
-      { title: 'L’essentiel', sub: 'Qu’est-ce que c’est, et à quel prix ?' },
-      { title: 'Où & quand', sub: 'Comment les clients le trouvent, et quand ça a lieu' },
-      { title: 'Photos & description', sub: 'Ce que les clients voient dans l’app' },
-      { title: 'Détails de réservation', sub: 'Confirmation, annulation et extras' },
+      { title: 'Comment s’appelle votre expérience ?', sub: 'Le nom, la catégorie et la ville' },
+      { title: 'Comment les clients paient-ils ?', sub: 'Gratuit ou payant, et le prix' },
+      { title: 'Combien de personnes ?', sub: 'La taille de groupe que vous accueillez' },
+      { title: 'Où et quand ?', sub: 'Le lieu et les disponibilités' },
+      { title: 'Montrez-la', sub: 'Photos et description' },
+      { title: 'Choix & extras', sub: 'Ce que les clients peuvent ajouter' },
+      { title: 'Derniers détails', sub: 'Confirmation et annulation' },
+      { title: 'Aperçu', sub: 'Ce que verront les clients' },
     ],
+    summaryTitle: 'Que voulez-vous modifier ?',
+    stepOf: (a: number, b: number) => `Étape ${a}/${b}`,
+    previewNote: 'Aperçu approximatif — l’app peut différer légèrement.',
+    fromLabel: 'À PARTIR DE', bookNow: 'Réserver', guestsWord: 'pers.',
+    includedHint: 'Ce que le prix couvre — matériel, boissons, entrées…',
+    highlightsHint: 'Vos arguments de vente — ce qui donne envie.',
     editTitle: 'Modifier l’expérience', newTitle: 'Nouvelle expérience',
     migrated: 'Migré depuis votre ancienne annonce — à compléter :',
     nr_cancel: 'politique d’annulation', nr_photos: 'photos', nr_coords: 'lien Google Maps',
@@ -107,11 +117,21 @@ const M = {
   },
   en: {
     steps: [
-      { title: 'The basics', sub: 'What is it, and what does it cost?' },
-      { title: 'When & where', sub: 'How guests find it and when it runs' },
-      { title: 'Photos & story', sub: 'What guests see in the app' },
-      { title: 'Booking details', sub: 'Confirmation, cancellation, and extras' },
+      { title: 'What’s your experience called?', sub: 'Name, category and city' },
+      { title: 'How do guests pay?', sub: 'Free or paid, and the price' },
+      { title: 'How many people?', sub: 'The group size you can host' },
+      { title: 'Where and when?', sub: 'Location and availability' },
+      { title: 'Show it off', sub: 'Photos and description' },
+      { title: 'Choices & extras', sub: 'What guests can add' },
+      { title: 'Final details', sub: 'Confirmation and cancellation' },
+      { title: 'Preview', sub: 'What guests will see' },
     ],
+    summaryTitle: 'What do you want to edit?',
+    stepOf: (a: number, b: number) => `Step ${a}/${b}`,
+    previewNote: 'Approximate preview — the app may differ slightly.',
+    fromLabel: 'FROM', bookNow: 'Book now', guestsWord: 'guests',
+    includedHint: 'What the price covers — gear, drinks, entry…',
+    highlightsHint: 'Your selling points — what makes people want it.',
     editTitle: 'Edit experience', newTitle: 'New experience',
     migrated: 'Migrated from your old listing — please finish:',
     nr_cancel: 'cancellation policy', nr_photos: 'photos', nr_coords: 'Google Maps link',
@@ -213,6 +233,8 @@ export interface ExperienceFormData extends Partial<Experience> {
 interface ExperienceModalProps {
   providerId: string
   companyId: string
+  /** Company display name — shown on the guest-card preview. */
+  companyName?: string
   defaultCategory?: string
   defaultCity?: string
   experience?: Experience
@@ -277,13 +299,16 @@ function Stepper({ value, min = 1, onChange }: { value: number; min?: number; on
   )
 }
 
-export default function ExperienceModal({ providerId, companyId, defaultCategory, defaultCity, experience, existingOptions, onSave, onClose }: ExperienceModalProps) {
+export default function ExperienceModal({ providerId, companyId, companyName, defaultCategory, defaultCity, experience, existingOptions, onSave, onClose }: ExperienceModalProps) {
   const T = M[useLocale()]
   const [categories, setCategories] = useState<Opt[]>([])
   const [cities, setCities] = useState<Opt[]>([])
   const [tierHours, setTierHours] = useState<Partial<Record<CancellationTier, number>>>({})
   const [saving, setSaving] = useState(false)
   const [step, setStep] = useState(0)
+  // Airbnb pattern: the wizard walks NEW listings question by question; EDITS
+  // open on a section summary that jumps straight to the right screen.
+  const [view, setView] = useState<'summary' | 'steps'>(experience ? 'summary' : 'steps')
   const [photoOpen, setPhotoOpen] = useState<Record<string, boolean>>({})
 
   const [form, setForm] = useState<Partial<Experience>>(() => ({
@@ -372,13 +397,12 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
     setSaving(false)
   }
 
-  // What still blocks LEAVING step 1 — named, not just a dead button.
-  const missingBasics = [
-    !form.title && T.fName,
-    !form.category && T.fCategory,
-    !form.city && T.fCity,
-    isPaid && !form.price && T.fPrice,
-  ].filter(Boolean) as string[]
+  // What still blocks leaving THIS step — named, not just a dead button.
+  const missingBasics = (
+    step === 0 ? [!form.title && T.fName, !form.category && T.fCategory, !form.city && T.fCity]
+    : step === 1 ? [isPaid && !form.price && T.fPrice]
+    : []
+  ).filter(Boolean) as string[]
   const groupInverted = (form.maxGuests ?? 0) < (form.minGuests ?? 1)
 
   const needsReview = experience?.needsReview || []
@@ -386,13 +410,16 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
   // Live pricing example — the listing seen the way the APP works: a group of
   // friends booking together and splitting the total.
   const exampleParty = Math.min(Math.max(form.minGuests || 1, 4), form.maxGuests || 4)
+  // Required choices are part of the real minimum: add each one's cheapest option.
+  const requiredMin = groups.filter((g) => g.required)
+    .reduce((sum, g) => sum + (g.options.length ? Math.min(...g.options.map((o) => o.price || 0)) : 0), 0)
   const exampleTotal = isPaid && form.price
-    ? form.price * (form.priceUnit === 'per_person' ? exampleParty : 1)
-    : 0
+    ? form.price * (form.priceUnit === 'per_person' ? exampleParty : 1) + requiredMin
+    : requiredMin
   const perFriend = exampleParty > 0 ? exampleTotal / exampleParty : 0
 
   // ─── Step bodies ──────────────────────────────────────────────────────────
-  const stepBasics = (
+  const stepIdentity = (
     <>
       <div style={{ marginBottom: '1rem' }}>
         <label style={labelStyle}>{T.name}</label>
@@ -415,7 +442,11 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
           </select>
         </div>
       </div>
+    </>
+  )
 
+  const stepPricing = (
+    <>
       <div style={{ marginBottom: '1rem' }}>
         <label style={labelStyle}>{T.howPay}</label>
         <ChoiceCards value={form.mode} onChange={(m) => set('mode', m)} options={[
@@ -440,15 +471,6 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
         </div>
       )}
 
-      <div style={rowStyle}>
-        <div><label style={labelStyle}>{T.minGroup}</label><Stepper value={form.minGuests || 1} onChange={(v) => set('minGuests', v)} /></div>
-        <div><label style={labelStyle}>{T.maxGroup}</label><Stepper value={form.maxGuests || 1} onChange={(v) => set('maxGuests', v)} /></div>
-      </div>
-      <p style={{ ...hintStyle, margin: '-0.5rem 0 1rem' }}>{T.partyHint}</p>
-      {groupInverted && (
-        <p style={{ fontSize: '0.75rem', color: '#e07070', fontFamily: 'var(--font-sans)', margin: '-0.5rem 0 1rem' }}>{T.groupWarn}</p>
-      )}
-
       {/* What a group actually pays — the partner sees their pricing the way guests will. */}
       {isPaid && !!form.price && (
         <div style={{ background: 'var(--db-bg-banner)', border: '1px solid var(--db-border-gold)', borderRadius: '0.5rem', padding: '0.875rem 1rem' }}>
@@ -457,6 +479,19 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
             {T.previewLine(exampleParty, fmt(exampleTotal), fmt(perFriend))}
           </p>
         </div>
+      )}
+    </>
+  )
+
+  const stepParty = (
+    <>
+      <div style={rowStyle}>
+        <div><label style={labelStyle}>{T.minGroup}</label><Stepper value={form.minGuests || 1} onChange={(v) => set('minGuests', v)} /></div>
+        <div><label style={labelStyle}>{T.maxGroup}</label><Stepper value={form.maxGuests || 1} onChange={(v) => set('maxGuests', v)} /></div>
+      </div>
+      <p style={{ ...hintStyle, margin: '-0.5rem 0 1rem' }}>{T.partyHint}</p>
+      {groupInverted && (
+        <p style={{ fontSize: '0.75rem', color: '#e07070', fontFamily: 'var(--font-sans)', margin: '-0.5rem 0 1rem' }}>{T.groupWarn}</p>
       )}
     </>
   )
@@ -537,11 +572,11 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
         <textarea style={{ ...inputStyle, height: '90px', resize: 'vertical' }} placeholder={T.describePh} value={form.description} onChange={(e) => set('description', e.target.value)} />
       </div>
       <div style={rowStyle}>
-        <div><label style={labelStyle}>{T.included}</label><textarea style={{ ...inputStyle, height: '80px', resize: 'vertical' }} placeholder={T.includedPh} value={(form.includes || []).join('\n')} onChange={(e) => set('includes', linesToArray(e.target.value))} /></div>
+        <div><label style={labelStyle}>{T.included}</label><textarea style={{ ...inputStyle, height: '80px', resize: 'vertical' }} placeholder={T.includedPh} value={(form.includes || []).join('\n')} onChange={(e) => set('includes', linesToArray(e.target.value))} /><p style={hintStyle}>{T.includedHint}</p></div>
         <div><label style={labelStyle}>{T.notIncluded}</label><textarea style={{ ...inputStyle, height: '80px', resize: 'vertical' }} placeholder={T.notIncludedPh} value={(form.excludes || []).join('\n')} onChange={(e) => set('excludes', linesToArray(e.target.value))} /></div>
       </div>
       <div style={rowStyle}>
-        <div><label style={labelStyle}>{T.highlights}</label><textarea style={{ ...inputStyle, height: '70px', resize: 'vertical' }} value={(form.highlights || []).join('\n')} onChange={(e) => set('highlights', linesToArray(e.target.value))} /></div>
+        <div><label style={labelStyle}>{T.highlights}</label><textarea style={{ ...inputStyle, height: '70px', resize: 'vertical' }} value={(form.highlights || []).join('\n')} onChange={(e) => set('highlights', linesToArray(e.target.value))} /><p style={hintStyle}>{T.highlightsHint}</p></div>
         <div><label style={labelStyle}>{T.dress}</label><input style={inputStyle} placeholder={T.dressPh} value={form.dressCode || ''} onChange={(e) => set('dressCode', e.target.value || null)} /></div>
       </div>
       <div style={{ marginBottom: '0.5rem' }}>
@@ -576,7 +611,11 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
         <input style={inputStyle} placeholder={T.notesPh} value={form.cancellationPolicy?.customNotes || ''}
           onChange={(e) => setForm((p) => ({ ...p, cancellationPolicy: { tier: p.cancellationPolicy?.tier || 'moderate', customNotes: e.target.value || null, policyVersion: p.cancellationPolicy?.policyVersion || 'v1' } }))} />
       </div>
+    </>
+  )
 
+  const stepAddons = (
+    <>
       {/* Add-ons & choices (the optionGroups data). NEVER called "groups" in the
           UI — in this product, "group" means the guests' party. */}
       <div>
@@ -651,10 +690,56 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
     </>
   )
 
-  const stepBodies = [stepBasics, stepWhenWhere, stepPhotos, stepBooking]
+  // ─── Guest-card preview — matched to the real app listing screen (navy
+  // sheet, gold pin eyebrow, serif cream title, provider chip, FROM bar). ───
+  const stepPreview = (() => {
+    const APP = { sheet: '#0E2233', chip: '#16324a', gold: '#E9BC4F', goldDeep: '#D9A62E', cream: '#F3EBD8', dim: 'rgba(243,235,216,0.65)' }
+    return (
+      <div>
+        <div style={{ maxWidth: '23rem', margin: '0 auto', borderRadius: '1.25rem', overflow: 'hidden', border: '1px solid var(--db-border-subtle)', background: APP.sheet }}>
+          <div style={{ height: '11rem', background: form.img ? `center/cover url(${form.img})` : '#1a2f44', display: 'grid', placeItems: 'center' }}>
+            {!form.img && <span style={{ color: APP.dim, fontFamily: 'var(--font-sans)', fontSize: '0.75rem' }}>{T.mainPhoto}</span>}
+          </div>
+          <div style={{ padding: '1.125rem 1.25rem 0' }}>
+            {form.location && (
+              <div style={{ color: APP.gold, fontFamily: 'var(--font-sans)', fontSize: '0.625rem', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>⚲ {form.location} ↗</div>
+            )}
+            <div style={{ color: APP.cream, fontFamily: 'var(--font-serif)', fontSize: '1.5rem', fontWeight: 600, lineHeight: 1.15, marginBottom: '0.5rem' }}>{form.title || '…'}</div>
+            <div style={{ color: APP.dim, fontFamily: 'var(--font-sans)', fontSize: '0.75rem', marginBottom: '0.875rem' }}>
+              <span style={{ color: APP.gold }}>★</span> 0.00 (0) · ◍ {form.minGuests}–{form.maxGuests} {T.guestsWord}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', background: APP.chip, borderRadius: '0.875rem', padding: '0.75rem 0.875rem', marginBottom: '0.875rem' }}>
+              <span style={{ width: '2rem', height: '2rem', borderRadius: '50%', background: APP.gold, color: '#132638', display: 'grid', placeItems: 'center', fontFamily: 'var(--font-serif)', fontWeight: 700 }}>{(companyName || 'P').charAt(0).toUpperCase()}</span>
+              <span style={{ color: APP.cream, fontFamily: 'var(--font-sans)', fontSize: '0.8125rem' }}>{companyName || '—'} <span style={{ color: APP.gold }}>✓</span></span>
+            </div>
+            {form.description && (
+              <>
+                <div style={{ color: APP.gold, fontFamily: 'var(--font-sans)', fontSize: '0.625rem', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '0.375rem' }}>The Experience</div>
+                <p style={{ color: APP.dim, fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', lineHeight: 1.6, margin: 0, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{form.description}</p>
+              </>
+            )}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', margin: '1rem', padding: '0.75rem 1rem', background: APP.chip, borderRadius: '1rem' }}>
+            <div>
+              <div style={{ color: APP.dim, fontFamily: 'var(--font-sans)', fontSize: '0.5625rem', letterSpacing: '0.12em' }}>{T.fromLabel}</div>
+              <div style={{ color: APP.cream, fontFamily: 'var(--font-serif)', fontSize: '1.25rem', fontWeight: 600 }}>{fmt(isPaid ? (form.price || 0) : 0)} XOF</div>
+            </div>
+            <div style={{ background: APP.gold, color: '#132638', borderRadius: '999px', padding: '0.625rem 1.375rem', fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', fontWeight: 600 }}>{T.bookNow}</div>
+          </div>
+        </div>
+        <p style={{ ...hintStyle, textAlign: 'center', marginTop: '0.875rem' }}>{T.previewNote}</p>
+      </div>
+    )
+  })()
+
+  const stepBodies = [stepIdentity, stepPricing, stepParty, stepWhenWhere, stepPhotos, stepAddons, stepBooking, stepPreview]
   const isLast = step === T.steps.length - 1
-  // Step 0 holds every required-to-save field; later steps can't be reached without it.
-  const canNext = step > 0 || canSave
+  // Each step gates only on ITS OWN required fields.
+  const stepValid = (i: number) =>
+    i === 0 ? !!form.title && !!form.category && !!form.city
+    : i === 1 ? (!isPaid || !!form.price)
+    : true
+  const canNext = stepValid(step)
 
   return (
     <div data-lenis-prevent style={{ position: 'fixed', inset: 0, background: 'var(--db-overlay)', zIndex: 200, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
@@ -666,19 +751,21 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
               {experience ? T.editTitle : T.newTitle}
             </h2>
             <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: 'var(--db-text-faint)', margin: 0 }}>
-              {T.steps[step].title} — {T.steps[step].sub}
+              {view === 'summary' ? T.summaryTitle : <>{T.stepOf(step + 1, T.steps.length)} · {T.steps[step].title} — {T.steps[step].sub}</>}
             </p>
           </div>
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--db-text-faint)', fontSize: '1.375rem', cursor: 'pointer', lineHeight: 1 }}>×</button>
         </div>
 
-        {/* Step indicator — clickable once the basics are valid. */}
-        <div style={{ display: 'flex', gap: '6px', marginBottom: '1.5rem' }}>
-          {T.steps.map((s, i) => (
-            <button key={s.title} onClick={() => (i === 0 || canSave) && setStep(i)} title={s.title}
-              style={{ flex: 1, height: '3px', borderRadius: '2px', border: 'none', padding: 0, cursor: 'pointer', background: i === step ? '#be9a56' : i < step ? 'rgba(190,154,86,0.45)' : 'var(--db-border-subtle)' }} />
-          ))}
-        </div>
+        {/* Step indicator — labeled and tappable once the basics are valid. */}
+        {view === 'steps' && (
+          <div style={{ display: 'flex', gap: '6px', marginBottom: '1.5rem' }}>
+            {T.steps.map((st, i) => (
+              <button key={st.title} onClick={() => (i === 0 || canSave) && setStep(i)} title={st.title}
+                style={{ flex: 1, height: '3px', borderRadius: '2px', border: 'none', padding: 0, cursor: 'pointer', background: i === step ? '#be9a56' : i < step ? 'rgba(190,154,86,0.45)' : 'var(--db-border-subtle)' }} />
+            ))}
+          </div>
+        )}
 
         {needsReview.length > 0 && step === 0 && (
           <div style={{ background: 'rgba(224,112,112,0.08)', border: '1px solid rgba(224,112,112,0.3)', borderRadius: '0.375rem', padding: '0.75rem 1rem', marginBottom: '1.25rem' }}>
@@ -688,7 +775,31 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
           </div>
         )}
 
-        {stepBodies[step]}
+        {view === 'summary' ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {T.steps.map((st, i) => {
+              const summary =
+                i === 0 ? [form.title, form.category, form.city].filter(Boolean).join(' · ')
+                : i === 1 ? (isPaid ? `${fmt(form.price || 0)} XOF` : T.payFree)
+                : i === 2 ? `${form.minGuests}–${form.maxGuests}`
+                : i === 3 ? [form.location, form.scheduleType === 'ongoing' ? T.anytime : form.scheduleType === 'scheduled' ? T.setDays : T.oneOff].filter(Boolean).join(' · ')
+                : i === 4 ? `${form.img ? '📷 ' : ''}${(form.gallery?.length || 0) + (form.img ? 1 : 0)} photo(s)`
+                : i === 5 ? `${groups.length} ${T.addons.toLowerCase()}`
+                : i === 6 ? `${form.confirmationType === 'instant' ? T.instant : T.approve} · ${T.tierLabels[form.cancellationPolicy?.tier || 'moderate']}`
+                : T.steps[7].sub
+              return (
+                <button key={st.title} onClick={() => { setStep(i); setView('steps') }}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.875rem', textAlign: 'left', padding: '0.875rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--db-border-subtle)', background: 'var(--db-bg-card)', cursor: 'pointer' }}>
+                  <span style={{ minWidth: 0 }}>
+                    <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', color: 'var(--db-text)' }}>{st.title}</span>
+                    <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontSize: '0.6875rem', color: 'var(--db-text-ghost)', marginTop: '0.125rem', textTransform: 'capitalize', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{summary || '—'}</span>
+                  </span>
+                  <span style={{ color: '#be9a56', flexShrink: 0 }}>›</span>
+                </button>
+              )
+            })}
+          </div>
+        ) : stepBodies[step]}
       </div>
 
       {/* Footer: ALWAYS visible (Airbnb-style fixed band) — navigation must
@@ -699,14 +810,17 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
             {T.toPublish} {publishBlockers.join(', ')}
           </p>
         )}
-        {step === 0 && missingBasics.length > 0 && (
+        {view === 'steps' && missingBasics.length > 0 && (
           <p style={{ fontSize: '0.75rem', color: 'var(--db-text-faint)', fontFamily: 'var(--font-sans)', margin: '0 0 0.625rem', textAlign: 'right' }}>
             {T.toContinue} {missingBasics.join(', ')}
           </p>
         )}
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
-            {step > 0 && (
+            {view === 'steps' && experience && (
+              <button onClick={() => setView('summary')} style={{ padding: '10px 20px', background: 'transparent', border: '1px solid var(--db-border-subtle)', borderRadius: '0.25rem', color: 'var(--db-text-muted)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>{T.back}</button>
+            )}
+            {view === 'steps' && !experience && step > 0 && (
               <button onClick={() => setStep(step - 1)} style={{ padding: '10px 20px', background: 'transparent', border: '1px solid var(--db-border-subtle)', borderRadius: '0.25rem', color: 'var(--db-text-muted)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>{T.back}</button>
             )}
             {/* Airbnb-style reassurance: nothing here is a commitment. */}
@@ -722,7 +836,8 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
             <button onClick={() => handleSave('draft')} disabled={!canSave || saving} style={{ padding: '10px 20px', background: 'transparent', border: '1px solid var(--db-border-gold)', borderRadius: '0.25rem', color: canSave ? 'var(--db-text)' : 'var(--db-text-ghost)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', cursor: canSave ? 'pointer' : 'not-allowed' }}>
               {saving ? T.saving : T.saveDraft}
             </button>
-            {!isLast ? (
+            {/* Wizard walks Next→…→Publish; edit/summary saves directly. */}
+            {!experience && view === 'steps' && !isLast ? (
               <button onClick={() => canNext && setStep(step + 1)} disabled={!canNext} style={{ padding: '10px 24px', background: canNext ? '#9e763b' : 'var(--db-bg-card)', border: 'none', borderRadius: '0.25rem', color: canNext ? '#ebe8db' : 'var(--db-text-ghost)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', cursor: canNext ? 'pointer' : 'not-allowed' }}>
                 {T.next}
               </button>

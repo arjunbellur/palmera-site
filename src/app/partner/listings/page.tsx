@@ -156,6 +156,7 @@ export default function ListingsScreen() {
         <ExperienceModal
           providerId={uid}
           companyId={company.id!}
+          companyName={company.name}
           defaultCategory={company.category}
           defaultCity={company.city}
           experience={editing}
