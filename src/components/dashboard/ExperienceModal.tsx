@@ -76,13 +76,18 @@ const M = {
     cancelPolicy: 'Politique d’annulation', confirmTier: '— à confirmer',
     tierLabels: { flexible: 'Flexible', moderate: 'Modérée', strict: 'Stricte' } as Record<string, string>,
     notesPh: 'Autre chose à savoir pour les clients (facultatif)',
-    addons: 'Options & choix', addChoice: '+ Ajouter un choix',
-    addonsHint: <>Facultatif. Chaque « choix » est une question posée au client à la réservation — ex. <em>Placement</em> (Bord de ring 15 000 / Standard 5 000) ou <em>Extras</em> (Formule boissons 8 000). Les prix s’ajoutent au total que le groupe partage.</>,
-    noAddons: 'Aucune option — les clients réservent simplement au prix de base.',
-    choosing: 'Que choisissent les clients ?', choosingPh: 'ex. « Placement », « Type de chambre », « Extras »',
-    mustChoose: 'Choix obligatoire', several: 'Quantité multiple', remove: 'Retirer',
-    optNamePh: 'ex. « Bord de ring »', optPricePh: '+ Prix (XOF)', optMaxPh: 'Max par réservation',
-    optDescPh: 'Courte description (facultatif)', photo: 'Photo', addAnswer: '+ Ajouter une réponse',
+    addons: 'Choix & extras',
+    addonsHint: <>Facultatif — deux possibilités : un <strong>choix</strong> que le client doit faire (ex. type de chambre, placement), ou des <strong>extras</strong> qu’il peut ajouter (ex. formule boissons, transfert). Les prix s’ajoutent au total que le groupe partage.</>,
+    noAddons: 'Rien à choisir — les clients réservent simplement au prix de base.',
+    addChoiceSet: '+ Choix à faire', addExtrasSet: '+ Extras',
+    kindChoice: 'Le client choisit UNE option', kindExtras: 'Extras — le client ajoute ce qu’il veut',
+    setNameChoice: 'Titre du choix', setNameChoicePh: 'ex. « Type de chambre », « Placement »',
+    setNameExtras: 'Titre', setNameExtrasPh: 'ex. « Extras », « À la carte »',
+    remove: 'Retirer',
+    optNamePhChoice: 'ex. « Vue mer »', optNamePhExtras: 'ex. « Formule boissons »',
+    optPricePh: '+ Prix (XOF)',
+    addOptChoice: '+ Ajouter une option', addOptExtras: '+ Ajouter un extra',
+    optDescPh: 'Courte description (facultatif)', photo: 'Photo',
     toPublish: 'Pour publier, ajoutez :', blockPhoto: 'une photo', blockMaps: 'un lien Google Maps', blockCancel: 'la politique d’annulation',
     back: '← Retour', next: 'Suivant →', saveDraft: 'Enregistrer le brouillon',
     unpublish: 'Retirer de l’app', toContinue: 'Pour continuer, ajoutez :',
@@ -133,13 +138,18 @@ const M = {
     cancelPolicy: 'Cancellation policy', confirmTier: '— please confirm',
     tierLabels: { flexible: 'Flexible', moderate: 'Moderate', strict: 'Strict' } as Record<string, string>,
     notesPh: 'Anything else guests should know (optional)',
-    addons: 'Add-ons & choices', addChoice: '+ Add a choice',
-    addonsHint: <>Optional. Each “choice” is one question guests answer when booking — e.g. <em>Seating</em> (Ringside 15 000 / Standard 5 000) or <em>Extras</em> (Drinks package 8 000). Prices are added to the total the group splits.</>,
-    noAddons: 'No add-ons — guests just book at the base price.',
-    choosing: 'What are guests choosing?', choosingPh: 'e.g. "Seating", "Room type", "Extras"',
-    mustChoose: 'Must choose one', several: 'Can take several', remove: 'Remove',
-    optNamePh: 'e.g. "Ringside"', optPricePh: '+ Price (XOF)', optMaxPh: 'Max per booking',
-    optDescPh: 'Short description (optional)', photo: 'Photo', addAnswer: '+ Add an answer',
+    addons: 'Choices & extras',
+    addonsHint: <>Optional — two kinds: a <strong>choice</strong> the guest must make (e.g. room type, seating), or <strong>extras</strong> they can add on (e.g. drinks package, transfer). Prices are added to the total the group splits.</>,
+    noAddons: 'Nothing to choose — guests just book at the base price.',
+    addChoiceSet: '+ A choice to make', addExtrasSet: '+ Extras',
+    kindChoice: 'Guest picks ONE option', kindExtras: 'Extras — guest adds what they want',
+    setNameChoice: 'What is being chosen?', setNameChoicePh: 'e.g. "Room type", "Seating"',
+    setNameExtras: 'Title', setNameExtrasPh: 'e.g. "Extras", "Add-ons"',
+    remove: 'Remove',
+    optNamePhChoice: 'e.g. "Sea view"', optNamePhExtras: 'e.g. "Drinks package"',
+    optPricePh: '+ Price (XOF)',
+    addOptChoice: '+ Add an option', addOptExtras: '+ Add an extra',
+    optDescPh: 'Short description (optional)', photo: 'Photo',
     toPublish: 'To publish, add:', blockPhoto: 'a photo', blockMaps: 'a Google Maps link', blockCancel: 'cancellation policy',
     back: '← Back', next: 'Next →', saveDraft: 'Save as draft',
     unpublish: 'Unpublish', toContinue: 'To continue, add:',
@@ -193,9 +203,19 @@ interface ExperienceModalProps {
   onClose: () => void
 }
 
-const emptyGroup = (): OptionGroup & { options: (Option & { _isNew?: boolean })[] } => ({
+// Two kinds, matching how partners actually think:
+//  'choice' — the guest must pick exactly one (room type, seating).
+//  'extras' — optional add-ons, any number, with quantities (drinks, transfer).
+// Stored as the same OptionGroup shape; kind is derived from `required`.
+type SetKind = 'choice' | 'extras'
+const KIND_FLAGS: Record<SetKind, Pick<OptionGroup, 'required' | 'minSelect' | 'maxSelect' | 'allowQuantity'>> = {
+  choice: { required: true, minSelect: 1, maxSelect: 1, allowQuantity: false },
+  extras: { required: false, minSelect: 0, maxSelect: 99, allowQuantity: true },
+}
+const kindOf = (g: OptionGroup): SetKind => (g.required ? 'choice' : 'extras')
+const emptyGroup = (kind: SetKind): OptionGroup & { options: (Option & { _isNew?: boolean })[] } => ({
   id: `g_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-  name: '', required: false, minSelect: 0, maxSelect: 1, allowQuantity: false, sortOrder: 0, options: [],
+  name: '', ...KIND_FLAGS[kind], sortOrder: 0, options: [],
 })
 const emptyOption = (groupId: string): Option & { _isNew?: boolean } => ({
   groupId, name: '', description: '', img: null, gallery: [], price: 0, maxQuantityPerBooking: 1, active: true, sortOrder: 0, _isNew: true,
@@ -258,7 +278,8 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
   const isOneTime = form.scheduleType === 'one_time'
   const canSave = !!form.title && !!form.category && !!form.city && (!isPaid || !!form.price)
 
-  const addGroup = () => setGroups((g) => [...g, emptyGroup()])
+  const addGroup = (kind: SetKind) => setGroups((g) => [...g, emptyGroup(kind)])
+  const setKind = (id: string, kind: SetKind) => updateGroup(id, KIND_FLAGS[kind])
   const removeGroup = (id: string) => setGroups((g) => g.filter((x) => x.id !== id))
   const updateGroup = (id: string, patch: Partial<OptionGroup>) => setGroups((g) => g.map((x) => (x.id === id ? { ...x, ...patch } : x)))
   const addOption = (groupId: string) => setGroups((g) => g.map((x) => (x.id === groupId ? { ...x, options: [...x.options, emptyOption(groupId)] } : x)))
@@ -524,26 +545,34 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
       {/* Add-ons & choices (the optionGroups data). NEVER called "groups" in the
           UI — in this product, "group" means the guests' party. */}
       <div>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', marginBottom: '0.375rem' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', marginBottom: '0.375rem', flexWrap: 'wrap' }}>
           <label style={{ ...labelStyle, marginBottom: 0 }}>{T.addons}</label>
-          <button onClick={addGroup} style={{ flexShrink: 0, background: 'transparent', border: '1px solid var(--db-border-gold)', borderRadius: '0.25rem', color: '#be9a56', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', padding: '0.3125rem 0.75rem', cursor: 'pointer' }}>{T.addChoice}</button>
+          <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+            <button onClick={() => addGroup('choice')} style={{ background: 'transparent', border: '1px solid var(--db-border-gold)', borderRadius: '0.25rem', color: '#be9a56', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', padding: '0.3125rem 0.75rem', cursor: 'pointer' }}>{T.addChoiceSet}</button>
+            <button onClick={() => addGroup('extras')} style={{ background: 'transparent', border: '1px solid var(--db-border-gold)', borderRadius: '0.25rem', color: '#be9a56', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', padding: '0.3125rem 0.75rem', cursor: 'pointer' }}>{T.addExtrasSet}</button>
+          </div>
         </div>
         <p style={{ ...hintStyle, margin: '0 0 0.875rem' }}>{T.addonsHint}</p>
         {groups.length === 0 && <p style={{ fontSize: '0.75rem', color: 'var(--db-text-ghost)', fontStyle: 'italic', fontFamily: 'var(--font-sans)' }}>{T.noAddons}</p>}
-        {groups.map((g) => (
+        {groups.map((g) => {
+          const kind = kindOf(g)
+          return (
           <div key={g.id} style={{ background: 'var(--db-bg-card)', border: '1px solid var(--db-border-subtle)', borderRadius: '0.5rem', padding: '1rem', marginBottom: '0.875rem' }}>
-            <div style={{ display: 'flex', gap: '0.625rem', marginBottom: '0.75rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-              <div style={{ flex: 1, minWidth: '10rem' }}>
-                <label style={labelStyle}>{T.choosing}</label>
-                <input style={inputStyle} placeholder={T.choosingPh} value={g.name} onChange={(e) => updateGroup(g.id, { name: e.target.value })} />
+            {/* What KIND of set this is — plain words, not checkbox jargon. */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.625rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', borderRadius: '0.375rem', border: '1px solid var(--db-border-subtle)', overflow: 'hidden' }}>
+                {(['choice', 'extras'] as SetKind[]).map((k, ki) => (
+                  <button key={k} onClick={() => setKind(g.id, k)}
+                    style={{ padding: '0.375rem 0.75rem', background: kind === k ? 'rgba(190,154,86,0.15)' : 'transparent', border: 'none', borderRight: ki === 0 ? '1px solid var(--db-border-subtle)' : 'none', color: kind === k ? '#be9a56' : 'var(--db-text-faint)', fontSize: '0.6875rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>
+                    {k === 'choice' ? T.kindChoice : T.kindExtras}
+                  </button>
+                ))}
               </div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: 'var(--db-text-muted)', fontFamily: 'var(--font-sans)', paddingBottom: '0.6875rem', cursor: 'pointer' }}>
-                <input type="checkbox" checked={g.required} onChange={(e) => updateGroup(g.id, { required: e.target.checked, minSelect: e.target.checked ? 1 : 0 })} style={{ accentColor: '#be9a56' }} /> {T.mustChoose}
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: 'var(--db-text-muted)', fontFamily: 'var(--font-sans)', paddingBottom: '0.6875rem', cursor: 'pointer' }}>
-                <input type="checkbox" checked={g.allowQuantity} onChange={(e) => updateGroup(g.id, { allowQuantity: e.target.checked })} style={{ accentColor: '#be9a56' }} /> {T.several}
-              </label>
               <button onClick={() => removeGroup(g.id)} style={{ background: 'transparent', border: '1px solid rgba(224,112,112,0.35)', color: '#e07070', borderRadius: '0.25rem', padding: '0.375rem 0.625rem', fontSize: '0.6875rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>{T.remove}</button>
+            </div>
+            <div style={{ marginBottom: '0.75rem' }}>
+              <label style={labelStyle}>{kind === 'choice' ? T.setNameChoice : T.setNameExtras}</label>
+              <input style={inputStyle} placeholder={kind === 'choice' ? T.setNameChoicePh : T.setNameExtrasPh} value={g.name} onChange={(e) => updateGroup(g.id, { name: e.target.value })} />
             </div>
 
             {g.options.map((o, i) => {
@@ -551,9 +580,11 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
               return (
               <div key={i} style={{ border: '1px solid var(--db-border-subtle)', borderRadius: '0.375rem', padding: '0.625rem', marginBottom: '0.5rem' }}>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
-                  <input style={{ ...inputStyle, flex: '2 1 9rem', width: 'auto' }} placeholder={T.optNamePh} value={o.name} onChange={(e) => updateOptionAt(g.id, i, { name: e.target.value })} />
+                  <input style={{ ...inputStyle, flex: '2 1 9rem', width: 'auto' }} placeholder={kind === 'choice' ? T.optNamePhChoice : T.optNamePhExtras} value={o.name} onChange={(e) => updateOptionAt(g.id, i, { name: e.target.value })} />
                   <input style={{ ...inputStyle, flex: '1 1 6rem', width: 'auto' }} type="number" placeholder={T.optPricePh} value={o.price} onChange={(e) => updateOptionAt(g.id, i, { price: parseInt(e.target.value) || 0 })} />
-                  <input style={{ ...inputStyle, flex: '1 1 5rem', width: 'auto' }} type="number" min="1" placeholder={T.optMax} title={T.optMaxPh} value={o.maxQuantityPerBooking} onChange={(e) => updateOptionAt(g.id, i, { maxQuantityPerBooking: parseInt(e.target.value) || 1 })} />
+                  {kind === 'extras' && (
+                    <input style={{ ...inputStyle, flex: '1 1 5rem', width: 'auto' }} type="number" min="1" placeholder={T.optMax} value={o.maxQuantityPerBooking} onChange={(e) => updateOptionAt(g.id, i, { maxQuantityPerBooking: parseInt(e.target.value) || 1 })} />
+                  )}
                   <button onClick={() => removeOption(g.id, i)} style={{ background: 'transparent', border: 'none', color: '#e07070', fontSize: '1rem', cursor: 'pointer', padding: '0 0.5rem' }}>×</button>
                 </div>
                 <input style={{ ...inputStyle, marginTop: '0.5rem' }} placeholder={T.optDescPh} value={o.description || ''} onChange={(e) => updateOptionAt(g.id, i, { description: e.target.value })} />
@@ -578,9 +609,9 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
                 )}
               </div>
             )})}
-            <button onClick={() => addOption(g.id)} style={{ background: 'transparent', border: 'none', color: '#be9a56', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', textDecoration: 'underline', cursor: 'pointer', padding: 0, marginTop: '0.25rem' }}>{T.addAnswer}</button>
+            <button onClick={() => addOption(g.id)} style={{ background: 'transparent', border: 'none', color: '#be9a56', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', textDecoration: 'underline', cursor: 'pointer', padding: 0, marginTop: '0.25rem' }}>{kind === 'choice' ? T.addOptChoice : T.addOptExtras}</button>
           </div>
-        ))}
+        )})}
       </div>
     </>
   )
