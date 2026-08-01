@@ -83,6 +83,7 @@ export default function AgreementDocument({ content, locale, signatures, onScrol
       // this box, so the reader can never reach the natural end. Same fix as
       // ListingModal's overlay.
       data-lenis-prevent={maxHeight ? true : undefined}
+      className="agreement-doc-scroll"
       style={{
         background: 'var(--db-bg-card)', border: '1px solid var(--db-border-subtle)',
         borderRadius: '0.5rem', padding: '1.5rem 1.75rem',

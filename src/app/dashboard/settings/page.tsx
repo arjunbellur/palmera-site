@@ -148,6 +148,9 @@ export default function SettingsPage() {
         #agreement-print, #agreement-print * { visibility: visible !important; }
         #agreement-print { position: absolute; inset: 0; padding: 1.5rem; }
         .no-print { display: none !important; }
+        /* On paper the scroll box must unroll — otherwise the PDF clips at the
+           box height and only the visible slice of the agreement prints. */
+        .agreement-doc-scroll { max-height: none !important; overflow: visible !important; }
       }`}</style>
 
       <div style={{ marginBottom: '2rem' }}>
@@ -167,11 +170,16 @@ export default function SettingsPage() {
       )}
 
       <div style={{ marginBottom: '1.75rem' }}>
+        {/* ALWAYS a bounded scroll box — signed too. Rendering the signed
+            agreement at natural height grew the page under Lenis's stale
+            height cache (scroll hit a wall mid-document) and pushed the
+            Print/Save action thousands of pixels down. The box keeps the
+            action visible; the print stylesheet unrolls it on paper. */}
         <AgreementDocument
           content={content}
           locale={locale}
           signatures={signatures}
-          maxHeight={alreadySigned ? undefined : '30rem'}
+          maxHeight="30rem"
           onScrolledToEnd={alreadySigned ? undefined : () => setScrolledToEnd(true)}
         />
       </div>
