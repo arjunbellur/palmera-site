@@ -49,6 +49,20 @@ indexes, collections). Last updated: 2026-08-01 (indexes live, sync verified; NO
 | 8 | Agree rules-through-repo workflow explicitly | **Arjun ↔ Samson** | UPDATED: Samson has NO repo (Xcode → TestFlight directly). Therefore ALL rules changes flow through THIS repo — he requests, we land + deploy. He must not console-edit. |
 | 9 | ⚠⚠ App source exists ONLY on Samson's laptop — no version control | **Samson** | URGENT: create private palmera-app repo from Xcode (Source Control → New Git Repository → push). TestFlight stores builds, not source; a dead laptop = lost app. |
 
+## App-impact changelog (⚠ = Samson should read before next build)
+Every dashboard change that touches documents/rules/indexes the app consumes
+gets a line here, newest first. Pure-UI dashboard changes are never listed.
+
+- 2026-08-01 ⚠ **optionGroups: extras sets now write `maxSelect: 99`** (was 1).
+  Same shape; semantic: guests may select multiple different extras in one
+  group. If the app enforces maxSelect at checkout, multi-select now applies.
+- 2026-08-01 ⚠ **Partners can self-unpublish** (`status: 'unpublished'`).
+  Status existed in the schema; app read rules already hide it — but listings
+  can now vanish from the app by partner action.
+- 2026-08-01 Booking optional fields (`customerPhone/Email`, `specialRequests`,
+  `paymentStatus`, `payment` map), customer-update rule, composite indexes —
+  all in booking-contract-for-app.md.
+
 ## Standing risk to watch
 Both sides can deploy the whole ruleset; whoever deploys last wins. Until
 item 8 is agreed, ANY rules change should be announced in the group chat
