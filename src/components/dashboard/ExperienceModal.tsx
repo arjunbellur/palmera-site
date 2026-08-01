@@ -85,6 +85,10 @@ const M = {
     optDescPh: 'Courte description (facultatif)', photo: 'Photo', addAnswer: '+ Ajouter une réponse',
     toPublish: 'Pour publier, ajoutez :', blockPhoto: 'une photo', blockMaps: 'un lien Google Maps', blockCancel: 'la politique d’annulation',
     back: '← Retour', next: 'Suivant →', saveDraft: 'Enregistrer le brouillon',
+    unpublish: 'Retirer de l’app', toContinue: 'Pour continuer, ajoutez :',
+    fName: 'le nom', fCategory: 'la catégorie', fCity: 'la ville', fPrice: 'le prix',
+    groupWarn: 'Le groupe maximum doit être supérieur ou égal au minimum.',
+    addPhoto: '+ Photo', hidePhoto: 'Masquer les photos', optMax: 'Qté max',
     saving: 'Enregistrement…', keepLive: 'Enregistrer (reste en ligne)', publish: 'Publier',
   },
   en: {
@@ -138,6 +142,10 @@ const M = {
     optDescPh: 'Short description (optional)', photo: 'Photo', addAnswer: '+ Add an answer',
     toPublish: 'To publish, add:', blockPhoto: 'a photo', blockMaps: 'a Google Maps link', blockCancel: 'cancellation policy',
     back: '← Back', next: 'Next →', saveDraft: 'Save as draft',
+    unpublish: 'Unpublish', toContinue: 'To continue, add:',
+    fName: 'a name', fCategory: 'a category', fCity: 'a city', fPrice: 'a price',
+    groupWarn: 'Largest group must be at least the smallest group.',
+    addPhoto: '+ Photo', hidePhoto: 'Hide photos', optMax: 'Max qty',
     saving: 'Saving…', keepLive: 'Save & keep live', publish: 'Publish',
   },
 }
@@ -202,13 +210,14 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
   const [tierHours, setTierHours] = useState<Partial<Record<CancellationTier, number>>>({})
   const [saving, setSaving] = useState(false)
   const [step, setStep] = useState(0)
+  const [photoOpen, setPhotoOpen] = useState<Record<string, boolean>>({})
 
   const [form, setForm] = useState<Partial<Experience>>(() => ({
     mode: 'paid', priceUnit: 'flat', currency: 'XOF', confirmationType: 'provider_confirmed',
     cancellationPolicy: { tier: 'moderate', customNotes: null, policyVersion: 'v1' },
     scheduleType: 'ongoing', schedule: null, optionGroups: [],
     title: '', location: '', category: defaultCategory || '', city: defaultCity || '',
-    mapsLink: null, lat: null, lng: null, duration: '', minGuests: 1, maxGuests: 1,
+    mapsLink: null, lat: null, lng: null, duration: '', minGuests: 1, maxGuests: 10,
     img: '', gallery: [], description: '', includes: [], highlights: [],
     languages: [], excludes: [], dressCode: null,
     ...experience,
@@ -264,8 +273,8 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
   ].filter(Boolean) as string[]
   const canPublish = canSave && publishBlockers.length === 0
 
-  const handleSave = async (publish: boolean) => {
-    if (!canSave || (publish && !canPublish)) return
+  const handleSave = async (mode: 'draft' | 'publish' | 'unpublish') => {
+    if (!canSave || (mode === 'publish' && !canPublish)) return
     setSaving(true)
     const optionGroups: OptionGroup[] = groups.map(({ options: _opts, ...g }) => g)
     const eventDate = isOneTime && eventDateStr
@@ -274,13 +283,28 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
     const schedule = isScheduled
       ? { ...(form.schedule || {}), timeSlots: timeSlotsInput.split(',').map((s) => s.trim()).filter(Boolean) }
       : form.schedule
-    const status: Experience['status'] = publish ? 'published' : (experience?.status === 'published' ? 'published' : 'draft')
+    // Group size can never be inverted — clamp max up to min on save.
+    const minGuests = Math.max(1, form.minGuests || 1)
+    const maxGuests = Math.max(minGuests, form.maxGuests || minGuests)
+    const status: Experience['status'] =
+      mode === 'publish' ? 'published'
+      : mode === 'unpublish' ? 'unpublished'
+      : (experience?.status === 'published' ? 'published' : 'draft')
     await onSave(
-      { ...form, eventDate, schedule, optionGroups, providerId, companyId, status, active: status === 'published' },
+      { ...form, minGuests, maxGuests, eventDate, schedule, optionGroups, providerId, companyId, status, active: status === 'published' },
       groups,
     )
     setSaving(false)
   }
+
+  // What still blocks LEAVING step 1 — named, not just a dead button.
+  const missingBasics = [
+    !form.title && T.fName,
+    !form.category && T.fCategory,
+    !form.city && T.fCity,
+    isPaid && !form.price && T.fPrice,
+  ].filter(Boolean) as string[]
+  const groupInverted = (form.maxGuests ?? 0) < (form.minGuests ?? 1)
 
   const pillBase = (active: boolean): React.CSSProperties => ({
     flex: 1, padding: '9px 0', background: active ? 'rgba(190,154,86,0.15)' : 'transparent', border: 'none',
@@ -359,6 +383,9 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
         <div><label style={labelStyle}>{T.maxGroup}</label><input style={inputStyle} type="number" min="1" value={form.maxGuests} onChange={(e) => set('maxGuests', parseInt(e.target.value) || 1)} /></div>
       </div>
       <p style={{ ...hintStyle, margin: '-0.5rem 0 1rem' }}>{T.partyHint}</p>
+      {groupInverted && (
+        <p style={{ fontSize: '0.75rem', color: '#e07070', fontFamily: 'var(--font-sans)', margin: '-0.5rem 0 1rem' }}>{T.groupWarn}</p>
+      )}
 
       {/* What a group actually pays — the partner sees their pricing the way guests will. */}
       {isPaid && !!form.price && (
@@ -523,23 +550,32 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
               const optKey = o.id || `${g.id}_opt${i}`
               return (
               <div key={i} style={{ border: '1px solid var(--db-border-subtle)', borderRadius: '0.375rem', padding: '0.625rem', marginBottom: '0.5rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: '0.5rem', alignItems: 'center' }}>
-                  <input style={inputStyle} placeholder={T.optNamePh} value={o.name} onChange={(e) => updateOptionAt(g.id, i, { name: e.target.value })} />
-                  <input style={inputStyle} type="number" placeholder={T.optPricePh} value={o.price} onChange={(e) => updateOptionAt(g.id, i, { price: parseInt(e.target.value) || 0 })} />
-                  <input style={inputStyle} type="number" min="1" placeholder={T.optMaxPh} value={o.maxQuantityPerBooking} onChange={(e) => updateOptionAt(g.id, i, { maxQuantityPerBooking: parseInt(e.target.value) || 1 })} />
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
+                  <input style={{ ...inputStyle, flex: '2 1 9rem', width: 'auto' }} placeholder={T.optNamePh} value={o.name} onChange={(e) => updateOptionAt(g.id, i, { name: e.target.value })} />
+                  <input style={{ ...inputStyle, flex: '1 1 6rem', width: 'auto' }} type="number" placeholder={T.optPricePh} value={o.price} onChange={(e) => updateOptionAt(g.id, i, { price: parseInt(e.target.value) || 0 })} />
+                  <input style={{ ...inputStyle, flex: '1 1 5rem', width: 'auto' }} type="number" min="1" placeholder={T.optMax} title={T.optMaxPh} value={o.maxQuantityPerBooking} onChange={(e) => updateOptionAt(g.id, i, { maxQuantityPerBooking: parseInt(e.target.value) || 1 })} />
                   <button onClick={() => removeOption(g.id, i)} style={{ background: 'transparent', border: 'none', color: '#e07070', fontSize: '1rem', cursor: 'pointer', padding: '0 0.5rem' }}>×</button>
                 </div>
                 <input style={{ ...inputStyle, marginTop: '0.5rem' }} placeholder={T.optDescPh} value={o.description || ''} onChange={(e) => updateOptionAt(g.id, i, { description: e.target.value })} />
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 10rem), 1fr))', gap: '0.75rem', marginTop: '0.5rem' }}>
-                  <div>
-                    <label style={{ ...labelStyle, fontSize: '0.6875rem' }}>{T.photo}</label>
-                    <PhotoUpload uid={providerId} label={T.photo} fieldName={`option_${optKey}_hero`} existingUrl={o.img || ''} onUploaded={(url) => updateOptionAt(g.id, i, { img: url })} />
+                {/* Photos are the exception, not the rule (room types yes, drink
+                    packages no) — keep them folded until asked for. */}
+                {(o.img || (o.gallery?.length ?? 0) > 0 || photoOpen[optKey]) ? (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 10rem), 1fr))', gap: '0.75rem', marginTop: '0.5rem' }}>
+                    <div>
+                      <label style={{ ...labelStyle, fontSize: '0.6875rem' }}>{T.photo}</label>
+                      <PhotoUpload uid={providerId} label={T.photo} fieldName={`option_${optKey}_hero`} existingUrl={o.img || ''} onUploaded={(url) => updateOptionAt(g.id, i, { img: url })} />
+                    </div>
+                    <div>
+                      <label style={{ ...labelStyle, fontSize: '0.6875rem' }}>{T.morePhotos}</label>
+                      <GalleryUpload uid={providerId} value={o.gallery || []} onChange={(urls) => updateOptionAt(g.id, i, { gallery: urls })} />
+                    </div>
                   </div>
-                  <div>
-                    <label style={{ ...labelStyle, fontSize: '0.6875rem' }}>{T.morePhotos}</label>
-                    <GalleryUpload uid={providerId} value={o.gallery || []} onChange={(urls) => updateOptionAt(g.id, i, { gallery: urls })} />
-                  </div>
-                </div>
+                ) : (
+                  <button onClick={() => setPhotoOpen((prev) => ({ ...prev, [optKey]: true }))}
+                    style={{ marginTop: '0.5rem', background: 'transparent', border: 'none', color: 'var(--db-text-faint)', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', textDecoration: 'underline', cursor: 'pointer', padding: 0 }}>
+                    {T.addPhoto}
+                  </button>
+                )}
               </div>
             )})}
             <button onClick={() => addOption(g.id)} style={{ background: 'transparent', border: 'none', color: '#be9a56', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', textDecoration: 'underline', cursor: 'pointer', padding: 0, marginTop: '0.25rem' }}>{T.addAnswer}</button>
@@ -593,6 +629,11 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
             {T.toPublish} {publishBlockers.join(', ')}
           </p>
         )}
+        {step === 0 && missingBasics.length > 0 && (
+          <p style={{ fontSize: '0.75rem', color: 'var(--db-text-faint)', fontFamily: 'var(--font-sans)', margin: '1rem 0 0', textAlign: 'right' }}>
+            {T.toContinue} {missingBasics.join(', ')}
+          </p>
+        )}
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.25rem', flexWrap: 'wrap' }}>
           <div>
             {step > 0 && (
@@ -600,7 +641,13 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
             )}
           </div>
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <button onClick={() => handleSave(false)} disabled={!canSave || saving} style={{ padding: '10px 20px', background: 'transparent', border: '1px solid var(--db-border-gold)', borderRadius: '0.25rem', color: canSave ? 'var(--db-text)' : 'var(--db-text-ghost)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', cursor: canSave ? 'pointer' : 'not-allowed' }}>
+            {experience?.status === 'published' && (
+              <button onClick={() => handleSave('unpublish')} disabled={saving}
+                style={{ padding: '10px 16px', background: 'transparent', border: '1px solid rgba(224,112,112,0.4)', borderRadius: '0.25rem', color: '#e07070', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>
+                {T.unpublish}
+              </button>
+            )}
+            <button onClick={() => handleSave('draft')} disabled={!canSave || saving} style={{ padding: '10px 20px', background: 'transparent', border: '1px solid var(--db-border-gold)', borderRadius: '0.25rem', color: canSave ? 'var(--db-text)' : 'var(--db-text-ghost)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', cursor: canSave ? 'pointer' : 'not-allowed' }}>
               {saving ? T.saving : T.saveDraft}
             </button>
             {!isLast ? (
@@ -608,7 +655,7 @@ export default function ExperienceModal({ providerId, companyId, defaultCategory
                 {T.next}
               </button>
             ) : (
-              <button onClick={() => handleSave(true)} disabled={!canPublish || saving} title={canPublish ? '' : publishBlockers.join(', ')} style={{ padding: '10px 24px', background: canPublish ? '#9e763b' : 'var(--db-bg-card)', border: 'none', borderRadius: '0.25rem', color: canPublish ? '#ebe8db' : 'var(--db-text-ghost)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', cursor: canPublish ? 'pointer' : 'not-allowed' }}>
+              <button onClick={() => handleSave('publish')} disabled={!canPublish || saving} title={canPublish ? '' : publishBlockers.join(', ')} style={{ padding: '10px 24px', background: canPublish ? '#9e763b' : 'var(--db-bg-card)', border: 'none', borderRadius: '0.25rem', color: canPublish ? '#ebe8db' : 'var(--db-text-ghost)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', cursor: canPublish ? 'pointer' : 'not-allowed' }}>
                 {saving ? T.saving : experience?.status === 'published' ? T.keepLive : T.publish}
               </button>
             )}

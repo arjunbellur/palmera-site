@@ -4,8 +4,8 @@ import { useEffect, useState, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { onAuthChange } from '@/lib/auth'
 import {
-  getCompany, updateCompany, getExperiencesByCompany, addExperience, updateExperience, deleteExperience,
-  getOptions, addOption, deleteOption, getProvider, updateProvider,
+  getCompany, updateCompany, getExperiencesByCompany, deleteExperience,
+  getOptions, getProvider, updateProvider, saveExperienceWithOptions,
 } from '@/lib/firestore'
 import GraduationModal from '@/components/dashboard/GraduationModal'
 import CompanyForm, { type CompanyFormValues } from '@/components/dashboard/CompanyForm'
@@ -35,6 +35,7 @@ const STR = {
     delNote: 'L’expérience et ses options seront supprimées. Cette action est irréversible.',
     delConfirm: 'Supprimer définitivement', delBusy: 'Suppression…',
     delBody: 'Vous êtes sur le point de supprimer définitivement',
+    tSaved: '✓ Enregistré', tLive: '✓ En ligne dans l’app', tUnpub: 'Retirée de l’app',
     delThis: 'cette expérience',
     photosIntro: 'L’image de cet établissement sur Palmera. Les envois sont enregistrés automatiquement.',
     hero: 'Photo de couverture', logo: 'Logo de l’établissement',
@@ -62,6 +63,7 @@ const STR = {
     delNote: 'Removes the experience and its options. This cannot be undone.',
     delConfirm: 'Delete permanently', delBusy: 'Deleting…',
     delBody: "You're about to permanently delete",
+    tSaved: '✓ Saved', tLive: '✓ Live in the app', tUnpub: 'Removed from the app',
     delThis: 'this experience',
     photosIntro: 'How this company appears on Palmera. Uploads save automatically.',
     hero: 'Hero photo', logo: 'Company logo',
@@ -146,49 +148,21 @@ export default function CompanyPage({ params }: { params: Promise<{ companyId: s
     setShowExpModal(true)
   }
 
-  const handleSaveExperience = async (data: Partial<Experience>, groups: (OptionGroup & { options: Option[] })[]) => {
-    // Finalize per the schema before writing:
-    //  - invariant #2: price>0 iff paid, null iff reservation.
-    //  - currency required if paid OR any option is paid (else null).
-    //  - guests derived "min–max"; provider = company.name (app display; no CF yet).
-    //  - needsReview recomputed so fixing photos/coords in the editor clears the flag.
-    const paidOption = groups.some((g) => g.options.some((o) => (o.price || 0) > 0))
-    const isPaid = data.mode === 'paid'
-    const needsReview = [
-      ...(!data.img ? ['photos'] : []),
-      ...(!data.mapsLink ? ['coords'] : []),
-    ]
-    const finalData: Partial<Experience> = {
-      ...data,
-      price: isPaid ? (data.price ?? null) : null,
-      currency: isPaid || paidOption ? 'XOF' : null,
-      guests: data.minGuests != null && data.maxGuests != null ? `${data.minGuests}–${data.maxGuests}` : '',
-      provider: company?.name || '',
-      needsReview,
-    }
-    let id = editingExp?.id
-    if (id) await updateExperience(id, finalData)
-    else { const ref = await addExperience(finalData); id = ref.id }
+  const [toast, setToast] = useState('')
 
-    // Options: simplest-correct approach — clear and recreate from the current
-    // form state each save. Fine at this scale; revisit with real diffing if
-    // option counts grow large enough for this to matter.
-    const existing = await getOptions(id)
-    await Promise.all(existing.map((o) => deleteOption(id!, o.id!)))
-    for (const g of groups) {
-      for (const o of g.options) {
-        const { id: _oid, ...rest } = o as Option & { _isNew?: boolean }
-        delete (rest as { _isNew?: boolean })._isNew
-        await addOption(id, rest)
-      }
-    }
+  // ONE save path shared with /partner Listings (saveExperienceWithOptions) —
+  // the two surfaces can't drift.
+  const handleSaveExperience = async (data: Partial<Experience>, groups: (OptionGroup & { options: Option[] })[]) => {
+    const { status } = await saveExperienceWithOptions({ companyName: company?.name || '', existingId: editingExp?.id, data, groups })
     await loadExperiences(uid)
     setShowExpModal(false); setEditingExp(undefined)
+    setToast(status === 'published' ? s.tLive : status === 'unpublished' ? s.tUnpub : s.tSaved)
+    setTimeout(() => setToast(''), 3000)
 
     // GRADUATION: the first time a partner puts a listing live, onboarding is
     // over. We record it on the provider (rather than deriving it from live
     // listings) so unpublishing later can't demote them back into onboarding.
-    if (finalData.status === 'published') {
+    if (status === 'published') {
       const p = await getProvider(uid)
       if (p && p.onboardingStage !== 'complete') {
         await updateProvider(uid, { onboardingStage: 'complete' })
@@ -397,6 +371,12 @@ export default function CompanyPage({ params }: { params: Promise<{ companyId: s
         >
           {s.delBody} <strong style={{ color: 'var(--db-text)' }}>{toDeleteExp.title || s.delThis}</strong>.
         </ConfirmDialog>
+      )}
+
+      {toast && (
+        <div style={{ position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)', zIndex: 90, background: 'var(--db-bg-modal)', border: '1px solid var(--db-border-gold)', borderRadius: '2rem', padding: '0.625rem 1.25rem', color: '#be9a56', fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', letterSpacing: '0.03em', boxShadow: '0 8px 24px rgba(0,0,0,0.35)' }}>
+          {toast}
+        </div>
       )}
 
       {graduating && (

@@ -17,7 +17,7 @@ import {
   COLLECTIONS, SUB,
   type Provider, type ProviderPrivateAdmin,
   type Company, type CompanyPrivateAdmin,
-  type Experience, type Option,
+  type Experience, type Option, type OptionGroup,
   type Booking, type LedgerEntry, type Payout, type CompanyPayoutProfile,
 } from './schema'
 
@@ -523,4 +523,47 @@ export const setPayoutProfile = async (companyId: string, data: Omit<CompanyPayo
     ...data,
     updatedAt: serverTimestamp(),
   })
+}
+
+/**
+ * The ONE save path for the listing editor — both surfaces (onboarding company
+ * page and /partner Listings) call this so the documents they write can never
+ * drift. Finalizes schema invariants, writes the experience + options, and
+ * returns the saved id/status for follow-ups (toasts, graduation).
+ */
+export const saveExperienceWithOptions = async (args: {
+  companyName: string
+  existingId?: string
+  data: Partial<Experience>
+  groups: (OptionGroup & { options: (Option & { _isNew?: boolean })[] })[]
+}): Promise<{ id: string; status: Experience['status'] }> => {
+  const { companyName, existingId, data, groups } = args
+  const paidOption = groups.some((g) => g.options.some((o) => (o.price || 0) > 0))
+  const isPaid = data.mode === 'paid'
+  const finalData: Partial<Experience> = {
+    ...data,
+    price: isPaid ? (data.price ?? null) : null,
+    currency: isPaid || paidOption ? 'XOF' : null,
+    guests: data.minGuests != null && data.maxGuests != null ? `${data.minGuests}–${data.maxGuests}` : '',
+    provider: companyName || '',
+    needsReview: [
+      ...(!data.img ? ['photos'] : []),
+      ...(!data.mapsLink ? ['coords'] : []),
+    ],
+  }
+  let id = existingId
+  if (id) await updateExperience(id, finalData)
+  else { const ref = await addExperience(finalData); id = ref.id }
+
+  // Options: clear-and-recreate from form state. Fine at this scale.
+  const existing = await getOptions(id)
+  await Promise.all(existing.map((o: Option) => deleteOption(id!, o.id!)))
+  for (const g of groups) {
+    for (const o of g.options) {
+      const { id: _oid, ...rest } = o
+      delete (rest as { _isNew?: boolean })._isNew
+      await addOption(id, rest)
+    }
+  }
+  return { id, status: (finalData.status || 'draft') as Experience['status'] }
 }

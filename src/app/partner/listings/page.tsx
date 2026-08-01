@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { usePartner } from '../PartnerContext'
 import { t } from '../i18n'
 import {
-  getExperiencesByCompany, addExperience, updateExperience, deleteExperience, getOptions, addOption, deleteOption,
+  getExperiencesByCompany, addExperience, deleteExperience, getOptions, addOption, saveExperienceWithOptions,
 } from '@/lib/firestore'
 import ConfirmDialog from '@/components/dashboard/ConfirmDialog'
 import type { Experience, ExperienceStatus, Option, OptionGroup } from '@/lib/schema'
@@ -70,38 +70,17 @@ export default function ListingsScreen() {
     await load()
   }
 
-  // Mirrors the onboarding save path so both surfaces write identical documents.
+  const [toast, setToast] = useState('')
+
+  // ONE save path shared with the onboarding editor (saveExperienceWithOptions)
+  // — the two surfaces can't drift. Toast tells the partner what happened.
   const handleSave = async (data: Partial<Experience>, groups: (OptionGroup & { options: Option[] })[]) => {
     if (!company?.id) return
-    const paidOption = groups.some(g => g.options.some(o => (o.price || 0) > 0))
-    const isPaid = data.mode === 'paid'
-    const needsReview = [
-      ...(!data.img ? ['photos'] : []),
-      ...(!data.mapsLink ? ['coords'] : []),
-    ]
-    const finalData: Partial<Experience> = {
-      ...data,
-      price: isPaid ? (data.price ?? null) : null,
-      currency: isPaid || paidOption ? 'XOF' : null,
-      guests: data.minGuests != null && data.maxGuests != null ? `${data.minGuests}–${data.maxGuests}` : '',
-      provider: company.name || '',
-      needsReview,
-    }
-    let id = editing?.id
-    if (id) await updateExperience(id, finalData)
-    else { const ref = await addExperience(finalData); id = ref.id }
-
-    const existing = await getOptions(id!)
-    await Promise.all(existing.map(o => deleteOption(id!, o.id!)))
-    for (const g of groups) {
-      for (const o of g.options) {
-        const { id: _oid, ...rest } = o as Option & { _isNew?: boolean }
-        delete (rest as { _isNew?: boolean })._isNew
-        await addOption(id!, rest)
-      }
-    }
+    const { status } = await saveExperienceWithOptions({ companyName: company.name || '', existingId: editing?.id, data, groups })
     setShowModal(false); setEditing(undefined)
     await load()
+    setToast(status === 'published' ? L('t_live') : status === 'unpublished' ? L('t_unpub') : L('t_saved'))
+    setTimeout(() => setToast(''), 3000)
   }
 
   return (
@@ -165,6 +144,12 @@ export default function ListingsScreen() {
         >
           <strong style={{ color: 'var(--pf-text)' }}>{toDelete.title || L('untitled')}</strong>
         </ConfirmDialog>
+      )}
+
+      {toast && (
+        <div className="pf-in" style={{ position: 'fixed', bottom: '76px', left: '50%', transform: 'translateX(-50%)', zIndex: 90, background: 'var(--pf-sheet)', border: '1px solid var(--pf-border-strong)', borderRadius: '999px', padding: '10px 20px', color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '12.5px', letterSpacing: '0.03em', boxShadow: '0 8px 24px rgba(0,0,0,0.35)' }}>
+          {toast}
+        </div>
       )}
 
       {showModal && company && (
