@@ -2,7 +2,7 @@
 
 Living tracker for the two-sided integration. Update this whenever either
 side ships something that touches the shared surface (schema, rules,
-indexes, collections). Last updated: 2026-08-01 (indexes live, sync VERIFIED end-to-end at the query layer).
+indexes, collections). Last updated: 2026-08-01 (indexes live, sync verified; NOTE: the app has no repo — see items 8–9).
 
 ## Ground rules (agreed direction — confirm with Samson)
 1. **`firestore.rules` in this repo is the single source of truth.** Rule
@@ -44,9 +44,10 @@ indexes, collections). Last updated: 2026-08-01 (indexes live, sync VERIFIED end
 | 3 | Point payment writes at the booking's own doc id | **Samson** | rule gap fixed our side; his code change pending |
 | 4 | Confirm the 8 orphan payment docs are abandoned → we wipe | **Samson** confirm, us delete | pending |
 | 5 | Free-reservation flow (no payment, "Confirm", points) | **Samson** | spec now in contract doc |
-| 6 | App-side rules hardening (points self-grant, open chat, favorites delete, notification spam) | **Samson**, via repo PR not console | pending — flagged ⚠ inline in firestore.rules |
+| 6 | App-side rules hardening (points self-grant, open chat, favorites delete, notification spam) | **Samson** specs the change → we land it in repo + deploy | pending — flagged ⚠ inline in firestore.rules |
 | 7 | Server-side validation of client-authored booking money fields | joint (needs Cloud Function or trusted server) | pre-launch requirement, not blocking testing |
-| 8 | Agree rules-through-repo workflow explicitly | **Arjun ↔ Samson** | this doc is the proposal |
+| 8 | Agree rules-through-repo workflow explicitly | **Arjun ↔ Samson** | UPDATED: Samson has NO repo (Xcode → TestFlight directly). Therefore ALL rules changes flow through THIS repo — he requests, we land + deploy. He must not console-edit. |
+| 9 | ⚠⚠ App source exists ONLY on Samson's laptop — no version control | **Samson** | URGENT: create private palmera-app repo from Xcode (Source Control → New Git Repository → push). TestFlight stores builds, not source; a dead laptop = lost app. |
 
 ## Standing risk to watch
 Both sides can deploy the whole ruleset; whoever deploys last wins. Until
