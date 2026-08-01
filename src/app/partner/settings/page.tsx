@@ -27,6 +27,14 @@ export default function SettingsScreen() {
   const L = (k: string) => t(locale, k)
   const [logo, setLogo] = useState(provider?.logo || '')
 
+  // Airbnb "Menu" pattern: a grouped link list; each row opens ONE focused
+  // section. null = the menu. Deep-linkable via ?s=payout etc.
+  const [section, setSection] = useState<string | null>(null)
+  useEffect(() => {
+    const sParam = new URLSearchParams(window.location.search).get('s')
+    if (sParam) setSection(sParam)
+  }, [])
+
   // Company profile editing — the onboarding info a graduated partner could
   // no longer reach anywhere (Jordan's catch).
   const [coEditing, setCoEditing] = useState(false)
@@ -178,8 +186,58 @@ export default function SettingsScreen() {
 
   return (
     <div className="pf-in">
-      <ScreenHeader label={L('set_label')} title={L('set_title')} />
+      {section ? (
+        <button onClick={() => setSection(null)}
+          style={{ background: 'transparent', border: 'none', padding: 0, marginBottom: '18px', color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '12.5px', letterSpacing: '0.04em', cursor: 'pointer' }}>
+          {L('back_settings')}
+        </button>
+      ) : (
+        <ScreenHeader label={L('set_label')} title={L('set_title')} />
+      )}
 
+      {/* The menu — grouped rows, each with its live value as the hint. */}
+      {!section && (() => {
+        const rows: { group: string; items: { k: string; label: string; hint: string }[] }[] = [
+          { group: L('g_account'), items: [
+            { k: 'account', label: L('sec_account'), hint: provider?.fullName || email },
+            { k: 'password', label: L('pw_title'), hint: '••••••' },
+          ]},
+          { group: L('g_company'), items: [
+            { k: 'company', label: L('sec_company'), hint: company?.name || '' },
+            { k: 'photos', label: L('co_photos'), hint: `${(company?.gallery?.length || 0) + (company?.heroPhoto ? 1 : 0) + (company?.logo ? 1 : 0)} photo(s)` },
+            { k: 'contact', label: L('sec_contact'), hint: company?.phone || L('incomplete') },
+          ]},
+          { group: L('g_pay'), items: [
+            { k: 'payout', label: L('sec_payout'), hint: poLoaded ? `${poLoaded.method === 'wave' ? 'Wave' : poLoaded.method === 'orange_money' ? 'Orange Money' : L('po_bank')}` : L('incomplete') },
+          ]},
+          { group: L('g_prefs'), items: [
+            { k: 'notifications', label: L('np_title'), hint: '' },
+            { k: 'prefs', label: L('prefs_row'), hint: locale.toUpperCase() },
+          ]},
+          { group: L('g_help'), items: [
+            { k: 'support', label: L('sec_support'), hint: '' },
+          ]},
+        ]
+        return rows.map(g => (
+          <div key={g.group} style={{ marginBottom: '18px' }}>
+            <div style={{ ...eyebrow, color: 'var(--pf-eyebrow)', margin: '0 0 8px' }}>{g.group}</div>
+            <div style={{ borderRadius: '16px', background: 'var(--pf-card)', border: '1px solid var(--pf-border)', overflow: 'hidden' }}>
+              {g.items.map((it, i) => (
+                <button key={it.k} onClick={() => setSection(it.k)}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', width: '100%', textAlign: 'left', padding: '14px 16px', background: 'transparent', border: 'none', borderTop: i === 0 ? 'none' : '1px solid var(--pf-border)', cursor: 'pointer' }}>
+                  <span style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '14px' }}>{it.label}</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                    {it.hint && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: it.hint === L('incomplete') ? 'var(--pf-gold)' : 'var(--pf-faint)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '11rem' }}>{it.hint}</span>}
+                    <span style={{ color: 'var(--pf-gold)' }}>›</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ))
+      })()}
+
+      {section === 'account' && (<>
       {/* Account */}
       <div style={card}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
@@ -201,7 +259,9 @@ export default function SettingsScreen() {
           </div>
         </div>
       </div>
+      </>)}
 
+      {section === 'password' && (<>
       {/* Password */}
       <SectionTitle action={pwMsg?.ok ? <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-success)' }}>{pwMsg.text}</span> : undefined}>
         {L('pw_title')}
@@ -238,7 +298,9 @@ export default function SettingsScreen() {
           </>
         )}
       </div>
+      </>)}
 
+      {section === 'company' && (<>
       {/* Company — view, or full onboarding-profile edit (Jordan's catch). */}
       <SectionTitle action={coSaved ? <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-success)' }}>{L('po_saved')}</span> : undefined}>
         {L('sec_company')}
@@ -309,7 +371,9 @@ export default function SettingsScreen() {
           </div>
         </div>
       )}
+      </>)}
 
+      {section === 'photos' && (<>
       {/* Company photos — hero, logo, gallery; auto-persist on upload. */}
       <SectionTitle>{L('co_photos')}</SectionTitle>
       <div style={card}>
@@ -330,7 +394,9 @@ export default function SettingsScreen() {
         <div style={{ ...eyebrow, marginBottom: '6px' }}>{L('co_gallery')}</div>
         <GalleryUpload uid={uid} value={company?.gallery || []} onChange={(urls) => persistCoPhotos({ gallery: urls })} />
       </div>
+      </>)}
 
+      {section === 'payout' && (<>
       {/* Payout details — owner-entered, per company. */}
       <SectionTitle>{L('sec_payout')}</SectionTitle>
       {!poEditing && poLoaded ? (
@@ -400,7 +466,9 @@ export default function SettingsScreen() {
           </div>
         </div>
       )}
+      </>)}
 
+      {section === 'contact' && (<>
       {/* Contact & hours */}
       <SectionTitle>{L('sec_contact')}</SectionTitle>
       <div style={card}>
@@ -434,7 +502,9 @@ export default function SettingsScreen() {
           {contactSaved && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-success)' }}>{L('po_saved')}</span>}
         </div>
       </div>
+      </>)}
 
+      {section === 'notifications' && (<>
       {/* Notification preferences — stored on the provider; email-only today. */}
       <SectionTitle>{L('np_title')}</SectionTitle>
       <div style={card}>
@@ -456,7 +526,9 @@ export default function SettingsScreen() {
           )
         })}
       </div>
+      </>)}
 
+      {section === 'prefs' && (<>
       {/* Preferences */}
       <SectionTitle>{L('sec_prefs')}</SectionTitle>
       <div style={card}>
@@ -473,7 +545,9 @@ export default function SettingsScreen() {
           <GhostButton onClick={toggle}>{theme === 'dark' ? L('theme_dark') : L('theme_light')}</GhostButton>
         </div>
       </div>
+      </>)}
 
+      {section === 'support' && (<>
       {/* Support */}
       <SectionTitle>{L('sec_support')}</SectionTitle>
       <div style={card}>
@@ -482,10 +556,13 @@ export default function SettingsScreen() {
           <a href="mailto:palmeraexp@gmail.com" style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--pf-gold)' }}>{L('contact')} →</a>
         </div>
       </div>
+      </>)}
 
-      <div style={{ marginTop: '26px' }}>
-        <GhostButton tone="alert" onClick={signOut}>{L('signout')}</GhostButton>
-      </div>
+      {!section && (
+        <div style={{ marginTop: '8px' }}>
+          <GhostButton tone="alert" onClick={signOut}>{L('signout')}</GhostButton>
+        </div>
+      )}
     </div>
   )
 }

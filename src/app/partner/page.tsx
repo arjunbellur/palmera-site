@@ -68,7 +68,7 @@ export default function PartnerHome() {
         const items = [
           ...(pending.length > 0 ? [{ href: '/partner/reservations', label: `${pending.length} ${L('pa_pending_res')}`, count: pending.length }] : []),
           ...(incompleteListings > 0 ? [{ href: '/partner/listings', label: `${incompleteListings} ${L('pa_incomplete_listing')}`, count: incompleteListings }] : []),
-          ...(!hasPayoutProfile ? [{ href: '/partner/settings', label: L('pa_missing_payout'), count: 0 }] : []),
+          ...(!hasPayoutProfile ? [{ href: '/partner/settings?s=payout', label: L('pa_missing_payout'), count: 0 }] : []),
         ]
         if (items.length === 0) return null
         return (
@@ -89,7 +89,7 @@ export default function PartnerHome() {
         {[
           { href: '/partner/listings', label: `+ ${L('qa_new')}` },
           { href: '/partner/reservations', label: L('qa_res') },
-          { href: '/partner/settings', label: L('qa_company') },
+          { href: '/partner/settings?s=company', label: L('qa_company') },
           { href: 'mailto:palmeraexp@gmail.com', label: L('qa_support') },
         ].map(a => (
           <a key={a.label} href={a.href} style={{ padding: '8px 15px', borderRadius: '999px', border: '1px solid var(--pf-border-strong)', color: 'var(--pf-gold)', textDecoration: 'none', fontFamily: 'var(--font-sans)', fontSize: '11.5px', letterSpacing: '0.03em', background: 'transparent' }}>

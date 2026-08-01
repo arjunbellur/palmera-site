@@ -67,6 +67,8 @@ const FR: Record<string, string> = {
   st_published: 'En ligne', st_draft: 'Brouillon', st_pending: 'En révision', st_unpublished: 'Retirée', st_archived: 'Archivée',
 
   set_label: 'Réglages', set_title: 'Réglages',
+  g_account: 'Compte', g_company: 'Établissement', g_pay: 'Paiements', g_prefs: 'Préférences', g_help: 'Aide',
+  prefs_row: 'Langue & thème', back_settings: '← Réglages', incomplete: 'À compléter',
   sec_account: 'Votre compte', sec_company: 'Établissement', sec_payout: 'Mode de versement',
   sec_prefs: 'Préférences', sec_support: 'Aide', edit: 'Modifier',
   lang_label: 'Langue', theme_label: 'Thème', theme_dark: 'Sombre', theme_light: 'Clair',
@@ -168,6 +170,8 @@ const EN: Record<string, string> = {
   st_published: 'Live', st_draft: 'Draft', st_pending: 'In review', st_unpublished: 'Unpublished', st_archived: 'Archived',
 
   set_label: 'Settings', set_title: 'Settings',
+  g_account: 'Account', g_company: 'Company', g_pay: 'Payments', g_prefs: 'Preferences', g_help: 'Help',
+  prefs_row: 'Language & theme', back_settings: '← Settings', incomplete: 'To complete',
   sec_account: 'Your account', sec_company: 'Company', sec_payout: 'Payout method',
   sec_prefs: 'Preferences', sec_support: 'Support', edit: 'Edit',
   lang_label: 'Language', theme_label: 'Theme', theme_dark: 'Dark', theme_light: 'Light',
