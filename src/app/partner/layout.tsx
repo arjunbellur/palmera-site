@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { onAuthChange } from '@/lib/auth'
 import { ThemeProvider, useTheme } from '@/lib/theme'
-import { getProvider, getCompanies, getBookingsByCompany } from '@/lib/firestore'
+import { getProvider, getCompanies, subscribeBookingsByCompany } from '@/lib/firestore'
 import type { Company, Provider } from '@/lib/schema'
 import { PartnerContext } from './PartnerContext'
 import { t, type Locale } from './i18n'
@@ -70,7 +70,9 @@ function Shell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!uid || !companyId) return
-    getBookingsByCompany(uid, companyId).then((bs) => setPendingCount(bs.filter((b) => b.status === 'pending').length))
+    // Live badge: a new booking from the app lights the tab up immediately.
+    const unsub = subscribeBookingsByCompany(uid, companyId, (bs) => setPendingCount(bs.filter((b) => b.status === 'pending').length))
+    return () => unsub()
   }, [uid, companyId])
 
   const refresh = async () => {

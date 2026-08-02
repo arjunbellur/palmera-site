@@ -9,7 +9,7 @@ const STATUS: Record<BookingStatus, { key: string; tone: Tone }> = {
   confirmed: { key: 'f_confirmed', tone: 'green' },
   completed: { key: 'f_done', tone: 'neutral' },
   declined: { key: 'decline', tone: 'alert' },
-  cancelled: { key: 'st_unpublished', tone: 'neutral' },
+  cancelled: { key: 'st_cancelled', tone: 'alert' },
   no_show: { key: 'st_noshow', tone: 'alert' },
 }
 

@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import { usePartner } from '../PartnerContext'
 import { t } from '../i18n'
-import { getBookingsByCompany, setBookingStatus } from '@/lib/firestore'
+import { subscribeBookingsByCompany, setBookingStatus } from '@/lib/firestore'
 import type { Booking } from '@/lib/schema'
 import { toDate } from '@/lib/money'
 import { ScreenHeader, EmptyState, Chip, Money, eyebrow, GhostButton, Skeleton } from '@/components/partner/ui'
@@ -25,12 +25,13 @@ export default function ReservationsScreen() {
   const [error, setError] = useState('')
   const [loaded, setLoaded] = useState(false)
 
-  const load = async () => {
+  // LIVE feed — the app's writes (new bookings, cancellations) appear without
+  // a refresh; this is what makes cancel-in-app show up here in real time.
+  useEffect(() => {
     if (!uid || !company?.id) return
-    setBookings(await getBookingsByCompany(uid, company.id))
-    setLoaded(true)
-  }
-  useEffect(() => { load() /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [uid, company?.id])
+    const unsub = subscribeBookingsByCompany(uid, company.id, (bs) => { setBookings(bs); setLoaded(true) })
+    return () => unsub()
+  }, [uid, company?.id])
 
   // Deep link from Home's Today tile: /partner/reservations?f=today
   useEffect(() => {
@@ -42,8 +43,7 @@ export default function ReservationsScreen() {
     setBusyId(b.id); setError('')
     try {
       await setBookingStatus(b.id, status)
-      setDetail(null)
-      await load()
+      setDetail(null) // the live snapshot delivers the updated list
     } catch {
       // Most likely cause: the security rule for partner-side confirmation
       // isn't deployed, or the booking already moved on. Say so plainly.

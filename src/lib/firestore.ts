@@ -11,6 +11,7 @@ import {
   query,
   where,
   orderBy,
+  onSnapshot,
 } from 'firebase/firestore'
 import { db } from './firebase'
 import {
@@ -439,6 +440,27 @@ export const getBookingsByProvider = async (uid: string, status?: Booking['statu
     console.error('getBookingsByProvider query failed:', e)
     return []
   }
+}
+
+/**
+ * LIVE reservations for one company — pushes every change the moment the
+ * customer app writes it (new booking, cancellation, payment update), so the
+ * partner never needs to refresh. Returns the unsubscribe function.
+ */
+export const subscribeBookingsByCompany = (
+  uid: string,
+  companyId: string,
+  cb: (bookings: Booking[]) => void,
+): (() => void) => {
+  const q = query(
+    collection(db, COLLECTIONS.bookings),
+    where('providerId', '==', uid), where('companyId', '==', companyId),
+    orderBy('scheduledFor', 'desc'),
+  )
+  return onSnapshot(q,
+    (snap) => cb(snap.docs.map((d) => ({ id: d.id, ...(d.data() as object) })) as Booking[]),
+    (e) => { console.error('subscribeBookingsByCompany failed:', e); cb([]) },
+  )
 }
 
 /** Reservations scoped to one company (subset of the provider's). */
