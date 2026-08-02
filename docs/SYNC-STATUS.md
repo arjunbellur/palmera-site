@@ -53,6 +53,12 @@ indexes, collections). Last updated: 2026-08-01 (indexes live, sync verified; NO
 Every dashboard change that touches documents/rules/indexes the app consumes
 gets a line here, newest first. Pure-UI dashboard changes are never listed.
 
+- 2026-08-02 ⚠ **All 13 categories enabled in `config/categories`** (Jordan's
+  partner-pipeline list): activities, lifestyle, villas, islands, yachts,
+  entertainment, sports flipped on (hotels, dining, wellness, rentals,
+  nightlife, safari already were). No ids or names changed. If the app
+  renders category pickers/filters from this doc, it now shows 13 instead
+  of 6.
 - 2026-08-01 ⚠ **8 new Senegal cities enabled in `config/markets`** (from
   Jordan): sine-saloum, lampoul, saint-louis, lac-rose, pointe-sarene, goree,
   ngor, ngaparou (names: Sine Saloum, Lampoul, Saint-Louis, Lac Rose, Pointe
