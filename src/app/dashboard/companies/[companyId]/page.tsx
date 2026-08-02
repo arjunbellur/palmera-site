@@ -18,7 +18,10 @@ import type { Company, Experience, Option, OptionGroup } from '@/lib/schema'
 
 // Company-scoped sections. No Documents tab: KYC/compliance documents are
 // deliberately NOT stored live (archive-only) — see docs + migration script.
-const TABS = ['Profile', 'Experiences', 'Photos', 'Operations'] as const
+// Ordered as the onboarding journey: fill in the company, show it off, tell
+// us how bookings reach you, then create the listing whose publish graduates
+// you. The Next buttons below walk this order.
+const TABS = ['Profile', 'Photos', 'Operations', 'Experiences'] as const
 type Tab = typeof TABS[number]
 
 const STR = {
@@ -26,6 +29,7 @@ const STR = {
     back: 'Aperçu', eyebrow: 'Établissement', untitled: 'Établissement sans nom',
     tabs: { Profile: 'Profil', Experiences: 'Expériences', Photos: 'Photos', Operations: 'Opérations' } as Record<Tab, string>,
     save: 'Enregistrer', saved: '✓ Enregistré', saving: 'Enregistrement…',
+    next: 'Suivant', lastStep: 'Publiez une expérience pour terminer votre onboarding.',
     addExp: '+ Ajouter une expérience', noExpTitle: 'Aucune expérience pour l’instant',
     noExpBody: 'Ajoutez les expériences que propose cet établissement.',
     addFirstExp: '+ Ajouter votre première expérience',
@@ -54,6 +58,7 @@ const STR = {
     back: 'Overview', eyebrow: 'Company', untitled: 'Untitled company',
     tabs: { Profile: 'Profile', Experiences: 'Experiences', Photos: 'Photos', Operations: 'Operations' } as Record<Tab, string>,
     save: 'Save changes', saved: '✓ Saved', saving: 'Saving…',
+    next: 'Next', lastStep: 'Publish an experience to finish your onboarding.',
     addExp: '+ Add experience', noExpTitle: 'No experiences yet',
     noExpBody: 'Add the experiences this company offers.',
     addFirstExp: '+ Add your first experience',
@@ -203,6 +208,25 @@ export default function CompanyPage({ params }: { params: Promise<{ companyId: s
     setSavingOps(false); setSavedOps(true); setTimeout(() => setSavedOps(false), 2500)
   }
 
+  // Step completion — drives the Next buttons. Persistent (derived from data,
+  // not from having just clicked save) so it's still there after a reload.
+  const profileDone = !!(company?.name && company?.legalName && company?.category && company?.city)
+  const photosDone = !!(company?.heroPhoto && company?.logo)
+  // From SAVED data, not the inputs — typing then tapping Next mustn't skip the save.
+  const savedOpsData = (company?.operations || {}) as Partial<OpsForm>
+  const opsDone = !!(savedOpsData.opsContactName && savedOpsData.opsContactWhatsapp)
+  const nextTab: Partial<Record<Tab, Tab>> = { Profile: 'Photos', Photos: 'Operations', Operations: 'Experiences' }
+  const NextButton = ({ from }: { from: Tab }) => {
+    const to = nextTab[from]
+    if (!to) return null
+    return (
+      <button onClick={() => { setTab(to); window.scrollTo({ top: 0 }) }}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '0.625rem 1.5rem', background: 'transparent', border: '1px solid var(--db-border-gold)', borderRadius: '0.375rem', color: '#be9a56', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', cursor: 'pointer' }}>
+        {s.next} : {s.tabs[to]} →
+      </button>
+    )
+  }
+
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '40vh' }}>
       <div style={{ width: '1.75rem', height: '1.75rem', border: '2px solid rgba(190,154,86,0.15)', borderTopColor: '#be9a56', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
@@ -234,7 +258,10 @@ export default function CompanyPage({ params }: { params: Promise<{ companyId: s
       {tab === 'Profile' && (
         <>
           <CompanyForm initial={company} submitLabel={s.save} saving={saving} onSubmit={handleSubmit} />
-          {saved && <p style={{ fontSize: '0.8125rem', color: '#be9a56', fontFamily: 'var(--font-sans)', marginTop: '0.75rem' }}>{s.saved}</p>}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
+            {saved && <span style={{ fontSize: '0.8125rem', color: '#be9a56', fontFamily: 'var(--font-sans)' }}>{s.saved}</span>}
+            {profileDone && <NextButton from="Profile" />}
+          </div>
         </>
       )}
 
@@ -300,6 +327,7 @@ export default function CompanyPage({ params }: { params: Promise<{ companyId: s
             {s.galleryHint}
           </p>
           <GalleryUpload uid={uid} value={company.gallery || []} onChange={(urls) => persistPhotos({ gallery: urls })} />
+          {photosDone && <div style={{ marginTop: '1.5rem' }}><NextButton from="Photos" /></div>}
         </div>
       )}
 
@@ -332,7 +360,7 @@ export default function CompanyPage({ params }: { params: Promise<{ companyId: s
               <select style={{ ...opsInput, appearance: 'none' }} value={ops.confirmationSpeed}
                 onChange={(e) => setOps(p => ({ ...p, confirmationSpeed: e.target.value }))}>
                 <option value="">{s.confPh}</option>
-                
+                {CONFIRMATION_SPEEDS.map(sp => <option key={sp} value={sp}>{s.speedLabels[sp]}</option>)}
               </select>
             </div>
           </div>
@@ -342,6 +370,7 @@ export default function CompanyPage({ params }: { params: Promise<{ companyId: s
               {savingOps ? s.saving : s.save}
             </button>
             {savedOps && <span style={{ fontSize: '0.8125rem', color: '#be9a56', fontFamily: 'var(--font-sans)' }}>{s.saved}</span>}
+            {opsDone && <NextButton from="Operations" />}
           </div>
         </div>
       )}
