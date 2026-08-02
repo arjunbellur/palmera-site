@@ -103,10 +103,7 @@ const M = {
     ao_card_extras_t: 'Des extras',
     ao_card_extras_d: 'Le client ajoute ce qu’il veut en plus — petit-déjeuner, transfert, GoPro.',
     ao_suggest: 'Ou partez d’un exemple :',
-    ao_badge_choice: 'Choix obligatoire', ao_badge_extras: 'Extras facultatifs',
-    ao_switch_to_extras: 'Changer en extras', ao_switch_to_choice: 'Changer en choix',
-    ao_switch_confirm_extras: 'Passer en extras ? Les options deviendront facultatives — le client pourra en ajouter plusieurs, ou aucune.',
-    ao_switch_confirm_choice: 'Passer en choix ? Le client devra obligatoirement choisir UNE de ces options pour réserver.',
+    ao_kind_choice_d: 'Le client doit en choisir une', ao_kind_extras_d: 'Le client ajoute ce qu’il veut',
     ao_prev: 'Aperçu côté client',
     ao_prev_pickone: 'Choisissez-en une · obligatoire',
     ao_prev_optional: 'Facultatif — ajoutez ce que vous voulez',
@@ -199,10 +196,7 @@ const M = {
     ao_card_extras_t: 'Extras',
     ao_card_extras_d: 'The guest adds whatever they like on top — breakfast, transfer, GoPro.',
     ao_suggest: 'Or start from an example:',
-    ao_badge_choice: 'Required choice', ao_badge_extras: 'Optional extras',
-    ao_switch_to_extras: 'Switch to extras', ao_switch_to_choice: 'Switch to a choice',
-    ao_switch_confirm_extras: 'Switch to extras? The options become optional — guests can add several, or none.',
-    ao_switch_confirm_choice: 'Switch to a choice? Guests will be required to pick ONE of these options to book.',
+    ao_kind_choice_d: 'Guest must pick one', ao_kind_extras_d: 'Guest adds what they like',
     ao_prev: 'Guest preview',
     ao_prev_pickone: 'Pick one · required',
     ao_prev_optional: 'Optional — add what you like',
@@ -729,22 +723,17 @@ export default function ExperienceModal({ providerId, companyId, companyName, de
             <label style={{ ...labelStyle, marginBottom: '0.75rem' }}>{T.addons}</label>
             {groups.map((g) => {
               const kind = kindOf(g)
-              const other: SetKind = kind === 'choice' ? 'extras' : 'choice'
               return (
               <div key={g.id} style={{ background: 'var(--db-bg-card)', border: '1px solid var(--db-border-subtle)', borderRadius: '0.5rem', padding: '1rem', marginBottom: '0.875rem' }}>
-                {/* Kind is decided at creation; here it's a labeled badge, and
-                    switching is an explicit, explained act — not a silent toggle. */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.625rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-                    <span style={{ background: 'rgba(190,154,86,0.15)', color: '#be9a56', borderRadius: '999px', padding: '0.25rem 0.75rem', fontSize: '0.6875rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.04em' }}>
-                      {kind === 'choice' ? T.ao_badge_choice : T.ao_badge_extras}
-                    </span>
-                    <button onClick={() => { if (window.confirm(kind === 'choice' ? T.ao_switch_confirm_extras : T.ao_switch_confirm_choice)) setKind(g.id, other) }}
-                      style={{ background: 'transparent', border: 'none', color: 'var(--db-text-faint)', fontSize: '0.6875rem', fontFamily: 'var(--font-sans)', textDecoration: 'underline', cursor: 'pointer', padding: 0 }}>
-                      {kind === 'choice' ? T.ao_switch_to_extras : T.ao_switch_to_choice}
-                    </button>
-                  </div>
-                  <button onClick={() => removeGroup(g.id)} style={{ background: 'transparent', border: '1px solid rgba(224,112,112,0.35)', color: '#e07070', borderRadius: '0.25rem', padding: '0.375rem 0.625rem', fontSize: '0.6875rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>{T.remove}</button>
+                {/* The kind stays a visible two-card pick — same cards as the
+                    empty state, same idiom as every other wizard step. Tapping
+                    the other card switches; the guest preview below flips
+                    instantly, so the consequence is shown, not confirmed. */}
+                <div style={{ marginBottom: '0.75rem' }}>
+                  <ChoiceCards value={kind} onChange={(k) => setKind(g.id, k)} options={[
+                    { v: 'choice' as SetKind, icon: '◉', label: T.ao_card_choice_t, desc: T.ao_kind_choice_d },
+                    { v: 'extras' as SetKind, icon: '✚', label: T.ao_card_extras_t, desc: T.ao_kind_extras_d },
+                  ]} />
                 </div>
                 <div style={{ marginBottom: '0.75rem' }}>
                   <label style={labelStyle}>{kind === 'choice' ? T.setNameChoice : T.setNameExtras}</label>
@@ -794,7 +783,10 @@ export default function ExperienceModal({ providerId, companyId, companyName, de
                     )}
                   </div>
                 )})}
-                <button onClick={() => addOption(g.id)} style={{ background: 'transparent', border: 'none', color: '#be9a56', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', textDecoration: 'underline', cursor: 'pointer', padding: 0, marginTop: '0.25rem' }}>{kind === 'choice' ? T.addOptChoice : T.addOptExtras}</button>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', marginTop: '0.25rem' }}>
+                  <button onClick={() => addOption(g.id)} style={{ background: 'transparent', border: 'none', color: '#be9a56', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', textDecoration: 'underline', cursor: 'pointer', padding: 0 }}>{kind === 'choice' ? T.addOptChoice : T.addOptExtras}</button>
+                  <button onClick={() => removeGroup(g.id)} style={{ background: 'transparent', border: 'none', color: '#e07070', fontSize: '0.6875rem', fontFamily: 'var(--font-sans)', textDecoration: 'underline', cursor: 'pointer', padding: 0 }}>{T.remove}</button>
+                </div>
 
                 {/* Live guest mini-preview — shows exactly how the app renders
                     this set, which teaches the choice/extras model wordlessly. */}
