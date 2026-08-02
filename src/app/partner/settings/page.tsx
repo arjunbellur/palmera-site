@@ -330,10 +330,12 @@ export default function SettingsScreen() {
             <div>
               <div style={{ ...eyebrow, marginBottom: '5px' }}>{L('co_name')} *</div>
               <input style={inputStyle} value={coForm.name} onChange={e => setCoForm(f => ({ ...f, name: e.target.value }))} />
+              <p style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-faint)', margin: '5px 0 0', lineHeight: 1.45 }}>{L('co_name_hint')}</p>
             </div>
             <div>
               <div style={{ ...eyebrow, marginBottom: '5px' }}>{L('co_legal')}</div>
               <input style={inputStyle} value={coForm.legalName} onChange={e => setCoForm(f => ({ ...f, legalName: e.target.value }))} />
+              <p style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-faint)', margin: '5px 0 0', lineHeight: 1.45 }}>{L('co_legal_hint')}</p>
             </div>
             <div>
               <div style={{ ...eyebrow, marginBottom: '5px' }}>{L('co_category')}</div>

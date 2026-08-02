@@ -7,7 +7,9 @@ import type { Company } from '@/lib/schema'
 const STR = {
   fr: {
     name: 'Nom commercial *', namePh: 'ex. Yuma Lodge',
-    legal: 'Raison sociale *', legalPh: 'Entité juridique enregistrée',
+    nameHint: 'Le nom que vos clients connaissent — celui affiché dans l’app.',
+    legal: 'Raison sociale *', legalPh: 'ex. Yuma Hospitality SARL',
+    legalHint: 'Le nom officiel enregistré de votre entreprise — utilisé sur le contrat, jamais montré aux clients.',
     type: 'Forme juridique', typePh: 'ex. SARL, entreprise individuelle',
     category: 'Catégorie *', city: 'Ville *', select: 'Sélectionner',
     address: 'Adresse', addressPh: 'Rue, quartier',
@@ -18,7 +20,9 @@ const STR = {
   },
   en: {
     name: 'Business name *', namePh: 'e.g. Yuma Lodge',
-    legal: 'Legal name *', legalPh: 'Registered legal entity',
+    nameHint: 'The name your guests know you by — shown in the app.',
+    legal: 'Legal name *', legalPh: 'e.g. Yuma Hospitality SARL',
+    legalHint: 'Your officially registered company name — used on the contract, never shown to guests.',
     type: 'Business type', typePh: 'e.g. SARL, sole proprietor',
     category: 'Category *', city: 'City *', select: 'Select',
     address: 'Address', addressPh: 'Street, neighbourhood',
@@ -34,6 +38,7 @@ type Opt = { id: string; name: string }
 const inp: React.CSSProperties = { width: '100%', background: 'var(--db-bg-input)', border: '1px solid var(--db-border-gold)', borderRadius: '0.375rem', padding: '0.6875rem 0.875rem', color: 'var(--db-text)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', outline: 'none', boxSizing: 'border-box' }
 const lbl: React.CSSProperties = { display: 'block', fontSize: '0.6875rem', color: 'var(--db-text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.375rem', fontFamily: 'var(--font-sans)' }
 const row: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 12rem), 1fr))', gap: '1rem', marginBottom: '1rem' }
+const hint: React.CSSProperties = { fontSize: '0.6875rem', color: 'var(--db-text-ghost)', fontFamily: 'var(--font-sans)', margin: '0.375rem 0 0', lineHeight: 1.45 }
 
 const EMPTY = {
   name: '', legalName: '', businessType: '', category: '', city: '',
@@ -74,8 +79,18 @@ export default function CompanyForm({ initial, saving, submitLabel, onSubmit }: 
   return (
     <div>
       <div style={row}>
-        <div><label style={lbl}>{s.name}</label><input style={inp} placeholder={s.namePh} value={form.name} onChange={e => set('name', e.target.value)} /></div>
-        <div><label style={lbl}>{s.legal}</label><input style={inp} placeholder={s.legalPh} value={form.legalName} onChange={e => set('legalName', e.target.value)} /></div>
+        {/* Jordan: these two confused partners — say plainly which name is
+            which instead of relying on the legal-jargon labels alone. */}
+        <div>
+          <label style={lbl}>{s.name}</label>
+          <input style={inp} placeholder={s.namePh} value={form.name} onChange={e => set('name', e.target.value)} />
+          <p style={hint}>{s.nameHint}</p>
+        </div>
+        <div>
+          <label style={lbl}>{s.legal}</label>
+          <input style={inp} placeholder={s.legalPh} value={form.legalName} onChange={e => set('legalName', e.target.value)} />
+          <p style={hint}>{s.legalHint}</p>
+        </div>
       </div>
       <div style={row}>
         <div><label style={lbl}>{s.type}</label><input style={inp} placeholder={s.typePh} value={form.businessType} onChange={e => set('businessType', e.target.value)} /></div>
