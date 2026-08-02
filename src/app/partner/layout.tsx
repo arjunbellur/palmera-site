@@ -123,14 +123,17 @@ function Shell({ children }: { children: React.ReactNode }) {
     return (
       <a key={item.href} href={item.href} style={{
         display: 'flex', alignItems: 'center', gap: mobile ? 0 : '11px',
-        flexDirection: mobile ? 'column' : 'row', justifyContent: 'center',
+        flexDirection: mobile ? 'column' : 'row',
+        justifyContent: mobile ? 'center' : 'flex-start',
         padding: mobile ? '9px 4px 7px' : '10px 14px', borderRadius: mobile ? 0 : '10px',
         textDecoration: 'none', flex: mobile ? 1 : undefined,
         background: !mobile && active ? 'var(--pf-card)' : 'transparent',
         color: active ? 'var(--pf-gold)' : 'var(--pf-faint)',
         borderTop: mobile ? `2px solid ${active ? 'var(--pf-gold)' : 'transparent'}` : undefined,
       }}>
-        <span style={{ fontSize: mobile ? '15px' : '13px', lineHeight: 1, position: 'relative' }}>
+        {/* Fixed-width icon slot — the glyphs have different natural widths,
+            so without this the labels would still start at ragged x positions. */}
+        <span style={{ fontSize: mobile ? '15px' : '13px', lineHeight: 1, position: 'relative', width: mobile ? undefined : '18px', textAlign: mobile ? undefined : 'center', flexShrink: 0 }}>
           {item.icon}
           {/* Attention badge — the partner learns they're needed WITHOUT visiting the tab. */}
           {item.key === 'nav_res' && pendingCount > 0 && mobile && (
