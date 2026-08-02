@@ -7,8 +7,8 @@ import { getProvider, getCompanies, subscribeBookingsByCompany } from '@/lib/fir
 import type { Company, Provider } from '@/lib/schema'
 import { PartnerContext } from './PartnerContext'
 import { t, type Locale } from './i18n'
+import { isAdminEmail } from '@/lib/admin'
 
-const ADMIN_EMAILS = ['palmeraexp@gmail.com']
 const STORE_KEY = 'palmera.partner.companyId'
 
 const NAV = [
@@ -47,7 +47,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const unsub = onAuthChange(async user => {
       if (!user) { router.replace('/dashboard'); return }
-      if (ADMIN_EMAILS.includes(user.email || '')) { router.replace('/dashboard/admin'); return }
+      if (isAdminEmail(user.email)) { router.replace('/admin'); return }
       setUid(user.uid); setEmail(user.email || '')
       const [p, all] = await Promise.all([getProvider(user.uid), getCompanies(user.uid)])
       // GRADUATION GATE (mirror of the /dashboard guard): the dashboard is for

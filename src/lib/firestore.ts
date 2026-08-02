@@ -346,6 +346,24 @@ export const getAllProviders = async (): Promise<Provider[]> => {
   return snap.docs.map((d) => ({ ...(d.data() as Provider), uid: d.id }))
 }
 
+/**
+ * LIVE full-collection listeners for the admin directory — every provider/
+ * company change lands without a Refresh button. Same read shape (and doc
+ * mapping) as the getters above; no where/orderBy, so no index needed.
+ * Returns the unsubscribe function.
+ */
+export const subscribeAllProviders = (cb: (ps: Provider[]) => void): (() => void) =>
+  onSnapshot(collection(db, COLLECTIONS.providers),
+    (snap) => cb(snap.docs.map((d) => ({ ...(d.data() as Provider), uid: d.id }))),
+    (e) => { console.error('subscribeAllProviders failed:', e); cb([]) },
+  )
+
+export const subscribeAllCompanies = (cb: (cs: Company[]) => void): (() => void) =>
+  onSnapshot(collection(db, COLLECTIONS.companies),
+    (snap) => cb(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Company) }))),
+    (e) => { console.error('subscribeAllCompanies failed:', e); cb([]) },
+  )
+
 export const getAllCompanies = async (): Promise<Company[]> => {
   const snap = await getDocs(collection(db, COLLECTIONS.companies))
   return snap.docs.map((d) => ({ id: d.id, ...(d.data() as Company) }))

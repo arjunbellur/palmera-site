@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { onAuthChange } from '@/lib/auth'
+import { isAdminEmail } from '@/lib/admin'
 import { ThemeProvider, useTheme } from '@/lib/theme'
 import DashboardNav from '@/components/dashboard/DashboardNav'
 
@@ -10,7 +11,6 @@ const NAV_LABELS: Record<string, Record<string, string>> = {
   en: { overview: 'Overview', account: 'Account', agreement: 'Agreement' },
 }
 
-const ADMIN_EMAILS = ['palmeraexp@gmail.com']
 
 function DashboardInner({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -54,11 +54,9 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
       if (!user) { router.replace('/dashboard'); return }
       const userEmail = user.email || ''
       setEmail(userEmail)
-      if (ADMIN_EMAILS.includes(userEmail)) {
-        if (!pathname.startsWith('/dashboard/admin')) router.replace('/dashboard/admin')
-        setLoading(false)
-        return
-      }
+      // Admins live on their own /admin surface now; the old /dashboard/admin
+      // pages are redirect stubs that land there too.
+      if (isAdminEmail(userEmail)) { router.replace('/admin' + window.location.search); return }
       // GRADUATION (hard cutover): a partner who has published a listing has
       // finished onboarding — their home is /partner now. Recorded on the
       // provider, so unpublishing later can't drop them back into onboarding.
@@ -79,15 +77,12 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
   }, [router, isLoginPage, pathname])
 
   const labels = NAV_LABELS[locale] || NAV_LABELS.fr
-  const isAdmin = ADMIN_EMAILS.includes(email)
 
-  const NAV_ITEMS = isAdmin
-    ? [{ href: '/dashboard/admin', label: 'Admin', short: 'Admin' }]
-    : [
-        { href: '/dashboard/home', label: labels.overview, short: labels.overview },
-        { href: '/dashboard/account', label: labels.account, short: labels.account },
-        { href: '/dashboard/settings', label: labels.agreement, short: labels.agreement },
-      ]
+  const NAV_ITEMS = [
+    { href: '/dashboard/home', label: labels.overview, short: labels.overview },
+    { href: '/dashboard/account', label: labels.account, short: labels.account },
+    { href: '/dashboard/settings', label: labels.agreement, short: labels.agreement },
+  ]
 
   // Company-scoped completeness now lives inside each company page, so the
   // provider-level sidebar carries no per-item status dots.
