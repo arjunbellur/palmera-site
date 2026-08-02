@@ -96,8 +96,23 @@ const M = {
     tierLabels: { flexible: 'Flexible', moderate: 'Modérée', strict: 'Stricte' } as Record<string, string>,
     notesPh: 'Autre chose à savoir pour les clients (facultatif)',
     addons: 'Choix & extras',
-    addonsHint: <>Facultatif — deux possibilités : un <strong>choix</strong> que le client doit faire (ex. type de chambre, placement), ou des <strong>extras</strong> qu’il peut ajouter (ex. formule boissons, transfert). Les prix s’ajoutent au total que le groupe partage.</>,
-    noAddons: 'Rien à choisir — les clients réservent simplement au prix de base.',
+    ao_q: 'Les clients doivent-ils choisir ou ajouter quelque chose en réservant ?',
+    ao_optional: 'Facultatif — beaucoup d’expériences se réservent simplement au prix de base.',
+    ao_card_choice_t: 'Un choix à faire',
+    ao_card_choice_d: 'Le client doit choisir une option pour réserver — type de chambre, durée, placement.',
+    ao_card_extras_t: 'Des extras',
+    ao_card_extras_d: 'Le client ajoute ce qu’il veut en plus — petit-déjeuner, transfert, GoPro.',
+    ao_suggest: 'Ou partez d’un exemple :',
+    ao_badge_choice: 'Choix obligatoire', ao_badge_extras: 'Extras facultatifs',
+    ao_switch_to_extras: 'Changer en extras', ao_switch_to_choice: 'Changer en choix',
+    ao_switch_confirm_extras: 'Passer en extras ? Les options deviendront facultatives — le client pourra en ajouter plusieurs, ou aucune.',
+    ao_switch_confirm_choice: 'Passer en choix ? Le client devra obligatoirement choisir UNE de ces options pour réserver.',
+    ao_prev: 'Aperçu côté client',
+    ao_prev_pickone: 'Choisissez-en une · obligatoire',
+    ao_prev_optional: 'Facultatif — ajoutez ce que vous voulez',
+    ao_prev_empty: 'Vos options apparaîtront ici au fur et à mesure.',
+    ao_included: 'Inclus', ao_free: 'Gratuit',
+    ao_optName: 'Nom de l’option', ao_optPrice: 'Prix en plus (XOF)',
     addChoiceSet: '+ Choix à faire', addExtrasSet: '+ Extras',
     kindChoice: 'Le client choisit UNE option', kindExtras: 'Extras — le client ajoute ce qu’il veut',
     setNameChoice: 'Titre du choix', setNameChoicePh: 'ex. « Type de chambre », « Placement »',
@@ -177,8 +192,23 @@ const M = {
     tierLabels: { flexible: 'Flexible', moderate: 'Moderate', strict: 'Strict' } as Record<string, string>,
     notesPh: 'Anything else guests should know (optional)',
     addons: 'Choices & extras',
-    addonsHint: <>Optional — two kinds: a <strong>choice</strong> the guest must make (e.g. room type, seating), or <strong>extras</strong> they can add on (e.g. drinks package, transfer). Prices are added to the total the group splits.</>,
-    noAddons: 'Nothing to choose — guests just book at the base price.',
+    ao_q: 'Do guests need to choose or add anything when they book?',
+    ao_optional: 'Optional — many experiences are simply booked at the base price.',
+    ao_card_choice_t: 'A choice to make',
+    ao_card_choice_d: 'The guest must pick one option to book — room type, duration, seating.',
+    ao_card_extras_t: 'Extras',
+    ao_card_extras_d: 'The guest adds whatever they like on top — breakfast, transfer, GoPro.',
+    ao_suggest: 'Or start from an example:',
+    ao_badge_choice: 'Required choice', ao_badge_extras: 'Optional extras',
+    ao_switch_to_extras: 'Switch to extras', ao_switch_to_choice: 'Switch to a choice',
+    ao_switch_confirm_extras: 'Switch to extras? The options become optional — guests can add several, or none.',
+    ao_switch_confirm_choice: 'Switch to a choice? Guests will be required to pick ONE of these options to book.',
+    ao_prev: 'Guest preview',
+    ao_prev_pickone: 'Pick one · required',
+    ao_prev_optional: 'Optional — add what you like',
+    ao_prev_empty: 'Your options will appear here as you type.',
+    ao_included: 'Included', ao_free: 'Free',
+    ao_optName: 'Option name', ao_optPrice: 'Extra price (XOF)',
     addChoiceSet: '+ A choice to make', addExtrasSet: '+ Extras',
     kindChoice: 'Guest picks ONE option', kindExtras: 'Extras — guest adds what they want',
     setNameChoice: 'What is being chosen?', setNameChoicePh: 'e.g. "Room type", "Seating"',
@@ -263,6 +293,42 @@ const emptyOption = (groupId: string): Option & { _isNew?: boolean } => ({
 
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR').format(Math.round(n))
 
+// One-tap starter examples for the Choices & extras step, keyed by category id
+// (config/categories). Tapping a chip creates a correctly-kinded, pre-named set
+// so partners start from a familiar example instead of a blank form. The
+// parenthetical part is chip-display only — it's stripped from the set name.
+const SUGGEST: Record<string, { kind: SetKind; fr: string; en: string }[]> = {
+  hotels: [
+    { kind: 'choice', fr: 'Type de chambre', en: 'Room type' },
+    { kind: 'extras', fr: 'Extras (petit-déjeuner, spa…)', en: 'Extras (breakfast, spa…)' },
+  ],
+  rentals: [
+    { kind: 'choice', fr: 'Durée', en: 'Duration' },
+    { kind: 'choice', fr: 'Couleur', en: 'Color' },
+    { kind: 'extras', fr: 'Extras (GoPro, gilet…)', en: 'Extras (GoPro, vest…)' },
+  ],
+  dining: [
+    { kind: 'choice', fr: 'Placement', en: 'Seating' },
+    { kind: 'extras', fr: 'Extras (formule boissons…)', en: 'Extras (drinks package…)' },
+  ],
+  wellness: [
+    { kind: 'choice', fr: 'Type de soin', en: 'Treatment type' },
+    { kind: 'extras', fr: 'Extras', en: 'Extras' },
+  ],
+  nightlife: [
+    { kind: 'choice', fr: 'Type de table', en: 'Table type' },
+    { kind: 'extras', fr: 'Extras (bouteilles…)', en: 'Extras (bottles…)' },
+  ],
+  safari: [
+    { kind: 'choice', fr: 'Durée', en: 'Duration' },
+    { kind: 'extras', fr: 'Extras', en: 'Extras' },
+  ],
+}
+const SUGGEST_DEFAULT: { kind: SetKind; fr: string; en: string }[] = [
+  { kind: 'choice', fr: 'Un choix (ex. durée)', en: 'A choice (e.g. duration)' },
+  { kind: 'extras', fr: 'Extras', en: 'Extras' },
+]
+
 /** Airbnb-style choice cards: big tap targets that EXPLAIN each option in a
  * sentence, replacing skinny segmented pills that only named them. */
 function ChoiceCards<T extends string>({ value, onChange, options }: {
@@ -300,7 +366,8 @@ function Stepper({ value, min = 1, onChange }: { value: number; min?: number; on
 }
 
 export default function ExperienceModal({ providerId, companyId, companyName, defaultCategory, defaultCity, experience, existingOptions, onSave, onClose }: ExperienceModalProps) {
-  const T = M[useLocale()]
+  const locale = useLocale()
+  const T = M[locale]
   const [categories, setCategories] = useState<Opt[]>([])
   const [cities, setCities] = useState<Opt[]>([])
   const [tierHours, setTierHours] = useState<Partial<Record<CancellationTier, number>>>({})
@@ -357,7 +424,12 @@ export default function ExperienceModal({ providerId, companyId, companyName, de
   const isOneTime = form.scheduleType === 'one_time'
   const canSave = !!form.title && !!form.category && !!form.city && (!isPaid || !!form.price)
 
-  const addGroup = (kind: SetKind) => setGroups((g) => [...g, emptyGroup(kind)])
+  const addGroupNamed = (kind: SetKind, name: string) => setGroups((g) => {
+    const ng = emptyGroup(kind)
+    ng.name = name
+    ng.options = [emptyOption(ng.id), emptyOption(ng.id)]
+    return [...g, ng]
+  })
   const setKind = (id: string, kind: SetKind) => updateGroup(id, KIND_FLAGS[kind])
   const removeGroup = (id: string) => setGroups((g) => g.filter((x) => x.id !== id))
   const updateGroup = (id: string, patch: Partial<OptionGroup>) => setGroups((g) => g.map((x) => (x.id === id ? { ...x, ...patch } : x)))
@@ -614,78 +686,144 @@ export default function ExperienceModal({ providerId, companyId, companyName, de
     </>
   )
 
+  const miniLabel: React.CSSProperties = { ...labelStyle, fontSize: '0.625rem', marginBottom: '0.25rem' }
+  const APP_PREV = { sheet: '#0E2233', gold: '#E9BC4F', cream: '#F3EBD8', dim: 'rgba(243,235,216,0.65)', line: 'rgba(243,235,216,0.12)' }
+  const suggestions = SUGGEST[form.category || ''] || SUGGEST_DEFAULT
+  const chipName = (sg: { fr: string; en: string }) => (locale === 'fr' ? sg.fr : sg.en).replace(/\s*\(.*\)$/, '')
+
+  const addSetBtn: React.CSSProperties = { background: 'transparent', border: '1px solid var(--db-border-gold)', borderRadius: '0.25rem', color: '#be9a56', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', padding: '0.3125rem 0.75rem', cursor: 'pointer' }
+
   const stepAddons = (
     <>
-      {/* Add-ons & choices (the optionGroups data). NEVER called "groups" in the
-          UI — in this product, "group" means the guests' party. */}
+      {/* The optionGroups data — NEVER called "groups" in the UI; in this
+          product, "group" means the guests' party. Question-first (Airbnb
+          lens): the partner answers a plain question about their business and
+          the data shape falls out of the answer. */}
       <div>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', marginBottom: '0.375rem', flexWrap: 'wrap' }}>
-          <label style={{ ...labelStyle, marginBottom: 0 }}>{T.addons}</label>
-          <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
-            <button onClick={() => addGroup('choice')} style={{ background: 'transparent', border: '1px solid var(--db-border-gold)', borderRadius: '0.25rem', color: '#be9a56', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', padding: '0.3125rem 0.75rem', cursor: 'pointer' }}>{T.addChoiceSet}</button>
-            <button onClick={() => addGroup('extras')} style={{ background: 'transparent', border: '1px solid var(--db-border-gold)', borderRadius: '0.25rem', color: '#be9a56', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', padding: '0.3125rem 0.75rem', cursor: 'pointer' }}>{T.addExtrasSet}</button>
-          </div>
-        </div>
-        <p style={{ ...hintStyle, margin: '0 0 0.875rem' }}>{T.addonsHint}</p>
-        {groups.length === 0 && <p style={{ fontSize: '0.75rem', color: 'var(--db-text-ghost)', fontStyle: 'italic', fontFamily: 'var(--font-sans)' }}>{T.noAddons}</p>}
-        {groups.map((g) => {
-          const kind = kindOf(g)
-          return (
-          <div key={g.id} style={{ background: 'var(--db-bg-card)', border: '1px solid var(--db-border-subtle)', borderRadius: '0.5rem', padding: '1rem', marginBottom: '0.875rem' }}>
-            {/* What KIND of set this is — plain words, not checkbox jargon. */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.625rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', borderRadius: '0.375rem', border: '1px solid var(--db-border-subtle)', overflow: 'hidden' }}>
-                {(['choice', 'extras'] as SetKind[]).map((k, ki) => (
-                  <button key={k} onClick={() => setKind(g.id, k)}
-                    style={{ padding: '0.375rem 0.75rem', background: kind === k ? 'rgba(190,154,86,0.15)' : 'transparent', border: 'none', borderRight: ki === 0 ? '1px solid var(--db-border-subtle)' : 'none', color: kind === k ? '#be9a56' : 'var(--db-text-faint)', fontSize: '0.6875rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>
-                    {k === 'choice' ? T.kindChoice : T.kindExtras}
-                  </button>
-                ))}
-              </div>
-              <button onClick={() => removeGroup(g.id)} style={{ background: 'transparent', border: '1px solid rgba(224,112,112,0.35)', color: '#e07070', borderRadius: '0.25rem', padding: '0.375rem 0.625rem', fontSize: '0.6875rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>{T.remove}</button>
+        {groups.length === 0 ? (
+          <>
+            <label style={{ ...labelStyle, fontSize: '0.8125rem', textTransform: 'none', letterSpacing: 0, color: 'var(--db-text)', marginBottom: '0.75rem' }}>{T.ao_q}</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 13rem), 1fr))', gap: '0.625rem', marginBottom: '1.125rem' }}>
+              {([['choice', T.ao_card_choice_t, T.ao_card_choice_d, '◉'], ['extras', T.ao_card_extras_t, T.ao_card_extras_d, '✚']] as [SetKind, string, string, string][]).map(([k, ct, cd, icon]) => (
+                <button key={k} onClick={() => addGroupNamed(k, '')}
+                  style={{ textAlign: 'left', padding: '1rem', borderRadius: '0.5rem', cursor: 'pointer', border: '1.5px solid var(--db-border-subtle)', background: 'var(--db-bg-card)', transition: 'border-color 0.15s' }}>
+                  <div style={{ fontSize: '1.125rem', color: '#be9a56', marginBottom: '0.375rem' }}>{icon}</div>
+                  <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.875rem', color: 'var(--db-text)', marginBottom: '0.25rem' }}>{ct}</div>
+                  <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6875rem', color: 'var(--db-text-ghost)', lineHeight: 1.5 }}>{cd}</div>
+                </button>
+              ))}
             </div>
-            <div style={{ marginBottom: '0.75rem' }}>
-              <label style={labelStyle}>{kind === 'choice' ? T.setNameChoice : T.setNameExtras}</label>
-              <input style={inputStyle} placeholder={kind === 'choice' ? T.setNameChoicePh : T.setNameExtrasPh} value={g.name} onChange={(e) => updateGroup(g.id, { name: e.target.value })} />
+            <p style={{ ...hintStyle, margin: '0 0 0.5rem' }}>{T.ao_suggest}</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.125rem' }}>
+              {suggestions.map((sg) => (
+                <button key={sg.fr} onClick={() => addGroupNamed(sg.kind, chipName(sg))}
+                  style={{ background: 'transparent', border: '1px solid var(--db-border-gold)', borderRadius: '999px', color: '#be9a56', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', padding: '0.375rem 0.875rem', cursor: 'pointer' }}>
+                  {locale === 'fr' ? sg.fr : sg.en}
+                </button>
+              ))}
             </div>
-
-            {g.options.map((o, i) => {
-              const optKey = o.id || `${g.id}_opt${i}`
+            <p style={hintStyle}>{T.ao_optional}</p>
+          </>
+        ) : (
+          <>
+            <label style={{ ...labelStyle, marginBottom: '0.75rem' }}>{T.addons}</label>
+            {groups.map((g) => {
+              const kind = kindOf(g)
+              const other: SetKind = kind === 'choice' ? 'extras' : 'choice'
               return (
-              <div key={i} style={{ border: '1px solid var(--db-border-subtle)', borderRadius: '0.375rem', padding: '0.625rem', marginBottom: '0.5rem' }}>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
-                  <input style={{ ...inputStyle, flex: '2 1 9rem', width: 'auto' }} placeholder={kind === 'choice' ? T.optNamePhChoice : T.optNamePhExtras} value={o.name} onChange={(e) => updateOptionAt(g.id, i, { name: e.target.value })} />
-                  <input style={{ ...inputStyle, flex: '1 1 6rem', width: 'auto' }} type="number" placeholder={T.optPricePh} value={o.price} onChange={(e) => updateOptionAt(g.id, i, { price: parseInt(e.target.value) || 0 })} />
-                  {kind === 'extras' && (
-                    <input style={{ ...inputStyle, flex: '1 1 5rem', width: 'auto' }} type="number" min="1" placeholder={T.optMax} value={o.maxQuantityPerBooking} onChange={(e) => updateOptionAt(g.id, i, { maxQuantityPerBooking: parseInt(e.target.value) || 1 })} />
-                  )}
-                  <button onClick={() => removeOption(g.id, i)} style={{ background: 'transparent', border: 'none', color: '#e07070', fontSize: '1rem', cursor: 'pointer', padding: '0 0.5rem' }}>×</button>
-                </div>
-                <input style={{ ...inputStyle, marginTop: '0.5rem' }} placeholder={T.optDescPh} value={o.description || ''} onChange={(e) => updateOptionAt(g.id, i, { description: e.target.value })} />
-                {/* Photos are the exception, not the rule (room types yes, drink
-                    packages no) — keep them folded until asked for. */}
-                {(o.img || (o.gallery?.length ?? 0) > 0 || photoOpen[optKey]) ? (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 10rem), 1fr))', gap: '0.75rem', marginTop: '0.5rem' }}>
-                    <div>
-                      <label style={{ ...labelStyle, fontSize: '0.6875rem' }}>{T.photo}</label>
-                      <PhotoUpload uid={providerId} label={T.photo} fieldName={`option_${optKey}_hero`} existingUrl={o.img || ''} onUploaded={(url) => updateOptionAt(g.id, i, { img: url })} />
-                    </div>
-                    <div>
-                      <label style={{ ...labelStyle, fontSize: '0.6875rem' }}>{T.morePhotos}</label>
-                      <GalleryUpload uid={providerId} value={o.gallery || []} onChange={(urls) => updateOptionAt(g.id, i, { gallery: urls })} />
-                    </div>
+              <div key={g.id} style={{ background: 'var(--db-bg-card)', border: '1px solid var(--db-border-subtle)', borderRadius: '0.5rem', padding: '1rem', marginBottom: '0.875rem' }}>
+                {/* Kind is decided at creation; here it's a labeled badge, and
+                    switching is an explicit, explained act — not a silent toggle. */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.625rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    <span style={{ background: 'rgba(190,154,86,0.15)', color: '#be9a56', borderRadius: '999px', padding: '0.25rem 0.75rem', fontSize: '0.6875rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.04em' }}>
+                      {kind === 'choice' ? T.ao_badge_choice : T.ao_badge_extras}
+                    </span>
+                    <button onClick={() => { if (window.confirm(kind === 'choice' ? T.ao_switch_confirm_extras : T.ao_switch_confirm_choice)) setKind(g.id, other) }}
+                      style={{ background: 'transparent', border: 'none', color: 'var(--db-text-faint)', fontSize: '0.6875rem', fontFamily: 'var(--font-sans)', textDecoration: 'underline', cursor: 'pointer', padding: 0 }}>
+                      {kind === 'choice' ? T.ao_switch_to_extras : T.ao_switch_to_choice}
+                    </button>
                   </div>
-                ) : (
-                  <button onClick={() => setPhotoOpen((prev) => ({ ...prev, [optKey]: true }))}
-                    style={{ marginTop: '0.5rem', background: 'transparent', border: 'none', color: 'var(--db-text-faint)', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', textDecoration: 'underline', cursor: 'pointer', padding: 0 }}>
-                    {T.addPhoto}
-                  </button>
-                )}
+                  <button onClick={() => removeGroup(g.id)} style={{ background: 'transparent', border: '1px solid rgba(224,112,112,0.35)', color: '#e07070', borderRadius: '0.25rem', padding: '0.375rem 0.625rem', fontSize: '0.6875rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>{T.remove}</button>
+                </div>
+                <div style={{ marginBottom: '0.75rem' }}>
+                  <label style={labelStyle}>{kind === 'choice' ? T.setNameChoice : T.setNameExtras}</label>
+                  <input style={inputStyle} placeholder={kind === 'choice' ? T.setNameChoicePh : T.setNameExtrasPh} value={g.name} onChange={(e) => updateGroup(g.id, { name: e.target.value })} />
+                </div>
+
+                {g.options.map((o, i) => {
+                  const optKey = o.id || `${g.id}_opt${i}`
+                  return (
+                  <div key={i} style={{ border: '1px solid var(--db-border-subtle)', borderRadius: '0.375rem', padding: '0.625rem', marginBottom: '0.5rem' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'flex-end' }}>
+                      <div style={{ flex: '2 1 9rem' }}>
+                        <label style={miniLabel}>{T.ao_optName}</label>
+                        <input style={inputStyle} placeholder={kind === 'choice' ? T.optNamePhChoice : T.optNamePhExtras} value={o.name} onChange={(e) => updateOptionAt(g.id, i, { name: e.target.value })} />
+                      </div>
+                      <div style={{ flex: '1 1 6rem' }}>
+                        <label style={miniLabel}>{T.ao_optPrice}</label>
+                        <input style={inputStyle} type="number" placeholder="0" value={o.price} onChange={(e) => updateOptionAt(g.id, i, { price: parseInt(e.target.value) || 0 })} />
+                      </div>
+                      {kind === 'extras' && (
+                        <div style={{ flex: '1 1 5rem' }}>
+                          <label style={miniLabel}>{T.optMax}</label>
+                          <input style={inputStyle} type="number" min="1" value={o.maxQuantityPerBooking} onChange={(e) => updateOptionAt(g.id, i, { maxQuantityPerBooking: parseInt(e.target.value) || 1 })} />
+                        </div>
+                      )}
+                      <button onClick={() => removeOption(g.id, i)} style={{ background: 'transparent', border: 'none', color: '#e07070', fontSize: '1rem', cursor: 'pointer', padding: '0 0.5rem 0.625rem' }}>×</button>
+                    </div>
+                    <input style={{ ...inputStyle, marginTop: '0.5rem' }} placeholder={T.optDescPh} value={o.description || ''} onChange={(e) => updateOptionAt(g.id, i, { description: e.target.value })} />
+                    {/* Photos are the exception, not the rule (room types yes, drink
+                        packages no) — keep them folded until asked for. */}
+                    {(o.img || (o.gallery?.length ?? 0) > 0 || photoOpen[optKey]) ? (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 10rem), 1fr))', gap: '0.75rem', marginTop: '0.5rem' }}>
+                        <div>
+                          <label style={{ ...labelStyle, fontSize: '0.6875rem' }}>{T.photo}</label>
+                          <PhotoUpload uid={providerId} label={T.photo} fieldName={`option_${optKey}_hero`} existingUrl={o.img || ''} onUploaded={(url) => updateOptionAt(g.id, i, { img: url })} />
+                        </div>
+                        <div>
+                          <label style={{ ...labelStyle, fontSize: '0.6875rem' }}>{T.morePhotos}</label>
+                          <GalleryUpload uid={providerId} value={o.gallery || []} onChange={(urls) => updateOptionAt(g.id, i, { gallery: urls })} />
+                        </div>
+                      </div>
+                    ) : (
+                      <button onClick={() => setPhotoOpen((prev) => ({ ...prev, [optKey]: true }))}
+                        style={{ marginTop: '0.5rem', background: 'transparent', border: 'none', color: 'var(--db-text-faint)', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', textDecoration: 'underline', cursor: 'pointer', padding: 0 }}>
+                        {T.addPhoto}
+                      </button>
+                    )}
+                  </div>
+                )})}
+                <button onClick={() => addOption(g.id)} style={{ background: 'transparent', border: 'none', color: '#be9a56', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', textDecoration: 'underline', cursor: 'pointer', padding: 0, marginTop: '0.25rem' }}>{kind === 'choice' ? T.addOptChoice : T.addOptExtras}</button>
+
+                {/* Live guest mini-preview — shows exactly how the app renders
+                    this set, which teaches the choice/extras model wordlessly. */}
+                <div style={{ background: APP_PREV.sheet, borderRadius: '0.625rem', padding: '0.875rem 1rem', marginTop: '0.875rem' }}>
+                  <div style={{ color: APP_PREV.gold, fontFamily: 'var(--font-sans)', fontSize: '0.5625rem', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>{T.ao_prev}</div>
+                  <div style={{ color: APP_PREV.cream, fontFamily: 'var(--font-serif)', fontSize: '0.9375rem', fontWeight: 600 }}>{g.name || '…'}</div>
+                  <div style={{ color: APP_PREV.dim, fontFamily: 'var(--font-sans)', fontSize: '0.625rem', margin: '0.125rem 0 0.5rem' }}>{kind === 'choice' ? T.ao_prev_pickone : T.ao_prev_optional}</div>
+                  {g.options.every((o) => !o.name) ? (
+                    <div style={{ color: APP_PREV.dim, fontSize: '0.6875rem', fontFamily: 'var(--font-sans)', fontStyle: 'italic' }}>{T.ao_prev_empty}</div>
+                  ) : g.options.filter((o) => o.name).map((o, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', padding: '0.4375rem 0', borderTop: i > 0 ? `1px solid ${APP_PREV.line}` : 'none' }}>
+                      <span style={{ color: APP_PREV.cream, fontFamily: 'var(--font-sans)', fontSize: '0.75rem' }}>
+                        <span style={{ color: APP_PREV.gold, marginRight: '0.5rem' }}>{kind === 'choice' ? (i === 0 ? '●' : '○') : '＋'}</span>
+                        {o.name}
+                      </span>
+                      <span style={{ color: APP_PREV.gold, fontFamily: 'var(--font-sans)', fontSize: '0.6875rem', whiteSpace: 'nowrap' }}>
+                        {o.price ? `+ ${fmt(o.price)} XOF` : (kind === 'choice' ? T.ao_included : T.ao_free)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )})}
-            <button onClick={() => addOption(g.id)} style={{ background: 'transparent', border: 'none', color: '#be9a56', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', textDecoration: 'underline', cursor: 'pointer', padding: 0, marginTop: '0.25rem' }}>{kind === 'choice' ? T.addOptChoice : T.addOptExtras}</button>
-          </div>
-        )})}
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button onClick={() => addGroupNamed('choice', '')} style={addSetBtn}>{T.addChoiceSet}</button>
+              <button onClick={() => addGroupNamed('extras', '')} style={addSetBtn}>{T.addExtrasSet}</button>
+            </div>
+          </>
+        )}
       </div>
     </>
   )
