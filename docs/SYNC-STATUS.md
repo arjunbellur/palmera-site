@@ -53,6 +53,12 @@ indexes, collections). Last updated: 2026-08-01 (indexes live, sync verified; NO
 Every dashboard change that touches documents/rules/indexes the app consumes
 gets a line here, newest first. Pure-UI dashboard changes are never listed.
 
+- 2026-08-01 ⚠ **8 new Senegal cities enabled in `config/markets`** (from
+  Jordan): sine-saloum, lampoul, saint-louis, lac-rose, pointe-sarene, goree,
+  ngor, ngaparou (names: Sine Saloum, Lampoul, Saint-Louis, Lac Rose, Pointe
+  Sarène, Gorée, Ngor, Ngaparou). Additive only — no existing ids or names
+  changed. If the app renders city pickers/filters from this doc, they now
+  show 10 enabled cities instead of 2.
 - 2026-08-01 ⚠ **optionGroups: extras sets now write `maxSelect: 99`** (was 1).
   Same shape; semantic: guests may select multiple different extras in one
   group. If the app enforces maxSelect at checkout, multi-select now applies.
