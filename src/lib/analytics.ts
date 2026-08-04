@@ -68,9 +68,11 @@ export interface Bucket { label: string; start: Date; count: number; sum: number
  *  Docs with unparseable dates are excluded, never NaN. */
 export function bucketByPeriod(docs: AnyDoc[], opts: {
   period: 'week' | 'month'; buckets: number; dateKey?: string
-  valueOf?: (d: AnyDoc) => number
+  // Named sumOf (not valueOf) — an optional `valueOf` collides with
+  // Object.prototype.valueOf in structural typing.
+  sumOf?: (d: AnyDoc) => number
 }): Bucket[] {
-  const { period, buckets, dateKey, valueOf } = opts
+  const { period, buckets, dateKey, sumOf } = opts
   const starts: Date[] = []
   if (period === 'week') {
     const w0 = startOfWeek()
@@ -95,8 +97,8 @@ export function bucketByPeriod(docs: AnyDoc[], opts: {
     for (let i = out.length - 1; i >= 0; i--) {
       if (dt >= out[i].start) {
         out[i].count += 1
-        if (valueOf) {
-          const v = valueOf(d)
+        if (sumOf) {
+          const v = sumOf(d)
           if (typeof v === 'number' && !isNaN(v)) out[i].sum += v
         }
         break

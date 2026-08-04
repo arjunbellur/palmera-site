@@ -10,14 +10,14 @@ import {
   getAppMoments, getAppReviews, getCountersignature,
 } from '@/lib/firestore'
 import { isAdminEmail } from '@/lib/admin'
-import { docDate, countSince, startOfToday, startOfWeek, startOfMonth, isRealBooking, sumField } from '@/lib/analytics'
+import { docDate, countSince, startOfToday, startOfWeek, startOfMonth, isRealBooking, sumField, bucketByPeriod } from '@/lib/analytics'
 import { ScreenHeader, Chip, Skeleton, Money, SectionTitle, card, eyebrow } from '@/components/partner/ui'
-import { CountTile, formatDate } from './ui'
+import { CountTile, SparkTile, timeAgo } from './ui'
 import type { AppProfile, AppDoc, Booking, Provider, Company } from '@/lib/schema'
 
 const fmtXof = (n: number) => new Intl.NumberFormat('fr-FR').format(Math.round(n))
 
-interface Activity { icon: string; tone: string; text: string; when: Date }
+interface Activity { icon: string; tone: string; text: string; when: Date; avatar?: string | null }
 
 export default function AdminOverview() {
   const [profiles, setProfiles] = useState<AppProfile[]>([])
@@ -56,22 +56,23 @@ export default function AdminOverview() {
     setActivity(null)
     const byId = new Map(profiles.map((p) => [p.id, p]))
     const who = (d: AppDoc) => { const p = byId.get(d.user_id as string); return p?.handle || p?.name || 'Someone' }
+    const face = (d: AppDoc) => byId.get(d.user_id as string)?.avatar_url || null
     const items: Activity[] = []
     profiles.forEach((p) => {
       const d = docDate(p); if (!d) return
-      items.push({ icon: '✦', tone: 'var(--pf-gold)', text: `${p.handle || p.name || 'New user'} joined the app`, when: d })
+      items.push({ icon: '✦', tone: 'var(--pf-gold)', text: `${p.handle || p.name || 'New user'} joined the app`, when: d, avatar: p.avatar_url || null })
     })
     bookings.forEach((b) => {
       const d = docDate(b); if (!d) return
-      items.push({ icon: '▤', tone: 'var(--pf-success)', text: `${b.customerName || 'A guest'} booked ${b.title} · ${b.status}`, when: d })
+      items.push({ icon: '▤', tone: 'var(--pf-success)', text: `${b.customerName || 'A guest'} booked ${b.title} · ${b.status}`, when: d, avatar: byId.get(b.customerId)?.avatar_url || null })
     })
     moments.forEach((m) => {
       const d = docDate(m); if (!d) return
-      items.push({ icon: '◉', tone: 'var(--pf-muted)', text: `${who(m)} posted a moment${m.caption ? ` — “${String(m.caption).slice(0, 60)}”` : ''}`, when: d })
+      items.push({ icon: '◉', tone: 'var(--pf-muted)', text: `${who(m)} posted a moment${m.caption ? ` — “${String(m.caption).slice(0, 60)}”` : ''}`, when: d, avatar: face(m) })
     })
     reviews.forEach((r) => {
       const d = docDate(r); if (!d) return
-      items.push({ icon: '★', tone: 'var(--pf-gold)', text: `${who(r)} left a ${r.rating}★ review`, when: d })
+      items.push({ icon: '★', tone: 'var(--pf-gold)', text: `${who(r)} left a ${r.rating}★ review`, when: d, avatar: face(r) })
     })
     items.sort((a, b) => b.when.getTime() - a.when.getTime())
     setActivity(items.slice(0, 15))
@@ -88,6 +89,9 @@ export default function AdminOverview() {
   const signupsToday = countSince(profiles, today)
   const signupsWeek = countSince(profiles, week)
   const plusCount = profiles.filter((p) => p.is_plus).length
+
+  const signupSpark = bucketByPeriod(profiles, { period: 'week', buckets: 8 }).map((b) => b.count)
+  const bookingSpark = bucketByPeriod(bookings, { period: 'week', buckets: 8 }).map((b) => b.count)
 
   const weekBookings = bookings.filter((b) => { const d = docDate(b); return d !== null && d >= week })
   const byStatus = (st: string) => weekBookings.filter((b) => b.status === st).length
@@ -129,20 +133,20 @@ export default function AdminOverview() {
 
       {/* App growth */}
       <SectionTitle>App</SectionTitle>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
-        <CountTile label="Signups today" value={signupsToday} tone={signupsToday > 0 ? 'gold' : undefined} />
-        <CountTile label="This week" value={signupsWeek} />
-        <CountTile label="App users" value={profiles.length} />
-        <CountTile label="Plus members" value={plusCount} />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '12px' }}>
+        <SparkTile icon="✦" label="App users" value={profiles.length} spark={signupSpark} featured />
+        <CountTile icon="↟" label="Signups today" value={signupsToday} tone={signupsToday > 0 ? 'gold' : undefined} />
+        <CountTile icon="◔" label="This week" value={signupsWeek} />
+        <CountTile icon="◆" label="Plus members" value={plusCount} />
       </div>
 
       {/* Business */}
       <SectionTitle>Business · this week</SectionTitle>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
-        <CountTile label="New bookings" value={weekBookings.length} />
-        <CountTile label="Pending" value={byStatus('pending')} tone={byStatus('pending') > 0 ? 'gold' : undefined} />
-        <CountTile label="Confirmed" value={byStatus('confirmed')} />
-        <CountTile label="Completed" value={byStatus('completed')} />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '12px' }}>
+        <SparkTile icon="▤" label="New bookings" value={weekBookings.length} spark={bookingSpark} />
+        <CountTile icon="◷" label="Pending" value={byStatus('pending')} tone={byStatus('pending') > 0 ? 'gold' : undefined} />
+        <CountTile icon="✓" label="Confirmed" value={byStatus('confirmed')} />
+        <CountTile icon="✦" label="Completed" value={byStatus('completed')} />
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 15rem), 1fr))', gap: '12px', marginTop: '12px' }}>
         <div style={{ ...card, background: 'linear-gradient(150deg, rgba(190,154,86,0.12), var(--pf-card))', borderColor: 'var(--pf-border-strong)' }}>
@@ -181,12 +185,22 @@ export default function AdminOverview() {
       ) : activity.length === 0 ? (
         <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--pf-faint)', fontStyle: 'italic' }}>Nothing yet.</p>
       ) : (
-        <div style={{ ...card, padding: '6px 16px' }}>
+        <div style={{ ...card, padding: '18px 20px 6px' }}>
+          {/* Timeline idiom (the app's Tracking History): avatar/icon nodes on a
+              connector line — faces make the social side feel alive. */}
           {activity.map((a, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: '12px', padding: '9px 0', borderTop: i > 0 ? '1px solid var(--pf-border)' : 'none' }}>
-              <span style={{ color: a.tone, fontSize: '12px', flexShrink: 0, width: '16px', textAlign: 'center' }}>{a.icon}</span>
-              <span style={{ flex: 1, fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '13.5px', minWidth: 0 }}>{a.text}</span>
-              <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-faint)', flexShrink: 0 }}>{formatDate(a.when.toISOString())}</span>
+            <div key={i} style={{ display: 'flex', gap: '14px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+                <span style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--pf-green-soft)', border: '1px solid var(--pf-border-strong)', color: a.tone, display: 'grid', placeItems: 'center', fontSize: '13px', overflow: 'hidden', flexShrink: 0 }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  {a.avatar ? <img src={a.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : a.icon}
+                </span>
+                {i < activity.length - 1 && <span style={{ width: '1px', flex: 1, background: 'var(--pf-border)', margin: '4px 0' }} />}
+              </div>
+              <div style={{ flex: 1, minWidth: 0, paddingBottom: '16px' }}>
+                <div style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '13.5px', lineHeight: 1.45 }}>{a.text}</div>
+                <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-faint)', marginTop: '3px' }}>{timeAgo(a.when)}</div>
+              </div>
             </div>
           ))}
         </div>
