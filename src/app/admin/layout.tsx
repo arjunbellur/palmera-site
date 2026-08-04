@@ -24,6 +24,10 @@ function Shell({ children }: { children: React.ReactNode }) {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
+  // Collapsed = a 68px icon rail; the whole width goes to the content.
+  const [collapsed, setCollapsed] = useState(false)
+  useEffect(() => { setCollapsed(localStorage.getItem('palmera.admin.nav') === 'collapsed') }, [])
+  const toggleNav = () => setCollapsed((c) => { localStorage.setItem('palmera.admin.nav', c ? 'open' : 'collapsed'); return !c })
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 900)
@@ -59,8 +63,10 @@ function Shell({ children }: { children: React.ReactNode }) {
   const Logo = (
     <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
       <img src="/images/PALMERA_cracked.png" alt="" width={24} height={24} style={{ objectFit: 'contain' }} />
-      <span style={{ fontFamily: 'var(--font-display)', color: 'var(--pf-head)', fontSize: '14px', letterSpacing: '0.12em' }}>PALMERA</span>
-      <Chip tone="gold">Admin</Chip>
+      {(!collapsed || isMobile) && <>
+        <span style={{ fontFamily: 'var(--font-display)', color: 'var(--pf-head)', fontSize: '14px', letterSpacing: '0.12em' }}>PALMERA</span>
+        <Chip tone="gold">Admin</Chip>
+      </>}
     </div>
   )
 
@@ -76,14 +82,15 @@ function Shell({ children }: { children: React.ReactNode }) {
       ? pathname === '/admin'
       : pathname.startsWith(item.href) || (item.href === '/admin/directory' && pathname.startsWith('/admin/companies'))
     return (
-      <a key={item.href} href={item.href} style={{
-        display: 'flex', alignItems: 'center', gap: '11px', justifyContent: 'flex-start',
-        padding: '10px 14px', borderRadius: '10px', textDecoration: 'none',
+      <a key={item.href} href={item.href} title={collapsed ? item.label : undefined} style={{
+        display: 'flex', alignItems: 'center', gap: collapsed ? 0 : '11px',
+        justifyContent: collapsed ? 'center' : 'flex-start',
+        padding: collapsed ? '11px 0' : '10px 14px', borderRadius: '10px', textDecoration: 'none',
         background: active ? 'var(--pf-card)' : 'transparent',
         color: active ? 'var(--pf-gold)' : 'var(--pf-faint)',
       }}>
         <span style={{ fontSize: '13px', lineHeight: 1, width: '18px', textAlign: 'center', flexShrink: 0 }}>{item.icon}</span>
-        <span style={{ fontFamily: 'var(--font-sans)', fontSize: '12.5px', letterSpacing: '0.04em' }}>{item.label}</span>
+        {!collapsed && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '12.5px', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{item.label}</span>}
       </a>
     )
   }
@@ -92,17 +99,22 @@ function Shell({ children }: { children: React.ReactNode }) {
     <AdminContext.Provider value={{ email }}>
       <div data-theme={theme} style={{ minHeight: '100vh', background: 'var(--pf-bg)', display: 'flex' }}>
         {!isMobile && (
-          <aside style={{ width: '236px', flexShrink: 0, background: 'var(--pf-nav)', borderRight: '1px solid var(--pf-border)', padding: '22px 16px', position: 'sticky', top: 0, height: '100vh', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <div style={{ padding: '0 6px' }}>{Logo}</div>
+          <aside style={{ width: collapsed ? '68px' : '236px', flexShrink: 0, background: 'var(--pf-nav)', borderRight: '1px solid var(--pf-border)', padding: collapsed ? '22px 10px' : '22px 16px', position: 'sticky', top: 0, height: '100vh', display: 'flex', flexDirection: 'column', gap: '20px', transition: 'width 0.25s cubic-bezier(0.22,1,0.36,1), padding 0.25s ease', overflow: 'hidden' }}>
+            <div style={{ padding: collapsed ? 0 : '0 6px', display: 'flex', justifyContent: collapsed ? 'center' : 'flex-start' }}>{Logo}</div>
             <nav style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>{NAV.map(navLink)}</nav>
-            <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid var(--pf-border)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-faint)', wordBreak: 'break-all' }}>{email}</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid var(--pf-border)', display: 'flex', flexDirection: 'column', gap: '12px', alignItems: collapsed ? 'center' : 'stretch' }}>
+              {!collapsed && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-faint)', wordBreak: 'break-all' }}>{email}</span>}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexDirection: collapsed ? 'column' : 'row' }}>
                 {ThemeButton}
-                <button onClick={signOut} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--pf-faint)', fontFamily: 'var(--font-sans)', fontSize: '11.5px', letterSpacing: '0.04em' }}>
-                  <span style={{ fontSize: '13px' }}>⎋</span> Sign out
+                <button onClick={signOut} title="Sign out" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--pf-faint)', fontFamily: 'var(--font-sans)', fontSize: '11.5px', letterSpacing: '0.04em' }}>
+                  <span style={{ fontSize: '13px' }}>⎋</span> {!collapsed && 'Sign out'}
                 </button>
               </div>
+              {/* Collapse toggle — reclaim the full width for the content. */}
+              <button onClick={toggleNav} aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
+                style={{ width: collapsed ? '30px' : '100%', height: '30px', borderRadius: '8px', border: '1px solid var(--pf-border)', background: 'transparent', color: 'var(--pf-faint)', cursor: 'pointer', fontSize: '12px' }}>
+                {collapsed ? '⟩' : '⟨'}
+              </button>
             </div>
           </aside>
         )}
@@ -118,7 +130,7 @@ function Shell({ children }: { children: React.ReactNode }) {
             </header>
           )}
 
-          <main className="pf-scroll" style={{ flex: 1, padding: isMobile ? '20px 18px 40px' : '30px 34px 52px', maxWidth: '1080px', width: '100%' }}>
+          <main className="pf-scroll" style={{ flex: 1, padding: isMobile ? '20px 18px 40px' : '30px 38px 52px', maxWidth: '1440px', width: '100%', margin: '0 auto' }}>
             {children}
           </main>
         </div>

@@ -240,6 +240,14 @@ body {
   background: linear-gradient(160deg, rgba(233,188,79,0.22), rgba(233,188,79,0.06) 55%, rgba(255,255,255,0.5));
   border-color: rgba(158,118,59,0.3);
 }
+/* Main + sticky right rail on wide screens — the feed lives beside the
+   numbers instead of below them. Single column under 1200px. */
+.pf-cols { display: grid; gap: 26px; grid-template-columns: 1fr; }
+@media (min-width: 1200px) {
+  .pf-cols { grid-template-columns: minmax(0, 1fr) 360px; align-items: start; }
+  .pf-rail { position: sticky; top: 24px; }
+}
+
 /* Card-shine sweep: a soft highlight travelling across gold surfaces. */
 @keyframes pfSheen { 0% { transform: translateX(-130%) skewX(-18deg); } 60%, 100% { transform: translateX(260%) skewX(-18deg); } }
 .pf-sheen { position: relative; overflow: hidden; }

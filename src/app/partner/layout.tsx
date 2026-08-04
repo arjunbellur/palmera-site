@@ -34,6 +34,10 @@ function Shell({ children }: { children: React.ReactNode }) {
   const [isMobile, setIsMobile] = useState(false)
   const [switcherOpen, setSwitcherOpen] = useState(false)
   const [pendingCount, setPendingCount] = useState(0)
+  // Collapsed = icon rail; full width for the content. Remembered per device.
+  const [collapsed, setCollapsed] = useState(false)
+  useEffect(() => { setCollapsed(localStorage.getItem('palmera.partner.nav') === 'collapsed') }, [])
+  const toggleNav = () => setCollapsed(c => { localStorage.setItem('palmera.partner.nav', c ? 'open' : 'collapsed'); return !c })
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 900)
@@ -120,12 +124,13 @@ function Shell({ children }: { children: React.ReactNode }) {
 
   const navLink = (item: typeof NAV[number], mobile: boolean) => {
     const active = pathname === item.href
+    const iconOnly = !mobile && collapsed
     return (
-      <a key={item.href} href={item.href} style={{
-        display: 'flex', alignItems: 'center', gap: mobile ? 0 : '11px',
+      <a key={item.href} href={item.href} title={iconOnly ? L(item.key) : undefined} style={{
+        display: 'flex', alignItems: 'center', gap: mobile || iconOnly ? 0 : '11px',
         flexDirection: mobile ? 'column' : 'row',
-        justifyContent: mobile ? 'center' : 'flex-start',
-        padding: mobile ? '9px 4px 7px' : '10px 14px', borderRadius: mobile ? 0 : '10px',
+        justifyContent: mobile || iconOnly ? 'center' : 'flex-start',
+        padding: mobile ? '9px 4px 7px' : iconOnly ? '11px 0' : '10px 14px', borderRadius: mobile ? 0 : '10px',
         textDecoration: 'none', flex: mobile ? 1 : undefined,
         background: !mobile && active ? 'var(--pf-card)' : 'transparent',
         color: active ? 'var(--pf-gold)' : 'var(--pf-faint)',
@@ -136,12 +141,12 @@ function Shell({ children }: { children: React.ReactNode }) {
         <span style={{ fontSize: mobile ? '15px' : '13px', lineHeight: 1, position: 'relative', width: mobile ? undefined : '18px', textAlign: mobile ? undefined : 'center', flexShrink: 0 }}>
           {item.icon}
           {/* Attention badge — the partner learns they're needed WITHOUT visiting the tab. */}
-          {item.key === 'nav_res' && pendingCount > 0 && mobile && (
+          {item.key === 'nav_res' && pendingCount > 0 && (mobile || collapsed) && (
             <span style={{ position: 'absolute', top: '-4px', right: '-8px', minWidth: '14px', height: '14px', borderRadius: '999px', background: 'var(--pf-gold)', color: '#0a0e18', fontSize: '9px', fontFamily: 'var(--font-sans)', display: 'grid', placeItems: 'center', padding: '0 3px', lineHeight: 1 }}>{pendingCount}</span>
           )}
         </span>
-        <span style={{ fontFamily: 'var(--font-sans)', fontSize: mobile ? '9.5px' : '12.5px', letterSpacing: '0.04em', marginTop: mobile ? '5px' : 0 }}>{L(item.key)}</span>
-        {item.key === 'nav_res' && pendingCount > 0 && !mobile && (
+        {!iconOnly && <span style={{ fontFamily: 'var(--font-sans)', fontSize: mobile ? '9.5px' : '12.5px', letterSpacing: '0.04em', marginTop: mobile ? '5px' : 0 }}>{L(item.key)}</span>}
+        {item.key === 'nav_res' && pendingCount > 0 && !mobile && !collapsed && (
           <span style={{ marginLeft: 'auto', minWidth: '18px', height: '18px', borderRadius: '999px', background: 'var(--pf-gold)', color: '#0a0e18', fontSize: '10px', fontFamily: 'var(--font-sans)', display: 'grid', placeItems: 'center', padding: '0 5px' }}>{pendingCount}</span>
         )}
       </a>
@@ -152,16 +157,20 @@ function Shell({ children }: { children: React.ReactNode }) {
     <PartnerContext.Provider value={{ uid, email, provider, companies, company, setCompanyId, locale, setLocale, refresh }}>
       <div data-theme={theme} style={{ minHeight: '100vh', background: 'var(--pf-bg)', display: 'flex' }}>
         {!isMobile && (
-          <aside style={{ width: '236px', flexShrink: 0, background: 'var(--pf-nav)', borderRight: '1px solid var(--pf-border)', padding: '22px 16px', position: 'sticky', top: 0, height: '100vh', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '0 6px' }}>
+          <aside style={{ width: collapsed ? '68px' : '236px', flexShrink: 0, background: 'var(--pf-nav)', borderRight: '1px solid var(--pf-border)', padding: collapsed ? '22px 10px' : '22px 16px', position: 'sticky', top: 0, height: '100vh', display: 'flex', flexDirection: 'column', gap: '20px', transition: 'width 0.25s cubic-bezier(0.22,1,0.36,1), padding 0.25s ease', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: collapsed ? 0 : '0 6px', justifyContent: collapsed ? 'center' : 'flex-start' }}>
               <img src="/images/PALMERA_cracked.png" alt="" width={24} height={24} style={{ objectFit: 'contain' }} />
-              <span style={{ fontFamily: 'var(--font-display)', color: 'var(--pf-head)', fontSize: '14px', letterSpacing: '0.12em' }}>PALMERA</span>
+              {!collapsed && <span style={{ fontFamily: 'var(--font-display)', color: 'var(--pf-head)', fontSize: '14px', letterSpacing: '0.12em' }}>PALMERA</span>}
             </div>
             <nav style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>{NAV.map(n => navLink(n, false))}</nav>
-            <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid var(--pf-border)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {CompanyPill}
-              <button onClick={signOut} style={{ display: 'flex', alignItems: 'center', gap: '9px', background: 'transparent', border: 'none', padding: '2px 0', cursor: 'pointer', color: 'var(--pf-faint)', fontFamily: 'var(--font-sans)', fontSize: '11.5px', letterSpacing: '0.04em' }}>
-                <span style={{ fontSize: '13px' }}>⎋</span> {L('signout')}
+            <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid var(--pf-border)', display: 'flex', flexDirection: 'column', gap: '14px', alignItems: collapsed ? 'center' : 'stretch' }}>
+              {!collapsed && CompanyPill}
+              <button onClick={signOut} title={L('signout')} style={{ display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start', gap: '9px', background: 'transparent', border: 'none', padding: '2px 0', cursor: 'pointer', color: 'var(--pf-faint)', fontFamily: 'var(--font-sans)', fontSize: '11.5px', letterSpacing: '0.04em' }}>
+                <span style={{ fontSize: '13px' }}>⎋</span> {!collapsed && L('signout')}
+              </button>
+              <button onClick={toggleNav} aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
+                style={{ width: collapsed ? '30px' : '100%', height: '30px', borderRadius: '8px', border: '1px solid var(--pf-border)', background: 'transparent', color: 'var(--pf-faint)', cursor: 'pointer', fontSize: '12px' }}>
+                {collapsed ? '⟩' : '⟨'}
               </button>
             </div>
           </aside>
@@ -187,7 +196,7 @@ function Shell({ children }: { children: React.ReactNode }) {
             </div>
           </header>
 
-          <main className="pf-scroll" style={{ flex: 1, padding: isMobile ? '20px 18px 84px' : '30px 34px 52px', maxWidth: '1080px', width: '100%' }}>
+          <main className="pf-scroll" style={{ flex: 1, padding: isMobile ? '20px 18px 84px' : '30px 38px 52px', maxWidth: '1280px', width: '100%', margin: '0 auto' }}>
             {children}
           </main>
 

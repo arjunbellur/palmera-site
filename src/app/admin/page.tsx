@@ -153,6 +153,10 @@ export default function AdminOverview() {
         <span style={{ marginTop: '4px' }}><Chip tone="green">● Live</Chip></span>
       </div>
 
+      {/* Wide screens: numbers in the main column, the live feed + actions on
+          a sticky right rail (pf-cols in globals.css). Single column <1200px. */}
+      <div className="pf-cols">
+      <div style={{ minWidth: 0 }}>
       {/* App growth */}
       <SectionTitle>App</SectionTitle>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '12px' }}>
@@ -181,6 +185,9 @@ export default function AdminOverview() {
         </div>
       </div>
 
+      </div>
+
+      <div className="pf-rail" style={{ minWidth: 0 }}>
       {/* Pending actions */}
       {actions.length > 0 && (
         <>
@@ -235,6 +242,8 @@ export default function AdminOverview() {
           ))}
         </div>
       )}
+      </div>
+      </div>
     </div>
   )
 }
