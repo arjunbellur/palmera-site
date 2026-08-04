@@ -386,3 +386,28 @@ export interface Payout {
   createdAt: TS
   updatedAt: TS
 }
+
+// ── App-side (Samson's collections) — display-only types for /admin ──────
+// snake_case matches what the app writes; the dashboard never writes these.
+export interface AppProfile {
+  id?: string // uid
+  name?: string
+  handle?: string
+  city?: string
+  phone?: string
+  instagram?: string
+  avatar_url?: string
+  points?: number
+  annual_points?: number
+  is_plus?: boolean
+  created_at?: unknown
+}
+
+/** Loose shape for the rest of the app collections (moments, favorites,
+ *  friends, points_ledger…) — read via lib/analytics normalizers. */
+export interface AppDoc {
+  id?: string
+  user_id?: string
+  created_at?: unknown
+  [key: string]: unknown
+}

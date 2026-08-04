@@ -11,7 +11,8 @@ import { Chip } from '@/components/partner/ui'
 import { AdminContext } from './AdminContext'
 
 const NAV = [
-  { href: '/admin', icon: '▤', label: 'Directory' },
+  { href: '/admin', icon: '⌂', label: 'Overview' },
+  { href: '/admin/directory', icon: '▤', label: 'Directory' },
 ] as const
 
 function Shell({ children }: { children: React.ReactNode }) {
@@ -68,9 +69,10 @@ function Shell({ children }: { children: React.ReactNode }) {
   )
 
   const navLink = (item: typeof NAV[number]) => {
+    // Company detail pages belong to the Directory's world.
     const active = item.href === '/admin'
-      ? (pathname === '/admin' || pathname.startsWith('/admin/companies'))
-      : pathname.startsWith(item.href)
+      ? pathname === '/admin'
+      : pathname.startsWith(item.href) || (item.href === '/admin/directory' && pathname.startsWith('/admin/companies'))
     return (
       <a key={item.href} href={item.href} style={{
         display: 'flex', alignItems: 'center', gap: '11px', justifyContent: 'flex-start',

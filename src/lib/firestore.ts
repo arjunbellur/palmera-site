@@ -20,6 +20,7 @@ import {
   type Company, type CompanyPrivateAdmin,
   type Experience, type Option, type OptionGroup,
   type Booking, type LedgerEntry, type Payout, type CompanyPayoutProfile,
+  type AppProfile, type AppDoc,
 } from './schema'
 
 // ── Listing types ─────────────────────────────────────────────────
@@ -362,6 +363,60 @@ export const subscribeAllCompanies = (cb: (cs: Company[]) => void): (() => void)
   onSnapshot(collection(db, COLLECTIONS.companies),
     (snap) => cb(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Company) }))),
     (e) => { console.error('subscribeAllCompanies failed:', e); cb([]) },
+  )
+
+// ── Admin analytics reads ─────────────────────────────────────────────────
+// The /admin hub reads the APP's collections (Samson's side: profiles,
+// moments, points…) purely for display. All snake_case fields, all readable
+// under the app's existing signedIn() rules — NO rules change involved, and
+// nothing here ever writes. Full-collection reads at current scale (<200
+// docs); revisit with server aggregation if a collection passes ~2k docs.
+
+const readAll = async <T extends { id?: string }>(name: string): Promise<T[]> => {
+  try {
+    const snap = await getDocs(collection(db, name))
+    return snap.docs.map((d) => ({ id: d.id, ...(d.data() as object) })) as T[]
+  } catch (e) {
+    console.error(`readAll(${name}) failed:`, e)
+    return []
+  }
+}
+
+export const getAppProfiles = () => readAll<AppProfile>('profiles')
+export const getAppMoments = () => readAll<AppDoc>('moments')
+export const getAppMomentLikes = () => readAll<AppDoc>('moment_likes')
+export const getAppMomentComments = () => readAll<AppDoc>('moment_comments')
+export const getAppFriends = () => readAll<AppDoc>('friends')
+export const getAppFavorites = () => readAll<AppDoc>('favorites')
+export const getAppReviews = () => readAll<AppDoc>('reviews')
+export const getAppPointsLedger = () => readAll<AppDoc>('points_ledger')
+export const getAppChatThreads = () => readAll<AppDoc>('chat_threads')
+export const getAppChatMessages = () => readAll<AppDoc>('chat_messages')
+
+/** LIVE app-user roster for the admin Pulse — a signup appears the moment
+ *  the app writes the profile. */
+export const subscribeAppProfiles = (cb: (ps: AppProfile[]) => void): (() => void) =>
+  onSnapshot(collection(db, 'profiles'),
+    (snap) => cb(snap.docs.map((d) => ({ id: d.id, ...(d.data() as object) })) as AppProfile[]),
+    (e) => { console.error('subscribeAppProfiles failed:', e); cb([]) },
+  )
+
+/** Every booking across all partners (admin read rule). Consumers filter
+ *  malformed legacy docs through isRealBooking() from lib/analytics. */
+export const getAllBookingsAdmin = async (): Promise<Booking[]> => {
+  try {
+    const snap = await getDocs(collection(db, COLLECTIONS.bookings))
+    return snap.docs.map((d) => ({ id: d.id, ...(d.data() as object) })) as Booking[]
+  } catch (e) {
+    console.error('getAllBookingsAdmin failed:', e)
+    return []
+  }
+}
+
+export const subscribeAllBookings = (cb: (bs: Booking[]) => void): (() => void) =>
+  onSnapshot(collection(db, COLLECTIONS.bookings),
+    (snap) => cb(snap.docs.map((d) => ({ id: d.id, ...(d.data() as object) })) as Booking[]),
+    (e) => { console.error('subscribeAllBookings failed:', e); cb([]) },
   )
 
 export const getAllCompanies = async (): Promise<Company[]> => {
