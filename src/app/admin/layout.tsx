@@ -12,6 +12,7 @@ import { AdminContext } from './AdminContext'
 
 const NAV = [
   { href: '/admin', icon: '⌂', label: 'Overview' },
+  { href: '/admin/app', icon: '◉', label: 'App' },
   { href: '/admin/directory', icon: '▤', label: 'Directory' },
 ] as const
 
