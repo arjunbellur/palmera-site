@@ -46,3 +46,19 @@ export function RankPills({ items }: { items: BarDatum[] }) {
     </div>
   )
 }
+
+/** Radial completion gauge — conic-gradient donut with a center readout. */
+export function Donut({ percent, label, sub }: { percent: number; label: string; sub?: string }) {
+  const p = Math.max(0, Math.min(100, percent))
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
+      <div style={{ width: '92px', height: '92px', borderRadius: '50%', flexShrink: 0, background: `conic-gradient(var(--pf-gold) ${p * 3.6}deg, var(--pf-border) 0deg)`, display: 'grid', placeItems: 'center' }}>
+        <div style={{ width: '66px', height: '66px', borderRadius: '50%', background: 'var(--pf-card-solid)', display: 'grid', placeItems: 'center', fontFamily: 'var(--font-display)', fontSize: '17px', color: 'var(--pf-text)' }}>{Math.round(p)}%</div>
+      </div>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--pf-faint)' }}>{label}</div>
+        {sub && <div style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-muted)', marginTop: '5px', lineHeight: 1.5 }}>{sub}</div>}
+      </div>
+    </div>
+  )
+}

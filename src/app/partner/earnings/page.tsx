@@ -10,6 +10,7 @@ import { getBookingsByCompany, getLedgerByProvider, getPayoutsByProvider } from 
 import type { Booking, LedgerEntry, LedgerEntryType, Payout, PayoutStatus } from '@/lib/schema'
 import { formatAmount, formatDate, toDate } from '@/lib/money'
 import { ScreenHeader, Money, EmptyState, SectionTitle, Skeleton, card, eyebrow } from '@/components/partner/ui'
+import { BarChart, RankPills } from '@/components/charts'
 
 const PAYOUT_COLOR: Record<PayoutStatus, string> = {
   scheduled: 'var(--pf-gold)', processing: 'var(--pf-gold)', paid: 'var(--pf-success)', failed: 'var(--pf-alert)',
@@ -117,7 +118,6 @@ export default function EarningsScreen() {
   const byTitle = new Map<string, number>()
   bookings.filter(b => b.status === 'completed').forEach(b => byTitle.set(b.title, (byTitle.get(b.title) || 0) + (b.payoutAmount || 0)))
   const revBars = [...byTitle.entries()].map(([label, val]) => ({ label, val })).sort((a, b) => b.val - a.val).slice(0, 4)
-  const revMax = Math.max(...revBars.map(r => r.val), 1)
   const hasData = chartMax > 0 || revBars.length > 0
 
   const h3: React.CSSProperties = { margin: '0 0 12px', fontFamily: 'var(--font-display)', fontSize: '1.125rem', fontWeight: 400, letterSpacing: '0.03em', color: 'var(--pf-head)' }
@@ -185,38 +185,15 @@ export default function EarningsScreen() {
           {chartMax > 0 && (
             <div style={{ marginTop: '22px' }}>
               <h3 style={h3}>{L('chart_title')}</h3>
-              <div style={{ padding: '20px 18px 14px', borderRadius: '18px', background: 'var(--pf-card)', border: '1px solid var(--pf-border)' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px' }}>
-                  {chart.map(c => (
-                    <div key={c.key} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '7px' }}>
-                      {c.val > 0 && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '9.5px', color: 'var(--pf-gold)' }}>{formatAmount(c.val)}</span>}
-                      <div style={{ height: '96px', width: '100%', maxWidth: '46px', display: 'flex', alignItems: 'flex-end' }}>
-                        <div className="pf-bar" style={{ width: '100%', height: `${Math.max((c.val / chartMax) * 100, c.val > 0 ? 6 : 2)}%`, borderRadius: '9px 9px 4px 4px', background: c.val > 0 ? 'linear-gradient(180deg, var(--pf-gold), var(--pf-gold-deep))' : 'var(--pf-border)' }} />
-                      </div>
-                      <span style={{ fontFamily: 'var(--font-sans)', fontSize: '8.5px', letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--pf-faint)', whiteSpace: 'nowrap' }}>{c.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              {/* Shared kit — same markup this page pioneered, one source of truth. */}
+              <BarChart data={chart.map(c => ({ label: c.label, value: c.val, display: formatAmount(c.val) }))} />
             </div>
           )}
 
           {revBars.length > 0 && (
             <div style={{ marginTop: '22px' }}>
               <h3 style={h3}>{L('rev_title')}</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                {revBars.map(b => (
-                  <div key={b.label}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '7px' }}>
-                      <span style={{ fontFamily: 'var(--font-serif)', fontSize: '14.5px', color: 'var(--pf-text)' }}>{b.label}</span>
-                      <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-gold)' }}>{formatAmount(b.val)} XOF</span>
-                    </div>
-                    <div style={{ height: '30px', borderRadius: '20px', background: 'var(--pf-card)', border: '1px solid var(--pf-border)', overflow: 'hidden' }}>
-                      <div className="pf-pill" style={{ height: '100%', width: `${Math.max((b.val / revMax) * 100, 4)}%`, borderRadius: '20px', background: 'linear-gradient(90deg, var(--pf-gold-deep), var(--pf-gold))' }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <RankPills items={revBars.map(b => ({ label: b.label, value: b.val, display: `${formatAmount(b.val)} XOF` }))} />
             </div>
           )}
         </>
