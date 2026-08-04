@@ -168,13 +168,10 @@ function AdminDirectory() {
         <span style={{ marginTop: '4px' }}><Chip tone="green">● Live</Chip></span>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '20px' }}>
-        <CountTile label="Partners" value={providers.length} />
-        <CountTile label="Graduated" value={graduated} />
-        <CountTile label="Agreement missing" value={unsignedCount} tone={unsignedCount > 0 ? 'gold' : undefined} />
-        <CountTile label="Suspended" value={suspendedCount} tone={suspendedCount > 0 ? 'alert' : undefined} />
-      </div>
-
+      {/* Composition: the directory list is the working column; the stat
+          tiles ride the sticky rail on wide screens (single column below). */}
+      <div className="pf-cols">
+      <div style={{ minWidth: 0 }}>
       {/* Search + filter chips — all mirrored in the URL */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '18px' }}>
         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search partner, email, or company…"
@@ -256,6 +253,18 @@ function AdminDirectory() {
           })}
         </div>
       )}
+
+      </div>
+
+      <div className="pf-rail" style={{ minWidth: 0 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '12px' }}>
+          <CountTile icon="◎" label="Partners" value={providers.length} />
+          <CountTile icon="✓" label="Graduated" value={graduated} />
+          <CountTile icon="✎" label="Agreement missing" value={unsignedCount} tone={unsignedCount > 0 ? 'gold' : undefined} />
+          <CountTile icon="◷" label="Suspended" value={suspendedCount} tone={suspendedCount > 0 ? 'alert' : undefined} />
+        </div>
+      </div>
+      </div>
 
       {toDeleteProvider && (
         <ConfirmDialog
