@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef } from 'react'
+import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import { onScrollFrame } from '@/lib/scroll-bus'
 
@@ -54,8 +55,8 @@ export default function Destinations({ locale }: { locale: string }) {
               }}>
 
               {/* Background image */}
-              <img src={dest.image} alt={`${dest.city}, ${countryName}`} loading="lazy"
-                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+              <Image src={dest.image} alt={`${dest.city}, ${countryName}`} fill sizes="100vw"
+                style={{ objectFit: 'cover' }} />
 
               {/* Dark overlay — matches original Webflow site ~48% opacity */}
               <div style={{

@@ -242,7 +242,7 @@ export default function SettingsScreen() {
       <div className="pf-glass" style={cardShape}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <span style={{ width: '46px', height: '46px', borderRadius: '13px', background: 'var(--pf-green-soft)', color: 'var(--pf-gold)', display: 'grid', placeItems: 'center', fontFamily: 'var(--font-display)', fontSize: '19px', flexShrink: 0, overflow: 'hidden' }}>
-            {logo ? <img src={logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (provider?.fullName || email || '?').charAt(0).toUpperCase()}
+            {logo ? <img loading="lazy" decoding="async" src={logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (provider?.fullName || email || '?').charAt(0).toUpperCase()}
           </span>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '15px' }}>{provider?.fullName || (locale === 'fr' ? 'Votre nom' : 'Your name')}</div>

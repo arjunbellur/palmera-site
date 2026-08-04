@@ -70,7 +70,7 @@ export default function PhotoUpload({ uid, label, fieldName, existingUrl, onUplo
       >
         {preview ? (
           <>
-            <img src={preview} alt={label} style={{ maxHeight: '7.5rem', maxWidth: '100%', borderRadius: '0.25rem', objectFit: 'cover' }} />
+            <img loading="lazy" decoding="async" src={preview} alt={label} style={{ maxHeight: '7.5rem', maxWidth: '100%', borderRadius: '0.25rem', objectFit: 'cover' }} />
             <span style={{ fontSize: '0.6875rem', color: 'var(--accent-4)', fontFamily: 'var(--font-sans)' }}>{s.replace}</span>
           </>
         ) : uploading ? (

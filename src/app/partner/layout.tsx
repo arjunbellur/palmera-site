@@ -112,7 +112,7 @@ function Shell({ children }: { children: React.ReactNode }) {
     <button onClick={() => setSwitcherOpen(true)}
       style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}>
       <span style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'var(--pf-green-soft)', color: 'var(--pf-gold)', display: 'grid', placeItems: 'center', fontFamily: 'var(--font-display)', fontSize: '15px', flexShrink: 0, overflow: 'hidden' }}>
-        {company?.logo ? <img src={company.logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initial}
+        {company?.logo ? <img loading="lazy" decoding="async" src={company.logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initial}
       </span>
       <span style={{ minWidth: 0 }}>
         <span style={{ display: 'block', fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '13.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{company?.name || 'Company'}</span>
@@ -159,7 +159,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         {!isMobile && (
           <aside style={{ width: collapsed ? '68px' : '236px', flexShrink: 0, background: 'var(--pf-nav)', borderRight: '1px solid var(--pf-border)', padding: collapsed ? '22px 10px' : '22px 16px', position: 'sticky', top: 0, height: '100vh', display: 'flex', flexDirection: 'column', gap: '20px', transition: 'width 0.25s cubic-bezier(0.22,1,0.36,1), padding 0.25s ease', overflow: 'hidden' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: collapsed ? 0 : '0 6px', justifyContent: collapsed ? 'center' : 'flex-start' }}>
-              <img src="/images/PALMERA_cracked.png" alt="" width={24} height={24} style={{ objectFit: 'contain' }} />
+              <img loading="lazy" decoding="async" src="/images/PALMERA_cracked.png" alt="" width={24} height={24} style={{ objectFit: 'contain' }} />
               {!collapsed && <span style={{ fontFamily: 'var(--font-display)', color: 'var(--pf-head)', fontSize: '14px', letterSpacing: '0.12em' }}>PALMERA</span>}
             </div>
             <nav style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>{NAV.map(n => navLink(n, false))}</nav>

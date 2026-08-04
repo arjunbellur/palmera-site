@@ -62,7 +62,7 @@ function Shell({ children }: { children: React.ReactNode }) {
 
   const Logo = (
     <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
-      <img src="/images/PALMERA_cracked.png" alt="" width={24} height={24} style={{ objectFit: 'contain' }} />
+      <img loading="lazy" decoding="async" src="/images/PALMERA_cracked.png" alt="" width={24} height={24} style={{ objectFit: 'contain' }} />
       {(!collapsed || isMobile) && <>
         <span style={{ fontFamily: 'var(--font-display)', color: 'var(--pf-head)', fontSize: '14px', letterSpacing: '0.12em' }}>PALMERA</span>
         <Chip tone="gold">Admin</Chip>

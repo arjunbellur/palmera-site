@@ -55,7 +55,7 @@ export default function GalleryUpload({ uid, value, onChange, max = 12 }: Galler
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 9rem), 1fr))', gap: '0.75rem' }}>
         {value.map((url, i) => (
           <div key={`${url}-${i}`} style={{ ...tile, position: 'relative' }}>
-            <img src={url} alt={`Gallery ${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            <img loading="lazy" decoding="async" src={url} alt={`Gallery ${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
             <button onClick={() => removeAt(i)} aria-label={`Remove photo ${i + 1}`}
               style={{ position: 'absolute', top: '0.375rem', right: '0.375rem', width: '1.5rem', height: '1.5rem', borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,0.55)', color: '#fff', fontSize: '0.9375rem', lineHeight: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
           </div>

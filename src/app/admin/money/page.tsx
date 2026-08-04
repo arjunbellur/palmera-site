@@ -224,7 +224,7 @@ function AdminMoney() {
               <div key={b.id} className="pf-note" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', animationDelay: `${Math.min(i * 30, 400)}ms` }}>
                 <span style={{ width: '36px', height: '36px', borderRadius: '12px', background: 'var(--pf-green-soft)', border: '1px solid var(--pf-border-strong)', color: 'var(--pf-gold)', display: 'grid', placeItems: 'center', fontSize: '13px', flexShrink: 0, overflow: 'hidden' }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  {byId.get(b.customerId)?.avatar_url ? <img src={byId.get(b.customerId)!.avatar_url!} alt="" style={{ width: '36px', height: '36px', objectFit: 'cover', display: 'block' }} /> : '▤'}
+                  {byId.get(b.customerId)?.avatar_url ? <img loading="lazy" decoding="async" src={byId.get(b.customerId)!.avatar_url!} alt="" style={{ width: '36px', height: '36px', objectFit: 'cover', display: 'block' }} /> : '▤'}
                 </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontFamily: 'var(--font-sans)', color: 'var(--pf-text)', fontSize: '12.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

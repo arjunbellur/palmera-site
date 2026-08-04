@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef } from 'react'
+import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import { onScrollFrame } from '@/lib/scroll-bus'
 import { useViewport } from '@/lib/use-viewport'
@@ -138,7 +139,7 @@ export default function BaseSection() {
                 borderRadius: '8px',
                 overflow: 'hidden', willChange: 'transform, opacity', zIndex: 1,
               }}>
-              <img src={p.src} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              <Image src={p.src} alt="" fill sizes="(max-width: 900px) 60vw, 30vw" style={{ objectFit: 'cover' }} />
             </div>
           )
         })}

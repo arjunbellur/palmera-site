@@ -1,5 +1,6 @@
 'use client'
 import { useTranslations } from 'next-intl'
+import Image from 'next/image'
 import { useViewport } from '@/lib/use-viewport'
 import { useState, useEffect, useRef } from 'react'
 
@@ -34,8 +35,8 @@ function MobileCarousel() {
       <a href="https://form.typeform.com/to/xo1Bskym" target="_blank" rel="noopener noreferrer"
         style={{ display: 'block', textDecoration: 'none', width: 'min(72vw, 260px)', position: 'relative' }}>
         {MOCKS.map((m, i) => (
-          <img key={m.src} src={m.src} alt={m.alt} loading="lazy"
-            style={{
+          <Image key={m.src} src={m.src} alt={m.alt} width={850} height={1851} sizes="(max-width: 900px) 72vw, 260px"
+            style={{ height: 'auto',
               width: '100%', display: 'block',
               position: i === 0 ? 'relative' : 'absolute',
               top: 0, left: 0,
@@ -99,8 +100,8 @@ export default function Stats() {
             {MOCKS.map(mock => (
               <a key={mock.src} href="https://form.typeform.com/to/xo1Bskym" target="_blank" rel="noopener noreferrer"
                 style={{ display: 'block', perspective: '62.5rem', textDecoration: 'none' }}>
-                <img src={mock.src} alt={mock.alt} loading="lazy"
-                  style={{ width: '100%', display: 'block', transform: `translate3d(0, 3.125rem, 0) rotateY(${mock.rotateY})`, transformStyle: 'preserve-3d', transition: 'transform 0.5s ease' }}
+                <Image src={mock.src} alt={mock.alt} width={850} height={1851} sizes="(max-width: 900px) 40vw, 15rem"
+                  style={{ width: '100%', height: 'auto', display: 'block', transform: `translate3d(0, 3.125rem, 0) rotateY(${mock.rotateY})`, transformStyle: 'preserve-3d', transition: 'transform 0.5s ease' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLImageElement).style.transform = `translate3d(0, 1.25rem, 0) rotateY(${mock.rotateY})` }}
                   onMouseLeave={e => { (e.currentTarget as HTMLImageElement).style.transform = `translate3d(0, 3.125rem, 0) rotateY(${mock.rotateY})` }} />
               </a>

@@ -14,7 +14,7 @@ export default function DashboardNav({ email, locale = 'fr' }: { email?: string;
   return (
     <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, height: '4rem', background: 'var(--db-bg-nav)', borderBottom: '1px solid var(--db-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 2rem', zIndex: 100 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-        <img src="/images/PALMERA_cracked.png" alt="Palmera" width={32} height={32} style={{ objectFit: 'contain' }} />
+        <img loading="lazy" decoding="async" src="/images/PALMERA_cracked.png" alt="Palmera" width={32} height={32} style={{ objectFit: 'contain' }} />
         <span style={{ fontFamily: 'var(--font-display)', color: 'var(--db-text)', fontSize: '1.125rem', letterSpacing: '0.1em' }}>PALMERA</span>
         <span style={{ color: 'rgba(190,154,86,0.5)', fontSize: '0.8125rem', marginLeft: '0.25rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.04em' }}>{portalLabel}</span>
       </div>

@@ -1,5 +1,6 @@
 'use client'
 import{useEffect,useRef}from 'react'
+import Image from 'next/image'
 import{useTranslations}from 'next-intl'
 const IMGS=['/images/gbenga-onalaja-bZC_VAVhoQE-unsplash.jpg','/images/paul-macallan-CFKksjYRSQ8-unsplash.jpg','/images/ed-wingate-ZMIdqdsbP2U-unsplash-min.jpg','/images/redcharlie-nf7W_hn6DKQ-unsplash-min.jpg','/images/priscilla-du-preez-W3SEyZODn8U-unsplash-min.jpg','/images/gilles-de-muynck-PtJDCD4fTI4-unsplash.jpg','/images/chaz-mcgregor-THXYw7ysYus-unsplash.jpg','/images/bas-van-den-eijkhof-w_O7qjB9ZVY-unsplash.jpg','/images/aliunix-NI265AcvQZs-unsplash-1.jpg','/images/ton-toan-dxwt8veyBzQ-unsplash.jpg','/images/konrad-bachusz--tpKv0goE94-unsplash.jpg','/images/haven-xie-IoTTc6Z5lTM-unsplash.jpg','/images/mike-swigunski-H9mQC5pNzP0-unsplash.jpg','/images/marek-okon-v2nO45qoGU0-unsplash.jpg','/images/bruno-ngarukiye-2qCs8eel2qI-unsplash.jpg','/images/bruno-ngarukiye-P7K8gBPNMUc-unsplash.jpg','/images/thomas-ashlock-RAjND0B3HDw-unsplash.jpg','/images/manuel-moreno-DGa0LQ0yDPc-unsplash.jpg','/images/tobias-tullius-XZOO6QHub60-unsplash.jpg','/images/upgraded-points-uu5Z7cx2PdA-unsplash.jpg']
 export default function AppSection(){
@@ -31,7 +32,7 @@ return()=>{style.remove();ring.classList.remove('ring-active')}
 },[])
 return(<section id="signal" style={{background:'transparent',height:'120vh',display:'flex',alignItems:'center',justifyContent:'center',position:'relative',overflow:'hidden'}}>
 <div ref={ringRef} style={{position:'absolute',inset:0,pointerEvents:'none'}}>
-{IMGS.map((src,i)=>(<div key={i} className="ci" style={{borderRadius:'0.75rem',overflow:'hidden',boxShadow:'0 0.25rem 1.5rem rgba(42,33,25,0.2)'}}><img src={src} alt="" loading="lazy" style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/></div>))}
+{IMGS.map((src,i)=>(<div key={i} className="ci" style={{borderRadius:'0.75rem',overflow:'hidden',boxShadow:'0 0.25rem 1.5rem rgba(42,33,25,0.2)',position:'relative'}}><Image src={src} alt="" fill sizes="(max-width: 900px) 50vw, 20rem" style={{objectFit:'cover'}}/></div>))}
 </div>
 <div style={{position:'relative',zIndex:2,textAlign:'center',maxWidth:'min(28rem,calc(100% - clamp(3rem,6vw,6rem)))',padding:'clamp(1.5rem,2.5vw,2rem) clamp(1.25rem,3vw,2.5rem)',borderRadius:'1rem',background:'rgba(235,232,219,0.88)',backdropFilter:'blur(10px)',WebkitBackdropFilter:'blur(10px)'}}>
 <p style={{fontFamily:'var(--font-mono)',fontSize:'0.6875rem',letterSpacing:'0.18em',textTransform:'uppercase',color:'rgba(42,33,25,0.6)',marginBottom:'1rem'}}>{t('stepInside')}</p>

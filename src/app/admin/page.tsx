@@ -223,7 +223,7 @@ export default function AdminOverview() {
               <div style={{ position: 'relative', flexShrink: 0 }}>
                 <span style={{ width: '36px', height: '36px', borderRadius: '12px', background: 'var(--pf-green-soft)', border: '1px solid var(--pf-border-strong)', color: 'var(--pf-gold)', display: 'grid', placeItems: 'center', fontSize: '14px', overflow: 'hidden' }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  {a.avatar ? <img src={a.avatar} alt="" style={{ width: '36px', height: '36px', objectFit: 'cover', display: 'block' }} /> : a.icon}
+                  {a.avatar ? <img loading="lazy" decoding="async" src={a.avatar} alt="" style={{ width: '36px', height: '36px', objectFit: 'cover', display: 'block' }} /> : a.icon}
                 </span>
                 {/* Event badge on the avatar corner — the notification tell. */}
                 <span style={{ position: 'absolute', right: '-4px', bottom: '-4px', width: '16px', height: '16px', borderRadius: '6px', background: 'var(--pf-gold-deep)', color: '#0a0e18', display: 'grid', placeItems: 'center', fontSize: '8.5px', border: '2px solid var(--pf-card-solid)' }}>{a.icon}</span>

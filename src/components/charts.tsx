@@ -40,7 +40,7 @@ export function RankPills({ items }: { items: BarDatum[] }) {
             <span style={{ display: 'flex', alignItems: 'center', gap: '9px', minWidth: 0 }}>
               {b.img && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={b.img} alt="" style={{ width: '24px', height: '24px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0, border: '1px solid var(--pf-border-strong)', boxShadow: '0 0 10px rgba(190,154,86,0.25)' }} />
+                <img loading="lazy" decoding="async" src={b.img} alt="" style={{ width: '24px', height: '24px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0, border: '1px solid var(--pf-border-strong)', boxShadow: '0 0 10px rgba(190,154,86,0.25)' }} />
               )}
               <span style={{ fontFamily: 'var(--font-serif)', fontSize: '14.5px', color: 'var(--pf-text)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.label}</span>
             </span>
