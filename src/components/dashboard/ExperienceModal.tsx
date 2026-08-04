@@ -336,7 +336,8 @@ function ChoiceCards<T extends string>({ value, onChange, options }: {
         const active = value === o.v
         return (
           <button key={o.v} onClick={() => onChange(o.v)}
-            style={{ textAlign: 'left', padding: '0.875rem 1rem', borderRadius: '0.5rem', cursor: 'pointer', transition: 'border-color 0.15s, background 0.15s', border: `1.5px solid ${active ? '#be9a56' : 'var(--db-border-subtle)'}`, background: active ? 'rgba(190,154,86,0.1)' : 'var(--db-bg-card)' }}>
+            className={active ? 'pf-glass pf-glass-gold' : 'pf-glass'}
+            style={{ textAlign: 'left', padding: '0.875rem 1rem', borderRadius: '0.5rem', cursor: 'pointer' }}>
             <div style={{ fontSize: '1rem', marginBottom: '0.375rem', color: active ? '#be9a56' : 'var(--db-text-faint)' }}>{o.icon}</div>
             <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', color: active ? '#be9a56' : 'var(--db-text)', marginBottom: o.desc ? '0.25rem' : 0 }}>{o.label}</div>
             {o.desc && <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6875rem', color: 'var(--db-text-ghost)', lineHeight: 1.45 }}>{o.desc}</div>}
@@ -700,7 +701,8 @@ export default function ExperienceModal({ providerId, companyId, companyName, de
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 13rem), 1fr))', gap: '0.625rem', marginBottom: '1.125rem' }}>
               {([['choice', T.ao_card_choice_t, T.ao_card_choice_d, '◉'], ['extras', T.ao_card_extras_t, T.ao_card_extras_d, '✚']] as [SetKind, string, string, string][]).map(([k, ct, cd, icon]) => (
                 <button key={k} onClick={() => addGroupNamed(k, '')}
-                  style={{ textAlign: 'left', padding: '1rem', borderRadius: '0.5rem', cursor: 'pointer', border: '1.5px solid var(--db-border-subtle)', background: 'var(--db-bg-card)', transition: 'border-color 0.15s' }}>
+                  className="pf-glass"
+                  style={{ textAlign: 'left', padding: '1rem', borderRadius: '0.5rem', cursor: 'pointer' }}>
                   <div style={{ fontSize: '1.125rem', color: '#be9a56', marginBottom: '0.375rem' }}>{icon}</div>
                   <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.875rem', color: 'var(--db-text)', marginBottom: '0.25rem' }}>{ct}</div>
                   <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6875rem', color: 'var(--db-text-ghost)', lineHeight: 1.5 }}>{cd}</div>
@@ -724,7 +726,7 @@ export default function ExperienceModal({ providerId, companyId, companyName, de
             {groups.map((g) => {
               const kind = kindOf(g)
               return (
-              <div key={g.id} style={{ background: 'var(--db-bg-card)', border: '1px solid var(--db-border-subtle)', borderRadius: '0.5rem', padding: '1rem', marginBottom: '0.875rem' }}>
+              <div key={g.id} className="pf-glass" style={{ borderRadius: '0.5rem', padding: '1rem', marginBottom: '0.875rem' }}>
                 {/* The kind stays a visible two-card pick — same cards as the
                     empty state, same idiom as every other wizard step. Tapping
                     the other card switches; the guest preview below flips

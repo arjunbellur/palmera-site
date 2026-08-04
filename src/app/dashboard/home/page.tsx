@@ -96,7 +96,7 @@ export default function DashboardHome() {
       </div>
 
       {companies.length === 0 ? (
-        <div style={{ background: 'var(--db-bg-card)', border: '1px dashed var(--db-border-dashed)', borderRadius: '0.625rem', padding: '3rem 2rem', textAlign: 'center' }}>
+        <div className="pf-glass" style={{ borderRadius: '0.625rem', padding: '3rem 2rem', textAlign: 'center' }}>
           <p style={{ fontFamily: 'var(--font-serif)', color: 'var(--db-text-faint)', fontSize: '1.0625rem', margin: '0 0 0.5rem' }}>{s.noneTitle}</p>
           <p style={{ fontFamily: 'var(--font-sans)', color: 'var(--db-text-ghost)', fontSize: '0.8125rem', margin: '0 0 1.5rem' }}>{s.noneBody}</p>
           <a href="/dashboard/companies/new" style={addBtn}>{s.addFirst}</a>
@@ -108,7 +108,8 @@ export default function DashboardHome() {
             const pct = Math.round((done / COMPLETENESS_KEYS.length) * 100)
             return (
               <a key={c.id} href={`/dashboard/companies/${c.id}`}
-                style={{ display: 'block', textDecoration: 'none', background: 'var(--db-bg-card)', border: '1px solid var(--db-border-subtle)', borderRadius: '0.5rem', padding: '1.25rem 1.375rem' }}>
+                className="pf-glass"
+                style={{ display: 'block', textDecoration: 'none', borderRadius: '0.5rem', padding: '1.25rem 1.375rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                   <h3 style={{ fontFamily: 'var(--font-serif)', color: 'var(--db-text)', fontSize: '1rem', fontWeight: 500, margin: 0, letterSpacing: '0.02em' }}>{c.name || s.untitled}</h3>
                   {c.active && <span style={{ fontSize: '0.5625rem', color: '#9e763b', border: '1px solid rgba(158,118,59,0.4)', padding: '0.125rem 0.4375rem', borderRadius: '2rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{s.active}</span>}

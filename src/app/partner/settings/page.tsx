@@ -12,7 +12,7 @@ import { getEnabledCategories, getEnabledCities } from '@/lib/config'
 import type { CompanyPayoutProfile } from '@/lib/schema'
 import PhotoUpload from '@/components/dashboard/PhotoUpload'
 import GalleryUpload from '@/components/dashboard/GalleryUpload'
-import { ScreenHeader, SectionTitle, card, eyebrow, GhostButton, bodyText } from '@/components/partner/ui'
+import { ScreenHeader, SectionTitle, card, cardShape, eyebrow, GhostButton, bodyText } from '@/components/partner/ui'
 
 const inputStyle: React.CSSProperties = { width: '100%', background: 'var(--pf-card)', border: '1px solid var(--pf-border)', borderRadius: '10px', padding: '9px 13px', color: 'var(--pf-text)', fontFamily: 'var(--font-sans)', fontSize: '12.5px', outline: 'none', boxSizing: 'border-box' }
 
@@ -239,7 +239,7 @@ export default function SettingsScreen() {
 
       {section === 'account' && (<>
       {/* Account */}
-      <div style={card}>
+      <div className="pf-glass" style={cardShape}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <span style={{ width: '46px', height: '46px', borderRadius: '13px', background: 'var(--pf-green-soft)', color: 'var(--pf-gold)', display: 'grid', placeItems: 'center', fontFamily: 'var(--font-display)', fontSize: '19px', flexShrink: 0, overflow: 'hidden' }}>
             {logo ? <img src={logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (provider?.fullName || email || '?').charAt(0).toUpperCase()}
@@ -266,7 +266,7 @@ export default function SettingsScreen() {
       <SectionTitle action={pwMsg?.ok ? <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-success)' }}>{pwMsg.text}</span> : undefined}>
         {L('pw_title')}
       </SectionTitle>
-      <div style={card}>
+      <div className="pf-glass" style={cardShape}>
         {!pwOpen ? (
           <GhostButton onClick={() => { setPwOpen(true); setPwMsg(null) }}>{L('pw_change')}</GhostButton>
         ) : (
@@ -306,7 +306,7 @@ export default function SettingsScreen() {
         {L('sec_company')}
       </SectionTitle>
       {!coEditing ? (
-        <div style={card}>
+        <div className="pf-glass" style={cardShape}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
             <div style={{ fontFamily: 'var(--font-display)', color: 'var(--pf-head)', fontSize: '1.0625rem', letterSpacing: '0.03em' }}>{company?.name}</div>
             <div style={{ display: 'flex', gap: '8px' }}>
@@ -325,7 +325,7 @@ export default function SettingsScreen() {
           </div>
         </div>
       ) : (
-        <div style={card}>
+        <div className="pf-glass" style={cardShape}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 13rem), 1fr))', gap: '10px', marginBottom: '10px' }}>
             <div>
               <div style={{ ...eyebrow, marginBottom: '5px' }}>{L('co_name')} *</div>
@@ -378,7 +378,7 @@ export default function SettingsScreen() {
       {section === 'photos' && (<>
       {/* Company photos — hero, logo, gallery; auto-persist on upload. */}
       <SectionTitle>{L('co_photos')}</SectionTitle>
-      <div style={card}>
+      <div className="pf-glass" style={cardShape}>
         <p style={{ ...bodyText, fontSize: '0.75rem', margin: '0 0 12px' }}>{L('co_photos_hint')}</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 14rem), 1fr))', gap: '12px', marginBottom: '14px' }}>
           <div>
@@ -402,7 +402,7 @@ export default function SettingsScreen() {
       {/* Payout details — owner-entered, per company. */}
       <SectionTitle>{L('sec_payout')}</SectionTitle>
       {!poEditing && poLoaded ? (
-        <div style={{ ...card, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+        <div className="pf-glass" style={{ ...cardShape, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '11px' }}>
             <span style={{ width: '34px', height: '34px', borderRadius: '50%', border: '1px solid var(--pf-border-strong)', display: 'grid', placeItems: 'center', color: 'var(--pf-gold)', fontSize: '13px' }}>◆</span>
             <div>
@@ -420,13 +420,13 @@ export default function SettingsScreen() {
           </div>
         </div>
       ) : !poEditing ? (
-        <div style={{ ...card, borderStyle: 'dashed' }}>
+        <div className="pf-glass" style={{ ...cardShape, borderStyle: 'dashed' }}>
           <div style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '14px' }}>{L('payout_none_t')}</div>
           <p style={{ ...bodyText, fontSize: '0.8125rem', margin: '6px 0 12px' }}>{L('payout_none_b')}</p>
           <GhostButton onClick={() => setPoEditing(true)}>+ {L('po_add')}</GhostButton>
         </div>
       ) : (
-        <div style={card}>
+        <div className="pf-glass" style={cardShape}>
           <div style={{ ...eyebrow, marginBottom: '8px' }}>{L('po_method')}</div>
           <div style={{ display: 'flex', gap: '7px', flexWrap: 'wrap', marginBottom: '14px' }}>
             {(['wave', 'orange_money', 'bank_transfer'] as PoMethod[]).map(m => (
@@ -473,7 +473,7 @@ export default function SettingsScreen() {
       {section === 'contact' && (<>
       {/* Contact & hours */}
       <SectionTitle>{L('sec_contact')}</SectionTitle>
-      <div style={card}>
+      <div className="pf-glass" style={cardShape}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 13rem), 1fr))', gap: '10px', marginBottom: '12px' }}>
           <div>
             <div style={{ ...eyebrow, marginBottom: '5px' }}>{L('phone_label')}</div>
@@ -509,7 +509,7 @@ export default function SettingsScreen() {
       {section === 'notifications' && (<>
       {/* Notification preferences — stored on the provider; email-only today. */}
       <SectionTitle>{L('np_title')}</SectionTitle>
-      <div style={card}>
+      <div className="pf-glass" style={cardShape}>
         <p style={{ ...bodyText, fontSize: '0.75rem', margin: '0 0 6px' }}>{L('np_hint')}</p>
         {(['bookings', 'payouts', 'marketing'] as const).map((k, i) => {
           const on = provider?.notificationPrefs?.[k] ?? true
@@ -533,7 +533,7 @@ export default function SettingsScreen() {
       {section === 'prefs' && (<>
       {/* Preferences */}
       <SectionTitle>{L('sec_prefs')}</SectionTitle>
-      <div style={card}>
+      <div className="pf-glass" style={cardShape}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px', padding: '4px 0' }}>
           <span style={eyebrow}>{L('lang_label')}</span>
           <div style={{ display: 'flex', border: '1px solid var(--pf-border)', borderRadius: '8px', overflow: 'hidden' }}>
@@ -552,7 +552,7 @@ export default function SettingsScreen() {
       {section === 'support' && (<>
       {/* Support */}
       <SectionTitle>{L('sec_support')}</SectionTitle>
-      <div style={card}>
+      <div className="pf-glass" style={cardShape}>
         <p style={{ ...bodyText, fontSize: '0.875rem', margin: 0 }}>{L('support_body')}</p>
         <div style={{ marginTop: '12px' }}>
           <a href="mailto:palmeraexp@gmail.com" style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--pf-gold)' }}>{L('contact')} →</a>

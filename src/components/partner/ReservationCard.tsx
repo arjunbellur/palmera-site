@@ -2,7 +2,7 @@
 import type { Booking, BookingStatus } from '@/lib/schema'
 import { formatAmount, formatDate, toDate } from '@/lib/money'
 import { t, type Locale } from '@/app/partner/i18n'
-import { card, eyebrow, Chip, Money, GhostButton, type Tone } from './ui'
+import { cardShape, eyebrow, Chip, Money, GhostButton, type Tone } from './ui'
 
 const STATUS: Record<BookingStatus, { key: string; tone: Tone }> = {
   pending: { key: 'f_pending', tone: 'gold' },
@@ -36,7 +36,7 @@ export default function ReservationCard({
   const showNoShow = !!onNoShow && b.status === 'confirmed' && !!when && when.getTime() < Date.now()
 
   return (
-    <div style={{ ...card, padding: compact ? '14px 16px' : '16px 18px' }}>
+    <div className="pf-glass" style={{ ...cardShape, padding: compact ? '14px 16px' : '16px 18px' }}>
       <div onClick={() => onOpen?.(b)} style={{ cursor: onOpen ? 'pointer' : 'default' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
         <span style={eyebrow}>{b.title ? '' : ''}{(b as unknown as { category?: string }).category || ''}</span>

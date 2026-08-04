@@ -9,7 +9,7 @@ import { t } from '../i18n'
 import { getBookingsByCompany, getLedgerByProvider, getPayoutsByProvider } from '@/lib/firestore'
 import type { Booking, LedgerEntry, LedgerEntryType, Payout, PayoutStatus } from '@/lib/schema'
 import { formatAmount, formatDate, toDate } from '@/lib/money'
-import { ScreenHeader, Money, EmptyState, SectionTitle, Skeleton, card, eyebrow } from '@/components/partner/ui'
+import { ScreenHeader, Money, EmptyState, SectionTitle, Skeleton, card, cardShape, eyebrow } from '@/components/partner/ui'
 import { BarChart, RankPills } from '@/components/charts'
 
 const PAYOUT_COLOR: Record<PayoutStatus, string> = {
@@ -121,7 +121,7 @@ export default function EarningsScreen() {
   const hasData = chartMax > 0 || revBars.length > 0
 
   const h3: React.CSSProperties = { margin: '0 0 12px', fontFamily: 'var(--font-display)', fontSize: '1.125rem', fontWeight: 400, letterSpacing: '0.03em', color: 'var(--pf-head)' }
-  const listCard: React.CSSProperties = { borderRadius: '16px', background: 'var(--pf-card)', border: '1px solid var(--pf-border)', overflow: 'hidden' }
+  const listCard: React.CSSProperties = { borderRadius: '16px', overflow: 'hidden' }
 
   return (
     <div className="pf-in">
@@ -143,11 +143,11 @@ export default function EarningsScreen() {
           </div>
         </div>
 
-        <div style={card}>
+        <div className="pf-glass" style={cardShape}>
           <div style={eyebrow}>{L('lifetime')}</div>
           <div style={{ marginTop: '6px' }}><Money amount={formatAmount(lifetime)} size={26} /></div>
         </div>
-        <div style={card}>
+        <div className="pf-glass" style={cardShape}>
           <div style={eyebrow}>{L('comm_window')}</div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: '26px', color: 'var(--pf-text)', marginTop: '6px' }}>
             10%{monthsLeft != null && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-muted)', marginLeft: '6px' }}>{monthsLeft} {locale === 'fr' ? 'mois' : 'mo'} {L('months_left')}</span>}
@@ -160,7 +160,7 @@ export default function EarningsScreen() {
 
       {/* Next-payout breakdown — Jordan: transparency on gross vs deductions. */}
       {unsettled.length > 0 && (
-        <div style={{ ...card, marginTop: '12px' }}>
+        <div className="pf-glass" style={{ ...cardShape, marginTop: '12px' }}>
           <div style={{ ...eyebrow, marginBottom: '10px' }}>{L('breakdown_title')}</div>
           <div style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid var(--pf-border)', fontFamily: 'var(--font-sans)', fontSize: '12.5px' }}>
             <span style={{ color: 'var(--pf-muted)' }}>{L('gross')}{pendingBookings > 0 && ` · ${pendingBookings} ${L('bookings_n')}`}</span>
@@ -203,7 +203,7 @@ export default function EarningsScreen() {
       {payouts.length === 0 ? (
         <EmptyState icon="◆" title={L('pay_empty_t')} body={L('pay_empty_b')} chip={L('pay_empty_chip')} />
       ) : (
-        <div style={listCard}>
+        <div className="pf-glass" style={listCard}>
           {payouts.map((p, i) => (
             <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '15px 18px', borderBottom: i < payouts.length - 1 ? '1px solid var(--pf-border)' : 'none' }}>
               <div>
@@ -240,9 +240,9 @@ export default function EarningsScreen() {
       {ledger.length === 0 ? (
         <EmptyState icon="◷" title={L('ledger_empty_t')} body={L('ledger_empty_b')} />
       ) : shownLedger.length === 0 ? (
-        <div style={{ ...card, textAlign: 'center', fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--pf-faint)' }}>—</div>
+        <div className="pf-glass" style={{ ...cardShape, textAlign: 'center', fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--pf-faint)' }}>—</div>
       ) : (
-        <div style={listCard}>
+        <div className="pf-glass" style={listCard}>
           {shownLedger.map((e, i) => (
             <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '13px 18px', borderBottom: i < shownLedger.length - 1 ? '1px solid var(--pf-border)' : 'none' }}>
               <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: LEDGER_DOT[e.type] || 'var(--pf-faint)', flexShrink: 0 }} />

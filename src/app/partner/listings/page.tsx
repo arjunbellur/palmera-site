@@ -9,7 +9,7 @@ import {
 import ConfirmDialog from '@/components/dashboard/ConfirmDialog'
 import type { Experience, ExperienceStatus, Option, OptionGroup } from '@/lib/schema'
 import { formatAmount } from '@/lib/money'
-import { ScreenHeader, EmptyState, PrimaryButton, Skeleton, card, eyebrow, Chip, type Tone } from '@/components/partner/ui'
+import { ScreenHeader, EmptyState, PrimaryButton, Skeleton, card, cardShape, eyebrow, Chip, type Tone } from '@/components/partner/ui'
 import ExperienceModal from '@/components/dashboard/ExperienceModal'
 
 const STATUS: Record<ExperienceStatus, { key: string; tone: Tone }> = {
@@ -105,7 +105,7 @@ export default function ListingsScreen() {
           {items.map(e => {
             const s = STATUS[e.status] ?? STATUS.draft
             return (
-              <div key={e.id} onClick={() => openEdit(e)} role="button" tabIndex={0} style={{ ...card, textAlign: 'left', cursor: 'pointer', padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+              <div key={e.id} onClick={() => openEdit(e)} role="button" tabIndex={0} className="pf-glass" style={{ ...cardShape, textAlign: 'left', cursor: 'pointer', padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
                 <div style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 2, display: 'flex', gap: '6px' }}>
                   <button onClick={(ev) => { ev.stopPropagation(); duplicate(e) }} title={L('dup')}
                     style={{ padding: '5px 10px', borderRadius: '8px', border: '1px solid var(--pf-border-strong)', background: 'var(--pf-sheet)', color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '10.5px', cursor: 'pointer', opacity: dupBusyId === e.id ? 0.5 : 1 }}>

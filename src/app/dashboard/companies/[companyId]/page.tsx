@@ -273,7 +273,7 @@ export default function CompanyPage({ params }: { params: Promise<{ companyId: s
             </button>
           </div>
           {loadingExp ? null : experiences.length === 0 ? (
-            <div style={{ background: 'var(--db-bg-card)', border: '1px dashed var(--db-border-dashed)', borderRadius: '0.625rem', padding: '3rem 2rem', textAlign: 'center' }}>
+            <div className="pf-glass" style={{ borderRadius: '0.625rem', padding: '3rem 2rem', textAlign: 'center' }}>
               <p style={{ fontFamily: 'var(--font-serif)', color: 'var(--db-text-faint)', fontSize: '1.0625rem', margin: '0 0 0.5rem' }}>{s.noExpTitle}</p>
               <p style={{ fontFamily: 'var(--font-sans)', color: 'var(--db-text-ghost)', fontSize: '0.8125rem', margin: '0 0 1.5rem' }}>{s.noExpBody}</p>
               <button onClick={openNewExperience} style={{ padding: '10px 24px', background: 'transparent', border: '1px solid var(--db-border-subtle)', borderRadius: '6px', color: 'var(--db-text)', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>{s.addFirstExp}</button>
@@ -281,7 +281,7 @@ export default function CompanyPage({ params }: { params: Promise<{ companyId: s
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 18rem), 1fr))', gap: '1rem' }}>
               {experiences.map((e) => (
-                <div key={e.id} style={{ background: 'var(--db-bg-card)', border: '1px solid var(--db-border-subtle)', borderRadius: '0.5rem', padding: '1.25rem 1.375rem' }}>
+                <div key={e.id} className="pf-glass" style={{ borderRadius: '0.5rem', padding: '1.25rem 1.375rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '0.625rem' }}>
                     <h3 style={{ fontFamily: 'var(--font-serif)', color: 'var(--db-text)', fontSize: '0.9375rem', fontWeight: 500, margin: 0 }}>{e.title || 'Untitled'}</h3>
                     <span style={{ flexShrink: 0, fontSize: '0.625rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', textTransform: 'uppercase', padding: '2px 8px', borderRadius: '2px', border: '1px solid var(--db-border-subtle)', color: 'var(--db-text-muted)' }}>{s.stLabels[e.status] || e.status}</span>

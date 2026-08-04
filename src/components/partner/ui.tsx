@@ -17,6 +17,10 @@ export const card: CSSProperties = {
   border: '1px solid var(--pf-border)',
 }
 
+/** Shape-only card style for glass surfaces — pair with className="pf-glass"
+ *  (the class carries background/border/blur/hover; inline would override). */
+export const cardShape: CSSProperties = { padding: '18px', borderRadius: '16px' }
+
 export const eyebrow: CSSProperties = {
   fontFamily: 'var(--font-sans)',
   fontSize: '10px',
@@ -65,7 +69,7 @@ export function Money({ amount, size = 27, currency = 'XOF' }: { amount: string;
 /** Small stat tile: mono label above a serif numeral. */
 export function StatTile({ label, amount, sub, currency }: { label: string; amount: string; sub?: ReactNode; currency?: string }) {
   return (
-    <div style={card}>
+    <div className="pf-glass" style={cardShape}>
       <div style={eyebrow}>{label}</div>
       <div style={{ marginTop: '6px' }}><Money amount={amount} currency={currency} /></div>
       {sub && <div style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-muted)', marginTop: '8px' }}>{sub}</div>}
@@ -95,7 +99,7 @@ export function Chip({ children, tone = 'neutral' }: { children: ReactNode; tone
     carries the one reassuring fact ("paid every two weeks"). */
 export function EmptyState({ icon, title, body, chip, action }: { icon: string; title: string; body: string; chip?: string; action?: ReactNode }) {
   return (
-    <div style={{ ...card, padding: '38px 22px', textAlign: 'center', borderRadius: '18px', borderStyle: 'dashed', borderColor: 'var(--pf-border-strong)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+    <div className="pf-glass" style={{ ...cardShape, padding: '38px 22px', textAlign: 'center', borderRadius: '18px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
       <div style={{ width: '54px', height: '54px', borderRadius: '50%', border: '1px solid var(--pf-border-strong)', display: 'grid', placeItems: 'center', color: 'var(--pf-gold)', fontSize: '22px' }}>{icon}</div>
       <p style={{ fontFamily: 'var(--font-display)', color: 'var(--pf-head)', fontSize: '1.25rem', fontWeight: 400, letterSpacing: '0.03em', margin: 0 }}>{title}</p>
       <p style={{ ...bodyText, fontSize: '0.875rem', margin: 0, maxWidth: '40ch' }}>{body}</p>
@@ -111,6 +115,7 @@ export function PrimaryButton({ children, onClick, href }: { children: ReactNode
   const style: CSSProperties = {
     display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px',
     background: 'var(--pf-gold-deep)', border: 'none', borderRadius: '10px', color: '#ebe8db',
+    boxShadow: '0 0 18px rgba(190,154,86,0.28)',
     fontFamily: 'var(--font-sans)', fontSize: '12.5px', letterSpacing: '0.05em', cursor: 'pointer', textDecoration: 'none',
   }
   return href ? <a href={href} style={style}>{children}</a> : <button onClick={onClick} style={style}>{children}</button>

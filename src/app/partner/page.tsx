@@ -6,7 +6,7 @@ import { t } from './i18n'
 import { getBookingsByCompany, getLedgerByProvider, getPayoutsByProvider, getExperiencesByCompany, getPayoutProfile } from '@/lib/firestore'
 import type { Booking, Experience, LedgerEntry, Payout } from '@/lib/schema'
 import { formatAmount, formatDate, toDate } from '@/lib/money'
-import { ScreenHeader, StatTile, Money, EmptyState, SectionTitle, Skeleton, card, eyebrow } from '@/components/partner/ui'
+import { ScreenHeader, StatTile, Money, EmptyState, SectionTitle, Skeleton, card, cardShape, eyebrow } from '@/components/partner/ui'
 import ReservationCard from '@/components/partner/ReservationCard'
 
 export default function PartnerHome() {
@@ -72,7 +72,7 @@ export default function PartnerHome() {
         ]
         if (items.length === 0) return null
         return (
-          <div style={{ ...card, background: 'var(--pf-green-soft)', borderColor: 'var(--pf-border-strong)', marginBottom: '14px', padding: '14px 16px' }}>
+          <div className="pf-glass" style={{ ...cardShape, background: 'var(--pf-green-soft)', borderColor: 'var(--pf-border-strong)', marginBottom: '14px', padding: '14px 16px' }}>
             <div style={{ ...eyebrow, marginBottom: '8px' }}>{L('pa_title')}</div>
             {items.map(it => (
               <a key={it.href + it.label} href={it.href} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '7px 0', textDecoration: 'none', borderTop: '1px solid var(--pf-border)' }}>
@@ -105,7 +105,7 @@ export default function PartnerHome() {
         </div>
       )}
       {loaded && <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
-        <a href="/partner/reservations?f=today" style={{ ...card, textDecoration: 'none', display: 'block' }}>
+        <a href="/partner/reservations?f=today" className="pf-glass" style={{ ...cardShape, textDecoration: 'none', display: 'block' }}>
           <div style={eyebrow}>{L('today_res')}</div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: '27px', color: 'var(--pf-text)', marginTop: '6px' }}>
             {todayCount}
@@ -115,7 +115,7 @@ export default function PartnerHome() {
             <span style={{ color: 'var(--pf-gold)', fontSize: '13px', marginLeft: '8px' }}>→</span>
           </div>
         </a>
-        <div style={card}>
+        <div className="pf-glass" style={cardShape}>
           <div style={eyebrow}>{L('next_res')}</div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: nextRes ? '18px' : '27px', color: 'var(--pf-text)', marginTop: '6px', lineHeight: 1.25 }}>
             {nextRes && nextResWhen
@@ -128,7 +128,7 @@ export default function PartnerHome() {
 
       {/* Metrics: balance leads full-width, the two smaller tiles sit beside it. */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 15rem), 1fr))', gap: '12px' }}>
-        <div style={{ ...card, gridColumn: '1 / -1', padding: '20px 22px', borderRadius: '18px', background: 'linear-gradient(150deg, rgba(190,154,86,0.12), var(--pf-card))', borderColor: 'var(--pf-border-strong)' }}>
+        <div className="pf-glass" style={{ ...cardShape, gridColumn: '1 / -1', padding: '20px 22px', borderRadius: '18px', background: 'linear-gradient(150deg, rgba(190,154,86,0.12), var(--pf-card))', borderColor: 'var(--pf-border-strong)' }}>
           <div style={{ ...eyebrow, fontSize: '10.5px', letterSpacing: '0.16em' }}>{L('balance')}</div>
           <div style={{ marginTop: '8px' }}><Money amount={formatAmount(balance)} size={46} /></div>
           <div style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-muted)', marginTop: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
