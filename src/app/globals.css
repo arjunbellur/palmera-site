@@ -203,6 +203,9 @@ body {
 .pf-in { animation: pfIn 0.4s ease; }
 .pf-bar { transform-origin: bottom; animation: pfGrow 0.6s cubic-bezier(0.22,1,0.36,1); }
 .pf-pill { animation: pfWide 0.7s cubic-bezier(0.22,1,0.36,1); }
+/* Notification-style feed rows (admin Pulse): hover lift + staggered entry. */
+.pf-note { transition: background 0.15s ease, transform 0.15s ease; border-radius: 12px; animation: pfIn 0.35s ease both; }
+.pf-note:hover { background: var(--pf-card-solid); transform: translateX(3px); }
 @keyframes pfShimmer { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
 .pf-skel { background: var(--pf-card); border: 1px solid var(--pf-border); border-radius: 14px; animation: pfShimmer 1.4s ease-in-out infinite; }
 

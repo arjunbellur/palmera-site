@@ -17,7 +17,15 @@ import type { AppProfile, AppDoc, Booking, Provider, Company } from '@/lib/schem
 
 const fmtXof = (n: number) => new Intl.NumberFormat('fr-FR').format(Math.round(n))
 
-interface Activity { icon: string; tone: string; text: string; when: Date; avatar?: string | null }
+interface Activity {
+  icon: string
+  title: string
+  detail: string
+  when: Date
+  avatar?: string | null
+  chip?: { label: string; tone: 'gold' | 'green' | 'alert' | 'neutral' }
+  amount?: number
+}
 
 export default function AdminOverview() {
   const [profiles, setProfiles] = useState<AppProfile[]>([])
@@ -27,7 +35,7 @@ export default function AdminOverview() {
   const [profilesLoaded, setProfilesLoaded] = useState(false)
   const [bookingsLoaded, setBookingsLoaded] = useState(false)
   const [uncountersigned, setUncountersigned] = useState<number | null>(null)
-  const [activity, setActivity] = useState<Activity[] | null>(null)
+  const [social, setSocial] = useState<{ moments: AppDoc[]; reviews: AppDoc[] } | null>(null)
 
   // ── Live tiles ──
   useEffect(() => {
@@ -50,37 +58,51 @@ export default function AdminOverview() {
     return () => { cancelled = true }
   }, [providers])
 
-  // ── Activity feed (one-shot merge) ──
-  const loadActivity = async () => {
+  // ── Social payloads (one-shot; refresh button refetches). The feed itself
+  // is DERIVED each render from live profiles/bookings + this cache, so a new
+  // booking or signup pops into the feed the moment the listener fires. ──
+  const loadSocial = async () => {
+    setSocial(null)
     const [moments, reviews] = await Promise.all([getAppMoments(), getAppReviews()])
-    setActivity(null)
+    setSocial({ moments, reviews })
+  }
+  useEffect(() => { loadSocial() }, [])
+
+  const STATUS_TONE: Record<string, 'gold' | 'green' | 'alert' | 'neutral'> = {
+    pending: 'gold', confirmed: 'green', completed: 'neutral', declined: 'alert', cancelled: 'alert', no_show: 'alert',
+  }
+  const activity: Activity[] | null = (() => {
+    if (!social || !profilesLoaded || !bookingsLoaded) return null
     const byId = new Map(profiles.map((p) => [p.id, p]))
-    const who = (d: AppDoc) => { const p = byId.get(d.user_id as string); return p?.handle || p?.name || 'Someone' }
+    // Some handles are stored WITH the @ already — normalize either way.
+    const at = (h: string) => `@${h.replace(/^@+/, '')}`
+    const who = (d: AppDoc) => { const p = byId.get(d.user_id as string); return p?.handle ? at(p.handle) : (p?.name || 'Someone') }
     const face = (d: AppDoc) => byId.get(d.user_id as string)?.avatar_url || null
     const items: Activity[] = []
     profiles.forEach((p) => {
       const d = docDate(p); if (!d) return
-      items.push({ icon: '✦', tone: 'var(--pf-gold)', text: `${p.handle || p.name || 'New user'} joined the app`, when: d, avatar: p.avatar_url || null })
+      items.push({ icon: '✦', title: p.handle ? at(p.handle) : (p.name || 'New user'), detail: 'joined Palmera', when: d, avatar: p.avatar_url || null, chip: { label: 'new user', tone: 'gold' } })
     })
     bookings.forEach((b) => {
       const d = docDate(b); if (!d) return
-      items.push({ icon: '▤', tone: 'var(--pf-success)', text: `${b.customerName || 'A guest'} booked ${b.title} · ${b.status}`, when: d, avatar: byId.get(b.customerId)?.avatar_url || null })
+      items.push({
+        icon: '▤', title: b.customerName || 'A guest', detail: `booked ${b.title}`, when: d,
+        avatar: byId.get(b.customerId)?.avatar_url || null,
+        chip: { label: b.status.replace('_', ' '), tone: STATUS_TONE[b.status] || 'neutral' },
+        amount: b.bookingTotal > 0 ? b.bookingTotal : undefined,
+      })
     })
-    moments.forEach((m) => {
+    social.moments.forEach((m) => {
       const d = docDate(m); if (!d) return
-      items.push({ icon: '◉', tone: 'var(--pf-muted)', text: `${who(m)} posted a moment${m.caption ? ` — “${String(m.caption).slice(0, 60)}”` : ''}`, when: d, avatar: face(m) })
+      items.push({ icon: '◉', title: who(m), detail: m.caption ? `“${String(m.caption).slice(0, 70)}”` : 'posted a moment', when: d, avatar: face(m) })
     })
-    reviews.forEach((r) => {
+    social.reviews.forEach((r) => {
       const d = docDate(r); if (!d) return
-      items.push({ icon: '★', tone: 'var(--pf-gold)', text: `${who(r)} left a ${r.rating}★ review`, when: d, avatar: face(r) })
+      items.push({ icon: '★', title: who(r), detail: 'left a review', when: d, avatar: face(r), chip: { label: `★ ${r.rating}`, tone: 'gold' } })
     })
     items.sort((a, b) => b.when.getTime() - a.when.getTime())
-    setActivity(items.slice(0, 15))
-  }
-  useEffect(() => {
-    if (profilesLoaded && bookingsLoaded && activity === null) loadActivity()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profilesLoaded, bookingsLoaded])
+    return items.slice(0, 15)
+  })()
 
   const loading = !(profilesLoaded && bookingsLoaded)
 
@@ -176,7 +198,7 @@ export default function AdminOverview() {
 
       {/* Activity feed */}
       <SectionTitle action={
-        <button onClick={loadActivity} style={{ background: 'transparent', border: 'none', color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '11.5px', cursor: 'pointer', padding: 0 }}>↻ Refresh</button>
+        <button onClick={loadSocial} style={{ background: 'transparent', border: 'none', color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '11.5px', cursor: 'pointer', padding: 0 }}>↻ Refresh</button>
       }>
         Latest activity
       </SectionTitle>
@@ -185,21 +207,29 @@ export default function AdminOverview() {
       ) : activity.length === 0 ? (
         <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--pf-faint)', fontStyle: 'italic' }}>Nothing yet.</p>
       ) : (
-        <div style={{ ...card, padding: '18px 20px 6px' }}>
-          {/* Timeline idiom (the app's Tracking History): avatar/icon nodes on a
-              connector line — faces make the social side feel alive. */}
+        <div style={{ ...card, padding: '8px' }}>
+          {/* Push-notification idiom: avatar chip with an event badge, bold
+              sans title + muted meta line, status/amount on the right. Rows
+              stagger in and lift on hover (.pf-note). */}
           {activity.map((a, i) => (
-            <div key={i} style={{ display: 'flex', gap: '14px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
-                <span style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--pf-green-soft)', border: '1px solid var(--pf-border-strong)', color: a.tone, display: 'grid', placeItems: 'center', fontSize: '13px', overflow: 'hidden', flexShrink: 0 }}>
+            <div key={`${a.title}_${a.when.getTime()}`} className="pf-note" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', animationDelay: `${Math.min(i * 45, 500)}ms` }}>
+              <div style={{ position: 'relative', flexShrink: 0 }}>
+                <span style={{ width: '36px', height: '36px', borderRadius: '12px', background: 'var(--pf-green-soft)', border: '1px solid var(--pf-border-strong)', color: 'var(--pf-gold)', display: 'grid', placeItems: 'center', fontSize: '14px', overflow: 'hidden' }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  {a.avatar ? <img src={a.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : a.icon}
+                  {a.avatar ? <img src={a.avatar} alt="" style={{ width: '36px', height: '36px', objectFit: 'cover', display: 'block' }} /> : a.icon}
                 </span>
-                {i < activity.length - 1 && <span style={{ width: '1px', flex: 1, background: 'var(--pf-border)', margin: '4px 0' }} />}
+                {/* Event badge on the avatar corner — the notification tell. */}
+                <span style={{ position: 'absolute', right: '-4px', bottom: '-4px', width: '16px', height: '16px', borderRadius: '6px', background: 'var(--pf-gold-deep)', color: '#0a0e18', display: 'grid', placeItems: 'center', fontSize: '8.5px', border: '2px solid var(--pf-card-solid)' }}>{a.icon}</span>
               </div>
-              <div style={{ flex: 1, minWidth: 0, paddingBottom: '16px' }}>
-                <div style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '13.5px', lineHeight: 1.45 }}>{a.text}</div>
-                <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-faint)', marginTop: '3px' }}>{timeAgo(a.when)}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: 'var(--font-sans)', color: 'var(--pf-text)', fontSize: '12.5px', letterSpacing: '0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {a.title} <span style={{ color: 'var(--pf-muted)' }}>{a.detail}</span>
+                </div>
+                <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'var(--pf-faint)', marginTop: '3px' }}>{timeAgo(a.when)}</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                {a.amount != null && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11.5px', color: 'var(--pf-gold)' }}>+{fmtXof(a.amount)}</span>}
+                {a.chip && <Chip tone={a.chip.tone}>{a.chip.label}</Chip>}
               </div>
             </div>
           ))}
