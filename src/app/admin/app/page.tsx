@@ -13,7 +13,7 @@ import {
 import { bucketByPeriod, groupCount, isRealBooking, docDate } from '@/lib/analytics'
 import { ScreenHeader, Chip, Skeleton, SectionTitle, EmptyState, card, eyebrow } from '@/components/partner/ui'
 import { BarChart, RankPills } from '@/components/charts'
-import { CountTile, SparkTile, FilterChip } from '../ui'
+import { CountTile, SparkTile, FilterChip, glass } from '../ui'
 import type { AppProfile, AppDoc, Booking, Experience } from '@/lib/schema'
 
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR').format(Math.round(n))
@@ -84,18 +84,20 @@ export default function AdminAppGrowth() {
     })
     const byId = new Map(profiles.map((p) => [p.id, p]))
     return [...m.entries()]
-      .map(([uid, value]) => { const pr = byId.get(uid); return { label: pr?.handle ? `@${pr.handle.replace(/^@+/, '')}` : (pr?.name || '—'), value, display: `${fmt(value)} pts` } })
+      .map(([uid, value]) => { const pr = byId.get(uid); return { label: pr?.handle ? `@${pr.handle.replace(/^@+/, '')}` : (pr?.name || '—'), value, display: `${fmt(value)} pts`, img: pr?.avatar_url || null } })
       .sort((a, b) => b.value - a.value).slice(0, 5)
   })()
 
   // ── 5+6. Favorites → bookings funnel + top experiences ──
   const expTitle = new Map(experiences.map((e) => [e.id, e.title || 'Untitled']))
+  const expImgById = new Map(experiences.map((e) => [e.id, e.img || null]))
+  const expImgByTitle = new Map(experiences.map((e) => [e.title || 'Untitled', e.img || null]))
   const favByExp = groupCount(favorites, 'exp_id')
   const bookedCount = bookings.length
   const completedCount = bookings.filter((b) => b.status === 'completed').length
   const rankItems = (() => {
     if (rankMode === 'favorites') {
-      return favByExp.slice(0, 5).map((f) => ({ label: expTitle.get(f.label) || f.label, value: f.value, display: `${f.value} ♥` }))
+      return favByExp.slice(0, 5).map((f) => ({ label: expTitle.get(f.label) || f.label, value: f.value, display: `${f.value} ♥`, img: expImgById.get(f.label) || null }))
     }
     const m = new Map<string, number>()
     bookings.forEach((b) => {
@@ -104,7 +106,7 @@ export default function AdminAppGrowth() {
       m.set(key, (m.get(key) || 0) + (rankMode === 'revenue' ? (b.bookingTotal || 0) : 1))
     })
     return [...m.entries()]
-      .map(([label, value]) => ({ label, value, display: rankMode === 'revenue' ? `${fmt(value)} XOF` : `${value}` }))
+      .map(([label, value]) => ({ label, value, display: rankMode === 'revenue' ? `${fmt(value)} XOF` : `${value}`, img: expImgByTitle.get(label) || null }))
       .sort((a, b) => b.value - a.value).slice(0, 5)
   })()
 
@@ -126,7 +128,7 @@ export default function AdminAppGrowth() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '12px', marginBottom: '12px' }}>
         <SparkTile icon="✦" label="Total users" value={profiles.length} spark={signupBuckets.map((b) => b.count)} featured />
         <CountTile icon="◆" label="Plus members" value={profiles.filter((p) => p.is_plus).length} />
-        <div style={card}>
+        <div className="pf-glass" style={glass}>
           <div style={{ width: '30px', height: '30px', borderRadius: '9px', background: 'var(--pf-green-soft)', color: 'var(--pf-gold)', display: 'grid', placeItems: 'center', fontSize: '13px', marginBottom: '10px' }}>↟</div>
           <div style={eyebrow}>Newest user</div>
           <div style={{ fontFamily: 'var(--font-sans)', fontSize: '14px', color: 'var(--pf-text)', marginTop: '6px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -163,7 +165,7 @@ export default function AdminAppGrowth() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '12px' }}>
         <CountTile icon="⚭" label="Friendships" value={accepted} tone="gold" />
         <CountTile icon="◷" label="Pending requests" value={pendingFriends} />
-        <div style={card}>
+        <div className="pf-glass" style={glass}>
           <div style={{ width: '30px', height: '30px', borderRadius: '9px', background: 'var(--pf-green-soft)', color: 'var(--pf-gold)', display: 'grid', placeItems: 'center', fontSize: '13px', marginBottom: '10px' }}>∅</div>
           <div style={eyebrow}>Avg friends / user</div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: '27px', color: 'var(--pf-text)', marginTop: '6px' }}>{avgFriends}</div>
@@ -191,7 +193,7 @@ export default function AdminAppGrowth() {
 
       {/* 5 — Funnel */}
       <SectionTitle>Discovery → booking funnel</SectionTitle>
-      <div style={{ ...card, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap', padding: '18px 22px' }}>
+      <div className="pf-glass" style={{ ...glass, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap', padding: '18px 22px' }}>
         {[
           { label: 'Favorited', value: favorites.length, icon: '♥' },
           { label: 'Booked', value: bookedCount, icon: '▤' },

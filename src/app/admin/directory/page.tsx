@@ -13,7 +13,7 @@ import {
 import { isAdminEmail } from '@/lib/admin'
 import ConfirmDialog from '@/components/dashboard/ConfirmDialog'
 import { ScreenHeader, Chip, EmptyState, Skeleton, GhostButton, card, eyebrow } from '@/components/partner/ui'
-import { CountTile, FilterChip, DangerButton, inputStyle, formatDate } from '../ui'
+import { CountTile, FilterChip, DangerButton, inputStyle, formatDate, glass } from '../ui'
 import type { Company, Provider } from '@/lib/schema'
 
 type StageFilter = 'all' | 'graduated' | 'onboarding'
@@ -191,7 +191,7 @@ function AdminDirectory() {
         <EmptyState icon="◎" title="No partners match" body="Try clearing a filter or changing the search."
           action={<GhostButton onClick={clearFilters}>Clear filters</GhostButton>} />
       ) : (
-        <div style={{ ...card, padding: 0, borderRadius: '16px', overflow: 'hidden' }}>
+        <div className="pf-glass" style={{ ...glass, padding: 0, overflow: 'hidden' }}>
           {shown.map((p, i) => {
             const cos = companiesOf(p.uid)
             const isExp = expanded === p.uid

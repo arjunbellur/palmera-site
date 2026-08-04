@@ -3,14 +3,18 @@
 // stays untouched — admin churn shouldn't ripple into the partner surface.
 // Everything reads --pf-* tokens so light/dark come free.
 import type { CSSProperties, ReactNode } from 'react'
-import { card, eyebrow, numeral } from '@/components/partner/ui'
+import { eyebrow, numeral } from '@/components/partner/ui'
+
+/** Shape-only card style — the glass visuals come from the .pf-glass class
+ *  (inline background/border would override the class). */
+export const glass: CSSProperties = { padding: '18px', borderRadius: '16px' }
 
 /** StatTile's plain-number sibling — admin stats are counts, not money.
  *  Optional icon chip (top-left, soft square) per the FW-dashboard idiom. */
 export function CountTile({ label, value, tone, icon }: { label: string; value: number; tone?: 'gold' | 'alert'; icon?: string }) {
   const color = tone === 'gold' ? 'var(--pf-gold)' : tone === 'alert' ? 'var(--pf-alert)' : 'var(--pf-text)'
   return (
-    <div style={card}>
+    <div className="pf-glass" style={glass}>
       {icon && <div style={{ width: '30px', height: '30px', borderRadius: '9px', background: 'var(--pf-green-soft)', color: 'var(--pf-gold)', display: 'grid', placeItems: 'center', fontSize: '13px', marginBottom: '10px' }}>{icon}</div>}
       <div style={eyebrow}>{label}</div>
       <div style={{ ...numeral, fontSize: '27px', marginTop: '6px', color }}>{value}</div>
@@ -29,7 +33,7 @@ export function SparkTile({ icon, label, value, spark, featured }: {
   const prev = spark[spark.length - 2] ?? 0
   const delta = prev > 0 ? Math.round(((last - prev) / prev) * 100) : (last > 0 ? 100 : 0)
   return (
-    <div style={{ ...card, ...(featured ? { background: 'linear-gradient(150deg, rgba(190,154,86,0.16), var(--pf-card))', borderColor: 'var(--pf-border-strong)' } : {}) }}>
+    <div className={featured ? 'pf-glass pf-glass-gold' : 'pf-glass'} style={glass}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px', marginBottom: '10px' }}>
         <div style={{ width: '30px', height: '30px', borderRadius: '9px', background: 'var(--pf-green-soft)', color: 'var(--pf-gold)', display: 'grid', placeItems: 'center', fontSize: '13px' }}>{icon}</div>
         <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: delta >= 0 ? 'var(--pf-success)' : 'var(--pf-alert)' }}>

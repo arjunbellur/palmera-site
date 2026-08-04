@@ -4,7 +4,7 @@
 // No chart library: flexbox + gradient fills + the pf-bar/pf-pill animations
 // (globals.css). Values are pre-computed by the caller — these only draw.
 
-export interface BarDatum { label: string; value: number; display?: string }
+export interface BarDatum { label: string; value: number; display?: string; img?: string | null }
 
 /** Vertical bars, gold gradient, grown-from-baseline animation. The 6%/2%
  *  floor keeps tiny-but-nonzero periods visible. */
@@ -17,7 +17,7 @@ export function BarChart({ data, height = 96 }: { data: BarDatum[]; height?: num
           <div key={`${d.label}_${i}`} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '7px', minWidth: 0 }}>
             {d.value > 0 && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '9.5px', color: 'var(--pf-gold)', whiteSpace: 'nowrap' }}>{d.display ?? d.value}</span>}
             <div style={{ height: `${height}px`, width: '100%', maxWidth: '46px', display: 'flex', alignItems: 'flex-end' }}>
-              <div className="pf-bar" style={{ width: '100%', height: `${max > 0 ? Math.max((d.value / max) * 100, d.value > 0 ? 6 : 2) : 2}%`, borderRadius: '9px 9px 4px 4px', background: d.value > 0 ? 'linear-gradient(180deg, var(--pf-gold), var(--pf-gold-deep))' : 'var(--pf-border)' }} />
+              <div className="pf-bar" style={{ width: '100%', height: `${max > 0 ? Math.max((d.value / max) * 100, d.value > 0 ? 6 : 2) : 2}%`, borderRadius: '9px 9px 4px 4px', background: d.value > 0 ? 'linear-gradient(180deg, var(--pf-gold), var(--pf-gold-deep))' : 'var(--pf-border)', boxShadow: d.value > 0 ? '0 0 16px rgba(190,154,86,0.35)' : 'none' }} />
             </div>
             <span style={{ fontFamily: 'var(--font-sans)', fontSize: '8.5px', letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--pf-faint)', whiteSpace: 'nowrap' }}>{d.label}</span>
           </div>
@@ -27,19 +27,27 @@ export function BarChart({ data, height = 96 }: { data: BarDatum[]; height?: num
   )
 }
 
-/** Horizontal ranked pills — "top X by Y". Sweeps in from zero width. */
+/** Horizontal ranked pills — "top X by Y". Sweeps in from zero width; the
+ *  gold carries a shine sweep and glow, and an optional avatar/photo chip
+ *  puts a face (or experience photo) on each row. */
 export function RankPills({ items }: { items: BarDatum[] }) {
   const max = Math.max(...items.map((i) => i.value), 1)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
       {items.map((b, i) => (
         <div key={`${b.label}_${i}`}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '7px', gap: '12px' }}>
-            <span style={{ fontFamily: 'var(--font-serif)', fontSize: '14.5px', color: 'var(--pf-text)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.label}</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '7px', gap: '12px' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '9px', minWidth: 0 }}>
+              {b.img && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={b.img} alt="" style={{ width: '24px', height: '24px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0, border: '1px solid var(--pf-border-strong)', boxShadow: '0 0 10px rgba(190,154,86,0.25)' }} />
+              )}
+              <span style={{ fontFamily: 'var(--font-serif)', fontSize: '14.5px', color: 'var(--pf-text)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.label}</span>
+            </span>
             <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-gold)', whiteSpace: 'nowrap' }}>{b.display ?? b.value}</span>
           </div>
-          <div style={{ height: '30px', borderRadius: '20px', background: 'var(--pf-card)', border: '1px solid var(--pf-border)', overflow: 'hidden' }}>
-            <div className="pf-pill" style={{ height: '100%', width: `${Math.max((b.value / max) * 100, 4)}%`, borderRadius: '20px', background: 'linear-gradient(90deg, var(--pf-gold-deep), var(--pf-gold))' }} />
+          <div className="pf-glass" style={{ height: '30px', borderRadius: '20px', overflow: 'hidden', padding: 0 }}>
+            <div className="pf-pill pf-sheen" style={{ height: '100%', width: `${Math.max((b.value / max) * 100, 4)}%`, borderRadius: '20px', background: 'linear-gradient(90deg, var(--pf-gold-deep), var(--pf-gold))', boxShadow: '0 0 18px rgba(190,154,86,0.4)' }} />
           </div>
         </div>
       ))}
@@ -52,7 +60,7 @@ export function Donut({ percent, label, sub }: { percent: number; label: string;
   const p = Math.max(0, Math.min(100, percent))
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
-      <div style={{ width: '92px', height: '92px', borderRadius: '50%', flexShrink: 0, background: `conic-gradient(var(--pf-gold) ${p * 3.6}deg, var(--pf-border) 0deg)`, display: 'grid', placeItems: 'center' }}>
+      <div style={{ width: '92px', height: '92px', borderRadius: '50%', flexShrink: 0, background: `conic-gradient(var(--pf-gold) ${p * 3.6}deg, var(--pf-border) 0deg)`, display: 'grid', placeItems: 'center', boxShadow: p > 0 ? '0 0 26px rgba(190,154,86,0.3)' : 'none' }}>
         <div style={{ width: '66px', height: '66px', borderRadius: '50%', background: 'var(--pf-card-solid)', display: 'grid', placeItems: 'center', fontFamily: 'var(--font-display)', fontSize: '17px', color: 'var(--pf-text)' }}>{Math.round(p)}%</div>
       </div>
       <div style={{ minWidth: 0 }}>

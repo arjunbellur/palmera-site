@@ -11,8 +11,8 @@ import {
 } from '@/lib/firestore'
 import { isAdminEmail } from '@/lib/admin'
 import { docDate, countSince, startOfToday, startOfWeek, startOfMonth, isRealBooking, sumField, bucketByPeriod } from '@/lib/analytics'
-import { ScreenHeader, Chip, Skeleton, Money, SectionTitle, card, eyebrow } from '@/components/partner/ui'
-import { CountTile, SparkTile, timeAgo } from './ui'
+import { ScreenHeader, Chip, Skeleton, Money, SectionTitle, eyebrow } from '@/components/partner/ui'
+import { CountTile, SparkTile, timeAgo, glass } from './ui'
 import type { AppProfile, AppDoc, Booking, Provider, Company } from '@/lib/schema'
 
 const fmtXof = (n: number) => new Intl.NumberFormat('fr-FR').format(Math.round(n))
@@ -171,11 +171,11 @@ export default function AdminOverview() {
         <CountTile icon="✦" label="Completed" value={byStatus('completed')} />
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 15rem), 1fr))', gap: '12px', marginTop: '12px' }}>
-        <div style={{ ...card, background: 'linear-gradient(150deg, rgba(190,154,86,0.12), var(--pf-card))', borderColor: 'var(--pf-border-strong)' }}>
+        <div className="pf-glass pf-glass-gold" style={glass}>
           <div style={eyebrow}>GMV this month · completed</div>
           <div style={{ marginTop: '8px' }}><Money amount={fmtXof(gmvMonth)} size={34} /></div>
         </div>
-        <div style={{ ...card, background: 'linear-gradient(150deg, rgba(190,154,86,0.12), var(--pf-card))', borderColor: 'var(--pf-border-strong)' }}>
+        <div className="pf-glass pf-glass-gold" style={glass}>
           <div style={eyebrow}>Palmera commission this month</div>
           <div style={{ marginTop: '8px' }}><Money amount={fmtXof(commissionMonth)} size={34} /></div>
         </div>
@@ -185,7 +185,7 @@ export default function AdminOverview() {
       {actions.length > 0 && (
         <>
           <SectionTitle>Needs attention</SectionTitle>
-          <div style={{ ...card, background: 'var(--pf-green-soft)', borderColor: 'var(--pf-border-strong)', padding: '14px 16px' }}>
+          <div className="pf-glass" style={{ ...glass, padding: '14px 16px' }}>
             {actions.map((a, i) => (
               <a key={a.text} href={a.href} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '8px 0', textDecoration: 'none', borderTop: i > 0 ? '1px solid var(--pf-border)' : 'none' }}>
                 <span style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '13.5px' }}>{a.text}</span>
@@ -207,7 +207,7 @@ export default function AdminOverview() {
       ) : activity.length === 0 ? (
         <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--pf-faint)', fontStyle: 'italic' }}>Nothing yet.</p>
       ) : (
-        <div style={{ ...card, padding: '8px' }}>
+        <div className="pf-glass" style={{ ...glass, padding: '8px' }}>
           {/* Push-notification idiom: avatar chip with an event badge, bold
               sans title + muted meta line, status/amount on the right. Rows
               stagger in and lift on hover (.pf-note). */}

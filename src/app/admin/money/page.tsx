@@ -10,7 +10,7 @@ import { getAllBookingsAdmin, getAllCompanies, getAppProfiles, getPayoutProfile 
 import { docDate, isRealBooking, startOfMonth, sumField, bucketByPeriod } from '@/lib/analytics'
 import { ScreenHeader, Chip, Skeleton, Money, SectionTitle, EmptyState, card, eyebrow, type Tone } from '@/components/partner/ui'
 import { BarChart, RankPills, Donut } from '@/components/charts'
-import { FilterChip, inputStyle, formatDate } from '../ui'
+import { FilterChip, inputStyle, formatDate, glass } from '../ui'
 import type { Booking, BookingStatus, Company, AppProfile, CompanyPayoutProfile } from '@/lib/schema'
 
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR').format(Math.round(n))
@@ -103,8 +103,9 @@ function AdminMoney() {
 
   const byCompany = (() => {
     const m = new Map<string, number>()
+    const coLogo = new Map(companies.map((c) => [c.id, c.logo || null]))
     completed.forEach((b) => m.set(b.companyId, (m.get(b.companyId) || 0) + (b.bookingTotal || 0)))
-    return [...m.entries()].map(([id, v]) => ({ label: coName.get(id) || '—', value: v, display: `${fmt(v)} XOF` })).sort((a, b) => b.value - a.value).slice(0, 5)
+    return [...m.entries()].map(([id, v]) => ({ label: coName.get(id) || '—', value: v, display: `${fmt(v)} XOF`, img: coLogo.get(id) || null })).sort((a, b) => b.value - a.value).slice(0, 5)
   })()
   const byCategory = (() => {
     const catOf = new Map(companies.map((c) => [c.id, c.category || '—']))
@@ -126,17 +127,17 @@ function AdminMoney() {
 
       {/* Revenue tiles */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 15rem), 1fr))', gap: '12px' }}>
-        <div style={{ ...card, background: 'linear-gradient(150deg, rgba(190,154,86,0.14), var(--pf-card))', borderColor: 'var(--pf-border-strong)' }}>
+        <div className="pf-glass pf-glass-gold" style={glass}>
           <div style={eyebrow}>GMV all-time · completed</div>
           <div style={{ marginTop: '8px' }}><Money amount={fmt(gmvAll)} size={32} /></div>
           <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-muted)', marginTop: '8px' }}>{fmt(gmvMonth)} XOF this month</div>
         </div>
-        <div style={{ ...card, background: 'linear-gradient(150deg, rgba(190,154,86,0.14), var(--pf-card))', borderColor: 'var(--pf-border-strong)' }}>
+        <div className="pf-glass pf-glass-gold" style={glass}>
           <div style={eyebrow}>Palmera commission all-time</div>
           <div style={{ marginTop: '8px' }}><Money amount={fmt(commAll)} size={32} /></div>
           <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-muted)', marginTop: '8px' }}>{fmt(commMonth)} XOF this month</div>
         </div>
-        <div style={{ ...card, display: 'flex', alignItems: 'center' }}>
+        <div className="pf-glass" style={{ ...glass, display: 'flex', alignItems: 'center' }}>
           <Donut percent={completionRate} label="Completion rate" sub={`${completed.length} completed of ${resolved.length} resolved booking(s)`} />
         </div>
       </div>
@@ -162,7 +163,7 @@ function AdminMoney() {
       {owed.length === 0 ? (
         <EmptyState icon="◆" title="Nothing owed yet" body="Once bookings are marked completed, each partner's payout builds up here." chip="Payouts run every two weeks" />
       ) : (
-        <div style={{ ...card, padding: '6px 16px' }}>
+        <div className="pf-glass" style={{ ...glass, padding: '6px 16px' }}>
           {owed.map((o, i) => (
             <div key={o.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '11px 0', borderTop: i > 0 ? '1px solid var(--pf-border)' : 'none', flexWrap: 'wrap' }}>
               <span style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '14px' }}>{o.name}</span>
@@ -204,7 +205,7 @@ function AdminMoney() {
       {rows.length === 0 ? (
         <EmptyState icon="▤" title="No bookings match" body="Try clearing a filter or widening the date range." />
       ) : (
-        <div style={{ ...card, padding: '8px' }}>
+        <div className="pf-glass" style={{ ...glass, padding: '8px' }}>
           {rows.map((b, i) => {
             const handle = handleOf(b.customerId)
             const d = docDate(b, 'scheduledFor')

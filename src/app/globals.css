@@ -206,6 +206,49 @@ body {
 /* Notification-style feed rows (admin Pulse): hover lift + staggered entry. */
 .pf-note { transition: background 0.15s ease, transform 0.15s ease; border-radius: 12px; animation: pfIn 0.35s ease both; }
 .pf-note:hover { background: var(--pf-card-solid); transform: translateX(3px); }
+
+/* ── Glass system (Apple-Card lens): frosted translucency, a 1px inner top
+   highlight, depth shadow, and a lift+glow on hover. Visuals live HERE so
+   components carry only padding/radius inline (inline styles would win). ── */
+.pf-glass {
+  background: linear-gradient(165deg, rgba(255,255,255,0.055), rgba(255,255,255,0.015) 45%, rgba(190,154,86,0.05));
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 8px 24px rgba(0,0,0,0.25);
+  transition: transform 0.22s cubic-bezier(0.22,1,0.36,1), box-shadow 0.22s ease;
+}
+.pf-glass:hover {
+  transform: translateY(-2px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.13), 0 16px 36px rgba(0,0,0,0.35), 0 0 28px rgba(190,154,86,0.10);
+}
+/* Gold-tinted glass for featured/hero cards — the warm Apple Card face. */
+.pf-glass-gold {
+  background: linear-gradient(160deg, rgba(233,188,79,0.15), rgba(190,154,86,0.05) 55%, rgba(255,255,255,0.02));
+  border-color: rgba(190,154,86,0.35);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 8px 28px rgba(0,0,0,0.3), 0 0 32px rgba(190,154,86,0.13);
+}
+.pf-glass-gold:hover {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 16px 40px rgba(0,0,0,0.38), 0 0 44px rgba(190,154,86,0.2);
+}
+[data-theme="light"] .pf-glass {
+  background: linear-gradient(165deg, rgba(255,255,255,0.72), rgba(255,255,255,0.45) 45%, rgba(190,154,86,0.08));
+  border-color: rgba(20,24,20,0.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 8px 24px rgba(30,32,28,0.08);
+}
+[data-theme="light"] .pf-glass-gold {
+  background: linear-gradient(160deg, rgba(233,188,79,0.22), rgba(233,188,79,0.06) 55%, rgba(255,255,255,0.5));
+  border-color: rgba(158,118,59,0.3);
+}
+/* Card-shine sweep: a soft highlight travelling across gold surfaces. */
+@keyframes pfSheen { 0% { transform: translateX(-130%) skewX(-18deg); } 60%, 100% { transform: translateX(260%) skewX(-18deg); } }
+.pf-sheen { position: relative; overflow: hidden; }
+.pf-sheen::after {
+  content: '';
+  position: absolute; top: 0; bottom: 0; left: 0; width: 45%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent);
+  animation: pfSheen 3.2s cubic-bezier(0.4,0,0.2,1) infinite;
+}
 @keyframes pfShimmer { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
 .pf-skel { background: var(--pf-card); border: 1px solid var(--pf-border); border-radius: 14px; animation: pfShimmer 1.4s ease-in-out infinite; }
 
