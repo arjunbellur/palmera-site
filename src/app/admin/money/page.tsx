@@ -125,6 +125,10 @@ function AdminMoney() {
     <div className="pf-in">
       <ScreenHeader label="Palmera HQ" title="Money" intro="Every booking on the platform, the revenue behind it, and what Palmera owes each partner." />
 
+      {/* Composition: the working column (revenue + explorer) with the payout
+          rail pinned right on wide screens. */}
+      <div className="pf-cols">
+      <div style={{ minWidth: 0 }}>
       {/* Revenue tiles */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 15rem), 1fr))', gap: '12px' }}>
         <div className="pf-glass pf-glass-gold" style={glass}>
@@ -136,9 +140,6 @@ function AdminMoney() {
           <div style={eyebrow}>Palmera commission all-time</div>
           <div style={{ marginTop: '8px' }}><Money amount={fmt(commAll)} size={32} /></div>
           <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-muted)', marginTop: '8px' }}>{fmt(commMonth)} XOF this month</div>
-        </div>
-        <div className="pf-glass" style={{ ...glass, display: 'flex', alignItems: 'center' }}>
-          <Donut percent={completionRate} label="Completion rate" sub={`${completed.length} completed of ${resolved.length} resolved booking(s)`} />
         </div>
       </div>
 
@@ -155,6 +156,12 @@ function AdminMoney() {
         </div>
       )}
 
+      </div>
+
+      <div className="pf-rail" style={{ minWidth: 0 }}>
+      <div className="pf-glass" style={{ ...glass, display: 'flex', alignItems: 'center' }}>
+        <Donut percent={completionRate} label="Completion rate" sub={`${completed.length} completed of ${resolved.length} resolved booking(s)`} />
+      </div>
       {/* Payout readiness */}
       <SectionTitle>Payout readiness</SectionTitle>
       <p style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-faint)', margin: '-6px 0 12px' }}>
@@ -176,7 +183,11 @@ function AdminMoney() {
         </div>
       )}
 
-      {/* Bookings explorer */}
+      </div>
+      </div>
+
+      {/* Bookings explorer — full width beneath the grid; the row list wants
+          every pixel it can get. */}
       <SectionTitle>All bookings</SectionTitle>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '14px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>

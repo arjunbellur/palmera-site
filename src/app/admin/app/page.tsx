@@ -123,6 +123,10 @@ export default function AdminAppGrowth() {
         <button onClick={load} style={{ marginTop: '4px', background: 'transparent', border: '1px solid var(--pf-border)', borderRadius: '8px', color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '11px', cursor: 'pointer', padding: '6px 12px' }}>↻ Refresh</button>
       </div>
 
+      {/* Composition: charts flow down the main column; city, social graph and
+          the earners leaderboard live on the sticky rail at ≥1200px. */}
+      <div className="pf-cols">
+      <div style={{ minWidth: 0 }}>
       {/* 1 — Signups */}
       <SectionTitle>Signups</SectionTitle>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '12px', marginBottom: '12px' }}>
@@ -137,12 +141,6 @@ export default function AdminAppGrowth() {
         </div>
       </div>
       <BarChart data={signupBuckets.map((b) => ({ label: b.label, value: b.count }))} />
-      {byCity.length > 0 && (
-        <div style={{ marginTop: '16px' }}>
-          <div style={{ ...eyebrow, marginBottom: '10px' }}>Users by city</div>
-          <RankPills items={byCity.map((c) => ({ label: c.label, value: c.value, display: `${c.value}` }))} />
-        </div>
-      )}
 
       {/* 2 — Engagement */}
       <SectionTitle>Engagement</SectionTitle>
@@ -160,17 +158,6 @@ export default function AdminAppGrowth() {
       <div style={{ ...eyebrow, marginBottom: '10px' }}>Content per week · moments + comments + messages</div>
       <BarChart data={contentBuckets.map((b) => ({ label: b.label, value: b.count }))} />
 
-      {/* 3 — Social graph */}
-      <SectionTitle>Social graph</SectionTitle>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '12px' }}>
-        <CountTile icon="⚭" label="Friendships" value={accepted} tone="gold" />
-        <CountTile icon="◷" label="Pending requests" value={pendingFriends} />
-        <div className="pf-glass" style={glass}>
-          <div style={{ width: '30px', height: '30px', borderRadius: '9px', background: 'var(--pf-green-soft)', color: 'var(--pf-gold)', display: 'grid', placeItems: 'center', fontSize: '13px', marginBottom: '10px' }}>∅</div>
-          <div style={eyebrow}>Avg friends / user</div>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: '27px', color: 'var(--pf-text)', marginTop: '6px' }}>{avgFriends}</div>
-        </div>
-      </div>
 
       {/* 4 — Points economy */}
       <SectionTitle>Points economy</SectionTitle>
@@ -179,15 +166,9 @@ export default function AdminAppGrowth() {
         <CountTile icon="▤" label="Ledger entries" value={points.length} />
       </div>
       {pointsByKind.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 20rem), 1fr))', gap: '20px' }}>
-          <div>
-            <div style={{ ...eyebrow, marginBottom: '10px' }}>By reason</div>
-            <RankPills items={pointsByKind.slice(0, 5)} />
-          </div>
-          <div>
-            <div style={{ ...eyebrow, marginBottom: '10px' }}>Top earners</div>
-            <RankPills items={topEarners} />
-          </div>
+        <div>
+          <div style={{ ...eyebrow, marginBottom: '10px' }}>By reason</div>
+          <RankPills items={pointsByKind.slice(0, 5)} />
         </div>
       )}
 
@@ -224,6 +205,33 @@ export default function AdminAppGrowth() {
       ) : (
         <RankPills items={rankItems} />
       )}
+      </div>
+
+      <div className="pf-rail" style={{ minWidth: 0 }}>
+        {byCity.length > 0 && (
+          <>
+            <SectionTitle>Users by city</SectionTitle>
+            <RankPills items={byCity.map((c) => ({ label: c.label, value: c.value, display: `${c.value}` }))} />
+          </>
+        )}
+        <SectionTitle>Social graph</SectionTitle>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '12px' }}>
+          <CountTile icon="⚭" label="Friendships" value={accepted} tone="gold" />
+          <CountTile icon="◷" label="Pending requests" value={pendingFriends} />
+          <div className="pf-glass" style={glass}>
+            <div style={{ width: '30px', height: '30px', borderRadius: '9px', background: 'var(--pf-green-soft)', color: 'var(--pf-gold)', display: 'grid', placeItems: 'center', fontSize: '13px', marginBottom: '10px' }}>∅</div>
+            <div style={eyebrow}>Avg friends / user</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: '27px', color: 'var(--pf-text)', marginTop: '6px' }}>{avgFriends}</div>
+          </div>
+        </div>
+        {topEarners.length > 0 && (
+          <>
+            <SectionTitle>Top earners</SectionTitle>
+            <RankPills items={topEarners} />
+          </>
+        )}
+      </div>
+      </div>
     </div>
   )
 }
