@@ -41,8 +41,9 @@ indexes, collections). Last updated: 2026-08-01 (indexes live, sync verified; NO
 |---|---|---|---|
 | 1 | Create 5 composite indexes (console links) | **Arjun** | ✅ done 2026-08-01 — all 5 Enabled |
 | 2 | Verify dashboard query returns Jordan's booking post-index | us | ✅ verified — 7 reservations return (provider + company-scoped), customer my-bookings works |
-| 3 | Point payment writes at the booking's own doc id | **Samson** | rule gap fixed our side; his code change pending |
-| 4 | Confirm the 8 orphan payment docs are abandoned → we wipe | **Samson** confirm, us delete | pending |
+| 3 | Point payment writes at the booking's own doc id | **Samson** | 🔴 ESCALATED 2026-08-04: still writing to self-generated `bk-XXXXXXXX` ids that match NO real booking — the paid flow creates a payment-only doc and NEVER creates the booking itself. This is why Jordan's paid reservations don't appear on the partner dashboard. Correct flow per contract: create the booking doc first (all v3.3 fields), then update THAT doc's `payment` map. |
+| 4 | Confirm the orphan payment docs are abandoned → we wipe | **Samson** confirm, us delete | count grew 8 → 25 (one `payment.status: completed`) — active bug, not legacy |
+| 4b | ⚠ Payment provider drift: latest completed payment is **Stripe, USD, LIVE session** (`cs_live_…`, amountMinor 89) — contract says PayDunya + XOF (`amountXof`). If Stripe is the new direction, the contract + dashboard money display need updating; if not, a live-mode test charged real money. | **Samson + Jordan** decide | 🔴 flagged 2026-08-04 |
 | 5 | Free-reservation flow (no payment, "Confirm", points) | **Samson** | spec now in contract doc |
 | 6 | App-side rules hardening (points self-grant, open chat, favorites delete, notification spam) | **Samson** specs the change → we land it in repo + deploy | pending — flagged ⚠ inline in firestore.rules |
 | 7 | Server-side validation of client-authored booking money fields | joint (needs Cloud Function or trusted server) | pre-launch requirement, not blocking testing |
