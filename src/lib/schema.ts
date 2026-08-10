@@ -305,7 +305,13 @@ export interface Booking {
   paymentStatus?: 'paid' | 'unpaid' | 'refunded' | null // app-set; reservation-mode bookings are 'unpaid'
   /** Processor state (PayDunya etc.), written by the APP onto the booking doc
    * itself — never as a separate doc. Absent for mode='reservation'. */
-  payment?: { provider: string; amountXof: number; status: string; token?: string | null; updatedAt?: TS } | null
+  // Two rails by design: PayDunya (amountXof/token) or Stripe
+  // (currency/amountMinor/sessionId). Booking money fields stay XOF.
+  payment?: {
+    provider: string; status: string; updatedAt?: TS
+    amountXof?: number; token?: string | null            // PayDunya
+    currency?: string; amountMinor?: number; sessionId?: string  // Stripe
+  } | null
   guestCount: number
   // ── When ──
   scheduledFor: TS            // the reserved date/time of the experience

@@ -106,14 +106,25 @@ A biweekly payout batch for one company.
 
 ---
 
-## Payment state (PayDunya etc.) — ON the booking doc, never separate
+## Payment state — ON the booking doc, never separate
 
-Write processor state to `bookings/{id}.payment` (a map on the SAME doc the
-booking lives in), not to a new document:
+Two payment rails are supported BY DESIGN (confirmed Arjun 2026-08-04):
+PayDunya for regional mobile money, Stripe for international cards. Either
+way, write processor state to `bookings/{id}.payment` (a map on the SAME doc
+the booking lives in — create the booking FIRST with the full shape above,
+then update that doc), never to a new/self-generated document id:
 
 ```
+// PayDunya (XOF)
 payment: { provider: 'paydunya', amountXof: 12000, status: 'pending'|'completed'|'failed', token: '…' }
+
+// Stripe (card; minor units in the charged currency)
+payment: { provider: 'stripe', currency: 'usd', amountMinor: 8900, sessionId: 'cs_…', status: 'pending'|'completed'|'failed' }
 ```
+
+Booking money fields (`bookingTotal`, `commissionAmount`, `payoutAmount`)
+stay XOF regardless of the charge currency — `payment` records the charge,
+the booking records the ledger truth.
 
 The security rules now allow the customer to UPDATE their own booking
 (anchors + money fields stay frozen) — the earlier permission gap that forced
