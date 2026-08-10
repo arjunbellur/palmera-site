@@ -12,6 +12,7 @@
 //     will experience it.
 import { useEffect, useState } from 'react'
 import PhotoUpload from './PhotoUpload'
+import MenuUpload from './MenuUpload'
 import GalleryUpload from './GalleryUpload'
 import { getEnabledCategories, getEnabledCities, getPolicies } from '@/lib/config'
 import { useLocale } from '@/lib/use-locale'
@@ -84,6 +85,7 @@ const M = {
     mapsHint: 'Dans Google Maps : trouvez votre lieu → Partager → Copier le lien, puis collez-le ici. Les clients l’utilisent pour s’y rendre.',
     pinOk: ' ✓ Position localisée.', pinPending: ' Lien enregistré — la position sera placée à partir du lien.',
     mainPhoto: 'Photo principale', photoHint: 'C’est la première photo que voient les clients — soignez-la.',
+    menuLabel: 'Votre menu', menuHint: 'PDF ou image — les clients pourront le consulter avant de réserver.',
     morePhotos: 'Autres photos',
     describe: 'Décrivez-la à un client', describePh: 'Que vont-ils faire ? Qu’est-ce qui la rend spéciale ?',
     included: 'Ce qui est inclus (un par ligne)', includedPh: 'Gilets de sauvetage\nBoissons',
@@ -177,6 +179,7 @@ const M = {
     mapsHint: 'In Google Maps: find your spot → Share → Copy link, and paste it here. Guests use it to navigate.',
     pinOk: ' ✓ Pin located.', pinPending: ' Link saved — the pin will be placed from it.',
     mainPhoto: 'Main photo', photoHint: 'This is the photo guests see first — make it count.',
+    menuLabel: 'Your menu', menuHint: 'PDF or image — guests can browse it before booking.',
     morePhotos: 'More photos',
     describe: 'Describe it to a guest', describePh: 'What will they do? What makes it special?',
     included: "What's included (one per line)", includedPh: 'Life jackets\nDrinks',
@@ -379,6 +382,7 @@ export default function ExperienceModal({ providerId, companyId, companyName, de
     scheduleType: 'ongoing', schedule: null, optionGroups: [],
     title: '', location: '', category: defaultCategory || '', city: defaultCity || '',
     mapsLink: null, lat: null, lng: null, duration: '', minGuests: 1, maxGuests: 10,
+    menuUrl: null, menuType: null,
     img: '', gallery: [], description: '', includes: [], highlights: [],
     languages: [], excludes: [], dressCode: null,
     ...experience,
@@ -635,6 +639,17 @@ export default function ExperienceModal({ providerId, companyId, companyName, de
       </div>
 
       <div style={{ marginBottom: '1rem' }}>
+        {/* Menu — restaurant-style categories only. Optional; PDF or image. */}
+        {['dining', 'nightlife'].includes(form.category || '') && (
+          <div style={{ marginBottom: '1.25rem' }}>
+            <label style={labelStyle}>{T.menuLabel}</label>
+            <p style={{ ...hintStyle, margin: '0 0 0.625rem' }}>{T.menuHint}</p>
+            <MenuUpload uid={providerId} fieldName={`experience_${experience?.id || 'new'}_menu`}
+              existingUrl={form.menuUrl} existingKind={form.menuType}
+              onUploaded={(url, kind) => setForm((f) => ({ ...f, menuUrl: url, menuType: kind }))}
+              onRemove={() => setForm((f) => ({ ...f, menuUrl: null, menuType: null }))} />
+          </div>
+        )}
         <label style={labelStyle}>{T.describe}</label>
         <textarea style={{ ...inputStyle, height: '90px', resize: 'vertical' }} placeholder={T.describePh} value={form.description} onChange={(e) => set('description', e.target.value)} />
       </div>

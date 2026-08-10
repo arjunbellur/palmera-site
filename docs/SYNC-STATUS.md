@@ -53,6 +53,13 @@ indexes, collections). Last updated: 2026-08-01 (indexes live, sync verified; NO
 Every dashboard change that touches documents/rules/indexes the app consumes
 gets a line here, newest first. Pure-UI dashboard changes are never listed.
 
+- 2026-08-04 ⚠ **Experiences gain optional `menuUrl` + `menuType`** —
+  restaurant-style listings (dining/nightlife categories) can now attach a
+  menu from the dashboard editor: `menuUrl: string|null` (Firebase Storage
+  download URL under partners/{uid}/experience_*_menu/), `menuType:
+  'pdf'|'image'|null`. Purely additive — absent/null on every existing doc;
+  app can ignore until it renders a "View menu" affordance (PDF opens in a
+  viewer/browser, image renders inline).
 - 2026-08-02 ⚠ **All 13 categories enabled in `config/categories`** (Jordan's
   partner-pipeline list): activities, lifestyle, villas, islands, yachts,
   entertainment, sports flipped on (hotels, dining, wellness, rentals,

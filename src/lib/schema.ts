@@ -187,6 +187,10 @@ export interface Experience {
   category: string                // config id; defaults from company; overridable; enabled
   city: string                    // config id; enabled only
   mapsLink: string | null         // Google Maps link — what the PARTNER enters; required at publish
+  // Menu attachment for restaurant-style listings (dining/nightlife) —
+  // optional; the app shows a "View menu" affordance when present.
+  menuUrl?: string | null
+  menuType?: 'pdf' | 'image' | null
   lat: number | null              // derived from mapsLink when parseable; app's pin. Partners never type these.
   lng: number | null
   duration: string
