@@ -83,7 +83,14 @@ export default function ReservationsScreen() {
       if (`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` !== dateFilter) return false
     }
     return true
-  }).sort((a, b) => (toDate(b.scheduledFor)?.getTime() ?? 0) - (toDate(a.scheduledFor)?.getTime() ?? 0))
+  })
+  // Airbnb host ordering: what's NEXT comes first. Upcoming sorts SOONEST-
+  // first (today on top — the old most-future-first pile buried near-term
+  // bookings and partners missed them), past sits below, most recent first.
+  const startToday = new Date(); startToday.setHours(0, 0, 0, 0)
+  const ts = (b: Booking) => toDate(b.scheduledFor)?.getTime() ?? 0
+  const upcoming = shown.filter(b => ts(b) >= startToday.getTime()).sort((a, b) => ts(a) - ts(b))
+  const past = shown.filter(b => ts(b) < startToday.getTime()).sort((a, b) => ts(b) - ts(a))
 
   const FILTERS: { key: Filter; label: string; count?: number }[] = [
     { key: 'all', label: L('f_all') },
@@ -141,7 +148,8 @@ export default function ReservationsScreen() {
         <EmptyState icon="◷" title={L('res_empty_t')} body={L('res_empty_b')} />
       ) : (
         // Grouped by day (Airbnb host pattern) — partners read their bookings
-        // like a service sheet: Today, Tomorrow, then dated sections.
+        // like a service sheet: Today, Tomorrow, then dated sections; anything
+        // already behind us lives under a separate Past divider.
         (() => {
           const now = new Date()
           const tm = new Date(now); tm.setDate(now.getDate() + 1)
@@ -151,14 +159,17 @@ export default function ReservationsScreen() {
             if (sameDay(d, tm)) return L('dp_tomorrow')
             return d.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
           }
-          const groups: { label: string; items: Booking[] }[] = []
-          for (const b of shown) {
-            const label = dayLabel(toDate(b.scheduledFor))
-            const g = groups[groups.length - 1]
-            if (g && g.label === label) g.items.push(b)
-            else groups.push({ label, items: [b] })
+          const toGroups = (list: Booking[]) => {
+            const groups: { label: string; items: Booking[] }[] = []
+            for (const b of list) {
+              const label = dayLabel(toDate(b.scheduledFor))
+              const g = groups[groups.length - 1]
+              if (g && g.label === label) g.items.push(b)
+              else groups.push({ label, items: [b] })
+            }
+            return groups
           }
-          return groups.map(g => (
+          const renderGroups = (list: Booking[]) => toGroups(list).map(g => (
             <div key={g.label} style={{ marginBottom: '18px' }}>
               <div style={{ ...eyebrow, color: 'var(--pf-eyebrow)', margin: '0 0 8px', textTransform: 'capitalize' }}>{g.label}</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 22rem), 1fr))', gap: '12px' }}>
@@ -173,6 +184,20 @@ export default function ReservationsScreen() {
               </div>
             </div>
           ))
+          return (
+            <>
+              {renderGroups(upcoming)}
+              {past.length > 0 && (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '26px 0 14px' }}>
+                    <span style={{ ...eyebrow, color: 'var(--pf-faint)' }}>{L('past_hdr')}</span>
+                    <span style={{ flex: 1, height: '1px', background: 'var(--pf-border)' }} />
+                  </div>
+                  {renderGroups(past)}
+                </>
+              )}
+            </>
+          )
         })()
       )}
 
