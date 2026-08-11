@@ -20,6 +20,14 @@ export default function ReservationsScreen() {
   const [search, setSearch] = useState('')
   const [dateFilter, setDateFilter] = useState('')
   const [datePreset, setDatePreset] = useState<'' | 'today' | 'tomorrow' | 'week'>('')
+  // Calendar view (Airbnb host): month grid with status dots, tap a day for
+  // its bookings. List stays the default.
+  const [view, setView] = useState<'list' | 'calendar'>('list')
+  const [calMonth, setCalMonth] = useState(() => { const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0); return d })
+  const [selectedDay, setSelectedDay] = useState<string>(() => {
+    const d = new Date(); const pad = (n: number) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  })
   const [detail, setDetail] = useState<Booking | null>(null)
   const [busyId, setBusyId] = useState('')
   const [error, setError] = useState('')
@@ -92,6 +100,17 @@ export default function ReservationsScreen() {
   const upcoming = shown.filter(b => ts(b) >= startToday.getTime()).sort((a, b) => ts(a) - ts(b))
   const past = shown.filter(b => ts(b) < startToday.getTime()).sort((a, b) => ts(b) - ts(a))
 
+  const matchesStatus = (b: Booking) => {
+    if (filter === 'pending' && b.status !== 'pending') return false
+    if (filter === 'confirmed' && b.status !== 'confirmed') return false
+    if (filter === 'done' && !['completed', 'no_show', 'cancelled', 'declined'].includes(b.status)) return false
+    if (q && !`${b.title} ${b.customerName} ${b.id}`.toLowerCase().includes(q)) return false
+    return true
+  }
+  const baseShown = bookings.filter(matchesStatus)
+  const pad2 = (n: number) => String(n).padStart(2, '0')
+  const dayKey = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
+
   const FILTERS: { key: Filter; label: string; count?: number }[] = [
     { key: 'all', label: L('f_all') },
     { key: 'pending', label: L('f_pending'), count: pendingCount },
@@ -107,14 +126,14 @@ export default function ReservationsScreen() {
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder={L('search_ph')}
           style={{ flex: '1 1 14rem', background: 'var(--pf-card)', border: '1px solid var(--pf-border)', borderRadius: '10px', padding: '9px 13px', color: 'var(--pf-text)', fontFamily: 'var(--font-sans)', fontSize: '12.5px', outline: 'none' }} />
-        {([['today', 'dp_today'], ['tomorrow', 'dp_tomorrow'], ['week', 'dp_week']] as const).map(([k, label]) => (
+        {view === 'list' && ([['today', 'dp_today'], ['tomorrow', 'dp_tomorrow'], ['week', 'dp_week']] as const).map(([k, label]) => (
           <button key={k} onClick={() => { setDatePreset(p => p === k ? '' : k); setDateFilter('') }}
             style={{ padding: '8px 13px', borderRadius: '10px', cursor: 'pointer', fontFamily: 'var(--font-sans)', fontSize: '11.5px', border: `1px solid ${datePreset === k ? 'var(--pf-border-strong)' : 'var(--pf-border)'}`, background: datePreset === k ? 'var(--pf-card)' : 'transparent', color: datePreset === k ? 'var(--pf-gold)' : 'var(--pf-faint)' }}>
             {L(label)}
           </button>
         ))}
-        <input type="date" value={dateFilter} onChange={e => { setDateFilter(e.target.value); setDatePreset('') }}
-          style={{ background: 'var(--pf-card)', border: '1px solid var(--pf-border)', borderRadius: '10px', padding: '8px 12px', color: dateFilter ? 'var(--pf-text)' : 'var(--pf-faint)', fontFamily: 'var(--font-sans)', fontSize: '12.5px', outline: 'none', colorScheme: 'dark' }} />
+        {view === 'list' && <input type="date" value={dateFilter} onChange={e => { setDateFilter(e.target.value); setDatePreset('') }}
+          style={{ background: 'var(--pf-card)', border: '1px solid var(--pf-border)', borderRadius: '10px', padding: '8px 12px', color: dateFilter ? 'var(--pf-text)' : 'var(--pf-faint)', fontFamily: 'var(--font-sans)', fontSize: '12.5px', outline: 'none', colorScheme: 'dark' }} />}
         {(search || dateFilter || datePreset) && (
           <button onClick={() => { setSearch(''); setDateFilter(''); setDatePreset('') }}
             style={{ background: 'transparent', border: '1px solid var(--pf-border)', borderRadius: '10px', padding: '8px 13px', color: 'var(--pf-faint)', fontFamily: 'var(--font-sans)', fontSize: '11.5px', cursor: 'pointer' }}>
@@ -123,7 +142,15 @@ export default function ReservationsScreen() {
         )}
       </div>
 
-      <div style={{ display: 'flex', gap: '7px', flexWrap: 'wrap', marginBottom: '16px' }}>
+      <div style={{ display: 'flex', gap: '7px', flexWrap: 'wrap', marginBottom: '16px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', border: '1px solid var(--pf-border)', borderRadius: '10px', overflow: 'hidden', marginRight: '4px' }}>
+          {([['list', 'view_list', '▤'], ['calendar', 'view_cal', '▦']] as const).map(([v, key, icon]) => (
+            <button key={v} onClick={() => setView(v)}
+              style={{ padding: '7px 13px', background: view === v ? 'var(--pf-card)' : 'transparent', border: 'none', color: view === v ? 'var(--pf-gold)' : 'var(--pf-faint)', fontFamily: 'var(--font-sans)', fontSize: '11.5px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '12px' }}>{icon}</span> {L(key)}
+            </button>
+          ))}
+        </div>
         {FILTERS.map(f => {
           const active = filter === f.key
           return (
@@ -144,6 +171,85 @@ export default function ReservationsScreen() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 22rem), 1fr))', gap: '12px' }}>
           <Skeleton height="150px" /><Skeleton height="150px" /><Skeleton height="150px" />
         </div>
+      ) : view === 'calendar' ? (
+        // ── Month grid (Airbnb host): dots per day by status, tap a day for
+        // its bookings below. Monday-start weeks.
+        (() => {
+          const byDay = new Map<string, Booking[]>()
+          baseShown.forEach(b => {
+            const d = toDate(b.scheduledFor); if (!d) return
+            const k = dayKey(d)
+            byDay.set(k, [...(byDay.get(k) || []), b])
+          })
+          const first = new Date(calMonth)
+          const gridStart = new Date(first); gridStart.setDate(1 - ((first.getDay() + 6) % 7))
+          const cells: Date[] = Array.from({ length: 42 }, (_, i) => { const d = new Date(gridStart); d.setDate(gridStart.getDate() + i); return d })
+          const todayK = dayKey(new Date())
+          const monthLabel = calMonth.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-GB', { month: 'long', year: 'numeric' })
+          const weekdays = Array.from({ length: 7 }, (_, i) => { const d = new Date(gridStart); d.setDate(gridStart.getDate() + i); return d.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-GB', { weekday: 'narrow' }) })
+          const DOT: Record<string, string> = { pending: 'var(--pf-gold)', confirmed: 'var(--pf-success)' }
+          const shiftMonth = (n: number) => setCalMonth(m => new Date(m.getFullYear(), m.getMonth() + n, 1))
+          const dayBookings = (byDay.get(selectedDay) || []).sort((a, b2) => (toDate(a.scheduledFor)?.getTime() ?? 0) - (toDate(b2.scheduledFor)?.getTime() ?? 0))
+          const selDate = new Date(`${selectedDay}T12:00`)
+          return (
+            <>
+              <div className="pf-glass" style={{ borderRadius: '16px', padding: '16px 14px', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', padding: '0 4px' }}>
+                  <button onClick={() => shiftMonth(-1)} aria-label="Previous month" style={{ width: '30px', height: '30px', borderRadius: '8px', border: '1px solid var(--pf-border)', background: 'transparent', color: 'var(--pf-gold)', cursor: 'pointer' }}>‹</button>
+                  <span style={{ fontFamily: 'var(--font-display)', color: 'var(--pf-head)', fontSize: '15px', letterSpacing: '0.04em', textTransform: 'capitalize' }}>{monthLabel}</span>
+                  <button onClick={() => shiftMonth(1)} aria-label="Next month" style={{ width: '30px', height: '30px', borderRadius: '8px', border: '1px solid var(--pf-border)', background: 'transparent', color: 'var(--pf-gold)', cursor: 'pointer' }}>›</button>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', marginBottom: '4px' }}>
+                  {weekdays.map((w, i) => <div key={i} style={{ ...eyebrow, textAlign: 'center', fontSize: '9px' }}>{w}</div>)}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
+                  {cells.map(d => {
+                    const k = dayKey(d)
+                    const inMonth = d.getMonth() === calMonth.getMonth()
+                    const dayBs = byDay.get(k) || []
+                    const isSel = k === selectedDay
+                    const isToday = k === todayK
+                    return (
+                      <button key={k} onClick={() => setSelectedDay(k)}
+                        style={{
+                          minHeight: '52px', borderRadius: '10px', cursor: 'pointer', padding: '6px 2px 4px',
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
+                          border: `1px solid ${isSel ? 'var(--pf-gold)' : isToday ? 'var(--pf-border-strong)' : 'transparent'}`,
+                          background: isSel ? 'rgba(190,154,86,0.12)' : dayBs.length > 0 ? 'var(--pf-card)' : 'transparent',
+                        }}>
+                        <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11.5px', color: isSel || isToday ? 'var(--pf-gold)' : inMonth ? 'var(--pf-text)' : 'var(--pf-faint)', opacity: inMonth ? 1 : 0.45 }}>{d.getDate()}</span>
+                        <span style={{ display: 'flex', gap: '3px', minHeight: '5px' }}>
+                          {dayBs.slice(0, 3).map((b, i) => (
+                            <span key={i} style={{ width: '5px', height: '5px', borderRadius: '50%', background: DOT[b.status] || 'var(--pf-faint)' }} />
+                          ))}
+                          {dayBs.length > 3 && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '8px', color: 'var(--pf-gold)', lineHeight: '5px' }}>+</span>}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div style={{ ...eyebrow, color: 'var(--pf-eyebrow)', margin: '0 0 10px', textTransform: 'capitalize' }}>
+                {selDate.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+              </div>
+              {dayBookings.length === 0 ? (
+                <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--pf-faint)', fontStyle: 'italic' }}>{L('cal_none')}</p>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 22rem), 1fr))', gap: '12px' }}>
+                  {dayBookings.map(b => (
+                    <ReservationCard key={b.id} booking={b} locale={locale}
+                      busy={busyId === b.id}
+                      onOpen={setDetail}
+                      onAccept={x => respond(x, 'confirmed')}
+                      onDecline={x => respond(x, 'declined')}
+                      onNoShow={x => respond(x, 'no_show')} />
+                  ))}
+                </div>
+              )}
+            </>
+          )
+        })()
       ) : shown.length === 0 ? (
         <EmptyState icon="◷" title={L('res_empty_t')} body={L('res_empty_b')} />
       ) : (
