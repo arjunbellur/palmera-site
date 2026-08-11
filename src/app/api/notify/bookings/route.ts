@@ -45,7 +45,7 @@ function bookingEmail(b: Record<string, unknown>, companyName: string) {
   </table>
   <p style="color:#2a2119;font-size:14px">Cette réservation attend votre confirmation.</p>
   <p style="margin:22px 0">
-    <a href="https://palmera.app/partner/reservations" style="background:#9e763b;color:#ebe8db;text-decoration:none;padding:11px 22px;border-radius:8px;font-family:Arial,sans-serif;font-size:13px">Ouvrir le tableau de bord</a>
+    <a href="https://www.palmeraexp.com/partner/reservations" style="background:#9e763b;color:#ebe8db;text-decoration:none;padding:11px 22px;border-radius:8px;font-family:Arial,sans-serif;font-size:13px">Ouvrir le tableau de bord</a>
   </p>
   <p style="color:#8a8577;font-size:11px">New booking awaiting your confirmation — open your Palmera dashboard to respond.</p>
 </div>`,

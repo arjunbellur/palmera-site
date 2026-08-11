@@ -8,9 +8,9 @@ const key = process.env.RESEND_API_KEY
 
 export const resend = key ? new Resend(key) : null
 
-/** From-address: Resend's shared sandbox sender until the palmera domain is
- *  verified in the Resend dashboard, then switch to e.g. hello@palmera.app. */
-export const EMAIL_FROM = 'onboarding@resend.dev'
+/** Verified domain sender (palmeraexp.com is verified in Resend) —
+ *  authenticated SPF/DKIM, lands in inboxes rather than spam. */
+export const EMAIL_FROM = 'Palmera <reservations@palmeraexp.com>'
 
 export async function sendEmail(opts: { to: string; subject: string; html: string }) {
   if (!resend) throw new Error('RESEND_API_KEY is not set (.env.local)')
