@@ -2,7 +2,7 @@
 import type { Booking, BookingStatus } from '@/lib/schema'
 import { formatAmount, formatDate, toDate } from '@/lib/money'
 import { t, type Locale } from '@/app/partner/i18n'
-import { cardShape, eyebrow, Chip, Money, GhostButton, type Tone } from './ui'
+import { cardShape, eyebrow, Chip, Money, type Tone } from './ui'
 
 const STATUS: Record<BookingStatus, { key: string; tone: Tone }> = {
   pending: { key: 'f_pending', tone: 'gold' },
@@ -13,15 +13,16 @@ const STATUS: Record<BookingStatus, { key: string; tone: Tone }> = {
   no_show: { key: 'st_noshow', tone: 'alert' },
 }
 
+// Progressive disclosure (Airbnb): a card shows AT MOST one action — the
+// primary one for its state (pending → Confirm). Decline, no-show and
+// everything rarer live in the detail drawer, reached by tapping the card.
 export default function ReservationCard({
-  booking: b, locale, compact = false, onAccept, onDecline, onNoShow, onOpen, busy,
+  booking: b, locale, compact = false, onAccept, onOpen, busy,
 }: {
   booking: Booking
   locale: Locale
   compact?: boolean
   onAccept?: (b: Booking) => void
-  onDecline?: (b: Booking) => void
-  onNoShow?: (b: Booking) => void
   /** Open the detail view. The info area becomes clickable; buttons still win. */
   onOpen?: (b: Booking) => void
   busy?: boolean
@@ -31,9 +32,7 @@ export default function ReservationCard({
   const when = toDate(b.scheduledFor)
   const time = when ? when.toLocaleTimeString(locale === 'fr' ? 'fr-FR' : 'en-GB', { hour: '2-digit', minute: '2-digit' }) : '—'
   const guestsLabel = `${b.guestCount} ${b.guestCount === 1 ? L('guest') : L('guests')}`
-  const showActions = b.status === 'pending' && (onAccept || onDecline)
-  // No-show is only claimable AFTER the reserved time — mirrors the rule.
-  const showNoShow = !!onNoShow && b.status === 'confirmed' && !!when && when.getTime() < Date.now()
+  const showPrimary = b.status === 'pending' && !!onAccept
 
   return (
     <div className="pf-glass" style={{ ...cardShape, padding: compact ? '14px 16px' : '16px 18px' }}>
@@ -72,18 +71,16 @@ export default function ReservationCard({
       </div>
       </div>
 
-      {showActions && (
-        <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
-          <GhostButton tone="alert" onClick={() => !busy && onDecline?.(b)}>{L('decline')}</GhostButton>
+      {showPrimary && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '12px' }}>
           <button onClick={() => !busy && onAccept?.(b)} disabled={busy}
-            style={{ flex: 1, padding: '9px 16px', background: 'var(--pf-gold-deep)', border: 'none', borderRadius: '10px', color: '#ebe8db', fontFamily: 'var(--font-sans)', fontSize: '12.5px', letterSpacing: '0.04em', cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.6 : 1 }}>
+            style={{ flex: 1, padding: '9px 16px', background: 'var(--pf-gold-deep)', border: 'none', borderRadius: '10px', color: '#ebe8db', fontFamily: 'var(--font-sans)', fontSize: '12.5px', letterSpacing: '0.04em', cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.6 : 1, boxShadow: '0 0 18px rgba(190,154,86,0.28)' }}>
             {L('accept')}
           </button>
-        </div>
-      )}
-      {showNoShow && (
-        <div style={{ marginTop: '12px' }}>
-          <GhostButton tone="alert" onClick={() => !busy && onNoShow?.(b)}>{L('mark_noshow')}</GhostButton>
+          <button onClick={() => onOpen?.(b)} title={L('more_options')}
+            style={{ padding: '9px 13px', background: 'transparent', border: '1px solid var(--pf-border)', borderRadius: '10px', color: 'var(--pf-faint)', fontFamily: 'var(--font-sans)', fontSize: '12.5px', cursor: 'pointer' }}>
+            ⋯
+          </button>
         </div>
       )}
     </div>

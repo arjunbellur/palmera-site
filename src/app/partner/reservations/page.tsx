@@ -10,7 +10,7 @@ import { ScreenHeader, EmptyState, Chip, Money, eyebrow, GhostButton, Skeleton }
 import ReservationCard from '@/components/partner/ReservationCard'
 import { formatAmount, formatDate } from '@/lib/money'
 
-type Filter = 'all' | 'pending' | 'confirmed' | 'done'
+type Filter = 'all' | 'action' | 'upcoming' | 'done'
 
 export default function ReservationsScreen() {
   const { uid, company, locale } = usePartner()
@@ -62,12 +62,17 @@ export default function ReservationsScreen() {
     setBusyId('')
   }
 
-  const pendingCount = bookings.filter(b => b.status === 'pending').length
+  // Smart filters describe WORK, not raw status: "À traiter" is anything a
+  // human must touch — pending requests plus confirmed bookings whose time
+  // has passed (no-show / completion decision).
+  const isPastNow = (b: Booking) => { const d = toDate(b.scheduledFor); return !!d && d.getTime() < Date.now() }
+  const needsAction = (b: Booking) => b.status === 'pending' || (b.status === 'confirmed' && isPastNow(b))
+  const actionCount = bookings.filter(needsAction).length
   const q = search.trim().toLowerCase()
   const sameDay = (d: Date, ref: Date) => d.getFullYear() === ref.getFullYear() && d.getMonth() === ref.getMonth() && d.getDate() === ref.getDate()
   const shown = bookings.filter(b => {
-    if (filter === 'pending' && b.status !== 'pending') return false
-    if (filter === 'confirmed' && b.status !== 'confirmed') return false
+    if (filter === 'action' && !needsAction(b)) return false
+    if (filter === 'upcoming' && !(['pending', 'confirmed'].includes(b.status) && !isPastNow(b))) return false
     if (filter === 'done' && !['completed', 'no_show', 'cancelled', 'declined'].includes(b.status)) return false
     if (q && !`${b.title} ${b.customerName} ${b.id}`.toLowerCase().includes(q)) return false
     const d = toDate(b.scheduledFor)
@@ -101,8 +106,8 @@ export default function ReservationsScreen() {
   const past = shown.filter(b => ts(b) < startToday.getTime()).sort((a, b) => ts(b) - ts(a))
 
   const matchesStatus = (b: Booking) => {
-    if (filter === 'pending' && b.status !== 'pending') return false
-    if (filter === 'confirmed' && b.status !== 'confirmed') return false
+    if (filter === 'action' && !needsAction(b)) return false
+    if (filter === 'upcoming' && !(['pending', 'confirmed'].includes(b.status) && !isPastNow(b))) return false
     if (filter === 'done' && !['completed', 'no_show', 'cancelled', 'declined'].includes(b.status)) return false
     if (q && !`${b.title} ${b.customerName} ${b.id}`.toLowerCase().includes(q)) return false
     return true
@@ -113,8 +118,8 @@ export default function ReservationsScreen() {
 
   const FILTERS: { key: Filter; label: string; count?: number }[] = [
     { key: 'all', label: L('f_all') },
-    { key: 'pending', label: L('f_pending'), count: pendingCount },
-    { key: 'confirmed', label: L('f_confirmed') },
+    { key: 'action', label: L('f_action'), count: actionCount },
+    { key: 'upcoming', label: L('f_upcoming') },
     { key: 'done', label: L('f_done') },
   ]
 
@@ -241,9 +246,7 @@ export default function ReservationsScreen() {
                     <ReservationCard key={b.id} booking={b} locale={locale}
                       busy={busyId === b.id}
                       onOpen={setDetail}
-                      onAccept={x => respond(x, 'confirmed')}
-                      onDecline={x => respond(x, 'declined')}
-                      onNoShow={x => respond(x, 'no_show')} />
+                      onAccept={x => respond(x, 'confirmed')} />
                   ))}
                 </div>
               )}
@@ -283,9 +286,7 @@ export default function ReservationsScreen() {
                   <ReservationCard key={b.id} booking={b} locale={locale}
                     busy={busyId === b.id}
                     onOpen={setDetail}
-                    onAccept={x => respond(x, 'confirmed')}
-                    onDecline={x => respond(x, 'declined')}
-                    onNoShow={x => respond(x, 'no_show')} />
+                    onAccept={x => respond(x, 'confirmed')} />
                 ))}
               </div>
             </div>
@@ -349,6 +350,11 @@ export default function ReservationsScreen() {
                     style={{ flex: 1, padding: '10px 16px', background: 'var(--pf-gold-deep)', border: 'none', borderRadius: '10px', color: '#ebe8db', fontFamily: 'var(--font-sans)', fontSize: '12.5px', cursor: 'pointer', opacity: busyId === b.id ? 0.6 : 1 }}>
                     {L('accept')}
                   </button>
+                </div>
+              )}
+              {b.status === 'confirmed' && when && when.getTime() < Date.now() && (
+                <div style={{ marginTop: '16px' }}>
+                  <GhostButton tone="alert" onClick={() => respond(b, 'no_show')}>{L('mark_noshow')}</GhostButton>
                 </div>
               )}
             </div>
