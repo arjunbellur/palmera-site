@@ -1,5 +1,5 @@
 {
   "crons": [
-    { "path": "/api/notify/bookings", "schedule": "*/10 * * * *" }
+    { "path": "/api/notify/bookings", "schedule": "0 7 * * *" }
   ]
 }
