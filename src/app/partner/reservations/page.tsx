@@ -16,7 +16,8 @@ export default function ReservationsScreen() {
   const { uid, company, locale } = usePartner()
   const L = (k: string) => t(locale, k)
   const [bookings, setBookings] = useState<Booking[]>([])
-  const [filter, setFilter] = useState<Filter>('all')
+  // Jordan: the page must OPEN on what's coming next, past excluded.
+  const [filter, setFilter] = useState<Filter>('upcoming')
   const [search, setSearch] = useState('')
   const [dateFilter, setDateFilter] = useState('')
   const [datePreset, setDatePreset] = useState<'' | 'today' | 'tomorrow' | 'week'>('')
@@ -117,9 +118,9 @@ export default function ReservationsScreen() {
   const dayKey = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
 
   const FILTERS: { key: Filter; label: string; count?: number }[] = [
-    { key: 'all', label: L('f_all') },
     { key: 'action', label: L('f_action'), count: actionCount },
     { key: 'upcoming', label: L('f_upcoming') },
+    { key: 'all', label: L('f_all') },
     { key: 'done', label: L('f_done') },
   ]
 
