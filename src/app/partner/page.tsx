@@ -61,23 +61,39 @@ export default function PartnerHome() {
         intro={L('home_intro')}
       />
 
-      {/* Pending actions — Jordan: "what do I need to do next?" answered first.
-          Every row is a link straight to where it gets fixed. */}
+      {/* Pending actions — severity-ranked (urgent → whenever), each row a
+          colored badge + what's wrong + an Airbnb-style action pill saying
+          exactly what to do. Every row links straight to where it gets fixed. */}
       {(() => {
         const incompleteListings = experiences.filter(e => (e.needsReview?.length ?? 0) > 0 || e.status === 'draft').length
-        const items = [
-          ...(pending.length > 0 ? [{ href: '/partner/reservations', label: `${pending.length} ${L('pa_pending_res')}`, count: pending.length }] : []),
-          ...(incompleteListings > 0 ? [{ href: '/partner/listings', label: `${incompleteListings} ${L('pa_incomplete_listing')}`, count: incompleteListings }] : []),
-          ...(!hasPayoutProfile ? [{ href: '/partner/settings?s=payout', label: L('pa_missing_payout'), count: 0 }] : []),
+        const missingPhotos = !!company && (!company.heroPhoto || !company.logo)
+        type Tone = 'alert' | 'gold' | 'neutral'
+        const TONE_BG: Record<Tone, string> = { alert: 'rgba(196,124,124,0.16)', gold: 'rgba(190,154,86,0.16)', neutral: 'var(--pf-card)' }
+        const TONE_FG: Record<Tone, string> = { alert: 'var(--pf-alert)', gold: 'var(--pf-gold)', neutral: 'var(--pf-faint)' }
+        const items: { href: string; label: string; icon: string; tone: Tone; act: string; when: string }[] = [
+          // 1 — guests are literally waiting on a human. Red, top.
+          ...(pending.length > 0 ? [{ href: '/partner/reservations?f=pending', label: `${pending.length} ${L('pa_pending_res')}`, icon: '◷', tone: 'alert' as Tone, act: L('pa_act_respond'), when: L('pa_now') }] : []),
+          // 2 — blocks getting paid. Gold.
+          ...(!hasPayoutProfile ? [{ href: '/partner/settings?s=payout', label: L('pa_missing_payout'), icon: '◆', tone: 'gold' as Tone, act: L('pa_act_add'), when: L('pa_soon') }] : []),
+          // 3 — unfinished listings can't sell. Gold.
+          ...(incompleteListings > 0 ? [{ href: '/partner/listings', label: `${incompleteListings} ${L('pa_incomplete_listing')}`, icon: '▦', tone: 'gold' as Tone, act: L('pa_act_finish'), when: L('pa_soon') }] : []),
+          // 4 — polish. Neutral, bottom.
+          ...(missingPhotos ? [{ href: '/partner/settings?s=photos', label: L('pa_missing_photos'), icon: '◨', tone: 'neutral' as Tone, act: L('pa_act_upload'), when: L('pa_optional') }] : []),
         ]
         if (items.length === 0) return null
         return (
-          <div className="pf-glass" style={{ ...cardShape, background: 'var(--pf-green-soft)', borderColor: 'var(--pf-border-strong)', marginBottom: '14px', padding: '14px 16px' }}>
-            <div style={{ ...eyebrow, marginBottom: '8px' }}>{L('pa_title')}</div>
-            {items.map(it => (
-              <a key={it.href + it.label} href={it.href} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '7px 0', textDecoration: 'none', borderTop: '1px solid var(--pf-border)' }}>
-                <span style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '13.5px' }}>{it.label}</span>
-                <span style={{ color: 'var(--pf-gold)', fontSize: '13px' }}>→</span>
+          <div className="pf-glass" style={{ ...cardShape, marginBottom: '14px', padding: '14px 16px' }}>
+            <div style={{ ...eyebrow, marginBottom: '10px' }}>{L('pa_title')}</div>
+            {items.map((it, i) => (
+              <a key={it.href + it.label} href={it.href} className="pf-note" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '9px 10px', textDecoration: 'none', borderTop: i > 0 ? '1px solid var(--pf-border)' : 'none', animationDelay: `${i * 60}ms` }}>
+                <span style={{ width: '28px', height: '28px', borderRadius: '9px', background: TONE_BG[it.tone], color: TONE_FG[it.tone], display: 'grid', placeItems: 'center', fontSize: '13px', flexShrink: 0 }}>{it.icon}</span>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: 'block', fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '13.5px', lineHeight: 1.35 }}>{it.label}</span>
+                  <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontSize: '9.5px', letterSpacing: '0.06em', textTransform: 'uppercase', color: TONE_FG[it.tone], marginTop: '2px' }}>{it.when}</span>
+                </span>
+                <span style={{ flexShrink: 0, fontFamily: 'var(--font-sans)', fontSize: '10.5px', letterSpacing: '0.04em', color: TONE_FG[it.tone], background: TONE_BG[it.tone], border: `1px solid ${it.tone === 'neutral' ? 'var(--pf-border)' : TONE_FG[it.tone]}`, borderRadius: '999px', padding: '5px 12px' }}>
+                  {it.act} →
+                </span>
               </a>
             ))}
           </div>
