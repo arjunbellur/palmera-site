@@ -281,7 +281,13 @@ export default function CompanyPage({ params }: { params: Promise<{ companyId: s
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 18rem), 1fr))', gap: '1rem' }}>
               {experiences.map((e) => (
-                <div key={e.id} className="pf-glass" style={{ borderRadius: '0.5rem', padding: '1.25rem 1.375rem' }}>
+                <div key={e.id} className="pf-glass" style={{ borderRadius: '0.5rem', padding: 0, overflow: 'hidden' }}>
+                  {/* App-card preview (Jordan): cover in the app's 4:5 shape,
+                      cover-fit — never stretched. */}
+                  <div style={{ aspectRatio: '4 / 5', maxHeight: '14rem', background: e.img ? `center/cover no-repeat url(${e.img})` : 'var(--db-bg-card)', display: 'grid', placeItems: 'center' }}>
+                    {!e.img && <span style={{ fontSize: '0.6875rem', color: 'var(--db-text-ghost)', fontFamily: 'var(--font-sans)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{s.hero}</span>}
+                  </div>
+                  <div style={{ padding: '1rem 1.375rem 1.25rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '0.625rem' }}>
                     <h3 style={{ fontFamily: 'var(--font-serif)', color: 'var(--db-text)', fontSize: '0.9375rem', fontWeight: 500, margin: 0 }}>{e.title || 'Untitled'}</h3>
                     <span style={{ flexShrink: 0, fontSize: '0.625rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', textTransform: 'uppercase', padding: '2px 8px', borderRadius: '2px', border: '1px solid var(--db-border-subtle)', color: 'var(--db-text-muted)' }}>{s.stLabels[e.status] || e.status}</span>
@@ -295,6 +301,7 @@ export default function CompanyPage({ params }: { params: Promise<{ companyId: s
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <button onClick={() => openEditExperience(e)} style={{ background: 'transparent', border: '1px solid var(--db-border-subtle)', borderRadius: '4px', color: 'var(--db-text-faint)', fontSize: '0.6875rem', fontFamily: 'var(--font-sans)', padding: '4px 10px', cursor: 'pointer' }}>{s.edit}</button>
                     <button onClick={() => setToDeleteExp(e)} style={{ background: 'transparent', border: '1px solid rgba(224,112,112,0.2)', borderRadius: '4px', color: 'rgba(224,112,112,0.7)', fontSize: '0.6875rem', fontFamily: 'var(--font-sans)', padding: '4px 10px', cursor: 'pointer' }}>{s.del}</button>
+                  </div>
                   </div>
                 </div>
               ))}

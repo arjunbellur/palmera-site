@@ -94,14 +94,14 @@ export default function ListingsScreen() {
       </div>
 
       {!loaded ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 17rem), 1fr))', gap: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 15rem), 1fr))', gap: '12px' }}>
           <Skeleton height="210px" /><Skeleton height="210px" /><Skeleton height="210px" />
         </div>
       ) : items.length === 0 ? (
         <EmptyState icon="▦" title={L('list_empty_t')} body={L('list_empty_b')}
           action={<PrimaryButton onClick={openNew}>+ {L('new_listing')}</PrimaryButton>} />
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 17rem), 1fr))', gap: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 15rem), 1fr))', gap: '12px' }}>
           {items.map(e => {
             const s = STATUS[e.status] ?? STATUS.draft
             return (
@@ -116,17 +116,20 @@ export default function ListingsScreen() {
                     ✕
                   </button>
                 </div>
-                <div style={{ height: '110px', background: e.img ? `center/cover url(${e.img})` : 'var(--pf-card-solid)', display: 'grid', placeItems: 'center' }}>
+                {/* App-card preview (Jordan): the cover in the app's shape —
+                    portrait 4:5, cover-fit so it can never stretch. */}
+                <div style={{ aspectRatio: '4 / 5', background: e.img ? `center/cover no-repeat url(${e.img})` : 'var(--pf-card-solid)', display: 'grid', placeItems: 'center', position: 'relative' }}>
                   {!e.img && <span style={{ ...eyebrow, opacity: 0.6 }}>{locale === 'fr' ? 'Sans photo' : 'No photo'}</span>}
+                  <span style={{ position: 'absolute', left: '10px', bottom: '10px' }}><Chip tone={s.tone}>{L(s.key)}</Chip></span>
                 </div>
-                <div style={{ padding: '14px 16px', flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '7px', flexWrap: 'wrap', marginBottom: '7px' }}>
-                    <span style={{ ...eyebrow, textTransform: 'capitalize' }}>{e.category || '—'}</span>
-                    <Chip tone={s.tone}>{L(s.key)}</Chip>
+                <div style={{ padding: '13px 16px 15px', flex: 1 }}>
+                  <div style={{ ...eyebrow, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '6px' }}>
+                    {[e.category, e.city].filter(Boolean).join(' · ') || '—'}
                   </div>
-                  <div style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '14.5px', marginBottom: '6px' }}>{e.title || L('untitled')}</div>
-                  <div style={{ fontFamily: 'var(--font-sans)', fontSize: '11.5px', color: 'var(--pf-muted)' }}>
-                    {e.price != null ? `${L('from')} ${formatAmount(e.price)} XOF` : (locale === 'fr' ? 'Sur réservation' : 'Reservation only')}
+                  <div style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '17px', fontWeight: 600, lineHeight: 1.2, marginBottom: '6px' }}>{e.title || L('untitled')}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontFamily: 'var(--font-sans)', fontSize: '11.5px', color: 'var(--pf-muted)', flexWrap: 'wrap' }}>
+                    <span><span style={{ color: 'var(--pf-gold)' }}>★</span> {(e.rating ?? 0).toFixed(2)} ({e.reviews ?? 0})</span>
+                    <span>{e.price != null ? `${L('from')} ${formatAmount(e.price)} XOF` : (locale === 'fr' ? 'Sur réservation' : 'Reservation only')}</span>
                   </div>
                   {(e.needsReview?.length ?? 0) > 0 && (
                     <div style={{ marginTop: '8px' }}><Chip tone="alert">{locale === 'fr' ? 'À compléter' : 'Needs'}: {e.needsReview!.join(', ')}</Chip></div>
