@@ -68,7 +68,10 @@ export default function ReservationsScreen() {
   // live in the detail drawer under Toutes until auto-completion exists
   // (SYNC-STATUS item 11).
   const isPastNow = (b: Booking) => { const d = toDate(b.scheduledFor); return !!d && d.getTime() < Date.now() }
-  const needsAction = (b: Booking) => b.status === 'pending'
+  // Pending on an INSTANT listing = the guest's checkout is unfinished; the
+  // payment confirms it automatically. Not the partner's queue.
+  const awaitingPayment = (b: Booking) => b.status === 'pending' && b.confirmationType === 'instant'
+  const needsAction = (b: Booking) => b.status === 'pending' && !awaitingPayment(b)
   const actionCount = bookings.filter(needsAction).length
   const q = search.trim().toLowerCase()
   const sameDay = (d: Date, ref: Date) => d.getFullYear() === ref.getFullYear() && d.getMonth() === ref.getMonth() && d.getDate() === ref.getDate()
@@ -314,7 +317,11 @@ export default function ReservationsScreen() {
       {detail && (() => {
         const b = detail
         const when = toDate(b.scheduledFor)
-        const payLabel = b.paymentStatus === 'paid' ? L('dt_paid') : b.paymentStatus === 'refunded' ? L('dt_refunded') : b.paymentStatus === 'unpaid' ? L('dt_unpaid') : L('dt_none')
+        const payMap = b.payment as { provider?: string; status?: string } | undefined
+        const payLabel = b.paymentStatus === 'paid' ? L('dt_paid')
+          : b.paymentStatus === 'refunded' ? L('dt_refunded')
+          : b.paymentStatus === 'unpaid' ? L('dt_unpaid')
+          : payMap?.status ? `${payMap.provider ?? '—'} · ${payMap.status}` : L('dt_none')
         const row = (label: string, value: React.ReactNode) => (
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: '14px', padding: '9px 0', borderTop: '1px solid var(--pf-border)' }}>
             <span style={eyebrow}>{label}</span>
@@ -345,6 +352,11 @@ export default function ReservationsScreen() {
                 <span style={eyebrow}>{L('you_earn')}</span>
                 <Money amount={formatAmount(b.payoutAmount)} size={24} currency={b.currency || 'XOF'} />
               </div>
+              {awaitingPayment(b) && (
+                <p style={{ fontFamily: 'var(--font-sans)', fontSize: '11.5px', color: 'var(--pf-gold)', background: 'rgba(190,154,86,0.1)', border: '1px solid var(--pf-border-strong)', borderRadius: '10px', padding: '10px 12px', margin: '14px 0 0', lineHeight: 1.5 }}>
+                  ◷ {L('await_pay_note')}
+                </p>
+              )}
               {b.status === 'pending' && (
                 <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
                   <GhostButton tone="alert" onClick={() => respond(b, 'declined')}>{L('decline')}</GhostButton>

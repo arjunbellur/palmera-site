@@ -79,6 +79,10 @@ export async function POST(req: NextRequest) {
       // confirmed (instant approvals) → FYI email. Terminal states → nothing.
       if (typeof b.providerId !== 'string' || typeof b.bookingTotal !== 'number') { continue }
       if (!['pending', 'confirmed'].includes(b.status)) { continue }
+      // Pending on an INSTANT listing = the guest's checkout is unfinished.
+      // Nothing for the partner to do; staying silent also leaves the log
+      // entry unwritten, so the "✓ confirmed" FYI still fires once paid.
+      if (b.status === 'pending' && b.confirmationType === 'instant') { continue }
 
       const logRef = db.collection('email_log').doc(doc.id)
       if ((await logRef.get()).exists) { continue }

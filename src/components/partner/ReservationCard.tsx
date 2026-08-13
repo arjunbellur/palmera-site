@@ -32,7 +32,11 @@ export default function ReservationCard({
   const when = toDate(b.scheduledFor)
   const time = when ? when.toLocaleTimeString(locale === 'fr' ? 'fr-FR' : 'en-GB', { hour: '2-digit', minute: '2-digit' }) : '—'
   const guestsLabel = `${b.guestCount} ${b.guestCount === 1 ? L('guest') : L('guests')}`
-  const showPrimary = b.status === 'pending' && !!onAccept
+  // An INSTANT listing that's still pending is waiting on the guest's payment,
+  // not on the partner (free instant bookings confirm on creation). Don't ask
+  // them to approve what the checkout will confirm by itself.
+  const awaitingPayment = b.status === 'pending' && b.confirmationType === 'instant'
+  const showPrimary = b.status === 'pending' && !awaitingPayment && !!onAccept
 
   return (
     <div className="pf-glass" style={{ ...cardShape, padding: compact ? '14px 16px' : '16px 18px' }}>
@@ -40,7 +44,7 @@ export default function ReservationCard({
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
         <span style={eyebrow}>{b.title ? '' : ''}{(b as unknown as { category?: string }).category || ''}</span>
         {b.confirmationType === 'instant' && <Chip tone="green">● {L('instant')}</Chip>}
-        <Chip tone={s.tone}>{L(s.key)}</Chip>
+        <Chip tone={awaitingPayment ? 'gold' : s.tone}>{awaitingPayment ? `◷ ${L('await_pay')}` : L(s.key)}</Chip>
       </div>
 
       <div style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: compact ? '14.5px' : '15.5px', marginBottom: '3px' }}>{b.title}</div>
@@ -71,6 +75,15 @@ export default function ReservationCard({
       </div>
       </div>
 
+      {awaitingPayment && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '12px' }}>
+          <span style={{ flex: 1, fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-faint)', lineHeight: 1.45 }}>{L('await_pay_note')}</span>
+          <button onClick={() => onOpen?.(b)} title={L('more_options')}
+            style={{ padding: '9px 13px', background: 'transparent', border: '1px solid var(--pf-border)', borderRadius: '10px', color: 'var(--pf-faint)', fontFamily: 'var(--font-sans)', fontSize: '12.5px', cursor: 'pointer', flexShrink: 0 }}>
+            ⋯
+          </button>
+        </div>
+      )}
       {showPrimary && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '12px' }}>
           <button onClick={() => !busy && onAccept?.(b)} disabled={busy}
