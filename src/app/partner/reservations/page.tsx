@@ -63,11 +63,12 @@ export default function ReservationsScreen() {
     setBusyId('')
   }
 
-  // Smart filters describe WORK, not raw status: "À traiter" is anything a
-  // human must touch — pending requests plus confirmed bookings whose time
-  // has passed (no-show / completion decision).
+  // "À traiter" = strictly reservations awaiting the partner's approval
+  // (Arjun: auto-confirms are not action). Past-confirmed no-show decisions
+  // live in the detail drawer under Toutes until auto-completion exists
+  // (SYNC-STATUS item 11).
   const isPastNow = (b: Booking) => { const d = toDate(b.scheduledFor); return !!d && d.getTime() < Date.now() }
-  const needsAction = (b: Booking) => b.status === 'pending' || (b.status === 'confirmed' && isPastNow(b))
+  const needsAction = (b: Booking) => b.status === 'pending'
   const actionCount = bookings.filter(needsAction).length
   const q = search.trim().toLowerCase()
   const sameDay = (d: Date, ref: Date) => d.getFullYear() === ref.getFullYear() && d.getMonth() === ref.getMonth() && d.getDate() === ref.getDate()
