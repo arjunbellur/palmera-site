@@ -35,7 +35,14 @@ export default function PartnerHome() {
     })()
   }, [uid, company?.id])
 
-  const balance = ledger.reduce((s, e) => s + (e.amount || 0), 0)
+  const ledgerBalance = ledger.reduce((s, e) => s + (e.amount || 0), 0)
+  // Same fallback as /partner/earnings: until the ledger writer exists, show
+  // the money already sitting on confirmed/completed bookings.
+  const derivedEarn = bookings
+    .filter(b => ['confirmed', 'completed'].includes(b.status))
+    .reduce((s, b) => s + (b.payoutAmount || 0), 0)
+  const derived = ledger.length === 0
+  const balance = derived ? derivedEarn : ledgerBalance
   const lifetime = payouts.filter(p => p.status === 'paid').reduce((s, p) => s + (p.netAmount || 0), 0)
   const next = payouts.find(p => p.status === 'scheduled' || p.status === 'processing')
   const pending = bookings.filter(b => b.status === 'pending')
@@ -145,11 +152,11 @@ export default function PartnerHome() {
       {/* Metrics: balance leads full-width, the two smaller tiles sit beside it. */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 15rem), 1fr))', gap: '12px' }}>
         <div className="pf-glass" style={{ ...cardShape, gridColumn: '1 / -1', padding: '20px 22px', borderRadius: '18px', background: 'linear-gradient(150deg, rgba(190,154,86,0.12), var(--pf-card))', borderColor: 'var(--pf-border-strong)' }}>
-          <div style={{ ...eyebrow, fontSize: '10.5px', letterSpacing: '0.16em' }}>{L('balance')}</div>
+          <div style={{ ...eyebrow, fontSize: '10.5px', letterSpacing: '0.16em' }}>{derived ? L('exp_earn') : L('balance')}</div>
           <div style={{ marginTop: '8px' }}><Money amount={formatAmount(balance)} size={46} /></div>
           <div style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-muted)', marginTop: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span style={{ color: 'var(--pf-gold)' }}>◆</span>
-            {L('next_payout')} · {next ? formatDate(next.scheduledFor) : '—'}
+            {derived && balance > 0 ? L('exp_earn_note') : <>{L('next_payout')} · {next ? formatDate(next.scheduledFor) : '—'}</>}
           </div>
         </div>
         <StatTile label={L('next_amt')} amount={formatAmount(next?.netAmount ?? 0)} />

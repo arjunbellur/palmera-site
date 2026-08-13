@@ -55,7 +55,15 @@ export default function EarningsScreen() {
     })()
   }, [uid, company?.id])
 
-  const balance = ledger.reduce((s, e) => s + (e.amount || 0), 0)
+  const ledgerBalance = ledger.reduce((s, e) => s + (e.amount || 0), 0)
+  // Until the ledger/payout writer exists (and bookings start completing),
+  // derive earnings from the bookings themselves — they already carry
+  // payoutAmount/commissionAmount. Ledger wins the moment it has entries.
+  const earning = bookings.filter(b => (b.payoutAmount || 0) > 0)
+  const upcomingEarn = earning.filter(b => b.status === 'confirmed').reduce((s, b) => s + (b.payoutAmount || 0), 0)
+  const deliveredEarn = earning.filter(b => b.status === 'completed').reduce((s, b) => s + (b.payoutAmount || 0), 0)
+  const derived = ledger.length === 0
+  const balance = derived ? upcomingEarn + deliveredEarn : ledgerBalance
   const lifetime = payouts.filter(p => p.status === 'paid').reduce((s, p) => s + (p.netAmount || 0), 0)
   const next = payouts.find(p => p.status === 'scheduled' || p.status === 'processing')
 
@@ -105,18 +113,30 @@ export default function EarningsScreen() {
     return { key: `${d.getFullYear()}-${d.getMonth()}`, label: d.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-GB', { month: 'short' }) }
   })
   const monthSums = new Map(months.map(m => [m.key, 0]))
-  for (const e of ledger) {
-    if (e.type !== 'commission_earned' || e.amount <= 0) continue
-    const d = toDate(e.createdAt); if (!d) continue
-    const key = `${d.getFullYear()}-${d.getMonth()}`
-    if (monthSums.has(key)) monthSums.set(key, (monthSums.get(key) || 0) + e.amount)
+  if (derived) {
+    // Money lands in the month the experience is scheduled for.
+    for (const b of earning) {
+      if (!['confirmed', 'completed'].includes(b.status)) continue
+      const d = toDate(b.scheduledFor); if (!d) continue
+      const key = `${d.getFullYear()}-${d.getMonth()}`
+      if (monthSums.has(key)) monthSums.set(key, (monthSums.get(key) || 0) + (b.payoutAmount || 0))
+    }
+  } else {
+    for (const e of ledger) {
+      if (e.type !== 'commission_earned' || e.amount <= 0) continue
+      const d = toDate(e.createdAt); if (!d) continue
+      const key = `${d.getFullYear()}-${d.getMonth()}`
+      if (monthSums.has(key)) monthSums.set(key, (monthSums.get(key) || 0) + e.amount)
+    }
   }
   const chart = months.map(m => ({ ...m, val: monthSums.get(m.key) || 0 }))
   const chartMax = Math.max(...chart.map(c => c.val))
 
-  // ── Earnings per experience, from completed bookings ──
+  // ── Earnings per experience — confirmed counts too, else a partner with
+  //    real paid bookings sees an empty screen. ──
   const byTitle = new Map<string, number>()
-  bookings.filter(b => b.status === 'completed').forEach(b => byTitle.set(b.title, (byTitle.get(b.title) || 0) + (b.payoutAmount || 0)))
+  earning.filter(b => ['confirmed', 'completed'].includes(b.status))
+    .forEach(b => byTitle.set(b.title, (byTitle.get(b.title) || 0) + (b.payoutAmount || 0)))
   const revBars = [...byTitle.entries()].map(([label, val]) => ({ label, val })).sort((a, b) => b.val - a.val).slice(0, 4)
   const hasData = chartMax > 0 || revBars.length > 0
 
@@ -133,8 +153,11 @@ export default function EarningsScreen() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 14rem), 1fr))', gap: '12px' }}>
         <div style={{ gridColumn: '1 / -1', padding: '24px', borderRadius: '18px', background: 'linear-gradient(150deg, rgba(190,154,86,0.12), var(--pf-card))', border: '1px solid var(--pf-border-strong)', display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '22px' }}>
           <div>
-            <div style={{ ...eyebrow, fontSize: '10.5px', letterSpacing: '0.16em' }}>{L('balance')}</div>
+            <div style={{ ...eyebrow, fontSize: '10.5px', letterSpacing: '0.16em' }}>{derived ? L('exp_earn') : L('balance')}</div>
             <div style={{ marginTop: '8px' }}><Money amount={formatAmount(balance)} size={52} /></div>
+            {derived && balance > 0 && (
+              <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-muted)', marginTop: '8px', maxWidth: '22rem', lineHeight: 1.5 }}>{L('exp_earn_note')}</div>
+            )}
           </div>
           <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
             <CircleStat icon="◆" label={L('next_payout')} value={next ? formatDate(next.scheduledFor) : '—'} />
@@ -158,6 +181,21 @@ export default function EarningsScreen() {
         </div>
       </div>
 
+      {/* Derived breakdown: what's coming vs what's already delivered. */}
+      {derived && balance > 0 && (
+        <div className="pf-glass" style={{ ...cardShape, marginTop: '12px' }}>
+          <div style={{ ...eyebrow, marginBottom: '10px' }}>{L('breakdown_title')}</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid var(--pf-border)', fontFamily: 'var(--font-sans)', fontSize: '12.5px' }}>
+            <span style={{ color: 'var(--pf-muted)' }}>{L('exp_upcoming')} · {earning.filter(b => b.status === 'confirmed').length}</span>
+            <span style={{ color: 'var(--pf-gold)' }}>{formatAmount(upcomingEarn)}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', fontFamily: 'var(--font-sans)', fontSize: '12.5px' }}>
+            <span style={{ color: 'var(--pf-muted)' }}>{L('exp_done')} · {earning.filter(b => b.status === 'completed').length}</span>
+            <span style={{ color: 'var(--pf-success)' }}>{formatAmount(deliveredEarn)}</span>
+          </div>
+          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'var(--pf-faint)', margin: '10px 0 0', lineHeight: 1.5 }}>{L('ledger_soon')}</p>
+        </div>
+      )}
       {/* Next-payout breakdown — Jordan: transparency on gross vs deductions. */}
       {unsettled.length > 0 && (
         <div className="pf-glass" style={{ ...cardShape, marginTop: '12px' }}>
