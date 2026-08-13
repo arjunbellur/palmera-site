@@ -41,8 +41,8 @@ indexes, collections). Last updated: 2026-08-01 (indexes live, sync verified; NO
 |---|---|---|---|
 | 1 | Create 5 composite indexes (console links) | **Arjun** | ✅ done 2026-08-01 — all 5 Enabled |
 | 2 | Verify dashboard query returns Jordan's booking post-index | us | ✅ verified — 7 reservations return (provider + company-scoped), customer my-bookings works |
-| 3 | Point payment writes at the booking's own doc id | **Samson** | 🔴 ESCALATED 2026-08-04: still writing to self-generated `bk-XXXXXXXX` ids that match NO real booking — the paid flow creates a payment-only doc and NEVER creates the booking itself. This is why Jordan's paid reservations don't appear on the partner dashboard. Correct flow per contract: create the booking doc first (all v3.3 fields), then update THAT doc's `payment` map. **Samson is on it (2026-08-04) — dashboard side FROZEN on all payment work until his fix lands: no doc wipes, no schema/contract edits, no payment-display changes.** |
-| 4 | Confirm the orphan payment docs are abandoned → we wipe | **Samson** confirm, us delete | count grew 8 → 25 (one `payment.status: completed`) — active bug, not legacy |
+| 3 | Point payment writes at the booking's own doc id | **Samson** | 🔴 ESCALATED 2026-08-04: still writing to self-generated `bk-XXXXXXXX` ids that match NO real booking — the paid flow creates a payment-only doc and NEVER creates the booking itself. This is why Jordan's paid reservations don't appear on the partner dashboard. Correct flow per contract: create the booking doc first (all v3.3 fields), then update THAT doc's `payment` map. **✅ FIXED & VERIFIED 2026-08-13: paid bookings are full docs with the payment map on the same doc (stripe pending/completed observed); all 4 spot-checked paid bookings appear in the partner dashboard query; orphan count frozen at 25 (latest 2026-08-10 — none since the fix). Freeze lifted.** |
+| 4 | Confirm the orphan payment docs are abandoned → we wipe | **Samson** confirm, us delete | orphans FROZEN at 25 since the fix (latest 2026-08-10) — now confirmed legacy; ready to wipe on Samson's nod (refund the completed $0.89 Stripe session first — Jordan decides) |
 | 4b | Payment provider: RESOLVED — dual rails are by design (Arjun 2026-08-04): PayDunya (mobile money, XOF) + Stripe (cards). Contract + schema now document both shapes. Booking money fields stay XOF regardless of charge currency. Item 3 (booking doc never created on the paid path) is unchanged and still the blocker. | — | ✅ documented |
 | 5 | Free-reservation flow (no payment, "Confirm", points) | **Samson** | spec now in contract doc |
 | 6 | App-side rules hardening (points self-grant, open chat, favorites delete, notification spam) | **Samson** specs the change → we land it in repo + deploy | pending — flagged ⚠ inline in firestore.rules |
@@ -52,6 +52,17 @@ indexes, collections). Last updated: 2026-08-01 (indexes live, sync verified; NO
 | 11 | Nothing ever marks bookings `completed` — 0 of 70+ bookings platform-wide. Breaks: app profile "Completed" counts (Jordan, feedback 15), dashboard completion-rate/revenue/payout-readiness (all keyed on completed). Need a completion mechanism: auto-complete N hours after `scheduledFor` (server), partner action, or app action. | **joint — decide design** | flagged 2026-08-12 |
 | 12 | External share links point at `palmera.app/e/{id}` + `palmera.app/invite` (feedback 15 sharing scenarios). Those URLs need real landing pages (experience preview → App Store / deep link). Decide domain (palmera.app vs palmeraexp.com); dashboard repo can host the landing routes. | **Arjun + Samson** | flagged 2026-08-12 |
 | 9 | ⚠⚠ App source exists ONLY on Samson's laptop — no version control | **Samson** | URGENT: create private palmera-app repo from Xcode (Source Control → New Git Repository → push). TestFlight stores builds, not source; a dead laptop = lost app. |
+
+## Rules sync log
+- 2026-08-13: **Samson's 2026-08-12 ruleset adopted into the repo verbatim**
+  (his console deploy of 23:47 UTC — group-chat membership gating via
+  chat_threads.memberIds, new invites/legal/support_messages/moment_likes/
+  moment_comments rules, notifications+favorites+points hardening, invite
+  spam-guard requiring a friend edge). All dashboard sections verified
+  intact (bookings/ledger/payouts/countersignatures/keep()/no_show).
+  NOTE: `invites` read is participant-only — the admin group-booking
+  funnel (item in hub Phase 4) still needs an isAdmin read clause when
+  we build it (⚠ coordinate).
 
 ## App-impact changelog (⚠ = Samson should read before next build)
 Every dashboard change that touches documents/rules/indexes the app consumes
