@@ -1,0 +1,37 @@
+# Near-real-time partner booking notifications.
+#
+# Vercel's Hobby plan allows only ONE cron run per day (that's the 07:00 UTC
+# job in vercel.json — 3am Eastern, far too late to be useful). GitHub Actions
+# gives us a free 5-minute poll instead; the Vercel daily run stays as a
+# backstop in case Actions is throttled or disabled.
+#
+# Requires repo secret CRON_SECRET (Settings → Secrets and variables →
+# Actions), matching the CRON_SECRET set in Vercel. Nothing secret lives in
+# this file — safe in a public repo.
+name: Notify partners of new bookings
+
+on:
+  schedule:
+    # Every 5 minutes (GitHub's minimum). Actual firing can drift a few
+    # minutes under load — fine for "within ~10 min of booking".
+    - cron: '*/5 * * * *'
+  workflow_dispatch: {}
+
+# One run at a time; a slow run must never stack up behind the next tick.
+concurrency:
+  group: notify-bookings
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Poll the notifier endpoint
+        run: |
+          code=$(curl -sS -o /tmp/out -w '%{http_code}' -X POST \
+            'https://www.palmeraexp.com/api/notify/bookings' \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
+          echo "HTTP $code"
+          cat /tmp/out; echo
+          test "$code" = "200"

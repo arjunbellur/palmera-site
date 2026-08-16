@@ -54,6 +54,14 @@ indexes, collections). Last updated: 2026-08-01 (indexes live, sync verified; NO
 | 13 | Abandoned checkouts on INSTANT listings sit at `status: 'pending'` forever (payment map stuck `stripe/pending`). Verified 2026-08-13: 6 such bookings — 3 were manually declined by the partner, 3 manually confirmed hours/days later, even though the listings are instant-confirm. Dashboard side now treats these as "awaiting payment" (not partner action, no email). App side: consider expiring an unpaid checkout after N minutes, or a distinct status, so they don't linger. | **Samson** | flagged 2026-08-13 |
 | 9 | ⚠⚠ App source exists ONLY on Samson's laptop — no version control | **Samson** | URGENT: create private palmera-app repo from Xcode (Source Control → New Git Repository → push). TestFlight stores builds, not source; a dead laptop = lost app. |
 
+## Partner notification emails (ours)
+Resend, from `reservations@palmeraexp.com`. Pending → "action required";
+instant-confirmed → FYI; awaiting-payment → silent. Driven by a GitHub
+Actions poll every 5 min (`.github/workflows/notify-bookings.yml`), with
+Vercel's daily cron as backstop. For true instant delivery later: a
+Firestore onCreate Cloud Function, or the app POSTing our endpoint after
+it writes a booking (⚠ would need Samson).
+
 ## Rules sync log
 - 2026-08-13: **Samson's 2026-08-12 ruleset adopted into the repo verbatim**
   (his console deploy of 23:47 UTC — group-chat membership gating via

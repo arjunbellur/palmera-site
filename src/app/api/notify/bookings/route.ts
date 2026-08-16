@@ -11,6 +11,10 @@
 //
 //   POST /api/notify/bookings          (Authorization: Bearer <CRON_SECRET>)
 //   POST /api/notify/bookings?dry=1    report what WOULD send, send nothing
+//
+// Cadence: .github/workflows/notify-bookings.yml polls every 5 minutes (the
+// real driver); vercel.json's daily 07:00 UTC cron is a backstop only —
+// Vercel Hobby allows just one cron run per day.
 import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase-admin'
 import { sendEmail } from '@/lib/email'
