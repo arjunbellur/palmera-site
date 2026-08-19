@@ -21,6 +21,7 @@ import {
   type Experience, type Option, type OptionGroup,
   type Booking, type LedgerEntry, type Payout, type CompanyPayoutProfile,
   type AppProfile, type AppDoc,
+  type Supplier, type SupplyProduct,
 } from './schema'
 
 // ── Listing types ─────────────────────────────────────────────────
@@ -661,4 +662,66 @@ export const saveExperienceWithOptions = async (args: {
     }
   }
   return { id, status: (finalData.status || 'draft') as Experience['status'] }
+}
+
+// ── Marketplace: suppliers + products (see docs/marketplace-plan.md) ──────
+// All CRUD is client-SDK under the marketplace rules block; supplier docs
+// are auto-id (uid claimed at first login), products are a FLAT collection
+// so the partner store is one query.
+export const getAllSuppliers = async (): Promise<Supplier[]> => {
+  const snap = await getDocs(collection(db, 'suppliers'))
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }) as Supplier)
+}
+
+export const getSupplierByUid = async (uid: string): Promise<Supplier | null> => {
+  const snap = await getDocs(query(collection(db, 'suppliers'), where('uid', '==', uid)))
+  return snap.empty ? null : ({ id: snap.docs[0].id, ...snap.docs[0].data() } as Supplier)
+}
+
+// Concierge claim: an invited supplier signs in with the email the admin
+// registered; the doc with that email and no uid becomes theirs.
+export const claimSupplierByEmail = async (email: string, uid: string): Promise<Supplier | null> => {
+  const snap = await getDocs(query(collection(db, 'suppliers'), where('email', '==', email)))
+  const doc0 = snap.docs.find(d => !d.data().uid)
+  if (!doc0) return null
+  await updateDoc(doc(db, 'suppliers', doc0.id), { uid, updatedAt: serverTimestamp() })
+  return { id: doc0.id, ...doc0.data(), uid } as Supplier
+}
+
+export const createSupplier = async (data: Partial<Supplier>) => {
+  const ref = await addDoc(collection(db, 'suppliers'), {
+    uid: null, status: 'active', commissionRate: 0.1, ...data,
+    createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+  })
+  return ref.id
+}
+
+export const updateSupplier = async (id: string, data: Partial<Supplier>) => {
+  await updateDoc(doc(db, 'suppliers', id), { ...data, updatedAt: serverTimestamp() })
+}
+
+export const getProductsBySupplier = async (supplierId: string): Promise<SupplyProduct[]> => {
+  const snap = await getDocs(query(collection(db, 'products'), where('supplierId', '==', supplierId)))
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }) as SupplyProduct)
+}
+
+export const getLiveProducts = async (): Promise<SupplyProduct[]> => {
+  const snap = await getDocs(query(collection(db, 'products'), where('status', '==', 'live')))
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }) as SupplyProduct)
+}
+
+export const addSupplyProduct = async (data: Partial<SupplyProduct>) => {
+  const ref = await addDoc(collection(db, 'products'), {
+    status: 'live', photo: null, stock: 0, ...data,
+    createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+  })
+  return ref.id
+}
+
+export const updateSupplyProduct = async (id: string, data: Partial<SupplyProduct>) => {
+  await updateDoc(doc(db, 'products', id), { ...data, updatedAt: serverTimestamp() })
+}
+
+export const deleteSupplyProduct = async (id: string) => {
+  await deleteDoc(doc(db, 'products', id))
 }

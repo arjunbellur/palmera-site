@@ -437,3 +437,82 @@ export interface AppDoc {
   created_at?: unknown
   [key: string]: unknown
 }
+
+// ── Marketplace (dashboard-owned; the iOS app never touches these) ───────
+// Suppliers are wholesale businesses (alcohol first) selling to partners.
+// Vocabulary rule: "supplier", never "vendor" — vendor blurs with
+// partner/provider. Doc id is auto-generated; `uid` stays null until the
+// supplier first signs in with the invited email and claims the record
+// (concierge onboarding: admins author suppliers + products first).
+export type SupplierStatus = 'active' | 'paused'
+
+export interface Supplier {
+  id?: string
+  uid: string | null          // auth uid once claimed; null = invited only
+  name: string
+  email: string               // claim key — must match the auth account
+  phone: string
+  city: string
+  status: SupplierStatus
+  commissionRate: number      // decimal, e.g. 0.118 — same mechanics as companies
+  notes?: string              // admin-only context (who vetted them, terms)
+  createdAt?: TS
+  updatedAt?: TS
+}
+
+export type SupplyProductStatus = 'live' | 'hidden'
+
+export interface SupplyProduct {
+  id?: string
+  supplierId: string
+  supplierName: string        // denormalized for the store grid
+  city: string                // denormalized from the supplier for filtering
+  name: string
+  category: string            // 'alcohol' first; enum grows via config/marketplace
+  photo: string | null
+  unit: string                // 'bottle' | 'case' | 'crate' | 'unit'…
+  unitSize: string            // "75cl", "×24"…
+  price: number               // XOF per unit
+  stock: number               // decremented on order accept (phase 3)
+  status: SupplyProductStatus
+  createdAt?: TS
+  updatedAt?: TS
+}
+
+// supply_orders — a RECEIPT: items + the commission split are frozen at
+// submission and never recomputed from later price/rate edits.
+export type SupplyOrderStatus =
+  | 'awaiting_payment' | 'paid' | 'accepted' | 'delivered'
+  | 'declined' | 'cancelled' | 'refunded'
+
+export interface SupplyOrderItem {
+  productId: string
+  name: string
+  unit: string
+  unitSize: string
+  unitPrice: number
+  qty: number
+  lineTotal: number
+}
+
+export interface SupplyOrder {
+  id?: string
+  partnerId: string           // buyer's auth uid
+  companyId: string           // buying business
+  companyName: string
+  supplierId: string
+  supplierName: string
+  items: SupplyOrderItem[]
+  orderTotal: number
+  commissionRate: number      // frozen from the supplier at submission
+  commissionAmount: number
+  supplierNet: number
+  status: SupplyOrderStatus
+  note: string
+  payment: { provider: 'stripe'; sessionId: string | null; status: 'pending' | 'completed' | 'refunded' } | null
+  createdAt?: TS
+  updatedAt?: TS
+  paidAt?: TS | null
+  acceptedAt?: TS | null
+  deliveredAt?: TS | null
+}

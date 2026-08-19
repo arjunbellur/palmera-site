@@ -15,6 +15,7 @@ const NAV = [
   { href: '/admin/app', icon: '◉', label: 'App' },
   { href: '/admin/money', icon: '◆', label: 'Money' },
   { href: '/admin/directory', icon: '▤', label: 'Directory' },
+  { href: '/admin/suppliers', icon: '◫', label: 'Suppliers' },
 ] as const
 
 function Shell({ children }: { children: React.ReactNode }) {

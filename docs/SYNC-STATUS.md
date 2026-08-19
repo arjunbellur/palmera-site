@@ -81,6 +81,14 @@ it writes a booking (⚠ would need Samson).
 Every dashboard change that touches documents/rules/indexes the app consumes
 gets a line here, newest first. Pure-UI dashboard changes are never listed.
 
+- 2026-08-19 ⚠ **Rules: marketplace block added (suppliers / products /
+  supply_orders / supplier_ledger)** — phase 1 of the supply marketplace
+  (docs/marketplace-plan.md). ALL new collections, dashboard-owned; the app
+  reads/writes NONE of them, and no existing rule was touched. Additive
+  only. NOTE for Samson: `products` is a new top-level collection name —
+  if the app ever adds a collection, avoid that name. Deploys with the
+  next `npm run rules:deploy`; pull main before any rules deploy.
+
 - 2026-08-18 ⚠ **Rules: admins may CREATE experiences on a partner's behalf**
   — the experiences create rule gains an `|| isAdmin()` branch (Jordan needs
   to author listings for businesses from /admin this week). The partner path
