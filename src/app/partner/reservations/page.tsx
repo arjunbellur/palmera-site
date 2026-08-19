@@ -67,6 +67,22 @@ export default function ReservationsScreen() {
   // (Arjun: auto-confirms are not action). Past-confirmed no-show decisions
   // live in the detail drawer under Toutes until auto-completion exists
   // (SYNC-STATUS item 11).
+  // Same guest + same experience + same slot = one party the app wrote more
+  // than once (a new doc per checkout attempt). Flag the later copies so a
+  // partner doesn't hold three tables for one booking.
+  const dupIds = (() => {
+    const firstSeen = new Map<string, number>()
+    const dups = new Set<string>()
+    ;[...bookings]
+      .sort((a, b) => (toDate(a.createdAt)?.getTime() ?? 0) - (toDate(b.createdAt)?.getTime() ?? 0))
+      .forEach(b => {
+        const key = `${b.customerId}__${b.experienceId}__${toDate(b.scheduledFor)?.getTime() ?? ''}`
+        if (firstSeen.has(key)) dups.add(b.id!)
+        else firstSeen.set(key, 1)
+      })
+    return dups
+  })()
+
   const guestStats = (customerId: string) => {
     const mine = bookings.filter(x => x.customerId === customerId)
     const counted = mine.filter(x => !['cancelled', 'declined'].includes(x.status))
@@ -270,6 +286,7 @@ export default function ReservationsScreen() {
                   {dayBookings.map(b => (
                     <ReservationCard key={b.id} booking={b} locale={locale}
                       busy={busyId === b.id}
+                      duplicate={dupIds.has(b.id!)}
                       onOpen={setDetail}
                       onAccept={x => respond(x, 'confirmed')} />
                   ))}
@@ -310,6 +327,7 @@ export default function ReservationsScreen() {
                 {g.items.map(b => (
                   <ReservationCard key={b.id} booking={b} locale={locale}
                     busy={busyId === b.id}
+                    duplicate={dupIds.has(b.id!)}
                     onOpen={setDetail}
                     onAccept={x => respond(x, 'confirmed')} />
                 ))}

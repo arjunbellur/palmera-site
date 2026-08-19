@@ -17,11 +17,13 @@ const STATUS: Record<BookingStatus, { key: string; tone: Tone }> = {
 // primary one for its state (pending → Confirm). Decline, no-show and
 // everything rarer live in the detail drawer, reached by tapping the card.
 export default function ReservationCard({
-  booking: b, locale, compact = false, onAccept, onOpen, busy,
+  booking: b, locale, compact = false, onAccept, onOpen, busy, duplicate,
 }: {
   booking: Booking
   locale: Locale
   compact?: boolean
+  /** Same guest/experience/slot as an earlier booking — the app wrote it twice. */
+  duplicate?: boolean
   onAccept?: (b: Booking) => void
   /** Open the detail view. The info area becomes clickable; buttons still win. */
   onOpen?: (b: Booking) => void
@@ -45,6 +47,7 @@ export default function ReservationCard({
         <span style={eyebrow}>{b.title ? '' : ''}{(b as unknown as { category?: string }).category || ''}</span>
         {b.confirmationType === 'instant' && <Chip tone="green">● {L('instant')}</Chip>}
         <Chip tone={awaitingPayment ? 'gold' : s.tone}>{awaitingPayment ? `◷ ${L('await_pay')}` : L(s.key)}</Chip>
+        {duplicate && <Chip tone="alert">⧉ {L('dup_flag')}</Chip>}
       </div>
 
       <div style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: compact ? '14.5px' : '15.5px', marginBottom: '3px' }}>{b.title}</div>

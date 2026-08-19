@@ -76,8 +76,18 @@ export async function POST(req: NextRequest) {
     const since = new Date(Date.now() - WINDOW_MS)
     const snap = await db.collection('bookings').where('createdAt', '>=', since).get()
 
+    // The app creates a NEW booking + NEW Stripe session on every checkout
+    // attempt, so one party can arrive as 2-3 identical docs seconds apart.
+    // Notify once per party; log the rest as suppressed so they never send.
+    const partyKey = (b: FirebaseFirestore.DocumentData) =>
+      `${b.customerId}__${b.experienceId}__${b.scheduledFor?.toMillis?.() ?? ''}`
+    const seenParty = new Set<string>()
+    const ordered = [...snap.docs].sort(
+      (a, b) => (a.data().createdAt?.toMillis?.() ?? 0) - (b.data().createdAt?.toMillis?.() ?? 0),
+    )
+
     const results: { booking: string; to?: string; title?: string; skipped?: string }[] = []
-    for (const doc of snap.docs) {
+    for (const doc of ordered) {
       const b = doc.data()
       // Malformed payment-only docs never notify. Pending → action email;
       // confirmed (instant approvals) → FYI email. Terminal states → nothing.
@@ -89,7 +99,17 @@ export async function POST(req: NextRequest) {
       if (b.status === 'pending' && b.confirmationType === 'instant') { continue }
 
       const logRef = db.collection('email_log').doc(doc.id)
-      if ((await logRef.get()).exists) { continue }
+      const existing = await logRef.get()
+      if (existing.exists) {
+        // Already handled — but remember the party so its duplicates stay quiet.
+        seenParty.add(partyKey(b))
+        continue
+      }
+      if (seenParty.has(partyKey(b))) {
+        if (!dry) await logRef.set({ kind: 'duplicate_suppressed', party: partyKey(b), sentAt: new Date(), title: b.title ?? null })
+        results.push({ booking: doc.id, skipped: 'duplicate of an already-notified party' })
+        continue
+      }
 
       const provider = (await db.collection('providers').doc(b.providerId).get()).data()
       const to = provider?.email
@@ -101,7 +121,8 @@ export async function POST(req: NextRequest) {
 
       const mail = bookingEmail(b, companyName)
       await sendEmail({ to, subject: mail.subject, html: mail.html })
-      await logRef.set({ kind: b.status === 'pending' ? 'new_booking_pending' : 'new_booking_confirmed', to, sentAt: new Date(), title: b.title ?? null })
+      await logRef.set({ kind: b.status === 'pending' ? 'new_booking_pending' : 'new_booking_confirmed', to, sentAt: new Date(), title: b.title ?? null, party: partyKey(b) })
+      seenParty.add(partyKey(b))
       results.push({ booking: doc.id, to, title: String(b.title) })
     }
     return NextResponse.json({ ok: true, dry, checked: snap.size, sent: results })
