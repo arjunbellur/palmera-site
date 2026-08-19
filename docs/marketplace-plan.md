@@ -82,14 +82,21 @@ tile on Money.
 orders, statements/CSV, WhatsApp notifications, courier integration,
 multi-category expansion beyond alcohol.
 
-## Open decisions (Arjun/Jordan)
-1. **Palmera's cut on marketplace orders** — commission %, flat fee, or free
-   at launch to drive adoption? (v1 can record 0 and add later; the field
-   exists from day one.)
-2. **Who can buy** — all active partners, or gate to hospitality categories
-   (hotels/dining/nightlife) since it's alcohol?
-3. **Vendor signup** — self-serve from day one, or concierge-only (admin
-   creates them) like the experience partners this week?
-4. Licensing sanity-check: vendors sell B2B to licensed establishments —
-   Jordan confirms vendors hold whatever permits Senegal requires; Palmera
+## Decisions (Arjun, 2026-08-19)
+1. **Vendor onboarding: concierge-only at launch.** Admin creates vendors and
+   their products from /admin (same play as experiences); vendors get login
+   access to manage inventory once set up. Self-serve signup deferred.
+2. **Buyers: all active partners.** No category gating.
+3. **Commission from day one.** Each vendor carries a commission rate
+   (decimal, same mechanics as company rates). Every order records
+   `commissionRate`, `commissionAmount`, and `vendorNet` at submission time
+   (frozen on the receipt). Since v1 payment is cash/mobile-money on
+   delivery, Palmera doesn't intercept funds — the admin Money view tracks
+   **commission owed per vendor** and settlement is recorded manually
+   (invoice/collect), until online rails land in Phase 4.
+4. Licensing: OPEN — Jordan confirms vendors hold required permits; Palmera
    is the ordering rail, not the seller of record.
+
+Phase deltas from the decisions: Phase 1 adds admin vendor+product creation
+(reusing the concierge pattern); Phase 3's admin view adds the
+commission-owed-per-vendor table and a "mark settled" action.
