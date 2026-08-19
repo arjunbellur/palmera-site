@@ -307,6 +307,22 @@ export interface Booking {
    * itself — never as a separate doc. Absent for mode='reservation'. */
   // Two rails by design: PayDunya (amountXof/token) or Stripe
   // (currency/amountMinor/sessionId). Booking money fields stay XOF.
+  // ── Fields the APP writes that aren't part of our v3.3 contract but are
+  // present in live data (observed 2026-08-16). We only ever READ these.
+  /** Split payment: how many people owe a share, and how many have paid. */
+  payersCount?: number
+  paidCount?: number
+  /** uids of the co-payers (inconsistently populated — treat as optional). */
+  copayUids?: string[]
+  /** Raw checkout snapshot the app keeps (contact details, selections…). */
+  checkout?: {
+    payers?: number; uid?: string
+    customerPhone?: string; customerEmail?: string
+    nights?: number; selections?: unknown[]
+    createdAt?: TS
+  }
+  nights?: number
+  pointsAwarded?: number
   payment?: {
     provider: string; status: string; updatedAt?: TS
     amountXof?: number; token?: string | null            // PayDunya

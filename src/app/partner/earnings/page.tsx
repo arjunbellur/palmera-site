@@ -140,6 +140,20 @@ export default function EarningsScreen() {
   const revBars = [...byTitle.entries()].map(([label, val]) => ({ label, val })).sort((a, b) => b.val - a.val).slice(0, 4)
   const hasData = chartMax > 0 || revBars.length > 0
 
+  // Top-paying clients (Jordan) — from this company's own bookings.
+  const topClients = (() => {
+    const m = new Map<string, { spend: number; visits: number }>()
+    bookings.filter(b => !['cancelled', 'declined'].includes(b.status)).forEach(b => {
+      const name = b.customerName?.trim() || '—'
+      const cur = m.get(name) || { spend: 0, visits: 0 }
+      m.set(name, { spend: cur.spend + (b.bookingTotal || 0), visits: cur.visits + 1 })
+    })
+    return [...m.entries()]
+      .filter(([, v]) => v.spend > 0)
+      .map(([label, v]) => ({ label, value: v.spend, display: `${formatAmount(v.spend)} XOF · ${v.visits}×` }))
+      .sort((a, b) => b.value - a.value).slice(0, 5)
+  })()
+
   const h3: React.CSSProperties = { margin: '0 0 12px', fontFamily: 'var(--font-display)', fontSize: '1.125rem', fontWeight: 400, letterSpacing: '0.03em', color: 'var(--pf-head)' }
   const listCard: React.CSSProperties = { borderRadius: '16px', overflow: 'hidden' }
 
@@ -235,6 +249,13 @@ export default function EarningsScreen() {
             </div>
           )}
         </>
+      )}
+
+      {topClients.length > 0 && (
+        <div style={{ marginTop: '22px' }}>
+          <h3 style={h3}>{L('top_clients')}</h3>
+          <RankPills items={topClients} />
+        </div>
       )}
 
       <SectionTitle>{L('payout_hist')}</SectionTitle>

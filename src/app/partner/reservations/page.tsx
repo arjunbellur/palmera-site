@@ -67,6 +67,18 @@ export default function ReservationsScreen() {
   // (Arjun: auto-confirms are not action). Past-confirmed no-show decisions
   // live in the detail drawer under Toutes until auto-completion exists
   // (SYNC-STATUS item 11).
+  const guestStats = (customerId: string) => {
+    const mine = bookings.filter(x => x.customerId === customerId)
+    const counted = mine.filter(x => !['cancelled', 'declined'].includes(x.status))
+    const dates = mine.map(x => toDate(x.scheduledFor)).filter(Boolean) as Date[]
+    dates.sort((a, b) => a.getTime() - b.getTime())
+    return {
+      visits: counted.length,
+      spend: counted.reduce((sum, x) => sum + (x.bookingTotal || 0), 0),
+      since: dates[0] ?? null,
+    }
+  }
+
   const isPastNow = (b: Booking) => { const d = toDate(b.scheduledFor); return !!d && d.getTime() < Date.now() }
   // Pending on an INSTANT listing = the guest's checkout is unfinished; the
   // payment confirms it automatically. Not the partner's queue.
@@ -360,6 +372,53 @@ export default function ReservationsScreen() {
                 <span style={eyebrow}>{L('you_earn')}</span>
                 <Money amount={formatAmount(b.payoutAmount)} size={24} currency={b.currency || 'XOF'} />
               </div>
+              {/* Who is this guest to us? (Jordan) — history with THIS
+                  company, plus how far the group's split payment has got. */}
+              {(() => {
+                const g = guestStats(b.customerId)
+                const payers = b.payersCount ?? 0
+                const paid = b.paidCount ?? 0
+                const phone = b.customerPhone || b.checkout?.customerPhone
+                const email = b.customerEmail || b.checkout?.customerEmail
+                return (
+                  <div className="pf-glass" style={{ borderRadius: '14px', padding: '14px 16px', marginTop: '16px' }}>
+                    <div style={{ ...eyebrow, marginBottom: '10px' }}>{L('g_panel')}</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 7rem), 1fr))', gap: '12px' }}>
+                      <div>
+                        <div style={{ fontFamily: 'var(--font-sans)', fontSize: '9.5px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pf-faint)' }}>{L('g_visits')}</div>
+                        <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--pf-text)', marginTop: '3px' }}>{g.visits}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontFamily: 'var(--font-sans)', fontSize: '9.5px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pf-faint)' }}>{L('g_spend')}</div>
+                        <div style={{ marginTop: '3px' }}><Money amount={formatAmount(g.spend)} size={22} currency={b.currency || 'XOF'} /></div>
+                      </div>
+                      <div>
+                        <div style={{ fontFamily: 'var(--font-sans)', fontSize: '9.5px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pf-faint)' }}>{L('g_since')}</div>
+                        <div style={{ fontFamily: 'var(--font-sans)', fontSize: '12.5px', color: 'var(--pf-text)', marginTop: '6px' }}>
+                          {g.visits <= 1 ? L('g_first_time') : (g.since ? formatDate(g.since) : '—')}
+                        </div>
+                      </div>
+                    </div>
+                    {(phone || email) && (
+                      <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', marginTop: '12px', paddingTop: '10px', borderTop: '1px solid var(--pf-border)' }}>
+                        {phone && <a href={`tel:${phone}`} style={{ fontFamily: 'var(--font-sans)', fontSize: '11.5px', color: 'var(--pf-gold)' }}>☏ {phone}</a>}
+                        {email && <a href={`mailto:${email}`} style={{ fontFamily: 'var(--font-sans)', fontSize: '11.5px', color: 'var(--pf-gold)', overflowWrap: 'anywhere' }}>✉ {email}</a>}
+                      </div>
+                    )}
+                    {payers > 1 && (
+                      <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid var(--pf-border)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
+                          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--pf-faint)' }}>{L('g_pay_progress')}</span>
+                          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11.5px', color: paid >= payers ? 'var(--pf-success)' : 'var(--pf-gold)' }}>{paid} {L('g_paid_of')} {payers}</span>
+                        </div>
+                        <div style={{ height: '7px', borderRadius: '999px', background: 'var(--pf-card)', border: '1px solid var(--pf-border)', overflow: 'hidden' }}>
+                          <div className="pf-pill" style={{ height: '100%', width: `${Math.min(100, Math.round((paid / payers) * 100))}%`, borderRadius: '999px', background: paid >= payers ? 'var(--pf-success)' : 'linear-gradient(90deg, var(--pf-gold-deep), var(--pf-gold))' }} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
               {awaitingPayment(b) && (
                 <p style={{ fontFamily: 'var(--font-sans)', fontSize: '11.5px', color: 'var(--pf-gold)', background: 'rgba(190,154,86,0.1)', border: '1px solid var(--pf-border-strong)', borderRadius: '10px', padding: '10px 12px', margin: '14px 0 0', lineHeight: 1.5 }}>
                   ◷ {L('await_pay_note')}
