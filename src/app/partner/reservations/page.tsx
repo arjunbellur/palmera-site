@@ -10,7 +10,7 @@ import { ScreenHeader, EmptyState, Chip, Money, eyebrow, GhostButton, Skeleton }
 import ReservationCard from '@/components/partner/ReservationCard'
 import { formatAmount, formatDate } from '@/lib/money'
 
-type Filter = 'all' | 'action' | 'upcoming' | 'done'
+type Filter = 'all' | 'action' | 'upcoming' | 'done' | 'cancelled' | 'noshow'
 
 export default function ReservationsScreen() {
   const { uid, company, locale } = usePartner()
@@ -78,7 +78,11 @@ export default function ReservationsScreen() {
   const shown = bookings.filter(b => {
     if (filter === 'action' && !needsAction(b)) return false
     if (filter === 'upcoming' && !(['pending', 'confirmed'].includes(b.status) && !isPastNow(b))) return false
-    if (filter === 'done' && !['completed', 'no_show', 'cancelled', 'declined'].includes(b.status)) return false
+    // "Terminées" is DELIVERED only — cancellations and no-shows have their
+    // own pills now.
+    if (filter === 'done' && b.status !== 'completed') return false
+    if (filter === 'cancelled' && !['cancelled', 'declined'].includes(b.status)) return false
+    if (filter === 'noshow' && b.status !== 'no_show') return false
     if (q && !`${b.title} ${b.customerName} ${b.id}`.toLowerCase().includes(q)) return false
     const d = toDate(b.scheduledFor)
     if (datePreset) {
@@ -113,7 +117,9 @@ export default function ReservationsScreen() {
   const matchesStatus = (b: Booking) => {
     if (filter === 'action' && !needsAction(b)) return false
     if (filter === 'upcoming' && !(['pending', 'confirmed'].includes(b.status) && !isPastNow(b))) return false
-    if (filter === 'done' && !['completed', 'no_show', 'cancelled', 'declined'].includes(b.status)) return false
+    if (filter === 'done' && b.status !== 'completed') return false
+    if (filter === 'cancelled' && !['cancelled', 'declined'].includes(b.status)) return false
+    if (filter === 'noshow' && b.status !== 'no_show') return false
     if (q && !`${b.title} ${b.customerName} ${b.id}`.toLowerCase().includes(q)) return false
     return true
   }
@@ -126,6 +132,8 @@ export default function ReservationsScreen() {
     { key: 'upcoming', label: L('f_upcoming') },
     { key: 'all', label: L('f_all') },
     { key: 'done', label: L('f_done') },
+    { key: 'cancelled', label: L('f_cancelled') },
+    { key: 'noshow', label: L('f_noshow') },
   ]
 
   return (

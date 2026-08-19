@@ -41,6 +41,7 @@ export default function ListingsScreen() {
     setEditing(e); setEditingOptions(await getOptions(e.id!)); setShowModal(true)
   }
 
+  const [catFilter, setCatFilter] = useState<string>('all')
   const [toDelete, setToDelete] = useState<Experience | null>(null)
   const [deleting, setDeleting] = useState(false)
   const handleDelete = async () => {
@@ -85,54 +86,77 @@ export default function ListingsScreen() {
     setTimeout(() => setToast(''), 3000)
   }
 
+  // Jordan: filter by experience type — "if they just want to look at all
+  // their activity experiences". Only categories the partner actually uses.
+  const cats = [...new Set(items.map(e => e.category).filter(Boolean))] as string[]
+  const shown = catFilter === 'all' ? items : items.filter(e => e.category === catFilter)
+
   return (
     <div className="pf-in">
       <ScreenHeader label={L('list_label')} title={L('list_title')} intro={L('list_intro')} />
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '14px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '14px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          {cats.length > 1 && [['all', L('cat_all')] as const, ...cats.map(c => [c, c] as const)].map(([k, label]) => (
+            <button key={k} onClick={() => setCatFilter(k)}
+              style={{ padding: '6px 13px', borderRadius: '999px', cursor: 'pointer', fontFamily: 'var(--font-sans)', fontSize: '11px', letterSpacing: '0.03em', textTransform: 'capitalize',
+                border: `1px solid ${catFilter === k ? 'var(--pf-gold)' : 'var(--pf-border)'}`,
+                background: catFilter === k ? 'rgba(190,154,86,0.14)' : 'transparent',
+                color: catFilter === k ? 'var(--pf-gold)' : 'var(--pf-faint)' }}>
+              {label}
+            </button>
+          ))}
+        </div>
         <PrimaryButton onClick={openNew}>+ {L('new_listing')}</PrimaryButton>
       </div>
 
       {!loaded ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 15rem), 1fr))', gap: '12px' }}>
-          <Skeleton height="210px" /><Skeleton height="210px" /><Skeleton height="210px" />
+          <Skeleton height="170px" /><Skeleton height="170px" /><Skeleton height="170px" /><Skeleton height="170px" />
         </div>
       ) : items.length === 0 ? (
         <EmptyState icon="▦" title={L('list_empty_t')} body={L('list_empty_b')}
           action={<PrimaryButton onClick={openNew}>+ {L('new_listing')}</PrimaryButton>} />
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 15rem), 1fr))', gap: '12px' }}>
-          {items.map(e => {
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 12.5rem), 1fr))', gap: '10px' }}>
+          {shown.map(e => {
             const s = STATUS[e.status] ?? STATUS.draft
             return (
               <div key={e.id} onClick={() => openEdit(e)} role="button" tabIndex={0} className="pf-glass" style={{ ...cardShape, textAlign: 'left', cursor: 'pointer', padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
                 <div style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 2, display: 'flex', gap: '6px' }}>
                   <button onClick={(ev) => { ev.stopPropagation(); duplicate(e) }} title={L('dup')}
-                    style={{ padding: '5px 10px', borderRadius: '8px', border: '1px solid var(--pf-border-strong)', background: 'var(--pf-sheet)', color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '10.5px', cursor: 'pointer', opacity: dupBusyId === e.id ? 0.5 : 1 }}>
-                    {dupBusyId === e.id ? '…' : `⧉ ${L('dup')}`}
+                    style={{ padding: '4px 8px', borderRadius: '7px', border: '1px solid var(--pf-border-strong)', background: 'var(--pf-sheet)', color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '10px', cursor: 'pointer', opacity: dupBusyId === e.id ? 0.5 : 1 }}>
+                    {dupBusyId === e.id ? '…' : '⧉'}
                   </button>
                   <button onClick={(ev) => { ev.stopPropagation(); setToDelete(e) }} title={L('del')}
-                    style={{ padding: '5px 10px', borderRadius: '8px', border: '1px solid rgba(196,124,124,0.4)', background: 'var(--pf-sheet)', color: 'var(--pf-alert)', fontFamily: 'var(--font-sans)', fontSize: '10.5px', cursor: 'pointer' }}>
+                    style={{ padding: '4px 8px', borderRadius: '7px', border: '1px solid rgba(196,124,124,0.4)', background: 'var(--pf-sheet)', color: 'var(--pf-alert)', fontFamily: 'var(--font-sans)', fontSize: '10px', cursor: 'pointer' }}>
                     ✕
                   </button>
                 </div>
-                {/* App-card preview (Jordan): the cover in the app's shape —
-                    portrait 4:5, cover-fit so it can never stretch. */}
-                <div style={{ aspectRatio: '4 / 5', background: e.img ? `center/cover no-repeat url(${e.img})` : 'var(--pf-card-solid)', display: 'grid', placeItems: 'center', position: 'relative' }}>
-                  {!e.img && <span style={{ ...eyebrow, opacity: 0.6 }}>{locale === 'fr' ? 'Sans photo' : 'No photo'}</span>}
-                  <span style={{ position: 'absolute', left: '10px', bottom: '10px' }}><Chip tone={s.tone}>{L(s.key)}</Chip></span>
+                {/* Compact cover (Jordan: density over drama — the full
+                    app-shaped preview lives in the editor). Landscape 16:9,
+                    cover-fit so it still can't stretch. */}
+                <div style={{ aspectRatio: '16 / 9', background: e.img ? `center/cover no-repeat url(${e.img})` : 'var(--pf-card-solid)', display: 'grid', placeItems: 'center', position: 'relative' }}>
+                  {!e.img && <span style={{ ...eyebrow, opacity: 0.6, fontSize: '9px' }}>{locale === 'fr' ? 'Sans photo' : 'No photo'}</span>}
+                  {/* Status reads at a glance: LIVE is solid, everything else quiet. */}
+                  <span style={{ position: 'absolute', left: '8px', bottom: '8px', fontFamily: 'var(--font-sans)', fontSize: '9px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 9px', borderRadius: '999px',
+                    background: e.status === 'published' ? 'var(--pf-success)' : 'rgba(10,14,24,0.72)',
+                    color: e.status === 'published' ? '#0a0e18' : 'var(--pf-muted)',
+                    border: e.status === 'published' ? 'none' : '1px solid var(--pf-border-strong)',
+                    boxShadow: e.status === 'published' ? '0 0 14px rgba(122,158,107,0.5)' : 'none', fontWeight: e.status === 'published' ? 600 : 400 }}>
+                    {e.status === 'published' ? `● ${L(s.key)}` : L(s.key)}
+                  </span>
                 </div>
-                <div style={{ padding: '13px 16px 15px', flex: 1 }}>
-                  <div style={{ ...eyebrow, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '6px' }}>
+                <div style={{ padding: '10px 12px 12px', flex: 1 }}>
+                  <div style={{ ...eyebrow, fontSize: '8.5px', letterSpacing: '0.1em', marginBottom: '4px' }}>
                     {[e.category, e.city].filter(Boolean).join(' · ') || '—'}
                   </div>
-                  <div style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '17px', fontWeight: 600, lineHeight: 1.2, marginBottom: '6px' }}>{e.title || L('untitled')}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontFamily: 'var(--font-sans)', fontSize: '11.5px', color: 'var(--pf-muted)', flexWrap: 'wrap' }}>
-                    <span><span style={{ color: 'var(--pf-gold)' }}>★</span> {(e.rating ?? 0).toFixed(2)} ({e.reviews ?? 0})</span>
-                    <span>{e.price != null ? `${L('from')} ${formatAmount(e.price)} XOF` : (locale === 'fr' ? 'Sur réservation' : 'Reservation only')}</span>
+                  <div style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '13.5px', lineHeight: 1.25, marginBottom: '4px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{e.title || L('untitled')}</div>
+                  <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-muted)' }}>
+                    {e.price != null ? `${L('from')} ${formatAmount(e.price)} XOF` : (locale === 'fr' ? 'Sur réservation' : 'Reservation only')}
                   </div>
                   {(e.needsReview?.length ?? 0) > 0 && (
-                    <div style={{ marginTop: '8px' }}><Chip tone="alert">{locale === 'fr' ? 'À compléter' : 'Needs'}: {e.needsReview!.join(', ')}</Chip></div>
+                    <div style={{ marginTop: '6px' }}><Chip tone="alert">{locale === 'fr' ? 'À compléter' : 'Needs'}</Chip></div>
                   )}
                 </div>
               </div>

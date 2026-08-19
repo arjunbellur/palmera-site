@@ -138,15 +138,15 @@ export default function PartnerHome() {
             <span style={{ color: 'var(--pf-gold)', fontSize: '13px', marginLeft: '8px' }}>→</span>
           </div>
         </a>
-        <div className="pf-glass" style={cardShape}>
+        <a href="/partner/reservations?f=next" className="pf-glass" style={{ ...cardShape, textDecoration: 'none', display: 'block' }}>
           <div style={eyebrow}>{L('next_res')}</div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: nextRes ? '18px' : '27px', color: 'var(--pf-text)', marginTop: '6px', lineHeight: 1.25 }}>
             {nextRes && nextResWhen
               ? <>{formatDate(nextResWhen)} · {nextResWhen.toLocaleTimeString(locale === 'fr' ? 'fr-FR' : 'en-GB', { hour: '2-digit', minute: '2-digit' })}</>
               : '—'}
           </div>
-          {nextRes && <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-faint)', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nextRes.title}</div>}
-        </div>
+          {nextRes && <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-faint)', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nextRes.title} <span style={{ color: 'var(--pf-gold)' }}>→</span></div>}
+        </a>
       </div>}
 
       {/* Metrics: balance leads full-width, the two smaller tiles sit beside it. */}

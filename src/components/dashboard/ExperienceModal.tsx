@@ -70,7 +70,8 @@ const M = {
     cancelDesc: (h: number | undefined) => h != null ? `Annulation gratuite jusqu’à ${h}h avant.` : '',
     changeLater: 'Modifiable à tout moment',
     price: 'Prix (XOF) *', priceIs: 'Ce prix s’applique', perGroup: 'Au groupe entier', perPerson: 'Par personne',
-    minGroup: 'Groupe minimum', maxGroup: 'Groupe maximum',
+    minGroup: 'Groupe minimum', maxGroup: 'Groupe maximum', noLimit: 'Sans limite', unlimited: 'Illimité',
+    reorder: 'Glissez pour réordonner',
     partyHint: 'Palmera est fait pour réserver entre amis — c’est la taille de groupe que vous pouvez accueillir.',
     preview: 'Ce que les clients verront',
     previewLine: (n: number, total: string, each: string) => <>Un groupe de {n} amis paie <strong style={{ color: 'var(--db-text)' }}>{total} XOF</strong> — soit environ <strong style={{ color: 'var(--db-text)' }}>{each} XOF chacun</strong> une fois partagé dans l’app.</>,
@@ -164,7 +165,8 @@ const M = {
     cancelDesc: (h: number | undefined) => h != null ? `Free cancellation up to ${h}h before.` : '',
     changeLater: 'You can change this later',
     price: 'Price (XOF) *', priceIs: 'This price is', perGroup: 'For the whole group', perPerson: 'Per person',
-    minGroup: 'Smallest group', maxGroup: 'Largest group',
+    minGroup: 'Smallest group', maxGroup: 'Largest group', noLimit: 'No limit', unlimited: 'Unlimited',
+    reorder: 'Drag to reorder',
     partyHint: 'Palmera is built for friends booking together — this is the party size you can host.',
     preview: 'What guests will see',
     previewLine: (n: number, total: string, each: string) => <>A group of {n} friends pays <strong style={{ color: 'var(--db-text)' }}>{total} XOF</strong> — about <strong style={{ color: 'var(--db-text)' }}>{each} XOF each</strong> when they split it in the app.</>,
@@ -352,13 +354,35 @@ function ChoiceCards<T extends string>({ value, onChange, options }: {
 }
 
 /** − n + stepper — counts are tapped, never typed (mobile-first). */
-function Stepper({ value, min = 1, onChange }: { value: number; min?: number; onChange: (v: number) => void }) {
+function Stepper({ value, min = 1, onChange, noLimit, noLimitLabel, unlimitedLabel }: {
+  value: number; min?: number; onChange: (v: number) => void
+  /** Show a "no limit" toggle (max-group only). NO_LIMIT is stored as 0. */
+  noLimit?: boolean; noLimitLabel?: string; unlimitedLabel?: string
+}) {
   const btn: React.CSSProperties = { width: '2.25rem', height: '2.25rem', borderRadius: '50%', border: '1px solid var(--db-border-gold)', background: 'transparent', color: 'var(--db-text)', fontSize: '1.125rem', cursor: 'pointer', lineHeight: 1 }
+  const unlimited = noLimit && value === 0
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
-      <button onClick={() => onChange(Math.max(min, value - 1))} disabled={value <= min} style={{ ...btn, opacity: value <= min ? 0.35 : 1, cursor: value <= min ? 'default' : 'pointer' }}>−</button>
-      <span style={{ fontFamily: 'var(--font-display)', color: 'var(--db-text)', fontSize: '1.25rem', minWidth: '2rem', textAlign: 'center' }}>{value}</span>
-      <button onClick={() => onChange(value + 1)} style={btn}>+</button>
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+        <button onClick={() => onChange(Math.max(min, (unlimited ? min : value) - 1))} disabled={unlimited || value <= min}
+          style={{ ...btn, opacity: unlimited || value <= min ? 0.35 : 1, cursor: unlimited || value <= min ? 'default' : 'pointer' }}>−</button>
+        {unlimited ? (
+          <span style={{ fontFamily: 'var(--font-display)', color: '#be9a56', fontSize: '1.05rem', minWidth: '4.5rem', textAlign: 'center' }}>∞ {unlimitedLabel}</span>
+        ) : (
+          // Jordan: type the number directly instead of tapping + eleven times.
+          <input type="number" min={min} value={value}
+            onChange={(e) => { const n = parseInt(e.target.value, 10); onChange(isNaN(n) ? min : Math.max(min, n)) }}
+            style={{ width: '4.5rem', textAlign: 'center', background: 'var(--db-bg-input)', border: '1px solid var(--db-border-subtle)', borderRadius: '0.375rem', padding: '0.4375rem 0.25rem', color: 'var(--db-text)', fontFamily: 'var(--font-display)', fontSize: '1.125rem', outline: 'none' }} />
+        )}
+        <button onClick={() => onChange((unlimited ? min : value) + 1)} disabled={unlimited}
+          style={{ ...btn, opacity: unlimited ? 0.35 : 1, cursor: unlimited ? 'default' : 'pointer' }}>+</button>
+      </div>
+      {noLimit && (
+        <button onClick={() => onChange(unlimited ? Math.max(min, 10) : 0)}
+          style={{ marginTop: '0.5rem', background: 'transparent', border: 'none', color: unlimited ? '#be9a56' : 'var(--db-text-faint)', fontSize: '0.6875rem', fontFamily: 'var(--font-sans)', textDecoration: 'underline', cursor: 'pointer', padding: 0 }}>
+          {noLimitLabel}
+        </button>
+      )}
     </div>
   )
 }
@@ -417,12 +441,35 @@ export default function ExperienceModal({ providerId, companyId, companyName, de
     setSchedule({ days: days.includes(day) ? days.filter((d) => d !== day) : [...days, day] })
   }
   const linesToArray = (s: string) => s.split('\n').map((x) => x.trim()).filter(Boolean)
+  // RAW text for the multi-line list fields. Binding these straight to
+  // array.join('\n') made Enter and trailing spaces impossible to type —
+  // the parse ran on every keystroke and ate them. Type freely here; the
+  // form arrays stay in sync for saving.
+  const [listText, setListText] = useState({
+    includes: (experience?.includes || []).join('\n'),
+    excludes: (experience?.excludes || []).join('\n'),
+    highlights: (experience?.highlights || []).join('\n'),
+  })
+  const setList = (field: 'includes' | 'excludes' | 'highlights', raw: string) => {
+    setListText((p) => ({ ...p, [field]: raw }))
+    set(field, linesToArray(raw) as Experience[typeof field])
+  }
 
   const isPaid = form.mode === 'paid'
   const isScheduled = form.scheduleType === 'scheduled'
   const isOneTime = form.scheduleType === 'one_time'
   const canSave = !!form.title && !!form.category && !!form.city && (!isPaid || !!form.price)
 
+  // Order matters — it's the order guests see in the app. Drag a set by its
+  // handle instead of deleting and rebuilding it.
+  const [dragIdx, setDragIdx] = useState<number | null>(null)
+  const moveGroup = (from: number, to: number) => setGroups((g) => {
+    if (to < 0 || to >= g.length || from === to) return g
+    const next = [...g]
+    const [moved] = next.splice(from, 1)
+    next.splice(to, 0, moved)
+    return next.map((x, i) => ({ ...x, sortOrder: i }))
+  })
   const addGroupNamed = (kind: SetKind, name: string) => setGroups((g) => {
     const ng = emptyGroup(kind)
     ng.name = name
@@ -456,7 +503,8 @@ export default function ExperienceModal({ providerId, companyId, companyName, de
       : form.schedule
     // Group size can never be inverted — clamp max up to min on save.
     const minGuests = Math.max(1, form.minGuests || 1)
-    const maxGuests = Math.max(minGuests, form.maxGuests || minGuests)
+    // 0 = no limit (Jordan) — preserve it; otherwise clamp to >= minGuests.
+    const maxGuests = form.maxGuests === 0 ? 0 : Math.max(minGuests, form.maxGuests || minGuests)
     const status: Experience['status'] =
       mode === 'publish' ? 'published'
       : mode === 'unpublish' ? 'unpublished'
@@ -474,7 +522,7 @@ export default function ExperienceModal({ providerId, companyId, companyName, de
     : step === 1 ? [isPaid && !form.price && T.fPrice]
     : []
   ).filter(Boolean) as string[]
-  const groupInverted = (form.maxGuests ?? 0) < (form.minGuests ?? 1)
+  const groupInverted = form.maxGuests !== 0 && (form.maxGuests ?? 0) < (form.minGuests ?? 1)
 
   const needsReview = experience?.needsReview || []
 
@@ -558,7 +606,7 @@ export default function ExperienceModal({ providerId, companyId, companyName, de
     <>
       <div style={rowStyle}>
         <div><label style={labelStyle}>{T.minGroup}</label><Stepper value={form.minGuests || 1} onChange={(v) => set('minGuests', v)} /></div>
-        <div><label style={labelStyle}>{T.maxGroup}</label><Stepper value={form.maxGuests || 1} onChange={(v) => set('maxGuests', v)} /></div>
+        <div><label style={labelStyle}>{T.maxGroup}</label><Stepper value={form.maxGuests ?? 1} onChange={(v) => set('maxGuests', v)} noLimit noLimitLabel={T.noLimit} unlimitedLabel={T.unlimited} /></div>
       </div>
       <p style={{ ...hintStyle, margin: '-0.5rem 0 1rem' }}>{T.partyHint}</p>
       {groupInverted && (
@@ -654,11 +702,11 @@ export default function ExperienceModal({ providerId, companyId, companyName, de
         <textarea style={{ ...inputStyle, height: '90px', resize: 'vertical' }} placeholder={T.describePh} value={form.description} onChange={(e) => set('description', e.target.value)} />
       </div>
       <div style={rowStyle}>
-        <div><label style={labelStyle}>{T.included}</label><textarea style={{ ...inputStyle, height: '80px', resize: 'vertical' }} placeholder={T.includedPh} value={(form.includes || []).join('\n')} onChange={(e) => set('includes', linesToArray(e.target.value))} /><p style={hintStyle}>{T.includedHint}</p></div>
-        <div><label style={labelStyle}>{T.notIncluded}</label><textarea style={{ ...inputStyle, height: '80px', resize: 'vertical' }} placeholder={T.notIncludedPh} value={(form.excludes || []).join('\n')} onChange={(e) => set('excludes', linesToArray(e.target.value))} /></div>
+        <div><label style={labelStyle}>{T.included}</label><textarea style={{ ...inputStyle, height: '80px', resize: 'vertical' }} placeholder={T.includedPh} value={listText.includes} onChange={(e) => setList('includes', e.target.value)} /><p style={hintStyle}>{T.includedHint}</p></div>
+        <div><label style={labelStyle}>{T.notIncluded}</label><textarea style={{ ...inputStyle, height: '80px', resize: 'vertical' }} placeholder={T.notIncludedPh} value={listText.excludes} onChange={(e) => setList('excludes', e.target.value)} /></div>
       </div>
       <div style={rowStyle}>
-        <div><label style={labelStyle}>{T.highlights}</label><textarea style={{ ...inputStyle, height: '70px', resize: 'vertical' }} value={(form.highlights || []).join('\n')} onChange={(e) => set('highlights', linesToArray(e.target.value))} /><p style={hintStyle}>{T.highlightsHint}</p></div>
+        <div><label style={labelStyle}>{T.highlights}</label><textarea style={{ ...inputStyle, height: '70px', resize: 'vertical' }} value={listText.highlights} onChange={(e) => setList('highlights', e.target.value)} /><p style={hintStyle}>{T.highlightsHint}</p></div>
         <div><label style={labelStyle}>{T.dress}</label><input style={inputStyle} placeholder={T.dressPh} value={form.dressCode || ''} onChange={(e) => set('dressCode', e.target.value || null)} /></div>
       </div>
       <div style={{ marginBottom: '0.5rem' }}>
@@ -738,10 +786,26 @@ export default function ExperienceModal({ providerId, companyId, companyName, de
         ) : (
           <>
             <label style={{ ...labelStyle, marginBottom: '0.75rem' }}>{T.addons}</label>
-            {groups.map((g) => {
+            {groups.map((g, gi) => {
               const kind = kindOf(g)
               return (
-              <div key={g.id} className="pf-glass" style={{ borderRadius: '0.5rem', padding: '1rem', marginBottom: '0.875rem' }}>
+              <div key={g.id} className="pf-glass"
+                draggable
+                onDragStart={() => setDragIdx(gi)}
+                onDragOver={(ev) => ev.preventDefault()}
+                onDrop={(ev) => { ev.preventDefault(); if (dragIdx !== null) moveGroup(dragIdx, gi); setDragIdx(null) }}
+                onDragEnd={() => setDragIdx(null)}
+                style={{ borderRadius: '0.5rem', padding: '1rem', marginBottom: '0.875rem', opacity: dragIdx === gi ? 0.5 : 1 }}>
+                {groups.length > 1 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.625rem' }}>
+                    <span title={T.reorder} style={{ cursor: 'grab', color: 'var(--db-text-faint)', fontSize: '0.875rem', letterSpacing: '2px' }}>⠿</span>
+                    <span style={{ fontSize: '0.6875rem', color: 'var(--db-text-ghost)', fontFamily: 'var(--font-sans)', flex: 1 }}>{T.reorder}</span>
+                    <button onClick={() => moveGroup(gi, gi - 1)} disabled={gi === 0}
+                      style={{ width: '24px', height: '24px', borderRadius: '6px', border: '1px solid var(--db-border-subtle)', background: 'transparent', color: 'var(--db-text-faint)', cursor: gi === 0 ? 'default' : 'pointer', opacity: gi === 0 ? 0.35 : 1, fontSize: '0.75rem' }}>↑</button>
+                    <button onClick={() => moveGroup(gi, gi + 1)} disabled={gi === groups.length - 1}
+                      style={{ width: '24px', height: '24px', borderRadius: '6px', border: '1px solid var(--db-border-subtle)', background: 'transparent', color: 'var(--db-text-faint)', cursor: gi === groups.length - 1 ? 'default' : 'pointer', opacity: gi === groups.length - 1 ? 0.35 : 1, fontSize: '0.75rem' }}>↓</button>
+                  </div>
+                )}
                 {/* The kind stays a visible two-card pick — same cards as the
                     empty state, same idiom as every other wizard step. Tapping
                     the other card switches; the guest preview below flips
