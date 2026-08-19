@@ -422,5 +422,69 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    // ══ Marketplace (dashboard-owned; the iOS app never touches these) ══════
+    // Suppliers = wholesale businesses selling goods to partners (docs:
+    // marketplace-plan.md). Concierge onboarding: admin creates the doc with
+    // `email` and uid=null; the supplier claims it at first /supplier sign-in
+    // by setting uid to their own auth uid and NOTHING else.
+    match /suppliers/{id} {
+      allow read: if signedIn() && (resource.data.uid == request.auth.uid
+                    || resource.data.email == request.auth.token.email
+                    || isAdmin());
+      // Partners browsing the store see active suppliers.
+      allow read: if signedIn() && resource.data.status == 'active';
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin();
+      // The claim: uid null → own uid, all other fields untouched.
+      allow update: if signedIn()
+                    && resource.data.uid == null
+                    && resource.data.email == request.auth.token.email
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['uid', 'updatedAt']);
+      // A claimed owner edits their profile but never their own commission,
+      // status, claim email, or uid.
+      allow update: if signedIn()
+                    && resource.data.uid == request.auth.uid
+                    && keep('uid') && keep('email') && keep('commissionRate') && keep('status');
+      // Payout details / admin notes.
+      match /private/{doc} {
+        allow read, write: if isAdmin()
+          || get(/databases/$(database)/documents/suppliers/$(id)).data.uid == request.auth.uid;
+      }
+    }
+    // Does a supplier doc claimed by the caller back this supplierId?
+    function ownsSupplier(supplierId) {
+      return signedIn() &&
+        get(/databases/$(database)/documents/suppliers/$(supplierId)).data.uid == request.auth.uid;
+    }
+    // Products — FLAT catalog so the partner store is one query. Any signed-in
+    // user browses; only the owning supplier or admin writes.
+    match /products/{id} {
+      allow read: if signedIn();
+      allow create: if isAdmin() || ownsSupplier(request.resource.data.supplierId);
+      allow update, delete: if isAdmin() || ownsSupplier(resource.data.supplierId);
+    }
+    // supply_orders — RECEIPTS: money split frozen at submission. Buyer creates
+    // 'awaiting_payment' anchored on themselves and reads their own; supplier
+    // updates status on their own orders with anchors + money frozen; the
+    // Stripe webhook marks paid via the Admin SDK (bypasses rules).
+    match /supply_orders/{id} {
+      allow read: if signedIn() && (resource.data.partnerId == request.auth.uid || isAdmin());
+      allow read: if ownsSupplier(resource.data.supplierId);
+      allow create: if signedIn()
+                    && request.resource.data.partnerId == request.auth.uid
+                    && request.resource.data.status == 'awaiting_payment';
+      allow update: if isAdmin();
+      allow update: if ownsSupplier(resource.data.supplierId)
+                    && keep('partnerId') && keep('companyId') && keep('supplierId')
+                    && keep('items') && keep('orderTotal') && keep('commissionRate')
+                    && keep('commissionAmount') && keep('supplierNet') && keep('payment');
+    }
+    // supplier_ledger — server-written only (Admin SDK); supplier reads own.
+    match /supplier_ledger/{id} {
+      allow read: if isAdmin() || (signedIn() && resource.data.supplierUid == request.auth.uid);
+      allow write: if false;
+    }
   }
 }
