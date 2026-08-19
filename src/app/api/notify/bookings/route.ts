@@ -54,7 +54,7 @@ function bookingEmail(b: Record<string, unknown>, companyName: string) {
     ? 'Cette réservation attend votre confirmation.'
     : 'Réservation instantanée — aucune action requise, elle est déjà sur votre calendrier.'}</p>
   <p style="margin:22px 0">
-    <a href="https://www.palmeraexp.com/partner/reservations" style="background:#9e763b;color:#ebe8db;text-decoration:none;padding:11px 22px;border-radius:8px;font-family:Arial,sans-serif;font-size:13px">${pending ? 'Répondre dans le tableau de bord' : 'Voir dans le tableau de bord'}</a>
+    <a href="https://www.palmeraexp.com/partner/reservations${pending ? '?f=pending' : ''}" style="background:#9e763b;color:#ebe8db;text-decoration:none;padding:11px 22px;border-radius:8px;font-family:Arial,sans-serif;font-size:13px">${pending ? 'Répondre dans le tableau de bord' : 'Voir dans le tableau de bord'}</a>
   </p>
   <p style="color:#8a8577;font-size:11px">${pending
     ? 'New booking awaiting your confirmation — open your Palmera dashboard to respond.'

@@ -49,6 +49,7 @@ const M = {
     summaryTitle: 'Que voulez-vous modifier ?',
     stepOf: (a: number, b: number) => `Étape ${a}/${b}`,
     previewNote: 'Aperçu approximatif — l’app peut différer légèrement.',
+    prevHomeCard: 'Carte sur la page d’accueil', prevDetail: 'Page de l’expérience',
     fromLabel: 'À PARTIR DE', bookNow: 'Réserver', guestsWord: 'pers.',
     includedHint: 'Ce que le prix couvre — matériel, boissons, entrées…',
     highlightsHint: 'Vos arguments de vente — ce qui donne envie.',
@@ -144,6 +145,7 @@ const M = {
     summaryTitle: 'What do you want to edit?',
     stepOf: (a: number, b: number) => `Step ${a}/${b}`,
     previewNote: 'Approximate preview — the app may differ slightly.',
+    prevHomeCard: 'Card on the home page', prevDetail: 'Experience page',
     fromLabel: 'FROM', bookNow: 'Book now', guestsWord: 'guests',
     includedHint: 'What the price covers — gear, drinks, entry…',
     highlightsHint: 'Your selling points — what makes people want it.',
@@ -486,6 +488,13 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
   const updateGroup = (id: string, patch: Partial<OptionGroup>) => setGroups((g) => g.map((x) => (x.id === id ? { ...x, ...patch } : x)))
   const addOption = (groupId: string) => setGroups((g) => g.map((x) => (x.id === groupId ? { ...x, options: [...x.options, emptyOption(groupId)] } : x)))
   const removeOption = (groupId: string, idx: number) => setGroups((g) => g.map((x) => (x.id === groupId ? { ...x, options: x.options.filter((_, i) => i !== idx) } : x)))
+  const moveOption = (groupId: string, from: number, to: number) => setGroups((g) => g.map((x) => {
+    if (x.id !== groupId || to < 0 || to >= x.options.length) return x
+    const opts = [...x.options]
+    const [moved] = opts.splice(from, 1)
+    opts.splice(to, 0, moved)
+    return { ...x, options: opts }
+  }))
   const updateOptionAt = (groupId: string, idx: number, patch: Partial<Option>) =>
     setGroups((g) => g.map((x) => (x.id === groupId ? { ...x, options: x.options.map((o, i) => (i === idx ? { ...o, ...patch } : o)) } : x)))
 
@@ -845,6 +854,10 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
                           <input style={inputStyle} type="number" min="1" value={o.maxQuantityPerBooking} onChange={(e) => updateOptionAt(g.id, i, { maxQuantityPerBooking: parseInt(e.target.value) || 1 })} />
                         </div>
                       )}
+                      <button onClick={() => moveOption(g.id, i, i - 1)} disabled={i === 0}
+                        style={{ background: 'transparent', border: 'none', color: i === 0 ? 'var(--db-border-subtle)' : 'var(--db-text-faint)', fontSize: '0.8125rem', cursor: i === 0 ? 'default' : 'pointer', padding: '0 0.25rem 0.625rem' }}>↑</button>
+                      <button onClick={() => moveOption(g.id, i, i + 1)} disabled={i === g.options.length - 1}
+                        style={{ background: 'transparent', border: 'none', color: i === g.options.length - 1 ? 'var(--db-border-subtle)' : 'var(--db-text-faint)', fontSize: '0.8125rem', cursor: i === g.options.length - 1 ? 'default' : 'pointer', padding: '0 0.25rem 0.625rem' }}>↓</button>
                       <button onClick={() => removeOption(g.id, i)} style={{ background: 'transparent', border: 'none', color: '#e07070', fontSize: '1rem', cursor: 'pointer', padding: '0 0.5rem 0.625rem' }}>×</button>
                     </div>
                     <input style={{ ...inputStyle, marginTop: '0.5rem' }} placeholder={T.optDescPh} value={o.description || ''} onChange={(e) => updateOptionAt(g.id, i, { description: e.target.value })} />
@@ -910,8 +923,30 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
   // sheet, gold pin eyebrow, serif cream title, provider chip, FROM bar). ───
   const stepPreview = (() => {
     const APP = { sheet: '#0E2233', chip: '#16324a', gold: '#E9BC4F', goldDeep: '#D9A62E', cream: '#F3EBD8', dim: 'rgba(243,235,216,0.65)' }
+    const sectionLabel = (txt: string) => (
+      <p style={{ fontSize: '0.6875rem', color: '#be9a56', letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: 'var(--font-sans)', margin: '0 0 0.625rem', textAlign: 'center' }}>{txt}</p>
+    )
     return (
       <div>
+        {/* Home-feed card — the compact tile guests scroll past (Jordan's ask):
+            photo with a bottom gradient, title + city over it, FROM price. */}
+        {sectionLabel(T.prevHomeCard)}
+        <div style={{ maxWidth: '17rem', margin: '0 auto 1.75rem', borderRadius: '1.125rem', overflow: 'hidden', border: '1px solid var(--db-border-subtle)', background: APP.sheet, position: 'relative' }}>
+          <div style={{ height: '13rem', background: form.img ? `center/cover url(${form.img})` : '#1a2f44', display: 'grid', placeItems: 'center' }}>
+            {!form.img && <span style={{ color: APP.dim, fontFamily: 'var(--font-sans)', fontSize: '0.75rem' }}>{T.mainPhoto}</span>}
+          </div>
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(14,34,51,0) 40%, rgba(14,34,51,0.92) 100%)' }} />
+          <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '0.875rem 1rem' }}>
+            {form.city && <div style={{ color: APP.gold, fontFamily: 'var(--font-sans)', fontSize: '0.5625rem', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '0.25rem' }}>⚲ {form.city}</div>}
+            <div style={{ color: APP.cream, fontFamily: 'var(--font-serif)', fontSize: '1.0625rem', fontWeight: 600, lineHeight: 1.2, marginBottom: '0.25rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{form.title || '…'}</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+              <span style={{ color: APP.dim, fontFamily: 'var(--font-sans)', fontSize: '0.6875rem' }}><span style={{ color: APP.gold }}>★</span> 0.00</span>
+              <span style={{ color: APP.cream, fontFamily: 'var(--font-sans)', fontSize: '0.75rem' }}><span style={{ color: APP.dim, fontSize: '0.5625rem', letterSpacing: '0.1em' }}>{T.fromLabel}</span> {fmt(isPaid ? (form.price || 0) : 0)} XOF</span>
+            </div>
+          </div>
+        </div>
+
+        {sectionLabel(T.prevDetail)}
         <div style={{ maxWidth: '23rem', margin: '0 auto', borderRadius: '1.25rem', overflow: 'hidden', border: '1px solid var(--db-border-subtle)', background: APP.sheet }}>
           <div style={{ height: '11rem', background: form.img ? `center/cover url(${form.img})` : '#1a2f44', display: 'grid', placeItems: 'center' }}>
             {!form.img && <span style={{ color: APP.dim, fontFamily: 'var(--font-sans)', fontSize: '0.75rem' }}>{T.mainPhoto}</span>}

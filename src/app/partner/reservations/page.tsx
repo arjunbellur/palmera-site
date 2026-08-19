@@ -42,9 +42,13 @@ export default function ReservationsScreen() {
     return () => unsub()
   }, [uid, company?.id])
 
-  // Deep link from Home's Today tile: /partner/reservations?f=today
+  // Deep links (Home tiles, notification emails): ?f=today → today's date
+  // preset; ?f=pending → the À traiter filter; ?f=next → upcoming.
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get('f') === 'today') setDatePreset('today')
+    const f = new URLSearchParams(window.location.search).get('f')
+    if (f === 'today') setDatePreset('today')
+    else if (f === 'pending') setFilter('action')
+    else if (f === 'next') setFilter('upcoming')
   }, [])
 
   const respond = async (b: Booking, status: 'confirmed' | 'declined' | 'no_show') => {
