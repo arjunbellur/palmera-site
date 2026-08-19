@@ -41,11 +41,18 @@ function Shell({ children }: { children: React.ReactNode }) {
     const unsub = onAuthChange(async user => {
       if (!user) { setSupplier(null); setAuthed('out'); return }
       setUid(user.uid); setEmail(user.email || '')
-      let s = await getSupplierByUid(user.uid)
-      if (!s && user.email) s = await claimSupplierByEmail(user.email, user.uid)
-      if (!s) { setAuthed('unclaimed'); return }
-      setSupplier(s)
-      setAuthed('in')
+      // A failed lookup (offline, rules) must land on the friendly screen,
+      // never hang the spinner.
+      try {
+        let s = await getSupplierByUid(user.uid)
+        if (!s && user.email) s = await claimSupplierByEmail(user.email, user.uid)
+        if (!s) { setAuthed('unclaimed'); return }
+        setSupplier(s)
+        setAuthed('in')
+      } catch (e) {
+        console.error('supplier lookup failed:', e)
+        setAuthed('unclaimed')
+      }
     })
     return () => unsub()
   }, [])
