@@ -21,7 +21,7 @@ import {
   type Experience, type Option, type OptionGroup,
   type Booking, type LedgerEntry, type Payout, type CompanyPayoutProfile,
   type AppProfile, type AppDoc,
-  type Supplier, type SupplyProduct,
+  type Supplier, type SupplyProduct, type SupplyOrder,
 } from './schema'
 
 // ── Listing types ─────────────────────────────────────────────────
@@ -724,4 +724,9 @@ export const updateSupplyProduct = async (id: string, data: Partial<SupplyProduc
 
 export const deleteSupplyProduct = async (id: string) => {
   await deleteDoc(doc(db, 'products', id))
+}
+
+export const getSupplyOrdersByPartner = async (partnerId: string): Promise<SupplyOrder[]> => {
+  const snap = await getDocs(query(collection(db, 'supply_orders'), where('partnerId', '==', partnerId)))
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }) as SupplyOrder)
 }

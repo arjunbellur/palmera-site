@@ -16,6 +16,7 @@ const NAV = [
   { href: '/partner/reservations', icon: '▤', key: 'nav_res' },
   { href: '/partner/earnings', icon: '◆', key: 'nav_earn' },
   { href: '/partner/listings', icon: '▦', key: 'nav_list' },
+  { href: '/partner/marketplace', icon: '▩', key: 'nav_market' },
   { href: '/partner/messages', icon: '✉', key: 'nav_msg' },
   { href: '/partner/settings', icon: '◎', key: 'nav_set' },
 ] as const

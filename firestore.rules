@@ -480,6 +480,14 @@ service cloud.firestore {
                     && keep('partnerId') && keep('companyId') && keep('supplierId')
                     && keep('items') && keep('orderTotal') && keep('commissionRate')
                     && keep('commissionAmount') && keep('supplierNet') && keep('payment');
+      // Buyer may close out their own UNPAID checkout — cancelled only.
+      allow update: if signedIn()
+                    && resource.data.partnerId == request.auth.uid
+                    && resource.data.status == 'awaiting_payment'
+                    && request.resource.data.status == 'cancelled'
+                    && keep('partnerId') && keep('companyId') && keep('supplierId')
+                    && keep('items') && keep('orderTotal') && keep('commissionRate')
+                    && keep('commissionAmount') && keep('supplierNet') && keep('payment');
     }
     // supplier_ledger — server-written only (Admin SDK); supplier reads own.
     match /supplier_ledger/{id} {

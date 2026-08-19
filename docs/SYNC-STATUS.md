@@ -81,6 +81,9 @@ it writes a booking (⚠ would need Samson).
 Every dashboard change that touches documents/rules/indexes the app consumes
 gets a line here, newest first. Pure-UI dashboard changes are never listed.
 
+- 2026-08-19 ⚠ **Rules: marketplace block amended** — supply_orders gains a
+  buyer-cancel clause (a partner may flip their OWN awaiting_payment order
+  to cancelled, money fields frozen). Still additive, app untouched.
 - 2026-08-19 ⚠ **Rules: marketplace block added (suppliers / products /
   supply_orders / supplier_ledger)** — phase 1 of the supply marketplace
   (docs/marketplace-plan.md). ALL new collections, dashboard-owned; the app
