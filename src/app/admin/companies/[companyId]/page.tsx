@@ -11,8 +11,10 @@ import {
   activateCompany, updateCompanyAdminFields, updateCompany, setExperienceStatus, setExperienceTag,
   deleteCompanyCascade, deleteProviderAccountCascade, getCountersignature, setCountersignature, getCountersignatory, setCountersignatory,
   getProviderAdmin, setProviderStatus, getPayoutProfile,
+  getOptions, saveExperienceWithOptions,
   type Countersignature, type Countersignatory,
 } from '@/lib/firestore'
+import ExperienceModal from '@/components/dashboard/ExperienceModal'
 import ConfirmDialog from '@/components/dashboard/ConfirmDialog'
 import AgreementDocument from '@/components/dashboard/AgreementDocument'
 import CompanyForm, { type CompanyFormValues } from '@/components/dashboard/CompanyForm'
@@ -20,9 +22,13 @@ import { getAgreement, formatAgreementDate, PALMERA_SIGNATORY, AGREEMENT_VERSION
 import { ScreenHeader, Chip, EmptyState, Skeleton, PrimaryButton, GhostButton, card, bodyText } from '@/components/partner/ui'
 import { Field, Grid, SectionHeading, DangerButton, inputStyle, formatDate } from '../../ui'
 import { useAdmin } from '../../AdminContext'
-import type { Company, Provider, CompanyPrivateAdmin, CompanyPayoutProfile, Experience } from '@/lib/schema'
+import type { Company, Provider, CompanyPrivateAdmin, CompanyPayoutProfile, Experience, Option, OptionGroup } from '@/lib/schema'
 
 type Tab = 'overview' | 'experiences' | 'signoff' | 'admin'
+
+/** 0.118 → "11.8" (no rounding, no trailing zeros). Jordan sets rates like
+ *  11.8% — Math.round was showing them as 12%. */
+const pctText = (rate: number) => String(+(rate * 100).toFixed(2))
 
 const noteStyle: React.CSSProperties = { fontFamily: 'var(--font-sans)', fontSize: '13px', color: 'var(--pf-muted)', margin: '0 0 16px', lineHeight: 1.6 }
 
@@ -42,7 +48,7 @@ function DetailSkeleton() {
 export default function AdminCompanyDetailPage({ params }: { params: Promise<{ companyId: string }> }) {
   const { companyId } = use(params)
   const router = useRouter()
-  const { email: adminEmail } = useAdmin()
+  const { email: adminEmail, uid: adminUid } = useAdmin()
   const [company, setCompany] = useState<Company | null>(null)
   const [provider, setProvider] = useState<Provider | null>(null)
   const [companyAdmin, setCompanyAdmin] = useState<CompanyPrivateAdmin | null>(null)
@@ -91,7 +97,7 @@ export default function AdminCompanyDetailPage({ params }: { params: Promise<{ c
     setPayoutProfile(pp)
     setCountersign(cs); setSignatory(sig)
     setAccountStatus(pa?.status || 'active')
-    if (ca?.commissionRate != null) setRateInput(String(Math.round(ca.commissionRate * 100)))
+    if (ca?.commissionRate != null) setRateInput(pctText(ca.commissionRate))
     if (sig) { setRepName(sig.name); setRepTitle(sig.title) }
     setLoading(false)
   }
@@ -119,19 +125,38 @@ export default function AdminCompanyDetailPage({ params }: { params: Promise<{ c
     setSavingStatus(false)
   }
 
+  // Percent → rate, decimal-safe: 11.8 → 0.118 (not 0.11800000000000001).
+  const parseRate = () => {
+    const pct = Math.max(0, Math.min(100, parseFloat(rateInput) || 0))
+    return Math.round(pct * 100) / 10000
+  }
   const handleActivate = async () => {
     setSavingRate(true)
-    const rate = Math.max(0, Math.min(100, parseFloat(rateInput) || 0)) / 100
+    const rate = parseRate()
     await activateCompany(companyId, rate)
     await load(); setSavingRate(false)
   }
   const handleSaveRate = async () => {
     setSavingRate(true)
-    const rate = Math.max(0, Math.min(100, parseFloat(rateInput) || 0)) / 100
+    const rate = parseRate()
     await updateCompanyAdminFields(companyId, { commissionRate: rate })
     await load(); setSavingRate(false)
   }
   const [publishError, setPublishError] = useState('')
+  // Jordan onboards businesses for them — an admin can author listings on a
+  // partner's behalf. Same editor, same single save path as the partner uses.
+  const [showExpModal, setShowExpModal] = useState(false)
+  const [editingExp, setEditingExp] = useState<Experience | undefined>()
+  const [editingOptions, setEditingOptions] = useState<Option[]>([])
+  const openNewExp = () => { setEditingExp(undefined); setEditingOptions([]); setShowExpModal(true) }
+  const openEditExp = async (e: Experience) => {
+    setEditingExp(e); setEditingOptions(await getOptions(e.id!)); setShowExpModal(true)
+  }
+  const handleSaveExp = async (data: Partial<Experience>, groups: (OptionGroup & { options: Option[] })[]) => {
+    await saveExperienceWithOptions({ companyName: company?.name || '', existingId: editingExp?.id, data, groups })
+    setShowExpModal(false); setEditingExp(undefined)
+    await load()
+  }
   // Invariant #7: lat/lng, img, and cancellationPolicy are required at publish.
   const publishBlockers = (e: Experience): string[] => [
     ...(!e.img ? ['hero photo'] : []),
@@ -217,7 +242,7 @@ export default function AdminCompanyDetailPage({ params }: { params: Promise<{ c
         <span style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--pf-faint)' }}>{provider?.email}</span>
         <Chip tone={accountStatus === 'suspended' ? 'alert' : 'green'}>{accountStatus === 'suspended' ? 'Account suspended' : 'Account active'}</Chip>
         <Chip tone={provider?.onboardingStage === 'complete' ? 'gold' : 'neutral'}>{provider?.onboardingStage === 'complete' ? 'Graduated' : 'In onboarding'}</Chip>
-        {companyAdmin?.commissionRate != null && <Chip tone="neutral">{Math.round(companyAdmin.commissionRate * 100)}% commission</Chip>}
+        {companyAdmin?.commissionRate != null && <Chip tone="neutral">{pctText(companyAdmin.commissionRate)}% commission</Chip>}
       </div>
 
       {confirmDelete && (
@@ -273,9 +298,13 @@ export default function AdminCompanyDetailPage({ params }: { params: Promise<{ c
 
       {tab === 'experiences' && (
         <div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '14px' }}>
+            <PrimaryButton onClick={openNewExp}>+ Add experience</PrimaryButton>
+          </div>
           {publishError && <p style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', color: 'var(--pf-alert)', margin: '0 0 16px' }}>{publishError}</p>}
           {experiences.length === 0 ? (
-            <EmptyState icon="▦" title="No experiences yet" body="This company hasn't created any listings." />
+            <EmptyState icon="▦" title="No experiences yet" body="Create one on this partner's behalf — it saves exactly as if they had made it."
+              action={<PrimaryButton onClick={openNewExp}>+ Add experience</PrimaryButton>} />
           ) : experiences.map((e) => (
             <div key={e.id} style={{ ...card, marginBottom: '14px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', flexWrap: 'wrap' }}>
@@ -292,6 +321,7 @@ export default function AdminCompanyDetailPage({ params }: { params: Promise<{ c
                 <Field label="Duration" value={e.duration} />
               </Grid>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '12px', flexWrap: 'wrap' }}>
+                <GhostButton onClick={() => openEditExp(e)}>Edit</GhostButton>
                 {e.status === 'published' ? (
                   <GhostButton onClick={() => handlePublish(e.id!, 'unpublished')}>Unpublish</GhostButton>
                 ) : (() => {
@@ -370,6 +400,21 @@ export default function AdminCompanyDetailPage({ params }: { params: Promise<{ c
         </div>
       )}
 
+      {showExpModal && company && (
+        <ExperienceModal
+          providerId={company.providerId}
+          storageUid={adminUid}
+          companyId={companyId}
+          companyName={company.name}
+          defaultCategory={company.category}
+          defaultCity={company.city}
+          experience={editingExp}
+          existingOptions={editingOptions}
+          onSave={handleSaveExp}
+          onClose={() => { setShowExpModal(false); setEditingExp(undefined) }}
+        />
+      )}
+
       {tab === 'admin' && (
         <div>
           <SectionHeading>Provider account</SectionHeading>
@@ -391,7 +436,8 @@ export default function AdminCompanyDetailPage({ params }: { params: Promise<{ c
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: '12px', flexWrap: 'wrap' }}>
             <div>
               <p style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'var(--pf-faint)', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 6px' }}>Commission rate (%)</p>
-              <input type="number" min="0" max="100" value={rateInput} onChange={(e) => setRateInput(e.target.value)} style={{ ...inputStyle, width: '6rem' }} />
+              <input type="number" min="0" max="100" step="0.1" inputMode="decimal" value={rateInput}
+                onChange={(e) => setRateInput(e.target.value)} style={{ ...inputStyle, width: '6rem' }} />
             </div>
             {company.activatedAt ? (
               <GhostButton onClick={handleSaveRate}>{savingRate ? 'Saving…' : 'Update rate'}</GhostButton>

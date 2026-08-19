@@ -22,6 +22,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const { theme, toggle: toggleTheme } = useTheme()
   const [email, setEmail] = useState('')
+  const [uid, setUid] = useState('')
   const [loading, setLoading] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
   // Collapsed = a 68px icon rail; the whole width goes to the content.
@@ -41,7 +42,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       if (!user) { router.replace('/dashboard'); return }
       // Non-admins get a real destination, not a silent spinner.
       if (!isAdminEmail(user.email)) { router.replace('/dashboard/home'); return }
-      setEmail(user.email || '')
+      setEmail(user.email || ''); setUid(user.uid)
       setLoading(false)
     })
     return () => unsub()
@@ -96,7 +97,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AdminContext.Provider value={{ email }}>
+    <AdminContext.Provider value={{ email, uid }}>
       <div data-theme={theme} style={{ minHeight: '100vh', background: 'var(--pf-bg)', display: 'flex' }}>
         {!isMobile && (
           <aside style={{ width: collapsed ? '68px' : '236px', flexShrink: 0, background: 'var(--pf-nav)', borderRight: '1px solid var(--pf-border)', padding: collapsed ? '22px 10px' : '22px 16px', position: 'sticky', top: 0, height: '100vh', display: 'flex', flexDirection: 'column', gap: '20px', transition: 'width 0.25s cubic-bezier(0.22,1,0.36,1), padding 0.25s ease', overflow: 'hidden' }}>

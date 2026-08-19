@@ -260,7 +260,11 @@ export interface ExperienceFormData extends Partial<Experience> {
 }
 
 interface ExperienceModalProps {
+  /** Owner of the listing — the PARTNER's uid, even when an admin authors it. */
   providerId: string
+  /** Whose Storage folder uploads land in. Defaults to providerId; the admin
+   *  passes their own uid because partner paths aren't theirs to write. */
+  storageUid?: string
   companyId: string
   /** Company display name — shown on the guest-card preview. */
   companyName?: string
@@ -387,7 +391,8 @@ function Stepper({ value, min = 1, onChange, noLimit, noLimitLabel, unlimitedLab
   )
 }
 
-export default function ExperienceModal({ providerId, companyId, companyName, defaultCategory, defaultCity, experience, existingOptions, onSave, onClose }: ExperienceModalProps) {
+export default function ExperienceModal({ providerId, storageUid, companyId, companyName, defaultCategory, defaultCity, experience, existingOptions, onSave, onClose }: ExperienceModalProps) {
+  const uploadUid = storageUid || providerId
   const locale = useLocale()
   const T = M[locale]
   const [categories, setCategories] = useState<Opt[]>([])
@@ -679,11 +684,11 @@ export default function ExperienceModal({ providerId, companyId, companyName, de
     <>
       <div style={{ marginBottom: '1rem' }}>
         <label style={labelStyle}>{T.mainPhoto} {!form.img && <span style={{ color: '#e07070' }}>{T.needPub}</span>}</label>
-        <PhotoUpload uid={providerId} label={T.mainPhoto} fieldName={`experience_${experience?.id || 'new'}_hero`} existingUrl={form.img} onUploaded={(url) => set('img', url)} hint={T.photoHint} />
+        <PhotoUpload uid={uploadUid} label={T.mainPhoto} fieldName={`experience_${experience?.id || 'new'}_hero`} existingUrl={form.img} onUploaded={(url) => set('img', url)} hint={T.photoHint} />
       </div>
       <div style={{ marginBottom: '1.25rem' }}>
         <label style={labelStyle}>{T.morePhotos}</label>
-        <GalleryUpload uid={providerId} value={form.gallery || []} onChange={(urls) => set('gallery', urls)} />
+        <GalleryUpload uid={uploadUid} value={form.gallery || []} onChange={(urls) => set('gallery', urls)} />
       </div>
 
       <div style={{ marginBottom: '1rem' }}>
@@ -692,7 +697,7 @@ export default function ExperienceModal({ providerId, companyId, companyName, de
           <div style={{ marginBottom: '1.25rem' }}>
             <label style={labelStyle}>{T.menuLabel}</label>
             <p style={{ ...hintStyle, margin: '0 0 0.625rem' }}>{T.menuHint}</p>
-            <MenuUpload uid={providerId} fieldName={`experience_${experience?.id || 'new'}_menu`}
+            <MenuUpload uid={uploadUid} fieldName={`experience_${experience?.id || 'new'}_menu`}
               existingUrl={form.menuUrl} existingKind={form.menuType}
               onUploaded={(url, kind) => setForm((f) => ({ ...f, menuUrl: url, menuType: kind }))}
               onRemove={() => setForm((f) => ({ ...f, menuUrl: null, menuType: null }))} />
@@ -849,11 +854,11 @@ export default function ExperienceModal({ providerId, companyId, companyName, de
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 10rem), 1fr))', gap: '0.75rem', marginTop: '0.5rem' }}>
                         <div>
                           <label style={{ ...labelStyle, fontSize: '0.6875rem' }}>{T.photo}</label>
-                          <PhotoUpload uid={providerId} label={T.photo} fieldName={`option_${optKey}_hero`} existingUrl={o.img || ''} onUploaded={(url) => updateOptionAt(g.id, i, { img: url })} />
+                          <PhotoUpload uid={uploadUid} label={T.photo} fieldName={`option_${optKey}_hero`} existingUrl={o.img || ''} onUploaded={(url) => updateOptionAt(g.id, i, { img: url })} />
                         </div>
                         <div>
                           <label style={{ ...labelStyle, fontSize: '0.6875rem' }}>{T.morePhotos}</label>
-                          <GalleryUpload uid={providerId} value={o.gallery || []} onChange={(urls) => updateOptionAt(g.id, i, { gallery: urls })} />
+                          <GalleryUpload uid={uploadUid} value={o.gallery || []} onChange={(urls) => updateOptionAt(g.id, i, { gallery: urls })} />
                         </div>
                       </div>
                     ) : (
