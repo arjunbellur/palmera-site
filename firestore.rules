@@ -100,13 +100,16 @@ service cloud.firestore {
       allow read: if resource.data.status == 'published'
                   || resource.data.get('active', false) == true
                   || (signedIn() && (resource.data.providerId == request.auth.uid || isAdmin()));
-      // Create only for yourself AND only under a company you own; `active`
-      // must stay consistent with `status`; curation `tag` is Palmera's alone.
+      // Create for yourself under a company you own — or as admin on a
+      // partner's behalf (providerId = the partner, never the admin). `active`
+      // must stay consistent with `status`; curation `tag` is Palmera's alone
+      // (admins may set it at creation, partners may not).
       allow create: if signedIn()
-                    && request.resource.data.providerId == request.auth.uid
-                    && ownsCompany(request.resource.data.companyId)
-                    && request.resource.data.get('active', false) == (request.resource.data.get('status', 'draft') == 'published')
-                    && request.resource.data.get('tag', null) == null;
+                    && ((request.resource.data.providerId == request.auth.uid
+                         && ownsCompany(request.resource.data.companyId)
+                         && request.resource.data.get('tag', null) == null)
+                        || isAdmin())
+                    && request.resource.data.get('active', false) == (request.resource.data.get('status', 'draft') == 'published');
       // Admin may change anything (publish, tag, curate).
       allow update: if signedIn() && isAdmin();
       // Owner may edit AND publish/unpublish their own listing:

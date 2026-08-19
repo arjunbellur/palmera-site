@@ -81,6 +81,15 @@ it writes a booking (⚠ would need Samson).
 Every dashboard change that touches documents/rules/indexes the app consumes
 gets a line here, newest first. Pure-UI dashboard changes are never listed.
 
+- 2026-08-18 ⚠ **Rules: admins may CREATE experiences on a partner's behalf**
+  — the experiences create rule gains an `|| isAdmin()` branch (Jordan needs
+  to author listings for businesses from /admin this week). The partner path
+  is byte-for-byte unchanged: providerId must equal auth.uid, ownsCompany,
+  tag null. Admin-created docs still carry the PARTNER's providerId and the
+  same active↔status consistency check. App impact: none — the app never
+  creates experiences. Deployed from repo (`npm run rules:deploy`); pull
+  main before your next rules deploy.
+
 - 2026-08-04 ⚠ **Experiences gain optional `menuUrl` + `menuType`** —
   restaurant-style listings (dining/nightlife categories) can now attach a
   menu from the dashboard editor: `menuUrl: string|null` (Firebase Storage
