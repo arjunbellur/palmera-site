@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic'
 import { usePartner } from '../PartnerContext'
 import { t } from '../i18n'
 import { ScreenHeader, EmptyState } from '@/components/partner/ui'
+import { MessageCircle } from 'lucide-react'
 
 export default function MessagesScreen() {
   const { locale } = usePartner()
@@ -13,7 +14,7 @@ export default function MessagesScreen() {
   return (
     <div className="pf-in">
       <ScreenHeader label={L('msg_label')} title={L('msg_title')} />
-      <EmptyState icon="✉" title={L('msg_empty_t')} body={L('msg_empty_b')} chip={L('msg_soon')} />
+      <EmptyState icon={<MessageCircle size={22} strokeWidth={1.75} />} title={L('msg_empty_t')} body={L('msg_empty_b')} chip={L('msg_soon')} />
     </div>
   )
 }

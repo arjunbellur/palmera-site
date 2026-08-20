@@ -12,6 +12,7 @@ import { ScreenHeader, Chip, Skeleton, Money, SectionTitle, EmptyState, card, ey
 import { BarChart, RankPills, Donut } from '@/components/charts'
 import { FilterChip, inputStyle, formatDate, glass } from '../ui'
 import type { Booking, BookingStatus, Company, AppProfile, CompanyPayoutProfile } from '@/lib/schema'
+import { Wallet, CalendarDays } from 'lucide-react'
 
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR').format(Math.round(n))
 
@@ -168,7 +169,7 @@ function AdminMoney() {
         Derived from completed bookings — switches to the ledger once server writes land.
       </p>
       {owed.length === 0 ? (
-        <EmptyState icon="◆" title="Nothing owed yet" body="Once bookings are marked completed, each partner's payout builds up here." chip="Payouts run every two weeks" />
+        <EmptyState icon={<Wallet size={22} strokeWidth={1.75} />} title="Nothing owed yet" body="Once bookings are marked completed, each partner's payout builds up here." chip="Payouts run every two weeks" />
       ) : (
         <div className="pf-glass" style={{ ...glass, padding: '6px 16px' }}>
           {owed.map((o, i) => (
@@ -214,7 +215,7 @@ function AdminMoney() {
       </div>
 
       {rows.length === 0 ? (
-        <EmptyState icon="▤" title="No bookings match" body="Try clearing a filter or widening the date range." />
+        <EmptyState icon={<CalendarDays size={22} strokeWidth={1.75} />} title="No bookings match" body="Try clearing a filter or widening the date range." />
       ) : (
         <div className="pf-glass" style={{ ...glass, padding: '8px' }}>
           {rows.map((b, i) => {

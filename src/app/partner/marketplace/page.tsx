@@ -13,6 +13,7 @@ import { auth } from '@/lib/firebase'
 import { doc, updateDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { ScreenHeader, PrimaryButton, GhostButton, Chip, EmptyState, Skeleton, cardShape, eyebrow } from '@/components/partner/ui'
+import { ShoppingBasket, ClipboardList, Package } from 'lucide-react'
 
 const fmtXof = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
 
@@ -124,7 +125,7 @@ export default function Marketplace() {
         <div className="pf-cols" style={{ alignItems: 'flex-start' }}>
           <div style={{ minWidth: 0, flex: 1 }}>
             {products === null ? <Skeleton height="12rem" /> :
-             products.length === 0 ? <EmptyState icon="▩" title={L('mk_empty_t')} body={L('mk_empty_b')} /> :
+             products.length === 0 ? <EmptyState icon={<ShoppingBasket size={22} strokeWidth={1.75} />} title={L('mk_empty_t')} body={L('mk_empty_b')} /> :
              groupedBySupplier.map(([supplierName, ps]) => (
               <div key={supplierName} style={{ marginBottom: '22px' }}>
                 <p style={{ ...eyebrow, margin: '0 0 10px' }}>{supplierName} · {ps[0].city}</p>
@@ -133,7 +134,7 @@ export default function Marketplace() {
                     <div key={p.id} className="pf-glass" style={{ ...cardShape, display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                         <span style={{ width: '44px', height: '44px', borderRadius: '10px', background: 'var(--pf-green-soft)', flexShrink: 0, overflow: 'hidden', display: 'grid', placeItems: 'center', color: 'var(--pf-gold)' }}>
-                          {p.photo ? <img loading="lazy" decoding="async" src={p.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '▦'}
+                          {p.photo ? <img loading="lazy" decoding="async" src={p.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Package size={18} strokeWidth={1.75} />}
                         </span>
                         <div style={{ minWidth: 0 }}>
                           <p style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-head)', fontSize: '13.5px', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</p>
@@ -193,7 +194,7 @@ export default function Marketplace() {
 
       {tab === 'orders' && (
         orders === null ? <Skeleton height="8rem" /> :
-        orders.length === 0 ? <EmptyState icon="▤" title={L('mk_orders_empty_t')} body={L('mk_orders_empty_b')} /> : (
+        orders.length === 0 ? <EmptyState icon={<ClipboardList size={22} strokeWidth={1.75} />} title={L('mk_orders_empty_t')} body={L('mk_orders_empty_b')} /> : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {orders.map(o => (
               <div key={o.id} className="pf-glass" style={cardShape}>

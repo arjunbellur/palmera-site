@@ -9,13 +9,14 @@ import { ThemeProvider, useTheme } from '@/lib/theme'
 import { isAdminEmail } from '@/lib/admin'
 import { Chip } from '@/components/partner/ui'
 import { AdminContext } from './AdminContext'
+import { LayoutDashboard, Smartphone, CircleDollarSign, Building2, Truck, Moon, Sun, LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 
 const NAV = [
-  { href: '/admin', icon: '⌂', label: 'Overview' },
-  { href: '/admin/app', icon: '◉', label: 'App' },
-  { href: '/admin/money', icon: '◆', label: 'Money' },
-  { href: '/admin/directory', icon: '▤', label: 'Directory' },
-  { href: '/admin/suppliers', icon: '◫', label: 'Suppliers' },
+  { href: '/admin', icon: LayoutDashboard, label: 'Overview' },
+  { href: '/admin/app', icon: Smartphone, label: 'App' },
+  { href: '/admin/money', icon: CircleDollarSign, label: 'Money' },
+  { href: '/admin/directory', icon: Building2, label: 'Directory' },
+  { href: '/admin/suppliers', icon: Truck, label: 'Suppliers' },
 ] as const
 
 function Shell({ children }: { children: React.ReactNode }) {
@@ -74,7 +75,7 @@ function Shell({ children }: { children: React.ReactNode }) {
 
   const ThemeButton = (
     <button onClick={toggleTheme} aria-label="Toggle theme" style={{ width: '30px', height: '30px', borderRadius: '8px', border: '1px solid var(--pf-border)', background: 'transparent', color: 'var(--pf-gold)', cursor: 'pointer', fontSize: '12px' }}>
-      {theme === 'dark' ? '☾' : '☀'}
+      {theme === 'dark' ? <Moon size={14} strokeWidth={1.75} /> : <Sun size={14} strokeWidth={1.75} />}
     </button>
   )
 
@@ -91,7 +92,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         background: active ? 'var(--pf-card)' : 'transparent',
         color: active ? 'var(--pf-gold)' : 'var(--pf-faint)',
       }}>
-        <span style={{ fontSize: '13px', lineHeight: 1, width: '18px', textAlign: 'center', flexShrink: 0 }}>{item.icon}</span>
+        <span style={{ lineHeight: 0, width: '18px', display: 'grid', placeItems: 'center', flexShrink: 0 }}><item.icon size={15} strokeWidth={1.75} /></span>
         {!collapsed && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '12.5px', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{item.label}</span>}
       </a>
     )
@@ -109,13 +110,13 @@ function Shell({ children }: { children: React.ReactNode }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexDirection: collapsed ? 'column' : 'row' }}>
                 {ThemeButton}
                 <button onClick={signOut} title="Sign out" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--pf-faint)', fontFamily: 'var(--font-sans)', fontSize: '11.5px', letterSpacing: '0.04em' }}>
-                  <span style={{ fontSize: '13px' }}>⎋</span> {!collapsed && 'Sign out'}
+                  <LogOut size={14} strokeWidth={1.75} /> {!collapsed && 'Sign out'}
                 </button>
               </div>
               {/* Collapse toggle — reclaim the full width for the content. */}
               <button onClick={toggleNav} aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
                 style={{ width: collapsed ? '30px' : '100%', height: '30px', borderRadius: '8px', border: '1px solid var(--pf-border)', background: 'transparent', color: 'var(--pf-faint)', cursor: 'pointer', fontSize: '12px' }}>
-                {collapsed ? '⟩' : '⟨'}
+                {collapsed ? <PanelLeftOpen size={14} strokeWidth={1.75} /> : <PanelLeftClose size={14} strokeWidth={1.75} />}
               </button>
             </div>
           </aside>
@@ -127,7 +128,7 @@ function Shell({ children }: { children: React.ReactNode }) {
               {Logo}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 {ThemeButton}
-                <button onClick={signOut} aria-label="Sign out" title="Sign out" style={{ width: '30px', height: '30px', borderRadius: '8px', border: '1px solid var(--pf-border)', background: 'transparent', color: 'var(--pf-faint)', cursor: 'pointer', fontSize: '13px' }}>⎋</button>
+                <button onClick={signOut} aria-label="Sign out" title="Sign out" style={{ width: '30px', height: '30px', borderRadius: '8px', border: '1px solid var(--pf-border)', background: 'transparent', color: 'var(--pf-faint)', cursor: 'pointer', fontSize: '13px' }}><LogOut size={14} strokeWidth={1.75} /></button>
               </div>
             </header>
           )}

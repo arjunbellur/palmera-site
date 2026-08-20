@@ -97,7 +97,7 @@ export function Chip({ children, tone = 'neutral' }: { children: ReactNode; tone
 /** Empty state — a first-class screen here, since a new partner sees these first.
     Mockup idiom: the icon sits in a thin gold circle, and an optional mono chip
     carries the one reassuring fact ("paid every two weeks"). */
-export function EmptyState({ icon, title, body, chip, action }: { icon: string; title: string; body: string; chip?: string; action?: ReactNode }) {
+export function EmptyState({ icon, title, body, chip, action }: { icon: ReactNode; title: string; body: string; chip?: string; action?: ReactNode }) {
   return (
     <div className="pf-glass" style={{ ...cardShape, padding: '38px 22px', textAlign: 'center', borderRadius: '18px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
       <div style={{ width: '54px', height: '54px', borderRadius: '50%', border: '1px solid var(--pf-border-strong)', display: 'grid', placeItems: 'center', color: 'var(--pf-gold)', fontSize: '22px' }}>{icon}</div>

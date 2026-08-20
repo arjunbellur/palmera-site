@@ -8,17 +8,18 @@ import type { Company, Provider } from '@/lib/schema'
 import { PartnerContext } from './PartnerContext'
 import { t, type Locale } from './i18n'
 import { isAdminEmail } from '@/lib/admin'
+import { House, CalendarDays, Wallet, LayoutGrid, ShoppingBasket, MessageCircle, Settings, Moon, Sun, LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 
 const STORE_KEY = 'palmera.partner.companyId'
 
 const NAV = [
-  { href: '/partner', icon: '⌂', key: 'nav_home' },
-  { href: '/partner/reservations', icon: '▤', key: 'nav_res' },
-  { href: '/partner/earnings', icon: '◆', key: 'nav_earn' },
-  { href: '/partner/listings', icon: '▦', key: 'nav_list' },
-  { href: '/partner/marketplace', icon: '▩', key: 'nav_market' },
-  { href: '/partner/messages', icon: '✉', key: 'nav_msg' },
-  { href: '/partner/settings', icon: '◎', key: 'nav_set' },
+  { href: '/partner', icon: House, key: 'nav_home' },
+  { href: '/partner/reservations', icon: CalendarDays, key: 'nav_res' },
+  { href: '/partner/earnings', icon: Wallet, key: 'nav_earn' },
+  { href: '/partner/listings', icon: LayoutGrid, key: 'nav_list' },
+  { href: '/partner/marketplace', icon: ShoppingBasket, key: 'nav_market' },
+  { href: '/partner/messages', icon: MessageCircle, key: 'nav_msg' },
+  { href: '/partner/settings', icon: Settings, key: 'nav_set' },
 ] as const
 
 function Shell({ children }: { children: React.ReactNode }) {
@@ -139,8 +140,8 @@ function Shell({ children }: { children: React.ReactNode }) {
       }}>
         {/* Fixed-width icon slot — the glyphs have different natural widths,
             so without this the labels would still start at ragged x positions. */}
-        <span style={{ fontSize: mobile ? '15px' : '13px', lineHeight: 1, position: 'relative', width: mobile ? undefined : '18px', textAlign: mobile ? undefined : 'center', flexShrink: 0 }}>
-          {item.icon}
+        <span style={{ lineHeight: 0, position: 'relative', width: mobile ? undefined : '18px', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+          <item.icon size={mobile ? 17 : 15} strokeWidth={1.75} />
           {/* Attention badge — the partner learns they're needed WITHOUT visiting the tab. */}
           {item.key === 'nav_res' && pendingCount > 0 && (mobile || collapsed) && (
             <span style={{ position: 'absolute', top: '-4px', right: '-8px', minWidth: '14px', height: '14px', borderRadius: '999px', background: 'var(--pf-gold)', color: '#0a0e18', fontSize: '9px', fontFamily: 'var(--font-sans)', display: 'grid', placeItems: 'center', padding: '0 3px', lineHeight: 1 }}>{pendingCount}</span>
@@ -167,11 +168,11 @@ function Shell({ children }: { children: React.ReactNode }) {
             <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid var(--pf-border)', display: 'flex', flexDirection: 'column', gap: '14px', alignItems: collapsed ? 'center' : 'stretch' }}>
               {!collapsed && CompanyPill}
               <button onClick={signOut} title={L('signout')} style={{ display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start', gap: '9px', background: 'transparent', border: 'none', padding: '2px 0', cursor: 'pointer', color: 'var(--pf-faint)', fontFamily: 'var(--font-sans)', fontSize: '11.5px', letterSpacing: '0.04em' }}>
-                <span style={{ fontSize: '13px' }}>⎋</span> {!collapsed && L('signout')}
+                <LogOut size={14} strokeWidth={1.75} /> {!collapsed && L('signout')}
               </button>
               <button onClick={toggleNav} aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
                 style={{ width: collapsed ? '30px' : '100%', height: '30px', borderRadius: '8px', border: '1px solid var(--pf-border)', background: 'transparent', color: 'var(--pf-faint)', cursor: 'pointer', fontSize: '12px' }}>
-                {collapsed ? '⟩' : '⟨'}
+                {collapsed ? <PanelLeftOpen size={14} strokeWidth={1.75} /> : <PanelLeftClose size={14} strokeWidth={1.75} />}
               </button>
             </div>
           </aside>
@@ -187,11 +188,11 @@ function Shell({ children }: { children: React.ReactNode }) {
                 ))}
               </div>
               <button onClick={toggleTheme} aria-label="Toggle theme" style={{ width: '30px', height: '30px', borderRadius: '8px', border: '1px solid var(--pf-border)', background: 'transparent', color: 'var(--pf-gold)', cursor: 'pointer', fontSize: '12px' }}>
-                {theme === 'dark' ? '☾' : '☀'}
+                {theme === 'dark' ? <Moon size={14} strokeWidth={1.75} /> : <Sun size={14} strokeWidth={1.75} />}
               </button>
               {isMobile && (
                 <button onClick={signOut} aria-label={L('signout')} title={L('signout')} style={{ width: '30px', height: '30px', borderRadius: '8px', border: '1px solid var(--pf-border)', background: 'transparent', color: 'var(--pf-faint)', cursor: 'pointer', fontSize: '13px' }}>
-                  ⎋
+                  <LogOut size={14} strokeWidth={1.75} />
                 </button>
               )}
             </div>

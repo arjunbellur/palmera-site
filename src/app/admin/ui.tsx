@@ -11,7 +11,7 @@ export const glass: CSSProperties = { padding: '18px', borderRadius: '16px' }
 
 /** StatTile's plain-number sibling — admin stats are counts, not money.
  *  Optional icon chip (top-left, soft square) per the FW-dashboard idiom. */
-export function CountTile({ label, value, tone, icon }: { label: string; value: number; tone?: 'gold' | 'alert'; icon?: string }) {
+export function CountTile({ label, value, tone, icon }: { label: string; value: number; tone?: 'gold' | 'alert'; icon?: ReactNode }) {
   const color = tone === 'gold' ? 'var(--pf-gold)' : tone === 'alert' ? 'var(--pf-alert)' : 'var(--pf-text)'
   return (
     <div className="pf-glass" style={glass}>
@@ -25,7 +25,7 @@ export function CountTile({ label, value, tone, icon }: { label: string; value: 
 /** Featured stat card: icon chip + big number + week-over-week delta + a tiny
  *  bar sparkline of the recent weeks. One per row max — it's the headline. */
 export function SparkTile({ icon, label, value, spark, featured }: {
-  icon: string; label: string; value: number | string
+  icon: ReactNode; label: string; value: number | string
   spark: number[]; featured?: boolean
 }) {
   const max = Math.max(...spark, 1)

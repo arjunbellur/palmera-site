@@ -11,6 +11,7 @@ import type { Booking, LedgerEntry, LedgerEntryType, Payout, PayoutStatus } from
 import { formatAmount, formatDate, toDate } from '@/lib/money'
 import { ScreenHeader, Money, EmptyState, SectionTitle, Skeleton, card, cardShape, eyebrow } from '@/components/partner/ui'
 import { BarChart, RankPills } from '@/components/charts'
+import { CalendarClock, TrendingUp, BadgeCheck, Wallet, Clock } from 'lucide-react'
 
 const PAYOUT_COLOR: Record<PayoutStatus, string> = {
   scheduled: 'var(--pf-gold)', processing: 'var(--pf-gold)', paid: 'var(--pf-success)', failed: 'var(--pf-alert)',
@@ -21,7 +22,7 @@ const LEDGER_DOT: Record<LedgerEntryType, string> = {
 }
 
 /** Circled icon + tiny label + serif value — the hero card's stat idiom. */
-function CircleStat({ icon, label, value, tone = 'var(--pf-gold)' }: { icon: string; label: string; value: React.ReactNode; tone?: string }) {
+function CircleStat({ icon, label, value, tone = 'var(--pf-gold)' }: { icon: React.ReactNode; label: string; value: React.ReactNode; tone?: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
       <span style={{ width: '34px', height: '34px', borderRadius: '50%', border: '1px solid var(--pf-border-strong)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: tone, fontSize: '13px', flexShrink: 0 }}>{icon}</span>
@@ -174,9 +175,9 @@ export default function EarningsScreen() {
             )}
           </div>
           <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-            <CircleStat icon="◆" label={L('next_payout')} value={next ? formatDate(next.scheduledFor) : '—'} />
-            <CircleStat icon="↑" label={L('next_amt')} value={<>{formatAmount(next?.netAmount ?? 0)} <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'var(--pf-muted)' }}>XOF</span></>} />
-            <CircleStat icon="✓" label={L('status_lbl')} value={company?.active ? (locale === 'fr' ? 'Actif' : 'Active') : '—'} tone="var(--pf-success)" />
+            <CircleStat icon={<CalendarClock size={14} strokeWidth={1.75} />} label={L('next_payout')} value={next ? formatDate(next.scheduledFor) : '—'} />
+            <CircleStat icon={<TrendingUp size={14} strokeWidth={1.75} />} label={L('next_amt')} value={<>{formatAmount(next?.netAmount ?? 0)} <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'var(--pf-muted)' }}>XOF</span></>} />
+            <CircleStat icon={<BadgeCheck size={14} strokeWidth={1.75} />} label={L('status_lbl')} value={company?.active ? (locale === 'fr' ? 'Actif' : 'Active') : '—'} tone="var(--pf-success)" />
           </div>
         </div>
 
@@ -260,7 +261,7 @@ export default function EarningsScreen() {
 
       <SectionTitle>{L('payout_hist')}</SectionTitle>
       {payouts.length === 0 ? (
-        <EmptyState icon="◆" title={L('pay_empty_t')} body={L('pay_empty_b')} chip={L('pay_empty_chip')} />
+        <EmptyState icon={<Wallet size={22} strokeWidth={1.75} />} title={L('pay_empty_t')} body={L('pay_empty_b')} chip={L('pay_empty_chip')} />
       ) : (
         <div className="pf-glass" style={listCard}>
           {payouts.map((p, i) => (
@@ -297,7 +298,7 @@ export default function EarningsScreen() {
         </div>
       )}
       {ledger.length === 0 ? (
-        <EmptyState icon="◷" title={L('ledger_empty_t')} body={L('ledger_empty_b')} />
+        <EmptyState icon={<Clock size={22} strokeWidth={1.75} />} title={L('ledger_empty_t')} body={L('ledger_empty_b')} />
       ) : shownLedger.length === 0 ? (
         <div className="pf-glass" style={{ ...cardShape, textAlign: 'center', fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--pf-faint)' }}>—</div>
       ) : (

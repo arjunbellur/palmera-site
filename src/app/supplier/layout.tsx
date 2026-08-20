@@ -12,6 +12,7 @@ import type { Supplier } from '@/lib/schema'
 import { SupplierContext } from './SupplierContext'
 import { t, type Locale } from './i18n'
 import { Chip, PrimaryButton, EmptyState } from '@/components/partner/ui'
+import { Moon, Sun, LogOut, Store, PauseCircle } from 'lucide-react'
 
 function Shell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -126,7 +127,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   if (authed === 'unclaimed') return (
     <div data-theme={theme} style={{ minHeight: '100vh', background: 'var(--pf-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
       <div style={{ width: 'min(420px,100%)' }}>
-        <EmptyState icon="◫" title={L('not_registered_title')} body={`${L('not_registered_body')} (${email})`}
+        <EmptyState icon={<Store size={22} strokeWidth={1.75} />} title={L('not_registered_title')} body={`${L('not_registered_body')} (${email})`}
           action={<PrimaryButton onClick={signOutAll}>{L('sign_out')}</PrimaryButton>} />
       </div>
     </div>
@@ -135,7 +136,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   if (supplier?.status === 'paused') return (
     <div data-theme={theme} style={{ minHeight: '100vh', background: 'var(--pf-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
       <div style={{ width: 'min(420px,100%)' }}>
-        <EmptyState icon="⏸" title={L('paused_title')} body={L('paused_body')}
+        <EmptyState icon={<PauseCircle size={22} strokeWidth={1.75} />} title={L('paused_title')} body={L('paused_body')}
           action={<PrimaryButton onClick={signOutAll}>{L('sign_out')}</PrimaryButton>} />
       </div>
     </div>
@@ -149,8 +150,8 @@ function Shell({ children }: { children: React.ReactNode }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--pf-faint)' }}>{supplier?.name}</span>
             {LangToggle}
-            <button onClick={toggleTheme} aria-label="Theme" style={{ width: '30px', height: '30px', borderRadius: '8px', border: '1px solid var(--pf-border)', background: 'transparent', color: 'var(--pf-gold)', cursor: 'pointer', fontSize: '12px' }}>{theme === 'dark' ? '☾' : '☀'}</button>
-            <button onClick={signOutAll} title={L('sign_out')} style={{ width: '30px', height: '30px', borderRadius: '8px', border: '1px solid var(--pf-border)', background: 'transparent', color: 'var(--pf-faint)', cursor: 'pointer', fontSize: '13px' }}>⎋</button>
+            <button onClick={toggleTheme} aria-label="Theme" style={{ width: '30px', height: '30px', borderRadius: '8px', border: '1px solid var(--pf-border)', background: 'transparent', color: 'var(--pf-gold)', cursor: 'pointer', fontSize: '12px' }}>{theme === 'dark' ? <Moon size={14} strokeWidth={1.75} /> : <Sun size={14} strokeWidth={1.75} />}</button>
+            <button onClick={signOutAll} title={L('sign_out')} style={{ width: '30px', height: '30px', borderRadius: '8px', border: '1px solid var(--pf-border)', background: 'transparent', color: 'var(--pf-faint)', cursor: 'pointer', fontSize: '13px' }}><LogOut size={14} strokeWidth={1.75} /></button>
           </div>
         </header>
         <main className="pf-scroll" style={{ flex: 1, padding: '28px 22px 48px', maxWidth: '1100px', width: '100%', margin: '0 auto' }}>

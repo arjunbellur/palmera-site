@@ -14,11 +14,12 @@ import { docDate, countSince, startOfToday, startOfWeek, startOfMonth, isRealBoo
 import { ScreenHeader, Chip, Skeleton, Money, SectionTitle, eyebrow } from '@/components/partner/ui'
 import { CountTile, SparkTile, timeAgo, glass } from './ui'
 import type { AppProfile, AppDoc, Booking, Provider, Company } from '@/lib/schema'
+import { Sparkles, CalendarDays, Camera, Star, Users, TrendingUp, CalendarRange, Gem, Clock, Check } from 'lucide-react'
 
 const fmtXof = (n: number) => new Intl.NumberFormat('fr-FR').format(Math.round(n))
 
 interface Activity {
-  icon: string
+  icon: React.ReactNode
   title: string
   detail: string
   when: Date
@@ -81,12 +82,12 @@ export default function AdminOverview() {
     const items: Activity[] = []
     profiles.forEach((p) => {
       const d = docDate(p); if (!d) return
-      items.push({ icon: '✦', title: p.handle ? at(p.handle) : (p.name || 'New user'), detail: 'joined Palmera', when: d, avatar: p.avatar_url || null, chip: { label: 'new user', tone: 'gold' } })
+      items.push({ icon: <Sparkles size={10} strokeWidth={2} />, title: p.handle ? at(p.handle) : (p.name || 'New user'), detail: 'joined Palmera', when: d, avatar: p.avatar_url || null, chip: { label: 'new user', tone: 'gold' } })
     })
     bookings.forEach((b) => {
       const d = docDate(b); if (!d) return
       items.push({
-        icon: '▤', title: b.customerName || 'A guest', detail: `booked ${b.title}`, when: d,
+        icon: <CalendarDays size={10} strokeWidth={2} />, title: b.customerName || 'A guest', detail: `booked ${b.title}`, when: d,
         avatar: byId.get(b.customerId)?.avatar_url || null,
         chip: { label: b.status.replace('_', ' '), tone: STATUS_TONE[b.status] || 'neutral' },
         amount: b.bookingTotal > 0 ? b.bookingTotal : undefined,
@@ -94,11 +95,11 @@ export default function AdminOverview() {
     })
     social.moments.forEach((m) => {
       const d = docDate(m); if (!d) return
-      items.push({ icon: '◉', title: who(m), detail: m.caption ? `“${String(m.caption).slice(0, 70)}”` : 'posted a moment', when: d, avatar: face(m) })
+      items.push({ icon: <Camera size={10} strokeWidth={2} />, title: who(m), detail: m.caption ? `“${String(m.caption).slice(0, 70)}”` : 'posted a moment', when: d, avatar: face(m) })
     })
     social.reviews.forEach((r) => {
       const d = docDate(r); if (!d) return
-      items.push({ icon: '★', title: who(r), detail: 'left a review', when: d, avatar: face(r), chip: { label: `★ ${r.rating}`, tone: 'gold' } })
+      items.push({ icon: <Star size={10} strokeWidth={2} />, title: who(r), detail: 'left a review', when: d, avatar: face(r), chip: { label: `★ ${r.rating}`, tone: 'gold' } })
     })
     items.sort((a, b) => b.when.getTime() - a.when.getTime())
     return items.slice(0, 15)
@@ -160,19 +161,19 @@ export default function AdminOverview() {
       {/* App growth */}
       <SectionTitle>App</SectionTitle>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '12px' }}>
-        <SparkTile icon="✦" label="App users" value={profiles.length} spark={signupSpark} featured />
-        <CountTile icon="↟" label="Signups today" value={signupsToday} tone={signupsToday > 0 ? 'gold' : undefined} />
-        <CountTile icon="◔" label="This week" value={signupsWeek} />
-        <CountTile icon="◆" label="Plus members" value={plusCount} />
+        <SparkTile icon={<Users size={14} strokeWidth={1.75} />} label="App users" value={profiles.length} spark={signupSpark} featured />
+        <CountTile icon={<TrendingUp size={14} strokeWidth={1.75} />} label="Signups today" value={signupsToday} tone={signupsToday > 0 ? 'gold' : undefined} />
+        <CountTile icon={<CalendarRange size={14} strokeWidth={1.75} />} label="This week" value={signupsWeek} />
+        <CountTile icon={<Gem size={14} strokeWidth={1.75} />} label="Plus members" value={plusCount} />
       </div>
 
       {/* Business */}
       <SectionTitle>Business · this week</SectionTitle>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '12px' }}>
-        <SparkTile icon="▤" label="New bookings" value={weekBookings.length} spark={bookingSpark} />
-        <CountTile icon="◷" label="Pending" value={byStatus('pending')} tone={byStatus('pending') > 0 ? 'gold' : undefined} />
-        <CountTile icon="✓" label="Confirmed" value={byStatus('confirmed')} />
-        <CountTile icon="✦" label="Completed" value={byStatus('completed')} />
+        <SparkTile icon={<CalendarDays size={14} strokeWidth={1.75} />} label="New bookings" value={weekBookings.length} spark={bookingSpark} />
+        <CountTile icon={<Clock size={14} strokeWidth={1.75} />} label="Pending" value={byStatus('pending')} tone={byStatus('pending') > 0 ? 'gold' : undefined} />
+        <CountTile icon={<Check size={14} strokeWidth={1.75} />} label="Confirmed" value={byStatus('confirmed')} />
+        <CountTile icon={<Sparkles size={14} strokeWidth={1.75} />} label="Completed" value={byStatus('completed')} />
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 15rem), 1fr))', gap: '12px', marginTop: '12px' }}>
         <div className="pf-glass pf-glass-gold" style={glass}>

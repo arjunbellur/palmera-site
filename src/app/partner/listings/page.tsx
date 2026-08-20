@@ -11,6 +11,7 @@ import type { Experience, ExperienceStatus, Option, OptionGroup } from '@/lib/sc
 import { formatAmount } from '@/lib/money'
 import { ScreenHeader, EmptyState, PrimaryButton, Skeleton, card, cardShape, eyebrow, Chip, type Tone } from '@/components/partner/ui'
 import ExperienceModal from '@/components/dashboard/ExperienceModal'
+import { LayoutGrid } from 'lucide-react'
 
 const STATUS: Record<ExperienceStatus, { key: string; tone: Tone }> = {
   published: { key: 'st_published', tone: 'green' },
@@ -115,7 +116,7 @@ export default function ListingsScreen() {
           <Skeleton height="170px" /><Skeleton height="170px" /><Skeleton height="170px" /><Skeleton height="170px" />
         </div>
       ) : items.length === 0 ? (
-        <EmptyState icon="▦" title={L('list_empty_t')} body={L('list_empty_b')}
+        <EmptyState icon={<LayoutGrid size={22} strokeWidth={1.75} />} title={L('list_empty_t')} body={L('list_empty_b')}
           action={<PrimaryButton onClick={openNew}>+ {L('new_listing')}</PrimaryButton>} />
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 12.5rem), 1fr))', gap: '10px' }}>

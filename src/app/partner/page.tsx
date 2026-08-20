@@ -8,6 +8,7 @@ import type { Booking, Experience, LedgerEntry, Payout } from '@/lib/schema'
 import { formatAmount, formatDate, toDate } from '@/lib/money'
 import { ScreenHeader, StatTile, Money, EmptyState, SectionTitle, Skeleton, card, cardShape, eyebrow } from '@/components/partner/ui'
 import ReservationCard from '@/components/partner/ReservationCard'
+import { Clock, Wallet, LayoutGrid, Image as ImageIcon, Sparkles } from 'lucide-react'
 
 export default function PartnerHome() {
   const { uid, company, provider, locale } = usePartner()
@@ -77,15 +78,15 @@ export default function PartnerHome() {
         type Tone = 'alert' | 'gold' | 'neutral'
         const TONE_BG: Record<Tone, string> = { alert: 'rgba(196,124,124,0.16)', gold: 'rgba(190,154,86,0.16)', neutral: 'var(--pf-card)' }
         const TONE_FG: Record<Tone, string> = { alert: 'var(--pf-alert)', gold: 'var(--pf-gold)', neutral: 'var(--pf-faint)' }
-        const items: { href: string; label: string; icon: string; tone: Tone; act: string; when: string }[] = [
+        const items: { href: string; label: string; icon: React.ReactNode; tone: Tone; act: string; when: string }[] = [
           // 1 — guests are literally waiting on a human. Red, top.
-          ...(pending.length > 0 ? [{ href: '/partner/reservations?f=pending', label: `${pending.length} ${L('pa_pending_res')}`, icon: '◷', tone: 'alert' as Tone, act: L('pa_act_respond'), when: L('pa_now') }] : []),
+          ...(pending.length > 0 ? [{ href: '/partner/reservations?f=pending', label: `${pending.length} ${L('pa_pending_res')}`, icon: <Clock size={14} strokeWidth={1.75} />, tone: 'alert' as Tone, act: L('pa_act_respond'), when: L('pa_now') }] : []),
           // 2 — blocks getting paid. Gold.
-          ...(!hasPayoutProfile ? [{ href: '/partner/settings?s=payout', label: L('pa_missing_payout'), icon: '◆', tone: 'gold' as Tone, act: L('pa_act_add'), when: L('pa_soon') }] : []),
+          ...(!hasPayoutProfile ? [{ href: '/partner/settings?s=payout', label: L('pa_missing_payout'), icon: <Wallet size={14} strokeWidth={1.75} />, tone: 'gold' as Tone, act: L('pa_act_add'), when: L('pa_soon') }] : []),
           // 3 — unfinished listings can't sell. Gold.
-          ...(incompleteListings > 0 ? [{ href: '/partner/listings', label: `${incompleteListings} ${L('pa_incomplete_listing')}`, icon: '▦', tone: 'gold' as Tone, act: L('pa_act_finish'), when: L('pa_soon') }] : []),
+          ...(incompleteListings > 0 ? [{ href: '/partner/listings', label: `${incompleteListings} ${L('pa_incomplete_listing')}`, icon: <LayoutGrid size={14} strokeWidth={1.75} />, tone: 'gold' as Tone, act: L('pa_act_finish'), when: L('pa_soon') }] : []),
           // 4 — polish. Neutral, bottom.
-          ...(missingPhotos ? [{ href: '/partner/settings?s=photos', label: L('pa_missing_photos'), icon: '◨', tone: 'neutral' as Tone, act: L('pa_act_upload'), when: L('pa_optional') }] : []),
+          ...(missingPhotos ? [{ href: '/partner/settings?s=photos', label: L('pa_missing_photos'), icon: <ImageIcon size={14} strokeWidth={1.75} />, tone: 'neutral' as Tone, act: L('pa_act_upload'), when: L('pa_optional') }] : []),
         ]
         if (items.length === 0) return null
         return (
@@ -168,7 +169,7 @@ export default function PartnerHome() {
       </SectionTitle>
 
       {upcoming.length === 0 ? (
-        <EmptyState icon="✦" title={L('home_empty_t')} body={L('home_empty_b')} />
+        <EmptyState icon={<Sparkles size={22} strokeWidth={1.75} />} title={L('home_empty_t')} body={L('home_empty_b')} />
       ) : (
         <div style={{ display: 'grid', gap: '10px' }}>
           {upcoming.map(b => <ReservationCard key={b.id} booking={b} locale={locale} compact />)}

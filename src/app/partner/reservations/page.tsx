@@ -9,6 +9,7 @@ import { toDate } from '@/lib/money'
 import { ScreenHeader, EmptyState, Chip, Money, eyebrow, GhostButton, Skeleton } from '@/components/partner/ui'
 import ReservationCard from '@/components/partner/ReservationCard'
 import { formatAmount, formatDate } from '@/lib/money'
+import { Clock } from 'lucide-react'
 
 type Filter = 'all' | 'action' | 'upcoming' | 'done' | 'cancelled' | 'noshow'
 
@@ -300,7 +301,7 @@ export default function ReservationsScreen() {
           )
         })()
       ) : shown.length === 0 ? (
-        <EmptyState icon="◷" title={L('res_empty_t')} body={L('res_empty_b')} />
+        <EmptyState icon={<Clock size={22} strokeWidth={1.75} />} title={L('res_empty_t')} body={L('res_empty_b')} />
       ) : (
         // Grouped by day (Airbnb host pattern) — partners read their bookings
         // like a service sheet: Today, Tomorrow, then dated sections; anything

@@ -8,6 +8,7 @@ import type { SupplyProduct } from '@/lib/schema'
 import { getProductsBySupplier, updateSupplyProduct, deleteSupplyProduct } from '@/lib/firestore'
 import ProductModal from '@/components/supplier/ProductModal'
 import { ScreenHeader, PrimaryButton, GhostButton, Chip, EmptyState, Skeleton, cardShape } from '@/components/partner/ui'
+import { Package } from 'lucide-react'
 
 const fmtXof = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
 
@@ -49,7 +50,7 @@ export default function SupplierInventory() {
           {[0, 1, 2].map(i => <Skeleton key={i} height="10rem" />)}
         </div>
       ) : products.length === 0 ? (
-        <EmptyState icon="▦" title={L('empty_title')} body={L('empty_body')}
+        <EmptyState icon={<Package size={22} strokeWidth={1.75} />} title={L('empty_title')} body={L('empty_body')}
           action={<PrimaryButton onClick={() => setModal({ open: true, product: null })}>{L('add_product')}</PrimaryButton>} />
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(15rem, 1fr))', gap: '14px' }}>
@@ -57,7 +58,7 @@ export default function SupplierInventory() {
             <div key={p.id} className="pf-glass" style={{ ...cardShape, display: 'flex', flexDirection: 'column', gap: '10px', opacity: p.status === 'hidden' ? 0.6 : 1 }}>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                 <span style={{ width: '52px', height: '52px', borderRadius: '12px', background: 'var(--pf-green-soft)', flexShrink: 0, overflow: 'hidden', display: 'grid', placeItems: 'center', color: 'var(--pf-gold)', fontSize: '18px' }}>
-                  {p.photo ? <img loading="lazy" decoding="async" src={p.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '▦'}
+                  {p.photo ? <img loading="lazy" decoding="async" src={p.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Package size={18} strokeWidth={1.75} />}
                 </span>
                 <div style={{ minWidth: 0 }}>
                   <p style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-head)', fontSize: '14.5px', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</p>

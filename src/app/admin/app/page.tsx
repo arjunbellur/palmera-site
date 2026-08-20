@@ -15,6 +15,7 @@ import { ScreenHeader, Chip, Skeleton, SectionTitle, EmptyState, card, eyebrow }
 import { BarChart, RankPills } from '@/components/charts'
 import { CountTile, SparkTile, FilterChip, glass } from '../ui'
 import type { AppProfile, AppDoc, Booking, Experience } from '@/lib/schema'
+import { Users, Gem, Camera, Heart, PencilLine, MessageSquare, Coins, ListOrdered, LayoutGrid, UserPlus, Clock } from 'lucide-react'
 
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR').format(Math.round(n))
 
@@ -130,8 +131,8 @@ export default function AdminAppGrowth() {
       {/* 1 — Signups */}
       <SectionTitle>Signups</SectionTitle>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '12px', marginBottom: '12px' }}>
-        <SparkTile icon="✦" label="Total users" value={profiles.length} spark={signupBuckets.map((b) => b.count)} featured />
-        <CountTile icon="◆" label="Plus members" value={profiles.filter((p) => p.is_plus).length} />
+        <SparkTile icon={<Users size={14} strokeWidth={1.75} />} label="Total users" value={profiles.length} spark={signupBuckets.map((b) => b.count)} featured />
+        <CountTile icon={<Gem size={14} strokeWidth={1.75} />} label="Plus members" value={profiles.filter((p) => p.is_plus).length} />
         <div className="pf-glass" style={glass}>
           <div style={{ width: '30px', height: '30px', borderRadius: '9px', background: 'var(--pf-green-soft)', color: 'var(--pf-gold)', display: 'grid', placeItems: 'center', fontSize: '13px', marginBottom: '10px' }}>↟</div>
           <div style={eyebrow}>Newest user</div>
@@ -145,10 +146,10 @@ export default function AdminAppGrowth() {
       {/* 2 — Engagement */}
       <SectionTitle>Engagement</SectionTitle>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '12px', marginBottom: '12px' }}>
-        <CountTile icon="◉" label="Moments" value={moments.length} />
-        <CountTile icon="♥" label="Likes" value={likes.length} />
-        <CountTile icon="✎" label="Comments" value={comments.length} />
-        <CountTile icon="✉" label="Chat messages" value={messages.length} />
+        <CountTile icon={<Camera size={14} strokeWidth={1.75} />} label="Moments" value={moments.length} />
+        <CountTile icon={<Heart size={14} strokeWidth={1.75} />} label="Likes" value={likes.length} />
+        <CountTile icon={<PencilLine size={14} strokeWidth={1.75} />} label="Comments" value={comments.length} />
+        <CountTile icon={<MessageSquare size={14} strokeWidth={1.75} />} label="Chat messages" value={messages.length} />
       </div>
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
         <Chip tone="gold">{momentsPerUser} moments / user</Chip>
@@ -162,8 +163,8 @@ export default function AdminAppGrowth() {
       {/* 4 — Points economy */}
       <SectionTitle>Points economy</SectionTitle>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '12px', marginBottom: '16px' }}>
-        <CountTile icon="◈" label="Points issued" value={totalPoints} tone="gold" />
-        <CountTile icon="▤" label="Ledger entries" value={points.length} />
+        <CountTile icon={<Coins size={14} strokeWidth={1.75} />} label="Points issued" value={totalPoints} tone="gold" />
+        <CountTile icon={<ListOrdered size={14} strokeWidth={1.75} />} label="Ledger entries" value={points.length} />
       </div>
       {pointsByKind.length > 0 && (
         <div>
@@ -201,7 +202,7 @@ export default function AdminAppGrowth() {
         Top experiences
       </SectionTitle>
       {rankItems.length === 0 ? (
-        <EmptyState icon="▦" title="Nothing yet" body={`No ${rankMode === 'revenue' ? 'completed revenue' : rankMode} recorded so far.`} />
+        <EmptyState icon={<LayoutGrid size={22} strokeWidth={1.75} />} title="Nothing yet" body={`No ${rankMode === 'revenue' ? 'completed revenue' : rankMode} recorded so far.`} />
       ) : (
         <RankPills items={rankItems} />
       )}
@@ -216,8 +217,8 @@ export default function AdminAppGrowth() {
         )}
         <SectionTitle>Social graph</SectionTitle>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '12px' }}>
-          <CountTile icon="⚭" label="Friendships" value={accepted} tone="gold" />
-          <CountTile icon="◷" label="Pending requests" value={pendingFriends} />
+          <CountTile icon={<UserPlus size={14} strokeWidth={1.75} />} label="Friendships" value={accepted} tone="gold" />
+          <CountTile icon={<Clock size={14} strokeWidth={1.75} />} label="Pending requests" value={pendingFriends} />
           <div className="pf-glass" style={glass}>
             <div style={{ width: '30px', height: '30px', borderRadius: '9px', background: 'var(--pf-green-soft)', color: 'var(--pf-gold)', display: 'grid', placeItems: 'center', fontSize: '13px', marginBottom: '10px' }}>∅</div>
             <div style={eyebrow}>Avg friends / user</div>

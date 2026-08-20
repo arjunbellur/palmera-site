@@ -15,6 +15,7 @@ import ConfirmDialog from '@/components/dashboard/ConfirmDialog'
 import { ScreenHeader, Chip, EmptyState, Skeleton, GhostButton, card, eyebrow } from '@/components/partner/ui'
 import { CountTile, FilterChip, DangerButton, inputStyle, formatDate, glass } from '../ui'
 import type { Company, Provider } from '@/lib/schema'
+import { Users, GraduationCap, PenLine, Ban } from 'lucide-react'
 
 type StageFilter = 'all' | 'graduated' | 'onboarding'
 type AgreementFilter = 'all' | 'signed' | 'unsigned' | 'countersigned'
@@ -185,7 +186,7 @@ function AdminDirectory() {
 
       {/* Partner rows */}
       {shown.length === 0 ? (
-        <EmptyState icon="◎" title="No partners match" body="Try clearing a filter or changing the search."
+        <EmptyState icon={<Users size={22} strokeWidth={1.75} />} title="No partners match" body="Try clearing a filter or changing the search."
           action={<GhostButton onClick={clearFilters}>Clear filters</GhostButton>} />
       ) : (
         <div className="pf-glass" style={{ ...glass, padding: 0, overflow: 'hidden' }}>
@@ -258,10 +259,10 @@ function AdminDirectory() {
 
       <div className="pf-rail" style={{ minWidth: 0 }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '12px' }}>
-          <CountTile icon="◎" label="Partners" value={providers.length} />
-          <CountTile icon="✓" label="Graduated" value={graduated} />
-          <CountTile icon="✎" label="Agreement missing" value={unsignedCount} tone={unsignedCount > 0 ? 'gold' : undefined} />
-          <CountTile icon="◷" label="Suspended" value={suspendedCount} tone={suspendedCount > 0 ? 'alert' : undefined} />
+          <CountTile icon={<Users size={14} strokeWidth={1.75} />} label="Partners" value={providers.length} />
+          <CountTile icon={<GraduationCap size={14} strokeWidth={1.75} />} label="Graduated" value={graduated} />
+          <CountTile icon={<PenLine size={14} strokeWidth={1.75} />} label="Agreement missing" value={unsignedCount} tone={unsignedCount > 0 ? 'gold' : undefined} />
+          <CountTile icon={<Ban size={14} strokeWidth={1.75} />} label="Suspended" value={suspendedCount} tone={suspendedCount > 0 ? 'alert' : undefined} />
         </div>
       </div>
       </div>

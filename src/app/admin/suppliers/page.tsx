@@ -9,6 +9,7 @@ import type { Supplier, SupplyProduct } from '@/lib/schema'
 import { getAllSuppliers, createSupplier, updateSupplier, getProductsBySupplier, updateSupplyProduct, deleteSupplyProduct } from '@/lib/firestore'
 import ProductModal from '@/components/supplier/ProductModal'
 import { ScreenHeader, PrimaryButton, GhostButton, Chip, EmptyState, Skeleton, cardShape, eyebrow } from '@/components/partner/ui'
+import { Store, Package } from 'lucide-react'
 
 const fmtXof = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
 const pctText = (rate: number) => String(+(rate * 100).toFixed(2))
@@ -109,7 +110,7 @@ export default function AdminSuppliers() {
       {suppliers === null ? (
         <Skeleton height="8rem" />
       ) : suppliers.length === 0 && !form.show ? (
-        <EmptyState icon="◫" title="No suppliers yet" body="Add the first supplier to open the marketplace."
+        <EmptyState icon={<Store size={22} strokeWidth={1.75} />} title="No suppliers yet" body="Add the first supplier to open the marketplace."
           action={<PrimaryButton onClick={() => setForm({ show: true, supplier: null })}>+ Add supplier</PrimaryButton>} />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -143,7 +144,7 @@ export default function AdminSuppliers() {
                       {products[s.id!].sort((a, b) => a.name.localeCompare(b.name)).map(p => (
                         <div key={p.id} style={{ border: '1px solid var(--pf-border)', borderRadius: '12px', padding: '12px', display: 'flex', gap: '10px', alignItems: 'center', opacity: p.status === 'hidden' ? 0.6 : 1 }}>
                           <span style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'var(--pf-green-soft)', flexShrink: 0, overflow: 'hidden', display: 'grid', placeItems: 'center', color: 'var(--pf-gold)' }}>
-                            {p.photo ? <img loading="lazy" decoding="async" src={p.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '▦'}
+                            {p.photo ? <img loading="lazy" decoding="async" src={p.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Package size={16} strokeWidth={1.75} />}
                           </span>
                           <div style={{ minWidth: 0, flex: 1 }}>
                             <p style={{ fontFamily: 'var(--font-sans)', color: 'var(--pf-text)', fontSize: '12.5px', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</p>
