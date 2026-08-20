@@ -1,5 +1,23 @@
 # Palmera Marketplace — partner supply ordering (plan v2, 2026-08-19)
 
+> **⚠ PIVOT PENDING (v3, decided on the 2026-08-19 Arjun/Jordan call):**
+> the model changes from pre-purchase e-commerce to **lend-first / pay-after**
+> (dépôt-vente): the supplier lends stock to the business; the business
+> reports what it actually used; the supplier collects leftovers, verifies
+> the count, and confirms — payment captures then, for consumption only.
+> Payment becomes **authorize-and-hold** (authorize the full reserved amount
+> at order time, capture the recalculated amount on supplier confirmation).
+> New requirements: per-product order quantities, delivery (paid fee) vs
+> pickup, usage reporting step, supplier verification step, supplier
+> thresholds for new customers (e.g. >10 bottles → manual review), all
+> supplier inventory on-platform with stock-out/low-stock warnings.
+> French nav label: "Dépôt-vente" (English stays "Market"). Alcohol only at
+> launch. Arjun to wireframe candidate workflows and pick the fastest to
+> implement — the phases below describe the v2 build that SHIPPED (store +
+> Stripe checkout) and will be restructured, not thrown away: catalog,
+> cart, receipts, webhook, and rules all carry over.
+
+
 ## The idea (Jordan)
 West African hotels/restaurants routinely top up from a supplier when they
 sell more than expected, instead of dipping into their own stock. Palmera

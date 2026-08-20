@@ -4,7 +4,7 @@ export type Locale = 'fr' | 'en'
 
 const FR: Record<string, string> = {
   nav_home: 'Accueil', nav_res: 'Réservations', nav_earn: 'Revenus', nav_list: 'Annonces', nav_msg: 'Messages', nav_set: 'Réglages',
-  nav_market: 'Marché',
+  nav_market: 'Dépôt-vente',
   mk_label: 'Approvisionnement', mk_title: 'Marché', mk_intro: 'Commandez directement auprès des fournisseurs Palmera — payez en ligne, recevez votre stock.',
   mk_tab_store: 'Boutique', mk_tab_orders: 'Mes commandes',
   mk_empty_t: 'Aucun produit pour l’instant', mk_empty_b: 'Les fournisseurs Palmera arrivent — leurs produits apparaîtront ici.',

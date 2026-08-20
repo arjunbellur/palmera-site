@@ -18,7 +18,9 @@ const NAV = [
   { href: '/partner/earnings', icon: Wallet, key: 'nav_earn' },
   { href: '/partner/listings', icon: LayoutGrid, key: 'nav_list' },
   { href: '/partner/marketplace', icon: ShoppingBasket, key: 'nav_market' },
-  { href: '/partner/messages', icon: MessageCircle, key: 'nav_msg' },
+  // Messages hidden from nav until customer chat routing is figured out
+  // (Jordan, Dashboard Time call 2026-08-19). Page stays routable directly.
+  // { href: '/partner/messages', icon: MessageCircle, key: 'nav_msg' },
   { href: '/partner/settings', icon: Settings, key: 'nav_set' },
 ] as const
 
