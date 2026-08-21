@@ -3,6 +3,7 @@ import { useRef, useState } from 'react'
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import { storage } from '@/lib/firebase'
 import { useLocale } from '@/lib/use-locale'
+import { uploadErrorText } from '@/lib/upload-errors'
 
 const GSTR = {
   fr: { uploading: 'Envoi de', add: 'Ajouter des photos', multi: 'Sélection multiple possible', reorder: 'Glissez les photos pour changer leur ordre — les premières comptent le plus' },
@@ -23,7 +24,9 @@ interface GalleryUploadProps {
  * the array order IS the order guests see (Jordan: first photos convert).
  */
 export default function GalleryUpload({ uid, value, onChange, max = 12 }: GalleryUploadProps) {
-  const gs = GSTR[useLocale()]
+  const locale = useLocale()
+  const gs = GSTR[locale]
+  const [error, setError] = useState('')
   const [inFlight, setInFlight] = useState(0)
   const [dragIdx, setDragIdx] = useState<number | null>(null)
   const [overIdx, setOverIdx] = useState<number | null>(null)
@@ -42,11 +45,14 @@ export default function GalleryUpload({ uid, value, onChange, max = 12 }: Galler
     const list = Array.from(files).slice(0, room)
     if (!list.length) return
     setInFlight(n => n + list.length)
+    setError('')
     const urls: string[] = []
+    let failed = 0; let lastErr: unknown = null
     for (const f of list) {
-      try { urls.push(await uploadOne(f)) } catch (e) { console.error('Gallery upload failed', e) } finally { setInFlight(n => n - 1) }
+      try { urls.push(await uploadOne(f)) } catch (e) { failed++; lastErr = e; console.error('Gallery upload failed', e) } finally { setInFlight(n => n - 1) }
     }
     if (urls.length) onChange([...value, ...urls])
+    if (failed) setError(`${failed}/${list.length} — ${uploadErrorText(lastErr, locale)}`)
   }
 
   const removeAt = (i: number) => onChange(value.filter((_, j) => j !== i))
@@ -94,6 +100,7 @@ export default function GalleryUpload({ uid, value, onChange, max = 12 }: Galler
       <p style={{ fontSize: '0.6875rem', color: 'var(--db-text-ghost)', fontFamily: 'var(--font-sans)', margin: '0.625rem 0 0' }}>
         {gs.multi}{value.length > 1 ? ` · ${gs.reorder}` : ''} · {value.length}/{max}
       </p>
+      {error && <p role="alert" style={{ fontSize: '0.75rem', color: '#e07070', fontFamily: 'var(--font-sans)', margin: '0.375rem 0 0' }}>{error}</p>}
     </div>
   )
 }

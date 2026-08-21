@@ -1,0 +1,81 @@
+rules_version = '2';
+
+// Palmera — Cloud Storage rules (MERGED: customer app + partner dashboard).
+//
+// Base: Samson's 2026-08-12 console deploy (avatars / moments / chat, pinned
+// to the `<uid>-<UUID>.jpg` filename convention) — adopted verbatim.
+// Added 2026-08-21: the partner-dashboard block. The dashboard had been
+// uploading to partners/{uid}/… since before these rules existed; the
+// catch-all deny at the bottom silently rejected EVERY partner upload
+// (listing photos, galleries, logos, menus, product photos) for nine days.
+//
+// This file is the source of truth — deploy with `npm run storage:deploy`.
+// Console edits will be overwritten by the next deploy.
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // The file name must begin with the caller's own uid, matching the
+    // `<uid>-<UUID>.jpg` convention uploadImage uses.
+    function ownsFile(name) {
+      return signedIn() && name.matches('^' + request.auth.uid + '-.*');
+    }
+
+    // Images must be real images and bounded — without a size cap a single
+    // member can run up the bill, and without a type check this becomes
+    // arbitrary file hosting on your domain.
+    function validImage() {
+      return request.resource.size < 12 * 1024 * 1024
+             && request.resource.contentType.matches('image/.*');
+    }
+
+    // Avatars and Moments photos are shown to other members, so they stay
+    // readable by anyone signed in — but writable only by their owner.
+    match /avatars/{fileName} {
+      allow read: if signedIn();
+      allow write: if ownsFile(fileName) && validImage();
+      allow delete: if ownsFile(fileName);
+    }
+
+    match /moments/{fileName} {
+      allow read: if signedIn();
+      allow write: if ownsFile(fileName) && validImage();
+      allow delete: if ownsFile(fileName);
+    }
+
+    match /chat/{fileName} {
+      allow read: if signedIn();
+      allow write: if ownsFile(fileName) && validImage();
+      allow delete: if ownsFile(fileName);
+    }
+
+    // ── Partner dashboard (palmera-site) ──────────────────────────────────
+    // Everything a partner (or an admin acting on their behalf) uploads lives
+    // under partners/{uid}/<field>/<timestamp>_<file>: listing hero + gallery
+    // photos, option photos, company logo/photos, restaurant menus (PDF or
+    // image), supplier product photos. Ownership is the path segment, not
+    // the filename. Phone cameras produce 8–15 MB files, hence the higher
+    // cap; menus may be PDFs.
+    function validDashboardUpload() {
+      return request.resource.size < 20 * 1024 * 1024
+             && (request.resource.contentType.matches('image/.*')
+                 || request.resource.contentType == 'application/pdf');
+    }
+    match /partners/{uid}/{allPaths=**} {
+      // Listing media is public-facing (guests browse before signing in).
+      allow read: if true;
+      allow write: if signedIn() && request.auth.uid == uid && validDashboardUpload();
+      allow delete: if signedIn() && request.auth.uid == uid;
+    }
+
+    // Anything not explicitly matched above is denied. New upload folders must
+    // be added here deliberately rather than inheriting a permissive default.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

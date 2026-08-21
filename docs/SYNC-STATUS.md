@@ -67,6 +67,9 @@ Firestore onCreate Cloud Function, or the app POSTing our endpoint after
 it writes a booking (⚠ would need Samson).
 
 ## Rules sync log
+- 2026-08-21: **Samson's 2026-08-12 Storage ruleset adopted verbatim** into
+  `storage.rules` + partner block appended (see changelog). Storage rules
+  are repo-managed from now on — `npm run storage:deploy`.
 - 2026-08-13: **Samson's 2026-08-12 ruleset adopted into the repo verbatim**
   (his console deploy of 23:47 UTC — group-chat membership gating via
   chat_threads.memberIds, new invites/legal/support_messages/moment_likes/
@@ -80,6 +83,19 @@ it writes a booking (⚠ would need Samson).
 ## App-impact changelog (⚠ = Samson should read before next build)
 Every dashboard change that touches documents/rules/indexes the app consumes
 gets a line here, newest first. Pure-UI dashboard changes are never listed.
+
+- 2026-08-21 🔴 **Storage rules: partner uploads were DENIED since 2026-08-12.**
+  Samson's Storage ruleset (console deploy, Aug 12 23:47 UTC) scoped the
+  bucket to avatars/moments/chat with a catch-all deny — the dashboard
+  uploads to `partners/{uid}/…`, so every listing photo, gallery, logo,
+  menu and product photo upload failed silently for nine days (existing
+  tokenized URLs kept working, masking it). Fixed by adopting his rules
+  VERBATIM into `storage.rules` (now repo-managed, `npm run storage:deploy`)
+  plus a `partners/{uid}/**` block: public read, owner write, images or PDF
+  up to 20 MB. His three app folders are untouched. Same rule as Firestore
+  from here on: Storage rules live in this repo; console edits get
+  overwritten. Dashboard side also now SHOWS upload failures instead of
+  swallowing them.
 
 - 2026-08-19 ⚠ **Rules: marketplace block amended** — supply_orders gains a
   buyer-cancel clause (a partner may flip their OWN awaiting_payment order

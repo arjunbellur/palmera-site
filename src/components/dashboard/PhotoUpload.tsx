@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react'
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import { storage } from '@/lib/firebase'
 import { useLocale } from '@/lib/use-locale'
+import { uploadErrorText } from '@/lib/upload-errors'
 
 const STR = {
   fr: { replace: 'Cliquez pour remplacer', uploading: 'Envoi', drop: 'Cliquez ou glissez une photo' },
@@ -20,7 +21,9 @@ interface PhotoUploadProps {
 }
 
 export default function PhotoUpload({ uid, label, fieldName, existingUrl, onUploaded, hint }: PhotoUploadProps) {
-  const s = STR[useLocale()]
+  const locale = useLocale()
+  const s = STR[locale]
+  const [error, setError] = useState('')
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [preview, setPreview] = useState(existingUrl || '')
@@ -37,15 +40,21 @@ export default function PhotoUpload({ uid, label, fieldName, existingUrl, onUplo
     if (!file) return
     setUploading(true)
     setProgress(0)
+    setError('')
     const storageRef = ref(storage, `partners/${uid}/${fieldName}/${Date.now()}_${file.name}`)
     const task = uploadBytesResumable(storageRef, file)
     task.on('state_changed',
       snap => setProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
-      err => { console.error(err); setUploading(false) },
+      err => { console.error('photo upload failed:', err); setError(uploadErrorText(err, locale)); setUploading(false) },
       async () => {
-        const url = await getDownloadURL(task.snapshot.ref)
-        setPreview(url)
-        onUploaded(url, fieldName)
+        try {
+          const url = await getDownloadURL(task.snapshot.ref)
+          setPreview(url)
+          onUploaded(url, fieldName)
+        } catch (e) {
+          console.error('photo url failed:', e)
+          setError(uploadErrorText(e, locale))
+        }
         setUploading(false)
       }
     )
@@ -88,7 +97,8 @@ export default function PhotoUpload({ uid, label, fieldName, existingUrl, onUplo
           </>
         )}
       </div>
-      <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
+      <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) handleFile(e.target.files[0]); e.target.value = '' }} />
+      {error && <p role="alert" style={{ fontSize: '0.75rem', color: '#e07070', fontFamily: 'var(--font-sans)', margin: '0.5rem 0 0' }}>{error}</p>}
     </div>
   )
 }

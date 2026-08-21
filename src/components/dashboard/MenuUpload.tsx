@@ -6,6 +6,7 @@ import { useState, useRef } from 'react'
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import { storage } from '@/lib/firebase'
 import { useLocale } from '@/lib/use-locale'
+import { uploadErrorText } from '@/lib/upload-errors'
 
 const STR = {
   fr: {
@@ -36,7 +37,8 @@ interface MenuUploadProps {
 }
 
 export default function MenuUpload({ uid, fieldName, existingUrl, existingKind, onUploaded, onRemove }: MenuUploadProps) {
-  const s = STR[useLocale()]
+  const locale = useLocale()
+  const s = STR[locale]
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState('')
@@ -56,7 +58,7 @@ export default function MenuUpload({ uid, fieldName, existingUrl, existingKind, 
     const task = uploadBytesResumable(storageRef, file)
     task.on('state_changed',
       snap => setProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
-      err => { console.error('menu upload failed:', err); setUploading(false) },
+      err => { console.error('menu upload failed:', err); setError(uploadErrorText(err, locale)); setUploading(false) },
       async () => {
         const url = await getDownloadURL(task.snapshot.ref)
         setCurrent({ url, kind })
