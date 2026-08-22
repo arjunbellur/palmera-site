@@ -8,9 +8,20 @@ import { formatAmount, formatDate, toDate, isDelivered, isUpcoming, nextPayoutDa
 import { ScreenHeader, StatTile, Money, EmptyState, SectionTitle, Skeleton, card, cardShape, eyebrow } from '@/components/partner/ui'
 import ReservationCard from '@/components/partner/ReservationCard'
 import { Clock, Wallet, LayoutGrid, Image as ImageIcon, Sparkles } from 'lucide-react'
+import EarningsHero from '@/components/partner/EarningsHero'
+import { getCompanyAdmin } from '@/lib/firestore'
 
 // Module-level so React keeps the DOM between renders (defined inside the
 // page it would remount on every live-bookings tick).
+function CircleStatHome({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div style={{ ...eyebrow, fontSize: '9.5px' }}>{label}</div>
+      <div style={{ fontFamily: 'var(--font-display)', fontSize: '17px', color: 'var(--pf-text)', marginTop: '3px' }}>{value}</div>
+    </div>
+  )
+}
+
 function Tile({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="pf-glass" style={{ ...cardShape, padding: '14px 16px' }}>
@@ -28,15 +39,18 @@ export default function PartnerHome() {
   const [payouts, setPayouts] = useState<Payout[]>([])
   const [experiences, setExperiences] = useState<Experience[]>([])
   const [hasPayoutProfile, setHasPayoutProfile] = useState(true)
+  const [rate, setRate] = useState<number | null>(null)
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     if (!uid || !company?.id) return
     ;(async () => {
-      const [l, p, e, pp] = await Promise.all([
+      const [l, p, e, pp, adm] = await Promise.all([
         getLedgerByProvider(uid), getPayoutsByProvider(uid),
         getExperiencesByCompany(uid, company.id!), getPayoutProfile(company.id!),
+        getCompanyAdmin(company.id!).catch(() => null),
       ])
+      setRate(typeof adm?.commissionRate === 'number' ? adm.commissionRate : null)
       setLedger(l.filter(x => x.companyId === company.id))
       setPayouts(p.filter(x => x.companyId === company.id))
       setExperiences(e)
@@ -161,15 +175,11 @@ export default function PartnerHome() {
 
       {/* Metrics: balance leads full-width, the two smaller tiles sit beside it. */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 15rem), 1fr))', gap: '12px' }}>
-        <div className="pf-glass" style={{ ...cardShape, gridColumn: '1 / -1', padding: '20px 22px', borderRadius: '18px', background: 'linear-gradient(150deg, rgba(190,154,86,0.12), var(--pf-card))', borderColor: 'var(--pf-border-strong)' }}>
-          <div style={{ ...eyebrow, fontSize: '10.5px', letterSpacing: '0.16em' }}>{L('upcoming_earn')}</div>
-          <div style={{ marginTop: '8px' }}><Money amount={formatAmount(upcomingEarn)} size={46} /></div>
-          <div style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-muted)', marginTop: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Wallet size={12} strokeWidth={1.75} style={{ color: 'var(--pf-gold)' }} />
-            {L('upcoming_earn_note')}
-          </div>
+        <div style={{ gridColumn: '1 / -1' }}>
+          <EarningsHero bookings={bookings} locale={locale} rate={rate} nextPayout={next ? toDate(next.scheduledFor) : null} available={balance} size={46}>
+            <CircleStatHome label={L('upcoming_earn')} value={`${formatAmount(upcomingEarn)} XOF`} />
+          </EarningsHero>
         </div>
-        <StatTile label={L('next_payout_amt')} amount={formatAmount(balance)} sub={`${L('next_payout')} · ${formatDate(next?.scheduledFor ?? nextPayoutDate())}`} />
         <StatTile label={L('lifetime')} amount={formatAmount(lifetime)} />
       </div>
 
