@@ -7,7 +7,7 @@ import { usePartner } from '../PartnerContext'
 import { t } from '../i18n'
 import { getLedgerByProvider, getPayoutsByProvider, getCompanyAdmin, getExperiencesByCompany } from '@/lib/firestore'
 import type { Booking, LedgerEntry, LedgerEntryType, Payout, PayoutStatus } from '@/lib/schema'
-import { formatAmount, formatDate, toDate } from '@/lib/money'
+import { formatAmount, formatDate, toDate, isDelivered, isUpcoming, nextPayoutDate, moneySplit } from '@/lib/money'
 import { ScreenHeader, Money, EmptyState, SectionTitle, Skeleton, card, cardShape, eyebrow } from '@/components/partner/ui'
 import { BarChart, RankPills } from '@/components/charts'
 import { CalendarClock, TrendingUp, BadgeCheck, Wallet, Clock, Check } from 'lucide-react'
@@ -65,8 +65,11 @@ export default function EarningsScreen() {
   // derive earnings from the bookings themselves — they already carry
   // payoutAmount/commissionAmount. Ledger wins the moment it has entries.
   const earning = bookings.filter(b => (b.payoutAmount || 0) > 0)
-  const upcomingEarn = earning.filter(b => b.status === 'confirmed').reduce((s, b) => s + (b.payoutAmount || 0), 0)
-  const deliveredEarn = earning.filter(b => b.status === 'completed').reduce((s, b) => s + (b.payoutAmount || 0), 0)
+  // The real money flow: the guest pays Palmera the full amount; Palmera
+  // keeps its commission; the business is paid the net after the experience.
+  const split = moneySplit(earning)
+  const upcomingEarn = split.upcoming.net
+  const deliveredEarn = split.delivered.net
   const derived = ledger.length === 0
   // Jordan's vocabulary: Upcoming earnings (confirmed, not yet delivered) /
   // Available for payout (delivered, not yet paid out) / Paid to date.
@@ -174,13 +177,15 @@ export default function EarningsScreen() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 14rem), 1fr))', gap: '12px' }}>
         <div style={{ gridColumn: '1 / -1', padding: '24px', borderRadius: '18px', background: 'linear-gradient(150deg, rgba(190,154,86,0.12), var(--pf-card))', border: '1px solid var(--pf-border-strong)', display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '22px' }}>
           <div>
-            <div style={{ ...eyebrow, fontSize: '10.5px', letterSpacing: '0.16em' }}>{L('avail_payout')}</div>
+            <div style={{ ...eyebrow, fontSize: '10.5px', letterSpacing: '0.16em' }}>{L('next_payout_amt')}</div>
             <div style={{ marginTop: '8px' }}><Money amount={formatAmount(balance)} size={52} /></div>
-            <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-muted)', marginTop: '8px', maxWidth: '22rem', lineHeight: 1.5 }}>{L('avail_payout_note')}</div>
+            <div style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-muted)', marginTop: '8px', maxWidth: '24rem', lineHeight: 1.55 }}>
+              {L('next_payout_when').replace('{date}', formatDate(next?.scheduledFor ?? nextPayoutDate()))}{split.delivered.count > 0 ? ` · ${split.delivered.count} ${L('bookings_n')}` : ''}
+            </div>
           </div>
           <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
             <CircleStat icon={<TrendingUp size={14} strokeWidth={1.75} />} label={L('upcoming_earn')} value={<>{formatAmount(upcomingEarn)} <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'var(--pf-muted)' }}>XOF</span></>} />
-            <CircleStat icon={<CalendarClock size={14} strokeWidth={1.75} />} label={L('next_payout')} value={next ? formatDate(next.scheduledFor) : '—'} />
+            <CircleStat icon={<CalendarClock size={14} strokeWidth={1.75} />} label={L('upcoming_count')} value={String(split.upcoming.count)} />
             <CircleStat icon={<BadgeCheck size={14} strokeWidth={1.75} />} label={L('status_lbl')} value={company?.active ? (locale === 'fr' ? 'Actif' : 'Active') : '—'} tone="var(--pf-success)" />
           </div>
         </div>
@@ -220,8 +225,8 @@ export default function EarningsScreen() {
       {/* Money lifecycle (Jordan #8): where a franc is on its way to you. */}
       {(() => {
         const paidCount = earning.filter(b => ['confirmed', 'completed'].includes(b.status)).length
-        const upcomingCount = earning.filter(b => b.status === 'confirmed').length
-        const doneCount = earning.filter(b => b.status === 'completed').length
+        const upcomingCount = split.upcoming.count
+        const doneCount = split.delivered.count
         const paidOut = payouts.filter(p => p.status === 'paid').length
         const steps = [
           { k: 'lc_paid', n: paidCount }, { k: 'lc_upcoming', n: upcomingCount },
@@ -248,19 +253,33 @@ export default function EarningsScreen() {
         )
       })()}
 
-      {/* Derived breakdown: what's coming vs what's already delivered. */}
-      {derived && balance > 0 && (
-        <div className="pf-glass" style={{ ...cardShape, marginTop: '12px' }}>
-          <div style={{ ...eyebrow, marginBottom: '10px' }}>{L('breakdown_title')}</div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid var(--pf-border)', fontFamily: 'var(--font-sans)', fontSize: '12.5px' }}>
-            <span style={{ color: 'var(--pf-muted)' }}>{L('exp_upcoming')} · {earning.filter(b => b.status === 'confirmed').length}</span>
-            <span style={{ color: 'var(--pf-gold)' }}>{formatAmount(upcomingEarn)}</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', fontFamily: 'var(--font-sans)', fontSize: '12.5px' }}>
-            <span style={{ color: 'var(--pf-muted)' }}>{L('exp_done')} · {earning.filter(b => b.status === 'completed').length}</span>
-            <span style={{ color: 'var(--pf-success)' }}>{formatAmount(deliveredEarn)}</span>
-          </div>
-          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'var(--pf-faint)', margin: '10px 0 0', lineHeight: 1.5 }}>{L('ledger_soon')}</p>
+      {/* The money flow, made explicit (Jordan): what guests paid Palmera,
+          what Palmera keeps, what the business receives — for money already
+          earned (delivered) and money still to come (upcoming). */}
+      {(split.upcoming.count + split.delivered.count) > 0 && (
+        <div className="pf-glass" style={{ ...cardShape, marginTop: '12px', overflowX: 'auto' }}>
+          <div style={{ ...eyebrow, marginBottom: '10px' }}>{L('flow_title')}</div>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'var(--font-sans)', fontSize: '12.5px', minWidth: '28rem' }}>
+            <thead>
+              <tr style={{ color: 'var(--pf-faint)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                <th style={{ textAlign: 'left', padding: '6px 0', fontWeight: 400 }}></th>
+                <th style={{ textAlign: 'right', padding: '6px 0', fontWeight: 400 }}>{L('flow_gross')}</th>
+                <th style={{ textAlign: 'right', padding: '6px 0', fontWeight: 400 }}>{L('flow_commission')}{rate != null ? ` (${+(rate * 100).toFixed(2)}%)` : ''}</th>
+                <th style={{ textAlign: 'right', padding: '6px 0', fontWeight: 400 }}>{L('flow_net')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {([['delivered', split.delivered, 'var(--pf-success)'], ['upcoming', split.upcoming, 'var(--pf-gold)']] as const).map(([k, v, color]) => (
+                <tr key={k} style={{ borderTop: '1px solid var(--pf-border)' }}>
+                  <td style={{ padding: '9px 0', color: 'var(--pf-muted)' }}>{L(k === 'delivered' ? 'flow_delivered' : 'flow_upcoming')} <span style={{ color: 'var(--pf-faint)' }}>· {v.count}</span></td>
+                  <td style={{ padding: '9px 0', textAlign: 'right', color: 'var(--pf-text)' }}>{formatAmount(v.gross)}</td>
+                  <td style={{ padding: '9px 0', textAlign: 'right', color: 'var(--pf-faint)' }}>−{formatAmount(v.commission)}</td>
+                  <td style={{ padding: '9px 0', textAlign: 'right', color, fontWeight: 600 }}>{formatAmount(v.net)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-faint)', margin: '10px 0 0', lineHeight: 1.5 }}>{L('flow_note')}</p>
         </div>
       )}
       {/* Next-payout breakdown — Jordan: transparency on gross vs deductions. */}
@@ -369,8 +388,8 @@ export default function EarningsScreen() {
                     <td style={{ padding: '10px 14px', color: 'var(--pf-muted)' }}>{b.customerName || '—'}</td>
                     <td style={{ padding: '10px 14px', textAlign: 'right', color: 'var(--pf-text)' }}>{formatAmount(b.bookingTotal)}</td>
                     <td style={{ padding: '10px 14px', textAlign: 'right', color: 'var(--pf-faint)' }}>−{formatAmount(b.commissionAmount)}</td>
-                    <td style={{ padding: '10px 14px', textAlign: 'right', color: b.status === 'completed' ? 'var(--pf-success)' : 'var(--pf-gold)', fontWeight: 600 }}>{formatAmount(b.payoutAmount)}</td>
-                    <td style={{ padding: '10px 14px', color: 'var(--pf-muted)', whiteSpace: 'nowrap' }}>{L(b.status === 'completed' ? (ledger.some(e => e.bookingId === b.id && e.payoutId) ? 'lc_paid_s' : 'lc_eligible_s') : 'lc_upcoming_s')}</td>
+                    <td style={{ padding: '10px 14px', textAlign: 'right', color: isDelivered(b) ? 'var(--pf-success)' : 'var(--pf-gold)', fontWeight: 600 }}>{formatAmount(b.payoutAmount)}</td>
+                    <td style={{ padding: '10px 14px', color: 'var(--pf-muted)', whiteSpace: 'nowrap' }}>{L(isDelivered(b) ? (ledger.some(e => e.bookingId === b.id && e.payoutId) ? 'lc_paid_s' : 'lc_eligible_s') : isUpcoming(b) ? 'lc_upcoming_s' : 'lc_pending_s')}</td>
                   </tr>
                 ))}
               </tbody>

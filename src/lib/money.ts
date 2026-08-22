@@ -43,3 +43,43 @@ export function formatDate(value: unknown, withTime = false): string {
     ...(withTime ? { hour: '2-digit', minute: '2-digit' } : {}),
   })
 }
+
+// ── Money-state helpers (shared by partner Home/Earnings and admin Money) ──
+// How money actually flows: the app charges the GUEST the full amount into
+// Palmera's Stripe; Palmera keeps its commission; the business is paid the
+// net (payoutAmount) biweekly, once the experience has taken place.
+type MoneyBooking = { status: string; scheduledFor?: unknown; payoutAmount?: number; bookingTotal?: number; commissionAmount?: number }
+
+/** Delivered = the experience has taken place: explicitly completed, OR
+ *  confirmed with its date in the past. (Interim until auto-completion
+ *  exists — SYNC item 11 — but it's also simply what "delivered" means.) */
+export function isDelivered(b: MoneyBooking): boolean {
+  if (b.status === 'completed') return true
+  if (b.status !== 'confirmed') return false
+  const d = toDate(b.scheduledFor)
+  return !!d && d.getTime() < Date.now()
+}
+/** Upcoming = confirmed, date still ahead. Money is collected but not yet earned. */
+export function isUpcoming(b: MoneyBooking): boolean {
+  if (b.status !== 'confirmed') return false
+  const d = toDate(b.scheduledFor)
+  return !!d && d.getTime() >= Date.now()
+}
+
+/** Payout schedule: the 1st and the 16th of each month (biweekly, per the
+ *  BPA). Returns the next run strictly after `from`. */
+export function nextPayoutDate(from = new Date()): Date {
+  const y = from.getFullYear(), m = from.getMonth(), d = from.getDate()
+  if (d < 16) return new Date(y, m, 16)
+  return new Date(y, m + 1, 1)
+}
+/** Per-state totals for a set of bookings, in XOF. */
+export function moneySplit(bookings: MoneyBooking[]) {
+  const sum = (xs: MoneyBooking[], k: 'bookingTotal' | 'commissionAmount' | 'payoutAmount') => xs.reduce((s, b) => s + (b[k] || 0), 0)
+  const upcoming = bookings.filter(isUpcoming)
+  const delivered = bookings.filter(isDelivered)
+  return {
+    upcoming: { gross: sum(upcoming, 'bookingTotal'), commission: sum(upcoming, 'commissionAmount'), net: sum(upcoming, 'payoutAmount'), count: upcoming.length },
+    delivered: { gross: sum(delivered, 'bookingTotal'), commission: sum(delivered, 'commissionAmount'), net: sum(delivered, 'payoutAmount'), count: delivered.length },
+  }
+}

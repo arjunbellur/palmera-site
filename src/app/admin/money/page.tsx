@@ -12,7 +12,7 @@ import { BarChart, RankPills, Donut } from '@/components/charts'
 import { FilterChip, inputStyle, formatDate, glass } from '../ui'
 import type { Booking, BookingStatus, Company, AppProfile, CompanyPayoutProfile } from '@/lib/schema'
 import { Wallet, CalendarDays } from 'lucide-react'
-import { formatAmount } from '@/lib/money'
+import { formatAmount, isDelivered, isUpcoming } from '@/lib/money'
 
 const fmt = formatAmount
 
@@ -91,7 +91,14 @@ function AdminMoney() {
   }).sort((a, b) => (docDate(b, 'scheduledFor')?.getTime() ?? 0) - (docDate(a, 'scheduledFor')?.getTime() ?? 0))
 
   // ── Revenue (completed only) ──
-  const completed = bookings.filter((b) => b.status === 'completed')
+  // Delivered = completed OR confirmed with the date passed — money Palmera has
+  // collected AND earned. (Auto-completion doesn't exist yet; this is what
+  // 'completed' means in practice.)
+  const completed = bookings.filter(isDelivered)
+  const upcomingB = bookings.filter(isUpcoming)
+  const collectedAll = sumField([...completed, ...upcomingB], 'bookingTotal')
+  const owedAll = sumField(completed, 'payoutAmount')
+  const heldForUpcoming = sumField(upcomingB, 'payoutAmount')
   const month = startOfMonth()
   const completedMonth = completed.filter((b) => { const d = docDate(b, 'scheduledFor'); return d !== null && d >= month })
   const gmvAll = sumField(completed, 'bookingTotal')
@@ -117,9 +124,13 @@ function AdminMoney() {
 
   // ── Payout readiness ──
   const owed = (() => {
-    const m = new Map<string, number>()
-    completed.forEach((b) => m.set(b.companyId, (m.get(b.companyId) || 0) + (b.payoutAmount || 0)))
-    return [...m.entries()].map(([id, amount]) => ({ id, name: coName.get(id) || '—', amount, hasPayout: !!payoutProfiles[id] })).sort((a, b) => b.amount - a.amount)
+    const m = new Map<string, { gross: number; commission: number; net: number; n: number }>()
+    completed.forEach((b) => {
+      const c = m.get(b.companyId) || { gross: 0, commission: 0, net: 0, n: 0 }
+      c.gross += b.bookingTotal || 0; c.commission += b.commissionAmount || 0; c.net += b.payoutAmount || 0; c.n++
+      m.set(b.companyId, c)
+    })
+    return [...m.entries()].map(([id, v]) => ({ id, name: coName.get(id) || '—', ...v, amount: v.net, hasPayout: !!payoutProfiles[id] })).sort((a, b) => b.amount - a.amount)
   })()
 
   return (
@@ -130,17 +141,29 @@ function AdminMoney() {
           rail pinned right on wide screens. */}
       <div className="pf-cols">
       <div style={{ minWidth: 0 }}>
-      {/* Revenue tiles */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 15rem), 1fr))', gap: '12px' }}>
+      {/* The money position — how it actually flows: guests pay the full
+          amount into Palmera's Stripe; Palmera keeps its commission; the net
+          is owed to partners once the experience is delivered. */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 13rem), 1fr))', gap: '12px' }}>
         <div className="pf-glass pf-glass-gold" style={glass}>
-          <div style={eyebrow}>GMV all-time · completed</div>
-          <div style={{ marginTop: '8px' }}><Money amount={fmt(gmvAll)} size={32} /></div>
-          <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-muted)', marginTop: '8px' }}>{fmt(gmvMonth)} XOF this month</div>
+          <div style={eyebrow}>Collected in Stripe</div>
+          <div style={{ marginTop: '8px' }}><Money amount={fmt(collectedAll)} size={30} /></div>
+          <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-muted)', marginTop: '8px' }}>all paid bookings · delivered + upcoming</div>
         </div>
         <div className="pf-glass pf-glass-gold" style={glass}>
-          <div style={eyebrow}>Palmera commission all-time</div>
-          <div style={{ marginTop: '8px' }}><Money amount={fmt(commAll)} size={32} /></div>
-          <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-muted)', marginTop: '8px' }}>{fmt(commMonth)} XOF this month</div>
+          <div style={eyebrow}>Palmera keeps · delivered</div>
+          <div style={{ marginTop: '8px' }}><Money amount={fmt(commAll)} size={30} /></div>
+          <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-muted)', marginTop: '8px' }}>{fmt(commMonth)} XOF this month · GMV {fmt(gmvAll)}</div>
+        </div>
+        <div className="pf-glass" style={glass}>
+          <div style={eyebrow}>Owed to partners · delivered</div>
+          <div style={{ marginTop: '8px' }}><Money amount={fmt(owedAll)} size={30} /></div>
+          <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-muted)', marginTop: '8px' }}>pay out on the 1st / 16th</div>
+        </div>
+        <div className="pf-glass" style={glass}>
+          <div style={eyebrow}>Held for upcoming</div>
+          <div style={{ marginTop: '8px' }}><Money amount={fmt(heldForUpcoming)} size={30} /></div>
+          <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-muted)', marginTop: '8px' }}>partners' net on bookings not yet delivered</div>
         </div>
       </div>
 
@@ -166,15 +189,18 @@ function AdminMoney() {
       {/* Payout readiness */}
       <SectionTitle>Payout readiness</SectionTitle>
       <p style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-faint)', margin: '-6px 0 12px' }}>
-        Derived from completed bookings — switches to the ledger once server writes land.
+        Net owed per partner on DELIVERED bookings (completed, or confirmed with the date passed). Guests paid Palmera in full; commission is already deducted here.
       </p>
       {owed.length === 0 ? (
-        <EmptyState icon={<Wallet size={22} strokeWidth={1.75} />} title="Nothing owed yet" body="Once bookings are marked completed, each partner's payout builds up here." chip="Payouts run every two weeks" />
+        <EmptyState icon={<Wallet size={22} strokeWidth={1.75} />} title="Nothing owed yet" body="Once a paid booking's date passes, the partner's net builds up here." chip="Payouts on the 1st and 16th" />
       ) : (
         <div className="pf-glass" style={{ ...glass, padding: '6px 16px' }}>
           {owed.map((o, i) => (
             <div key={o.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '11px 0', borderTop: i > 0 ? '1px solid var(--pf-border)' : 'none', flexWrap: 'wrap' }}>
-              <span style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '14px' }}>{o.name}</span>
+              <span style={{ minWidth: 0 }}>
+                <span style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '14px', display: 'block' }}>{o.name}</span>
+                <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-faint)' }}>{o.n} delivered · guests paid {fmt(o.gross)} · Palmera keeps {fmt(o.commission)}</span>
+              </span>
               <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <Chip tone={o.hasPayout ? 'green' : 'alert'}>{o.hasPayout ? 'payout details ✓' : 'no payout details'}</Chip>
                 <Money amount={fmt(o.amount)} size={18} />

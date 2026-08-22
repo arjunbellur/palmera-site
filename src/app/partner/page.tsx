@@ -4,7 +4,7 @@ import { usePartner } from './PartnerContext'
 import { t } from './i18n'
 import { getLedgerByProvider, getPayoutsByProvider, getExperiencesByCompany, getPayoutProfile } from '@/lib/firestore'
 import type { Booking, Experience, LedgerEntry, Payout } from '@/lib/schema'
-import { formatAmount, formatDate, toDate } from '@/lib/money'
+import { formatAmount, formatDate, toDate, isDelivered, isUpcoming, nextPayoutDate } from '@/lib/money'
 import { ScreenHeader, StatTile, Money, EmptyState, SectionTitle, Skeleton, card, cardShape, eyebrow } from '@/components/partner/ui'
 import ReservationCard from '@/components/partner/ReservationCard'
 import { Clock, Wallet, LayoutGrid, Image as ImageIcon, Sparkles } from 'lucide-react'
@@ -48,8 +48,8 @@ export default function PartnerHome() {
   const ledgerBalance = ledger.reduce((s, e) => s + (e.amount || 0), 0)
   // Same fallback as /partner/earnings: until the ledger writer exists, show
   // the money already sitting on confirmed/completed bookings.
-  const upcomingEarn = bookings.filter(b => b.status === 'confirmed').reduce((s, b) => s + (b.payoutAmount || 0), 0)
-  const deliveredEarn = bookings.filter(b => b.status === 'completed').reduce((s, b) => s + (b.payoutAmount || 0), 0)
+  const upcomingEarn = bookings.filter(isUpcoming).reduce((s, b) => s + (b.payoutAmount || 0), 0)
+  const deliveredEarn = bookings.filter(isDelivered).reduce((s, b) => s + (b.payoutAmount || 0), 0)
   const derived = ledger.length === 0
   // Jordan's vocabulary: available for payout = delivered, not yet paid out.
   const balance = derived ? Math.max(0, deliveredEarn - payouts.filter(p => p.status === 'paid').reduce((s, p) => s + (p.netAmount || 0), 0)) : ledgerBalance
@@ -169,7 +169,7 @@ export default function PartnerHome() {
             {L('upcoming_earn_note')}
           </div>
         </div>
-        <StatTile label={L('balance')} amount={formatAmount(balance)} sub={next ? `${L('next_payout')} · ${formatDate(next.scheduledFor)}` : undefined} />
+        <StatTile label={L('next_payout_amt')} amount={formatAmount(balance)} sub={`${L('next_payout')} · ${formatDate(next?.scheduledFor ?? nextPayoutDate())}`} />
         <StatTile label={L('lifetime')} amount={formatAmount(lifetime)} />
       </div>
 
