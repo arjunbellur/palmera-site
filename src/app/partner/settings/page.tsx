@@ -7,7 +7,7 @@ import { t } from '../i18n'
 import { useTheme } from '@/lib/theme'
 import { formatDate } from '@/lib/money'
 import { changePassword } from '@/lib/auth'
-import { updateProvider, updateCompany, getPayoutProfile, setPayoutProfile, getExperiencesByCompany, updateExperience } from '@/lib/firestore'
+import { updateProvider, updateCompany, getPayoutProfile, setPayoutProfile, getExperiencesByCompany, updateExperience, getCompanyAdmin } from '@/lib/firestore'
 import { getEnabledCategories, getEnabledCities } from '@/lib/config'
 import type { CompanyPayoutProfile } from '@/lib/schema'
 import PhotoUpload from '@/components/dashboard/PhotoUpload'
@@ -51,6 +51,7 @@ export default function SettingsScreen() {
     method: 'wave', accountName: '', phone: '', bankName: '', accountRef: '',
   })
   const [poLoaded, setPoLoaded] = useState<CompanyPayoutProfile | null>(null)
+  const [rate, setRate] = useState<number | null>(null)
 
   // Contact & hours — light operational info Jordan asked for.
   const [contact, setContact] = useState({ phone: '', whatsapp: '', hours: '', opsName: '', opsWa: '' })
@@ -87,6 +88,8 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     if (!company?.id) return
+    // The real commission rate lives in companies/{id}/private/admin — never hardcode it.
+    getCompanyAdmin(company.id).then(a => setRate(typeof a?.commissionRate === 'number' ? a.commissionRate : null)).catch(() => setRate(null))
     getPayoutProfile(company.id).then(p => {
       setPoLoaded(p)
       if (p) setPo({ method: p.method, accountName: p.accountName || '', phone: p.phone || '', bankName: p.bankName || '', accountRef: p.accountRef || '' })
@@ -321,7 +324,7 @@ export default function SettingsScreen() {
             {row(L('co_category'), cats.find(c => c.id === company?.category)?.name || company?.category || '')}
             {row(L('co_address'), company?.address || '')}
             {row(L('activated'), company?.activatedAt ? formatDate(company.activatedAt) : '—')}
-            {row(L('comm_window'), '10%')}
+            {row(L('comm_title'), rate != null ? `${+(rate * 100).toFixed(2)}% ${L('comm_per_booking')}` : '—')}
           </div>
         </div>
       ) : (
