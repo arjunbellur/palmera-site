@@ -51,13 +51,13 @@ function bookingEmail(b: Record<string, unknown>, companyName: string) {
     ${total > 0 ? row('Montant', `${fmtXof(total)} XOF`) : ''}
   </table>
   <p style="color:#2a2119;font-size:14px">${pending
-    ? 'Cette réservation attend votre confirmation.'
+    ? 'Cette réservation attend votre confirmation — <strong>merci de répondre sous 24 h</strong>. Sans réponse, le client risque de réserver ailleurs.'
     : 'Réservation instantanée — aucune action requise, elle est déjà sur votre calendrier.'}</p>
   <p style="margin:22px 0">
     <a href="https://www.palmeraexp.com/partner/reservations${pending ? '?f=pending' : ''}" style="background:#9e763b;color:#ebe8db;text-decoration:none;padding:11px 22px;border-radius:8px;font-family:Arial,sans-serif;font-size:13px">${pending ? 'Répondre dans le tableau de bord' : 'Voir dans le tableau de bord'}</a>
   </p>
   <p style="color:#8a8577;font-size:11px">${pending
-    ? 'New booking awaiting your confirmation — open your Palmera dashboard to respond.'
+    ? 'New booking awaiting your confirmation — please respond within 24h from your Palmera dashboard.'
     : 'Instant booking, auto-confirmed — no action needed; it is already on your calendar.'}</p>
 </div>`,
   }
@@ -114,6 +114,11 @@ export async function POST(req: NextRequest) {
       const provider = (await db.collection('providers').doc(b.providerId).get()).data()
       const to = provider?.email
       if (!to) { results.push({ booking: doc.id, skipped: 'provider has no email' }); continue }
+      // The partner's own toggle (Settings → Notifications) is respected.
+      if (provider?.notificationPrefs?.bookings === false) {
+        if (!dry) await logRef.set({ kind: 'opted_out', sentAt: new Date(), title: b.title ?? null, party: partyKey(b) })
+        results.push({ booking: doc.id, skipped: 'partner opted out of booking emails' }); continue
+      }
       const company = (await db.collection('companies').doc(b.companyId).get()).data()
       const companyName = company?.name || 'votre établissement'
 
@@ -130,13 +135,21 @@ export async function POST(req: NextRequest) {
     // 24h; guests shouldn't sit waiting indefinitely. Logged as
     // `${id}_reminder` so it never repeats.
     const REMIND_AFTER_MS = 12 * 3600 * 1000
+    const REMIND_LOOKBACK_MS = 7 * 24 * 3600 * 1000
+    // Own query: the main 24h window would drop anything older, and a
+    // booking pending for 30h deserves its nudge just as much.
+    // Single-field range only (no composite index needed); status filtered here.
+    const remindSnap = await db.collection('bookings')
+      .where('createdAt', '>=', new Date(Date.now() - REMIND_LOOKBACK_MS))
+      .where('createdAt', '<=', new Date(Date.now() - REMIND_AFTER_MS))
+      .get()
     const reminders: { booking: string; to?: string; skipped?: string }[] = []
-    for (const doc of ordered) {
+    for (const doc of remindSnap.docs) {
       const b = doc.data()
       if (b.status !== 'pending' || b.confirmationType === 'instant') continue
       if (typeof b.providerId !== 'string' || typeof b.bookingTotal !== 'number') continue
       const created = b.createdAt?.toMillis?.() ?? 0
-      if (!created || Date.now() - created < REMIND_AFTER_MS) continue
+      if (!created) continue
       const logRef = db.collection('email_log').doc(`${doc.id}_reminder`)
       if ((await logRef.get()).exists) continue
       // Only remind about bookings we actually notified (skips suppressed duplicates).
@@ -145,6 +158,7 @@ export async function POST(req: NextRequest) {
       const provider = (await db.collection('providers').doc(b.providerId).get()).data()
       const to = provider?.email
       if (!to) { reminders.push({ booking: doc.id, skipped: 'no email' }); continue }
+      if (provider?.notificationPrefs?.bookings === false) { reminders.push({ booking: doc.id, skipped: 'opted out' }); continue }
       if (dry) { reminders.push({ booking: doc.id, to }); continue }
       const hours = Math.round((Date.now() - created) / 3600000)
       const whenStr = b.scheduledFor?.toDate?.()?.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) ?? '—'

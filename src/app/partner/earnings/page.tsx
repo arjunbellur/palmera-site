@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import { usePartner } from '../PartnerContext'
 import { t } from '../i18n'
-import { getBookingsByCompany, getLedgerByProvider, getPayoutsByProvider, getCompanyAdmin } from '@/lib/firestore'
+import { getBookingsByCompany, getLedgerByProvider, getPayoutsByProvider, getCompanyAdmin, getExperiencesByCompany } from '@/lib/firestore'
 import type { Booking, LedgerEntry, LedgerEntryType, Payout, PayoutStatus } from '@/lib/schema'
 import { formatAmount, formatDate, toDate } from '@/lib/money'
 import { ScreenHeader, Money, EmptyState, SectionTitle, Skeleton, card, cardShape, eyebrow } from '@/components/partner/ui'
@@ -43,15 +43,19 @@ export default function EarningsScreen() {
   const [period, setPeriod] = useState<'all' | 'month' | 'last' | '30'>('all')
   const [loaded, setLoaded] = useState(false)
   const [rate, setRate] = useState<number | null>(null)
+  const [extrasGroupIds, setExtrasGroupIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     if (!uid || !company?.id) return
     ;(async () => {
-      const [l, p, b, adm] = await Promise.all([
+      const [l, p, b, adm, exps] = await Promise.all([
         getLedgerByProvider(uid), getPayoutsByProvider(uid), getBookingsByCompany(uid, company.id!),
         getCompanyAdmin(company.id!).catch(() => null),
+        getExperiencesByCompany(uid, company.id!).catch(() => []),
       ])
       setRate(typeof adm?.commissionRate === 'number' ? adm.commissionRate : null)
+      // Which option groups are ADD-ONS (vs required choices) — extras revenue counts only those.
+      setExtrasGroupIds(new Set(exps.flatMap(e => (e.optionGroups || []).filter(g => !g.required).map(g => g.id))))
       setLedger(l.filter(e => e.companyId === company.id))
       setPayouts(p.filter(x => x.companyId === company.id))
       setBookings(b)
@@ -69,7 +73,7 @@ export default function EarningsScreen() {
   const derived = ledger.length === 0
   // Jordan's vocabulary: Upcoming earnings (confirmed, not yet delivered) /
   // Available for payout (delivered, not yet paid out) / Paid to date.
-  const balance = derived ? deliveredEarn : ledgerBalance
+  const balance = derived ? Math.max(0, deliveredEarn - payouts.filter(p => p.status === 'paid').reduce((s, p) => s + (p.netAmount || 0), 0)) : ledgerBalance
   const lifetime = payouts.filter(p => p.status === 'paid').reduce((s, p) => s + (p.netAmount || 0), 0)
   const next = payouts.find(p => p.status === 'scheduled' || p.status === 'processing')
 
@@ -191,8 +195,9 @@ export default function EarningsScreen() {
         {/* Jordan/ChatGPT #23: extras are the upsell engine — show what they bring in. */}
         {(() => {
           const live = bookings.filter(b => ['confirmed', 'completed'].includes(b.status))
-          const extras = live.reduce((s, b) => s + (b.selections || []).reduce((t, sel) => t + (sel.price || 0) * (sel.quantity || 1), 0), 0)
-          const withExtras = live.filter(b => (b.selections?.length ?? 0) > 0).length
+          const isExtra = (sel: { groupId?: string }) => extrasGroupIds.size === 0 || extrasGroupIds.has(sel.groupId || '')
+          const extras = live.reduce((s, b) => s + (b.selections || []).filter(isExtra).reduce((t, sel) => t + (sel.price || 0) * (sel.quantity || 1), 0), 0)
+          const withExtras = live.filter(b => (b.selections || []).some(isExtra)).length
           if (live.length === 0) return null
           return (
             <div className="pf-glass" style={cardShape}>
@@ -347,11 +352,9 @@ export default function EarningsScreen() {
           ))}
         </div>
       )}
-      {ledger.length === 0 ? (
-        earning.length === 0 ? (
-          <EmptyState icon={<Clock size={22} strokeWidth={1.75} />} title={L('ledger_empty_t')} body={L('ledger_empty_b')} />
-        ) : (
-          /* Jordan #7: the reconciliation table — every booking with money on it. */
+      {earning.length > 0 && (
+          /* Jordan #7: the reconciliation table — every booking with money on it.
+             Always shown; the itemised ledger (below) is the settlement view. */
           <div className="pf-glass" style={{ ...listCard, overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'var(--font-sans)', fontSize: '12px', minWidth: '38rem' }}>
               <thead>
@@ -370,13 +373,15 @@ export default function EarningsScreen() {
                     <td style={{ padding: '10px 14px', textAlign: 'right', color: 'var(--pf-text)' }}>{formatAmount(b.bookingTotal)}</td>
                     <td style={{ padding: '10px 14px', textAlign: 'right', color: 'var(--pf-faint)' }}>−{formatAmount(b.commissionAmount)}</td>
                     <td style={{ padding: '10px 14px', textAlign: 'right', color: b.status === 'completed' ? 'var(--pf-success)' : 'var(--pf-gold)', fontWeight: 600 }}>{formatAmount(b.payoutAmount)}</td>
-                    <td style={{ padding: '10px 14px', color: 'var(--pf-muted)', whiteSpace: 'nowrap' }}>{L(b.status === 'completed' ? 'lc_eligible_s' : 'lc_upcoming_s')}</td>
+                    <td style={{ padding: '10px 14px', color: 'var(--pf-muted)', whiteSpace: 'nowrap' }}>{L(b.status === 'completed' ? (ledger.some(e => e.bookingId === b.id && e.payoutId) ? 'lc_paid_s' : 'lc_eligible_s') : 'lc_upcoming_s')}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        )
+      )}
+      {ledger.length === 0 ? (
+        earning.length === 0 ? <EmptyState icon={<Clock size={22} strokeWidth={1.75} />} title={L('ledger_empty_t')} body={L('ledger_empty_b')} /> : null
       ) : shownLedger.length === 0 ? (
         <div className="pf-glass" style={{ ...cardShape, textAlign: 'center', fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--pf-faint)' }}>—</div>
       ) : (

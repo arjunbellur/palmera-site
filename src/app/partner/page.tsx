@@ -43,7 +43,7 @@ export default function PartnerHome() {
   const deliveredEarn = bookings.filter(b => b.status === 'completed').reduce((s, b) => s + (b.payoutAmount || 0), 0)
   const derived = ledger.length === 0
   // Jordan's vocabulary: available for payout = delivered, not yet paid out.
-  const balance = derived ? deliveredEarn : ledgerBalance
+  const balance = derived ? Math.max(0, deliveredEarn - payouts.filter(p => p.status === 'paid').reduce((s, p) => s + (p.netAmount || 0), 0)) : ledgerBalance
   const lifetime = payouts.filter(p => p.status === 'paid').reduce((s, p) => s + (p.netAmount || 0), 0)
   const next = payouts.find(p => p.status === 'scheduled' || p.status === 'processing')
   const pending = bookings.filter(b => b.status === 'pending')
@@ -170,7 +170,7 @@ export default function PartnerHome() {
         const now = new Date()
         const thisMonth = (b: Booking) => { const d = toDate(b.scheduledFor); return !!d && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() }
         const monthAll = bookings.filter(thisMonth)
-        const monthLive = monthAll.filter(b => ['pending', 'confirmed', 'completed'].includes(b.status))
+        const monthLive = monthAll.filter(b => ['confirmed', 'completed'].includes(b.status) || (b.status === 'pending' && b.confirmationType !== 'instant'))
         const monthRevenue = monthLive.reduce((s, b) => s + (b.payoutAmount || 0), 0)
         const completedAll = bookings.filter(b => b.status === 'completed').length
         const decided = bookings.filter(b => ['confirmed', 'completed', 'cancelled', 'declined', 'no_show'].includes(b.status)).length
@@ -199,6 +199,8 @@ export default function PartnerHome() {
               <Tile label={L('perf_cancel')} value={`${cancelRate}%`} sub={decided > 0 ? `${cancelled}/${decided}` : undefined} />
               <Tile label={L('perf_avg')} value={formatAmount(avgValue)} sub="XOF" />
               <Tile label={L('perf_top')} value={top ? top[0] : '—'} sub={top ? `${top[1]} ${L('bookings_n')}` : undefined} />
+              <Tile label={L('perf_upcoming')} value={String(upcomingAll.filter(b => b.status === 'confirmed').length)} />
+              <Tile label={L('perf_pending')} value={String(pending.filter(b => !(b.confirmationType === 'instant')).length)} />
             </div>
           </div>
         )

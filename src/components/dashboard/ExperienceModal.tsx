@@ -89,6 +89,7 @@ const M = {
     duration: 'Combien de temps ça dure ?', durationPh: 'ex. « 2 heures »',
     durUnits: { minutes: 'minutes', hours: 'heures', days: 'jours', nights: 'nuits' } as Record<string, string>,
     durFree: 'Texte libre', durStructured: 'Durée',
+    makeMain: 'Photo principale',
     maps: 'Lien Google Maps', needPub: '*requis pour publier',
     mapsPh: 'Collez le lien Google Maps de votre lieu',
     mapsHint: 'Dans Google Maps : trouvez votre lieu → Partager → Copier le lien, puis collez-le ici. Les clients l’utilisent pour s’y rendre.',
@@ -192,6 +193,7 @@ const M = {
     duration: 'How long does it last?', durationPh: 'e.g. "2 hours"',
     durUnits: { minutes: 'minutes', hours: 'hours', days: 'days', nights: 'nights' } as Record<string, string>,
     durFree: 'Free text', durStructured: 'Duration',
+    makeMain: 'Make main',
     maps: 'Google Maps link', needPub: '*needed to publish',
     mapsPh: 'Paste the Google Maps link to your spot',
     mapsHint: 'In Google Maps: find your spot → Share → Copy link, and paste it here. Guests use it to navigate.',
@@ -578,7 +580,8 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
 
   // Live pricing example — the listing seen the way the APP works: a group of
   // friends booking together and splitting the total.
-  const exampleParty = Math.min(Math.max(form.minGuests || 1, 4), form.maxGuests || 4)
+  // A 4-friend party, clamped to the listing's own bounds (0 max = no limit).
+  const exampleParty = Math.min(Math.max(form.minGuests || 1, 4), form.maxGuests ? form.maxGuests : Infinity)
   // Required choices are part of the real minimum: add each one's cheapest option.
   const requiredMin = groups.filter((g) => g.required)
     .reduce((sum, g) => sum + (g.options.length ? Math.min(...g.options.map((o) => o.price || 0)) : 0), 0)
@@ -774,7 +777,14 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
       </div>
       <div style={{ marginBottom: '1.25rem' }}>
         <label style={labelStyle}>{T.morePhotos}</label>
-        <GalleryUpload uid={uploadUid} value={form.gallery || []} onChange={(urls) => set('gallery', urls)} />
+        <GalleryUpload uid={uploadUid} value={form.gallery || []} onChange={(urls) => set('gallery', urls)}
+          promoteLabel={T.makeMain}
+          onPromote={(url) => setForm((f) => ({
+            // Swap: the chosen gallery photo becomes the hero; the old hero
+            // (if any) takes its place so nothing is lost.
+            ...f, img: url,
+            gallery: (f.gallery || []).map((g) => (g === url ? (f.img || '') : g)).filter(Boolean),
+          }))} />
       </div>
 
       <div style={{ marginBottom: '1rem' }}>

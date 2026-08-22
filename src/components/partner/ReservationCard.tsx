@@ -8,7 +8,7 @@ const STATUS: Record<BookingStatus, { key: string; tone: Tone }> = {
   pending: { key: 'f_pending', tone: 'gold' },
   confirmed: { key: 'f_confirmed', tone: 'green' },
   completed: { key: 'f_done', tone: 'neutral' },
-  declined: { key: 'decline', tone: 'alert' },
+  declined: { key: 'st_declined', tone: 'alert' },
   cancelled: { key: 'st_cancelled', tone: 'alert' },
   no_show: { key: 'st_noshow', tone: 'alert' },
 }

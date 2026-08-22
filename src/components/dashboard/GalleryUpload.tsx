@@ -15,6 +15,9 @@ interface GalleryUploadProps {
   value: string[]
   onChange: (urls: string[]) => void
   max?: number
+  /** When given, each tile offers "make this the main photo" (Jordan #19). */
+  onPromote?: (url: string) => void
+  promoteLabel?: string
 }
 
 /**
@@ -23,7 +26,7 @@ interface GalleryUploadProps {
  * customer app's experiences.gallery). Drag a tile onto another to reorder —
  * the array order IS the order guests see (Jordan: first photos convert).
  */
-export default function GalleryUpload({ uid, value, onChange, max = 12 }: GalleryUploadProps) {
+export default function GalleryUpload({ uid, value, onChange, max = 12, onPromote, promoteLabel }: GalleryUploadProps) {
   const locale = useLocale()
   const gs = GSTR[locale]
   const [error, setError] = useState('')
@@ -83,6 +86,12 @@ export default function GalleryUpload({ uid, value, onChange, max = 12 }: Galler
             <img loading="lazy" decoding="async" src={url} alt={`Gallery ${i + 1}`} draggable={false} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', pointerEvents: 'none' }} />
             {/* Position badge — makes the order (what guests see first) explicit. */}
             <span style={{ position: 'absolute', top: '0.375rem', left: '0.375rem', minWidth: '1.25rem', height: '1.25rem', borderRadius: '0.375rem', background: 'rgba(0,0,0,0.55)', color: '#fff', fontSize: '0.6875rem', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 0.25rem', fontFamily: 'var(--font-sans)' }}>{i + 1}</span>
+            {onPromote && (
+              <button onClick={() => onPromote(url)} title={promoteLabel || 'Main photo'}
+                style={{ position: 'absolute', bottom: '0.375rem', left: '0.375rem', padding: '0.2rem 0.5rem', borderRadius: '999px', border: 'none', background: 'rgba(0,0,0,0.6)', color: '#e9bc4f', fontSize: '0.625rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>
+                ★ {promoteLabel || 'Main'}
+              </button>
+            )}
             <button onClick={() => removeAt(i)} aria-label={`Remove photo ${i + 1}`}
               style={{ position: 'absolute', top: '0.375rem', right: '0.375rem', width: '1.5rem', height: '1.5rem', borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,0.55)', color: '#fff', fontSize: '0.9375rem', lineHeight: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
           </div>

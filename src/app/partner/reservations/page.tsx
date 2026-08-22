@@ -9,7 +9,8 @@ import { toDate } from '@/lib/money'
 import { ScreenHeader, EmptyState, Chip, Money, eyebrow, GhostButton, Skeleton } from '@/components/partner/ui'
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import { LifeBuoy, Phone, Mail, MessageCircle } from 'lucide-react'
+import { LifeBuoy, Phone, Mail, MessageCircle, Wallet } from 'lucide-react'
+import { getPolicies } from '@/lib/config'
 import ReservationCard from '@/components/partner/ReservationCard'
 import { formatAmount, formatDate } from '@/lib/money'
 import { Clock } from 'lucide-react'
@@ -33,7 +34,13 @@ export default function ReservationsScreen() {
     const d = new Date(); const pad = (n: number) => String(n).padStart(2, '0')
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
   })
-  const [detail, setDetail] = useState<Booking | null>(null)
+  const [tierHours, setTierHours] = useState<Record<string, number | undefined>>({})
+  useEffect(() => { getPolicies().then(p => { if (p) setTierHours(Object.fromEntries(Object.entries(p.tiers).map(([k, v]) => [k, (v as { cancelDeadlineHours?: number })?.cancelDeadlineHours]))) }).catch(() => {}) }, [])
+  const [help, setHelp] = useState<{ open: boolean; text: string; sent: boolean; busy: boolean }>({ open: false, text: '', sent: false, busy: false })
+  const [detail, setDetailRaw] = useState<Booking | null>(null)
+  // Opening a different booking (or closing) resets the help composer —
+  // otherwise booking B would show booking A's "✓ sent".
+  const setDetail = (b: Booking | null) => { setDetailRaw(b); setHelp({ open: false, text: '', sent: false, busy: false }) }
   const [busyId, setBusyId] = useState('')
   const [error, setError] = useState('')
   const [loaded, setLoaded] = useState(false)
@@ -58,7 +65,6 @@ export default function ReservationsScreen() {
   // Jordan/ChatGPT #33: "Get help with this booking" — pre-filled context so
   // the partner never has to explain which booking from scratch. Writes to
   // Samson's support_messages (snake_case, user_id = caller, per its rule).
-  const [help, setHelp] = useState<{ open: boolean; text: string; sent: boolean; busy: boolean }>({ open: false, text: '', sent: false, busy: false })
   const sendHelp = async (b: Booking) => {
     if (!help.text.trim() || help.busy) return
     setHelp(h => ({ ...h, busy: true }))
@@ -82,7 +88,6 @@ export default function ReservationsScreen() {
     try {
       await setBookingStatus(b.id, status)
       setDetail(null) // the live snapshot delivers the updated list
-      setHelp({ open: false, text: '', sent: false, busy: false })
     } catch {
       // Most likely cause: the security rule for partner-side confirmation
       // isn't deployed, or the booking already moved on. Say so plainly.
@@ -408,12 +413,19 @@ export default function ReservationsScreen() {
               {row(L('status_lbl'), <Chip tone={b.status === 'confirmed' ? 'green' : b.status === 'pending' ? 'gold' : 'neutral'}>{L({ pending: 'f_pending', confirmed: 'f_confirmed', completed: 'f_done', declined: 'st_declined', cancelled: 'st_cancelled', no_show: 'st_noshow' }[b.status] || b.status)}</Chip>)}
               {row(L('dt_booking_id'), <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11.5px' }}>{b.id}</span>)}
               {row(locale === 'fr' ? 'Client' : 'Guest', b.customerName || L('dt_none'))}
-              {b.customerPhone && row(L('dt_phone'), <a href={`tel:${b.customerPhone}`} style={{ color: 'var(--pf-gold)' }}>{b.customerPhone}</a>)}
-              {b.customerEmail && row(L('dt_email'), <a href={`mailto:${b.customerEmail}`} style={{ color: 'var(--pf-gold)' }}>{b.customerEmail}</a>)}
+              {(b.customerPhone || b.checkout?.customerPhone) && row(L('dt_phone'), <a href={`tel:${b.customerPhone || b.checkout?.customerPhone}`} style={{ color: 'var(--pf-gold)' }}>{b.customerPhone || b.checkout?.customerPhone}</a>)}
+              {(b.customerEmail || b.checkout?.customerEmail) && row(L('dt_email'), <a href={`mailto:${b.customerEmail || b.checkout?.customerEmail}`} style={{ color: 'var(--pf-gold)' }}>{b.customerEmail || b.checkout?.customerEmail}</a>)}
               {row(locale === 'fr' ? 'Expérience' : 'Experience', b.title)}
-              {row(L('dt_confirm_mode'), <Chip tone={b.confirmationType === 'instant' ? 'green' : 'gold'}>{b.confirmationType === 'instant' ? L('dt_instant') : L('dt_manual')}</Chip>)}
+              {b.confirmationType && row(L('dt_confirm_mode'), <Chip tone={b.confirmationType === 'instant' ? 'green' : 'gold'}>{b.confirmationType === 'instant' ? L('dt_instant') : L('dt_manual')}</Chip>)}
               {row(locale === 'fr' ? 'Personnes' : 'Party size', `${b.guestCount}`)}
-              {(b.nights ?? b.checkout?.nights) ? row(L('dt_nights'), String(b.nights ?? b.checkout?.nights)) : null}
+              {(b.nights ?? b.checkout?.nights) ? (() => {
+                const n = Number(b.nights ?? b.checkout?.nights)
+                const out = when ? new Date(when.getTime() + n * 86400_000) : null
+                return <>
+                  {row(L('dt_nights'), String(n))}
+                  {when && out && row(L('dt_checkin'), `${formatDate(when)} → ${formatDate(out)}`)}
+                </>
+              })() : null}
               {row(locale === 'fr' ? 'Date' : 'Date', when ? `${formatDate(when)} · ${when.toLocaleTimeString(locale === 'fr' ? 'fr-FR' : 'en-GB', { hour: '2-digit', minute: '2-digit' })}` : L('dt_none'))}
               {row(L('dt_payment'), payLabel)}
               {b.specialRequests && row(L('dt_requests'), b.specialRequests)}
@@ -424,7 +436,7 @@ export default function ReservationsScreen() {
                   ))}
                 </span>
               ))}
-              {b.cancellationPolicy?.tier && row(L('dt_policy'), <>{L(`tier_${b.cancellationPolicy.tier}`)}{b.cancellationPolicy.customNotes ? <span style={{ color: 'var(--pf-faint)' }}> · {b.cancellationPolicy.customNotes}</span> : null}</>)}
+              {b.cancellationPolicy?.tier && row(L('dt_policy'), <>{L(`tier_${b.cancellationPolicy.tier}`)}{tierHours[b.cancellationPolicy.tier] != null ? <span style={{ color: 'var(--pf-faint)' }}> · {L('dt_policy_terms').replace('{h}', String(tierHours[b.cancellationPolicy.tier]))}</span> : null}{b.cancellationPolicy.customNotes ? <span style={{ color: 'var(--pf-faint)' }}> · {b.cancellationPolicy.customNotes}</span> : null}</>)}
               {row(L('dt_created'), formatDate(b.createdAt, true))}
               {needsAction(b) && (() => {
                 const c = toDate(b.createdAt); if (!c) return null
@@ -502,7 +514,7 @@ export default function ReservationsScreen() {
                   ◷ {L('await_pay_note')}
                 </p>
               )}
-              {b.status === 'pending' && (
+              {needsAction(b) && (
                 <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
                   <GhostButton tone="alert" onClick={() => respond(b, 'declined')}>{L('decline')}</GhostButton>
                   <button onClick={() => respond(b, 'confirmed')} disabled={busyId === b.id}
@@ -514,6 +526,14 @@ export default function ReservationsScreen() {
               {b.status === 'confirmed' && when && when.getTime() < Date.now() && (
                 <div style={{ marginTop: '16px' }}>
                   <GhostButton tone="alert" onClick={() => respond(b, 'no_show')}>{L('mark_noshow')}</GhostButton>
+                </div>
+              )}
+
+              {b.status === 'completed' && (
+                <div style={{ marginTop: '16px' }}>
+                  <a href="/partner/earnings" style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '12px', textDecoration: 'none' }}>
+                    <Wallet size={13} strokeWidth={1.75} /> {L('dt_view_payout')}
+                  </a>
                 </div>
               )}
 
