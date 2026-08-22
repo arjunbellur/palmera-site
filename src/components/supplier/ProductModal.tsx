@@ -8,6 +8,7 @@ import type { Supplier, SupplyProduct } from '@/lib/schema'
 import { addSupplyProduct, updateSupplyProduct } from '@/lib/firestore'
 import PhotoUpload from '@/components/dashboard/PhotoUpload'
 import { PrimaryButton, GhostButton } from '@/components/partner/ui'
+import PriceInput from '@/components/dashboard/PriceInput'
 
 const UNITS = ['bottle', 'case', 'crate', 'pack', 'unit'] as const
 const CATEGORIES = ['alcohol'] as const // grows via config/marketplace later
@@ -97,7 +98,7 @@ export default function ProductModal({ supplier, product, storageUid, labels, on
           </div>
           <div>
             <label style={lbl}>{labels.price}</label>
-            <input style={field} type="number" min="0" inputMode="numeric" value={form.price} onChange={e => set('price', e.target.value)} placeholder="12000" />
+            <PriceInput compact value={form.price === '' ? null : Number(form.price)} onChange={v => set('price', v == null ? '' : String(v))} placeholder="12 000" />
           </div>
           <div>
             <label style={lbl}>{labels.stock}</label>

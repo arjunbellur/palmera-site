@@ -15,6 +15,7 @@ import PhotoUpload from './PhotoUpload'
 import MenuUpload from './MenuUpload'
 import GalleryUpload from './GalleryUpload'
 import ListingPreview from './ListingPreview'
+import PriceInput from './PriceInput'
 import { getEnabledCategories, getEnabledCities, getPolicies } from '@/lib/config'
 import { useLocale } from '@/lib/use-locale'
 import type { Experience, OptionGroup, Option, CancellationTier, ExperienceMode, PriceUnit, ConfirmationType, ScheduleType } from '@/lib/schema'
@@ -430,6 +431,7 @@ function Stepper({ value, min = 1, onChange, noLimit, noLimitLabel, unlimitedLab
   )
 }
 
+
 export default function ExperienceModal({ providerId, storageUid, companyId, companyName, commissionRate, defaultCategory, defaultCity, experience, existingOptions, onSave, onClose }: ExperienceModalProps) {
   const uploadUid = storageUid || providerId
   const locale = useLocale()
@@ -634,7 +636,7 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
         <div style={rowStyle}>
           <div>
             <label style={labelStyle}>{T.price}</label>
-            <input style={inputStyle} type="number" value={form.price ?? ''} onChange={(e) => set('price', e.target.value ? parseInt(e.target.value) : null)} />
+            <PriceInput value={form.price ?? null} onChange={(v) => set('price', v)} />
           </div>
           <div>
             <label style={labelStyle}>{T.priceIs}</label>
@@ -935,9 +937,9 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
                         <label style={miniLabel}>{T.ao_optName}</label>
                         <input style={inputStyle} placeholder={kind === 'choice' ? T.optNamePhChoice : T.optNamePhExtras} value={o.name} onChange={(e) => updateOptionAt(g.id, i, { name: e.target.value })} />
                       </div>
-                      <div style={{ flex: '1 1 6rem' }}>
+                      <div style={{ flex: '1 1 11rem' }}>
                         <label style={miniLabel}>{T.ao_optPrice}</label>
-                        <input style={inputStyle} type="number" placeholder="0" value={o.price} onChange={(e) => updateOptionAt(g.id, i, { price: parseInt(e.target.value) || 0 })} />
+                        <PriceInput compact value={o.price || 0} onChange={(v) => updateOptionAt(g.id, i, { price: v || 0 })} />
                       </div>
                       {kind === 'extras' && (
                         <div style={{ flex: '1 1 5rem' }}>
