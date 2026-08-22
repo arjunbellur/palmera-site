@@ -18,6 +18,9 @@ service firebase.storage {
     function signedIn() {
       return request.auth != null;
     }
+    function isAdmin() {
+      return signedIn() && request.auth.token.email in ['palmeraexp@gmail.com'];
+    }
 
     // The file name must begin with the caller's own uid, matching the
     // `<uid>-<UUID>.jpg` convention uploadImage uses.
@@ -65,11 +68,24 @@ service firebase.storage {
              && (request.resource.contentType.matches('image/.*')
                  || request.resource.contentType == 'application/pdf');
     }
-    match /partners/{uid}/{allPaths=**} {
-      // Listing media is public-facing (guests browse before signing in).
-      allow read: if true;
+    // KYC documents (ID copies, business registration, bank statements) —
+    // NEVER public. Owner and admin only. Declared BEFORE the media match so
+    // the more specific path wins for both get and list.
+    match /partners/{uid}/documents/{fileName} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
       allow write: if signedIn() && request.auth.uid == uid && validDashboardUpload();
       allow delete: if signedIn() && request.auth.uid == uid;
+    }
+    // Listing media (hero/gallery/option photos, logo, menus, product photos)
+    // is public-facing — guests browse before signing in. Every dashboard
+    // upload is exactly partners/{uid}/{folder}/{file}. Rules are OR'd across
+    // overlapping matches, so this block must itself refuse the documents
+    // folder — it does, explicitly. Public GET only; listing needs auth.
+    match /partners/{uid}/{folder}/{fileName} {
+      allow get: if folder != 'documents';
+      allow list: if folder != 'documents' && signedIn() && (request.auth.uid == uid || isAdmin());
+      allow write: if folder != 'documents' && signedIn() && request.auth.uid == uid && validDashboardUpload();
+      allow delete: if folder != 'documents' && signedIn() && request.auth.uid == uid;
     }
 
     // Anything not explicitly matched above is denied. New upload folders must
