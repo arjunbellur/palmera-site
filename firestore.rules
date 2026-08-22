@@ -21,6 +21,7 @@ service cloud.firestore {
 
     function isAdmin() {
       return request.auth != null &&
+        request.auth.token.email_verified == true &&
         request.auth.token.email in ['palmeraexp@gmail.com'];
     }
     function signedIn() { return request.auth != null; }
@@ -107,7 +108,9 @@ service cloud.firestore {
       allow create: if signedIn()
                     && ((request.resource.data.providerId == request.auth.uid
                          && ownsCompany(request.resource.data.companyId)
-                         && request.resource.data.get('tag', null) == null)
+                         && request.resource.data.get('tag', null) == null
+                         && request.resource.data.get('rating', 0) == 0
+                         && request.resource.data.get('reviews', 0) == 0)
                         || isAdmin())
                     && request.resource.data.get('active', false) == (request.resource.data.get('status', 'draft') == 'published');
       // Admin may change anything (publish, tag, curate).
@@ -126,7 +129,11 @@ service cloud.firestore {
       allow delete: if isAdmin() || (signedIn() && resource.data.providerId == request.auth.uid);
       // Options subcollection — public read, same as the listing they belong to.
       match /options/{optionId} {
-        allow read: if true;
+        // Visible exactly when the parent listing is: published → public;
+        // otherwise owner/admin only (draft pricing must not leak by id).
+        allow read: if get(/databases/$(database)/documents/experiences/$(id)).data.status == 'published'
+                    || get(/databases/$(database)/documents/experiences/$(id)).data.get('active', false) == true
+                    || (signedIn() && (get(/databases/$(database)/documents/experiences/$(id)).data.providerId == request.auth.uid || isAdmin()));
         allow write: if signedIn() &&
           (get(/databases/$(database)/documents/experiences/$(id)).data.providerId == request.auth.uid || isAdmin());
       }
@@ -430,7 +437,7 @@ service cloud.firestore {
     // by setting uid to their own auth uid and NOTHING else.
     match /suppliers/{id} {
       allow read: if signedIn() && (resource.data.uid == request.auth.uid
-                    || resource.data.email == request.auth.token.email
+                    || (resource.data.email == request.auth.token.email && request.auth.token.email_verified == true)
                     || isAdmin());
       // Partners browsing the store see active suppliers.
       allow read: if signedIn() && resource.data.status == 'active';
@@ -438,6 +445,7 @@ service cloud.firestore {
       allow update: if isAdmin();
       // The claim: uid null → own uid, all other fields untouched.
       allow update: if signedIn()
+                    && request.auth.token.email_verified == true
                     && resource.data.uid == null
                     && resource.data.email == request.auth.token.email
                     && request.resource.data.uid == request.auth.uid

@@ -35,3 +35,6 @@ next-env.d.ts
 public/videos/
 *firebase-adminsdk*.json
 serviceAccount*.json
+# every env file, with or without .local
+.env*
+!.env.example

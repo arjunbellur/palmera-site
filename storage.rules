@@ -19,7 +19,8 @@ service firebase.storage {
       return request.auth != null;
     }
     function isAdmin() {
-      return signedIn() && request.auth.token.email in ['palmeraexp@gmail.com'];
+      return signedIn() && request.auth.token.email_verified == true
+             && request.auth.token.email in ['palmeraexp@gmail.com'];
     }
 
     // The file name must begin with the caller's own uid, matching the

@@ -33,6 +33,9 @@ export async function POST(req: NextRequest) {
         // Not ours (the app's own checkout sessions hit this endpoint too).
         return NextResponse.json({ ok: true, ignored: true })
       }
+      // Async payment methods complete the session BEFORE money arrives —
+      // only a 'paid' session is a paid order.
+      if (session.payment_status !== 'paid') return NextResponse.json({ ok: true, ignored: 'not paid yet' })
       const ref = db.collection('supply_orders').doc(orderId)
       const doc = await ref.get()
       if (!doc.exists) { console.error('webhook: unknown order', orderId); return NextResponse.json({ ok: true }) }
@@ -47,17 +50,14 @@ export async function POST(req: NextRequest) {
 
     if (event.type === 'charge.refunded') {
       const charge = event.data.object
-      // Find our order via the payment intent's session (metadata lives there).
-      const piId = typeof charge.payment_intent === 'string' ? charge.payment_intent : charge.payment_intent?.id
-      if (piId) {
-        const stripe2 = new Stripe(key)
-        const sessions = await stripe2.checkout.sessions.list({ payment_intent: piId, limit: 1 })
-        const orderId = sessions.data[0]?.metadata?.orderId
-        if (orderId && sessions.data[0]?.metadata?.kind === 'supply_order') {
-          await db.collection('supply_orders').doc(orderId).update({
-            status: 'refunded', updatedAt: new Date(), 'payment.status': 'refunded',
-          })
-        }
+      // Order id rides on the charge via payment_intent_data.metadata.
+      const orderId = charge.metadata?.orderId
+      if (charge.metadata?.kind === 'supply_order' && orderId) {
+        const full = charge.amount_refunded >= charge.amount
+        await db.collection('supply_orders').doc(orderId).update(full
+          ? { status: 'refunded', updatedAt: new Date(), 'payment.status': 'refunded' }
+          // Partial refund: record it, don't flip the order.
+          : { updatedAt: new Date(), 'payment.partialRefund': charge.amount_refunded })
       }
     }
 

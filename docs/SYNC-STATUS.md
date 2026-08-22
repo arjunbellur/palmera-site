@@ -84,6 +84,15 @@ it writes a booking (⚠ would need Samson).
 Every dashboard change that touches documents/rules/indexes the app consumes
 gets a line here, newest first. Pure-UI dashboard changes are never listed.
 
+- 2026-08-22 ⚠ **Rules hardening (security audit):** (1) `isAdmin()` now also
+  requires `email_verified == true` — Firestore AND Storage; (2) supplier
+  claim/lookup requires a verified email; (3) experience CREATE by a
+  partner must carry `rating: 0` / `reviews: 0` (the client always did);
+  (4) `experiences/{id}/options` are readable only when the parent is
+  published/active, or by owner/admin — the app only reads options of
+  published listings, so no behaviour change, but NOTE the rule now does a
+  `get()` on the parent per options read. No other rule changed.
+
 - 2026-08-22 ⚠ **Experiences gain `cancelDeadlineHours: number|null`** — the
   resolved free-cancellation window (hours before `scheduledFor`) for the
   listing's policy tier, denormalized from `config/policies` at every save.

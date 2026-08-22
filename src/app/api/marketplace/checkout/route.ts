@@ -32,14 +32,23 @@ export async function POST(req: NextRequest) {
     const decoded = await getAuth().verifyIdToken(idToken).catch(() => null)
     if (!decoded) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
-    const { items, companyId, note } = await req.json() as {
-      items: { productId: string; qty: number }[]
-      companyId: string
-      note?: string
+    const body = await req.json().catch(() => null) as {
+      items?: unknown; companyId?: unknown; note?: unknown
+    } | null
+    const rawItems = Array.isArray(body?.items) ? body!.items : []
+    const companyId = typeof body?.companyId === 'string' ? body.companyId : ''
+    const note = typeof body?.note === 'string' ? body.note : ''
+    if (rawItems.length === 0 || !companyId) return NextResponse.json({ error: 'empty order' }, { status: 400 })
+    if (rawItems.length > 50) return NextResponse.json({ error: 'too many lines (max 50)' }, { status: 400 })
+    // Strict shapes: a NaN qty must never reach the receipt or Stripe.
+    const merged = new Map<string, number>()
+    for (const it of rawItems as { productId?: unknown; qty?: unknown }[]) {
+      const pid = typeof it?.productId === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(it.productId) ? it.productId : null
+      const qty = typeof it?.qty === 'number' && Number.isInteger(it.qty) ? it.qty : NaN
+      if (!pid || !(qty >= 1 && qty <= 999)) return NextResponse.json({ error: 'invalid line' }, { status: 400 })
+      merged.set(pid, Math.min(999, (merged.get(pid) || 0) + qty))
     }
-    if (!Array.isArray(items) || items.length === 0 || !companyId) {
-      return NextResponse.json({ error: 'empty order' }, { status: 400 })
-    }
+    const items = [...merged.entries()].map(([productId, qty]) => ({ productId, qty }))
 
     // The buying company must belong to the caller.
     const company = (await db.collection('companies').doc(companyId).get()).data()
@@ -79,19 +88,10 @@ export async function POST(req: NextRequest) {
     const commissionRate = typeof supplier.commissionRate === 'number' ? supplier.commissionRate : 0.1
     const commissionAmount = Math.round(orderTotal * commissionRate)
     const now = new Date()
-    const orderRef = db.collection('supply_orders').doc()
-    await orderRef.set({
-      partnerId: decoded.uid, companyId, companyName: company.name || '',
-      supplierId, supplierName: supplier.name || '',
-      items: lines, orderTotal, commissionRate, commissionAmount,
-      supplierNet: orderTotal - commissionAmount,
-      status: 'awaiting_payment', note: (note || '').slice(0, 500),
-      payment: { provider: 'stripe', sessionId: null, status: 'pending' },
-      createdAt: now, updatedAt: now, paidAt: null, acceptedAt: null, deliveredAt: null,
-    })
+    const orderRef = db.collection('supply_orders').doc() // id only — nothing written yet
 
-    // One session, keyed to the order — Stripe's idempotency guard means even
-    // a double-submit of THIS request can't create a second charge.
+    // Stripe FIRST: if the session can't be created, no order doc is left
+    // behind. Idempotency key = order id, so a double-submit can't double-charge.
     const stripe = new Stripe(stripeKey)
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
@@ -99,17 +99,28 @@ export async function POST(req: NextRequest) {
       line_items: lines.map(l => ({
         price_data: {
           currency: 'xof',
-          product_data: { name: `${l.name}${l.unitSize ? ` (${l.unitSize})` : ''}` },
+          product_data: { name: `${l.name}${l.unitSize ? ` (${l.unitSize})` : ''}`.slice(0, 120) },
           unit_amount: l.unitPrice, // XOF is zero-decimal
         },
         quantity: l.qty,
       })),
       metadata: { orderId: orderRef.id, kind: 'supply_order' },
+      // Copied onto the PaymentIntent → charge events carry it; the refund
+      // webhook needs no sessions.list round trip.
+      payment_intent_data: { metadata: { orderId: orderRef.id, kind: 'supply_order' } },
       success_url: `${SITE}/partner/marketplace?order=${orderRef.id}&pay=success`,
       cancel_url: `${SITE}/partner/marketplace?order=${orderRef.id}&pay=cancelled`,
     }, { idempotencyKey: `supply_order_${orderRef.id}` })
 
-    await orderRef.update({ 'payment.sessionId': session.id, updatedAt: new Date() })
+    await orderRef.set({
+      partnerId: decoded.uid, companyId, companyName: company.name || '',
+      supplierId, supplierName: supplier.name || '',
+      items: lines, orderTotal, commissionRate, commissionAmount,
+      supplierNet: orderTotal - commissionAmount,
+      status: 'awaiting_payment', note: note.slice(0, 500),
+      payment: { provider: 'stripe', sessionId: session.id, status: 'pending' },
+      createdAt: now, updatedAt: now, paidAt: null, acceptedAt: null, deliveredAt: null,
+    })
     return NextResponse.json({ orderId: orderRef.id, url: session.url })
   } catch (e) {
     console.error('marketplace/checkout failed:', e)
