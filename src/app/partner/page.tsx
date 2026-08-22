@@ -180,7 +180,6 @@ export default function PartnerHome() {
             <CircleStatHome label={L('upcoming_earn')} value={`${formatAmount(upcomingEarn)} XOF`} />
           </EarningsHero>
         </div>
-        <StatTile label={L('lifetime')} amount={formatAmount(lifetime)} />
       </div>
 
       {/* Performance this month (Jordan/ChatGPT #1): "How is my business doing
@@ -213,6 +212,7 @@ export default function PartnerHome() {
               <Tile label={L('perf_top')} value={top ? top[0] : '—'} sub={top ? `${top[1]} ${L('bookings_n')}` : undefined} />
               <Tile label={L('perf_upcoming')} value={String(upcomingAll.filter(b => b.status === 'confirmed').length)} />
               <Tile label={L('perf_pending')} value={String(pending.filter(b => !(b.confirmationType === 'instant')).length)} />
+              <Tile label={L('lifetime')} value={formatAmount(lifetime)} sub="XOF" />
             </div>
           </div>
         )
