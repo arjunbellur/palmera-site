@@ -16,6 +16,7 @@ import { CountTile, SparkTile, FilterChip, glass } from '../ui'
 import type { AppProfile, AppDoc, Booking, Experience } from '@/lib/schema'
 import { Users, Gem, Camera, Heart, PencilLine, MessageSquare, Coins, ListOrdered, LayoutGrid, UserPlus, Clock } from 'lucide-react'
 import { formatAmount } from '@/lib/money'
+import MembersPanel from '@/components/admin/MembersPanel'
 
 const fmt = formatAmount
 
@@ -231,6 +232,7 @@ export default function AdminAppGrowth() {
             <RankPills items={topEarners} />
           </>
         )}
+        <MembersPanel profiles={profiles} />
       </div>
       </div>
     </div>
