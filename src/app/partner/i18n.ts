@@ -83,6 +83,11 @@ const FR: Record<string, string> = {
   ps_scheduled: 'Prévu', ps_processing: 'En cours', ps_paid: 'Versé', ps_failed: 'Échoué',
   dt_title: 'Détail de la réservation', dt_booking_id: 'N° de réservation',
   dt_phone: 'Téléphone', dt_email: 'Email', dt_payment: 'Paiement',
+  dt_confirm_mode: 'Confirmation', dt_instant: 'Instantanée', dt_manual: 'Approuvée par vous', dt_nights: 'Nuits',
+  dt_options: 'Options choisies', dt_policy: 'Politique d’annulation', dt_created: 'Réservée le',
+  tier_flexible: 'Flexible', tier_moderate: 'Modérée', tier_strict: 'Stricte',
+  wa_btn: 'WhatsApp', wa_prefill: 'Bonjour, c’est {company} sur Palmera au sujet de votre réservation « {title} » le {date}.',
+  dt_respond_by: 'Répondre avant', dt_overdue: 'Délai de 24 h dépassé — répondez maintenant',
   dt_paid: 'Payé', dt_unpaid: 'Non payé', dt_refunded: 'Remboursé',
   dt_requests: 'Demandes particulières', dt_none: '—', close: 'Fermer',
 
@@ -231,6 +236,11 @@ const EN: Record<string, string> = {
   ps_scheduled: 'Scheduled', ps_processing: 'Processing', ps_paid: 'Paid', ps_failed: 'Failed',
   dt_title: 'Reservation details', dt_booking_id: 'Booking ID',
   dt_phone: 'Phone', dt_email: 'Email', dt_payment: 'Payment',
+  dt_confirm_mode: 'Confirmation', dt_instant: 'Instant', dt_manual: 'Approved by you', dt_nights: 'Nights',
+  dt_options: 'Options selected', dt_policy: 'Cancellation policy', dt_created: 'Booked on',
+  tier_flexible: 'Flexible', tier_moderate: 'Moderate', tier_strict: 'Strict',
+  wa_btn: 'WhatsApp', wa_prefill: 'Hello, this is {company} on Palmera about your booking “{title}” on {date}.',
+  dt_respond_by: 'Respond by', dt_overdue: '24h window passed — respond now',
   dt_paid: 'Paid', dt_unpaid: 'Unpaid', dt_refunded: 'Refunded',
   dt_requests: 'Special requests', dt_none: '—', close: 'Close',
 

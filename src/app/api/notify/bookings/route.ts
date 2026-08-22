@@ -125,7 +125,47 @@ export async function POST(req: NextRequest) {
       seenParty.add(partyKey(b))
       results.push({ booking: doc.id, to, title: String(b.title) })
     }
-    return NextResponse.json({ ok: true, dry, checked: snap.size, sent: results })
+    // ── Reminder pass (Jordan/ChatGPT #26): a manual-approval booking still
+    // pending after 12h gets ONE nudge. Partners are told to answer within
+    // 24h; guests shouldn't sit waiting indefinitely. Logged as
+    // `${id}_reminder` so it never repeats.
+    const REMIND_AFTER_MS = 12 * 3600 * 1000
+    const reminders: { booking: string; to?: string; skipped?: string }[] = []
+    for (const doc of ordered) {
+      const b = doc.data()
+      if (b.status !== 'pending' || b.confirmationType === 'instant') continue
+      if (typeof b.providerId !== 'string' || typeof b.bookingTotal !== 'number') continue
+      const created = b.createdAt?.toMillis?.() ?? 0
+      if (!created || Date.now() - created < REMIND_AFTER_MS) continue
+      const logRef = db.collection('email_log').doc(`${doc.id}_reminder`)
+      if ((await logRef.get()).exists) continue
+      // Only remind about bookings we actually notified (skips suppressed duplicates).
+      const first = await db.collection('email_log').doc(doc.id).get()
+      if (!first.exists || first.data()?.kind !== 'new_booking_pending') continue
+      const provider = (await db.collection('providers').doc(b.providerId).get()).data()
+      const to = provider?.email
+      if (!to) { reminders.push({ booking: doc.id, skipped: 'no email' }); continue }
+      if (dry) { reminders.push({ booking: doc.id, to }); continue }
+      const hours = Math.round((Date.now() - created) / 3600000)
+      const whenStr = b.scheduledFor?.toDate?.()?.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) ?? '—'
+      await sendEmail({
+        to,
+        subject: `⏰ Toujours en attente — ${b.title}`,
+        html: `
+<div style="font-family:Georgia,serif;max-width:520px;margin:0 auto;padding:24px">
+  <p style="letter-spacing:0.14em;font-size:11px;color:#9e763b;text-transform:uppercase">Palmera · rappel</p>
+  <h2 style="color:#2a2119;font-weight:500">Une réservation attend votre réponse depuis ${hours} h</h2>
+  <p style="color:#2a2119;font-size:14px"><strong>${b.title}</strong> — ${String(b.customerName || 'un client')} · ${whenStr} · ${(b.guestCount as number) || 1} pers.</p>
+  <p style="color:#2a2119;font-size:14px">Les clients attendent une réponse sous 24 h. Sans réponse, ils risquent de réserver ailleurs.</p>
+  <p style="margin:22px 0"><a href="https://www.palmeraexp.com/partner/reservations?f=pending" style="background:#9e763b;color:#ebe8db;text-decoration:none;padding:11px 22px;border-radius:8px;font-family:Arial,sans-serif;font-size:13px">Répondre maintenant</a></p>
+  <p style="color:#8a8577;font-size:11px">Reminder: a booking has been awaiting your response for ${hours}h — guests expect an answer within 24h.</p>
+</div>`,
+      })
+      await logRef.set({ kind: 'pending_reminder', to, sentAt: new Date(), title: b.title ?? null, party: partyKey(b) })
+      reminders.push({ booking: doc.id, to })
+    }
+
+    return NextResponse.json({ ok: true, dry, checked: snap.size, sent: results, reminders })
   } catch (e) {
     console.error('notify/bookings failed:', e)
     return NextResponse.json({ ok: false, error: String(e) }, { status: 500 })

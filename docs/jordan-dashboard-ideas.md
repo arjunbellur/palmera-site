@@ -12,8 +12,8 @@ Numbering follows the doc. Effort: 🟢 quick (hours) · 🟡 medium (a session)
 | 1b | ✅ Money vocabulary: Upcoming Earnings / Available for Payout / Paid to Date | 🟢 | Pure copy — matches the derived-earnings model we already built. |
 
 ## Reservations
-| 2 | Full detail drawer (ID, contact, options selected, commission split, policy, created date, instant vs manual) | 🟡 | Drawer exists; add commission math (company rate), selections from `checkout.selections`, policy, timestamps. |
-| 3 | Status-dependent actions (pending accept/decline exists; confirmed → message customer / report issue; completed → view payout) | 🟡 | Accept/decline/no-show shipped. "Message customer" is app-side chat (⚠ ask Samson) — WhatsApp deep link via customerPhone is the zero-impact version. "Report issue" → #33. |
+| 2 | ✅ Full detail drawer (ID, contact, options selected, commission split, policy, created date, instant vs manual) | 🟡 | Drawer exists; add commission math (company rate), selections from `checkout.selections`, policy, timestamps. |
+| 3 | ✅ Status-dependent actions (pending accept/decline exists; confirmed → message customer / report issue; completed → view payout) | 🟡 | Accept/decline/no-show shipped. "Message customer" is app-side chat (⚠ ask Samson) — WhatsApp deep link via customerPhone is the zero-impact version. "Report issue" → #33. |
 
 ## Availability — the big operational gap
 | 5 | Block dates/times/weekdays per listing or business | 🔴⚠ | Needs schema (`blockedDates`/availability doc) AND the app must respect it at booking time — joint design with Samson. Dashboard UI is the easy half. |
@@ -40,7 +40,7 @@ Numbering follows the doc. Effort: 🟢 quick (hours) · 🟡 medium (a session)
 
 ## Confirmation & cancellation
 | 25 | Policies must state financial outcomes | 🟡 | Copy once the refund rules are DECIDED (business decision first — ties to SYNC item 16, money on declined bookings). |
-| 26 | Manual-approval response deadline + reminder emails | 🟡 | Reminder = second pass in the existing notify poller (pending >N hrs → nudge). Auto-expiry after deadline would be ⚠ joint. |
+| 26 | ✅ Manual-approval response deadline + reminder emails | 🟡 | Reminder = second pass in the existing notify poller (pending >N hrs → nudge). Auto-expiry after deadline would be ⚠ joint. |
 
 ## Settings & support
 | 28 | Fuller company profile (WhatsApp, socials, hours, photos) | 🟡 | Additive fields; app already reads company docs (⚠ FYI only). |
@@ -48,7 +48,7 @@ Numbering follows the doc. Effort: 🟢 quick (hours) · 🟡 medium (a session)
 | 33 | ✅ "Get help with this booking" pre-filled support | 🟢 | `support_messages` collection + rules already exist — attach booking context. |
 
 ## Status (2026-08-21)
-✅ = shipped. Batch 1 complete (1, 1b, 7, 8, 10, 11, 14, 15, 16, 20, 24, 33) + 19 (photo drag).
+✅ = shipped. Batch 1 complete (1, 1b, 7, 8, 10, 11, 14, 15, 16, 20, 24, 33) + 19 (photo drag). Batch 2 complete (2, 3 via WhatsApp, 26).
 
 ## Suggested batches
 1. **Copy + display batch (all 🟢):** 1, 1b, 7, 8, 10, 11, 14, 15, 16, 20, 24, 33 — one to two sessions, zero shared-surface impact.

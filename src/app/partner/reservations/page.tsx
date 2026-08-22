@@ -9,7 +9,7 @@ import { toDate } from '@/lib/money'
 import { ScreenHeader, EmptyState, Chip, Money, eyebrow, GhostButton, Skeleton } from '@/components/partner/ui'
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import { LifeBuoy } from 'lucide-react'
+import { LifeBuoy, Phone, Mail, MessageCircle } from 'lucide-react'
 import ReservationCard from '@/components/partner/ReservationCard'
 import { formatAmount, formatDate } from '@/lib/money'
 import { Clock } from 'lucide-react'
@@ -410,12 +410,30 @@ export default function ReservationsScreen() {
               {row(locale === 'fr' ? 'Client' : 'Guest', b.customerName || L('dt_none'))}
               {b.customerPhone && row(L('dt_phone'), <a href={`tel:${b.customerPhone}`} style={{ color: 'var(--pf-gold)' }}>{b.customerPhone}</a>)}
               {b.customerEmail && row(L('dt_email'), <a href={`mailto:${b.customerEmail}`} style={{ color: 'var(--pf-gold)' }}>{b.customerEmail}</a>)}
+              {row(locale === 'fr' ? 'Expérience' : 'Experience', b.title)}
+              {row(L('dt_confirm_mode'), <Chip tone={b.confirmationType === 'instant' ? 'green' : 'gold'}>{b.confirmationType === 'instant' ? L('dt_instant') : L('dt_manual')}</Chip>)}
               {row(locale === 'fr' ? 'Personnes' : 'Party size', `${b.guestCount}`)}
+              {(b.nights ?? b.checkout?.nights) ? row(L('dt_nights'), String(b.nights ?? b.checkout?.nights)) : null}
               {row(locale === 'fr' ? 'Date' : 'Date', when ? `${formatDate(when)} · ${when.toLocaleTimeString(locale === 'fr' ? 'fr-FR' : 'en-GB', { hour: '2-digit', minute: '2-digit' })}` : L('dt_none'))}
               {row(L('dt_payment'), payLabel)}
               {b.specialRequests && row(L('dt_requests'), b.specialRequests)}
+              {(b.selections?.length ?? 0) > 0 && row(L('dt_options'), (
+                <span style={{ display: 'flex', flexDirection: 'column', gap: '3px', alignItems: 'flex-end' }}>
+                  {b.selections.map((sel, i) => (
+                    <span key={i} style={{ fontFamily: 'var(--font-sans)', fontSize: '12px' }}>{sel.quantity > 1 ? `${sel.quantity}× ` : ''}{sel.name}{sel.price ? <span style={{ color: 'var(--pf-faint)' }}> · {formatAmount(sel.price * sel.quantity)}</span> : null}</span>
+                  ))}
+                </span>
+              ))}
+              {b.cancellationPolicy?.tier && row(L('dt_policy'), <>{L(`tier_${b.cancellationPolicy.tier}`)}{b.cancellationPolicy.customNotes ? <span style={{ color: 'var(--pf-faint)' }}> · {b.cancellationPolicy.customNotes}</span> : null}</>)}
+              {row(L('dt_created'), formatDate(b.createdAt, true))}
+              {needsAction(b) && (() => {
+                const c = toDate(b.createdAt); if (!c) return null
+                const deadline = new Date(c.getTime() + 24 * 3600 * 1000)
+                const late = deadline.getTime() < Date.now()
+                return row(L('dt_respond_by'), <span style={{ color: late ? 'var(--pf-alert)' : 'var(--pf-gold)', fontWeight: 600 }}>{late ? L('dt_overdue') : formatDate(deadline, true)}</span>)
+              })()}
               {row(L('total'), `${formatAmount(b.bookingTotal)} ${b.currency || 'XOF'}`)}
-              {row(L('commission'), `−${formatAmount(b.commissionAmount)}`)}
+              {row(`${L('commission')}${typeof b.commissionRate === 'number' ? ` (${+(b.commissionRate * 100).toFixed(2)}%)` : ''}`, `−${formatAmount(b.commissionAmount)}`)}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '10px 0 0' }}>
                 <span style={eyebrow}>{L('you_earn')}</span>
                 <Money amount={formatAmount(b.payoutAmount)} size={24} currency={b.currency || 'XOF'} />
@@ -449,8 +467,20 @@ export default function ReservationsScreen() {
                     </div>
                     {(phone || email) && (
                       <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', marginTop: '12px', paddingTop: '10px', borderTop: '1px solid var(--pf-border)' }}>
-                        {phone && <a href={`tel:${phone}`} style={{ fontFamily: 'var(--font-sans)', fontSize: '11.5px', color: 'var(--pf-gold)' }}>☏ {phone}</a>}
-                        {email && <a href={`mailto:${email}`} style={{ fontFamily: 'var(--font-sans)', fontSize: '11.5px', color: 'var(--pf-gold)', overflowWrap: 'anywhere' }}>✉ {email}</a>}
+                        {phone && <a href={`tel:${phone}`} style={{ fontFamily: 'var(--font-sans)', fontSize: '11.5px', color: 'var(--pf-gold)', display: 'inline-flex', alignItems: 'center', gap: '5px' }}><Phone size={12} strokeWidth={1.75} /> {phone}</a>}
+                        {/* Jordan/ChatGPT #3 "message customer" — WhatsApp is THE channel in
+                            Senegal; zero app impact, pre-filled with the booking context. */}
+                        {phone && (() => {
+                          const digits = phone.replace(/\D/g, '')
+                          const msg = encodeURIComponent(L('wa_prefill').replace('{company}', company?.name || 'Palmera').replace('{title}', b.title).replace('{date}', when ? formatDate(when) : ''))
+                          return (
+                            <a href={`https://wa.me/${digits}?text=${msg}`} target="_blank" rel="noopener noreferrer"
+                              style={{ fontFamily: 'var(--font-sans)', fontSize: '11.5px', color: '#25D366', display: 'inline-flex', alignItems: 'center', gap: '5px', textDecoration: 'none', border: '1px solid rgba(37,211,102,0.35)', borderRadius: '999px', padding: '3px 10px' }}>
+                              <MessageCircle size={12} strokeWidth={1.75} /> {L('wa_btn')}
+                            </a>
+                          )
+                        })()}
+                        {email && <a href={`mailto:${email}`} style={{ fontFamily: 'var(--font-sans)', fontSize: '11.5px', color: 'var(--pf-gold)', overflowWrap: 'anywhere', display: 'inline-flex', alignItems: 'center', gap: '5px' }}><Mail size={12} strokeWidth={1.75} /> {email}</a>}
                       </div>
                     )}
                     {payers > 1 && (
