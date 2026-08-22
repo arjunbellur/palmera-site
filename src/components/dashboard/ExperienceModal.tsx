@@ -24,7 +24,7 @@ import { formatAmount } from '@/lib/money'
 
 type Opt = { id: string; name: string }
 
-const CANCELLATION_TIERS: CancellationTier[] = ['flexible', 'moderate', 'strict']
+const CANCELLATION_TIERS: CancellationTier[] = ['flexible', 'moderate', 'strict', 'firm']
 
 /** Firestore Timestamp (client or admin SDK) -> separate date/time input strings. */
 function toDateTimeInputs(ts: unknown): { date: string; time: string } {
@@ -72,7 +72,7 @@ const M = {
     oneOffDesc: 'Une date unique — un événement.',
     instantDesc: 'Le client est confirmé immédiatement.',
     approveDesc: 'Vous acceptez ou refusez chaque demande — sous 24 h. Rappel par e-mail après 12 h sans réponse.',
-    cancelDesc: (h: number | undefined) => h != null ? `Annulation gratuite jusqu’à ${h}h avant.` : '',
+    cancelDesc: (h: number | undefined) => h != null ? `Remboursement intégral jusqu’à ${h >= 48 ? `${h / 24} jours` : `${h} h`} avant · aucun remboursement ensuite.` : '',
     changeLater: 'Modifiable à tout moment',
     price: 'Prix (XOF) *', priceIs: 'Ce prix s’applique', perGroup: 'Au groupe entier', perPerson: 'Par personne',
     minGroup: 'Groupe minimum', maxGroup: 'Groupe maximum', noLimit: 'Sans limite', unlimited: 'Illimité',
@@ -108,7 +108,7 @@ const M = {
     langLabels: { French: 'Français', English: 'Anglais', Wolof: 'Wolof', Arabic: 'Arabe', Spanish: 'Espagnol' } as Record<string, string>,
     whenBooks: 'Quand un groupe réserve', instant: 'Confirmé instantanément', approve: 'J’approuve chaque réservation',
     cancelPolicy: 'Politique d’annulation', confirmTier: '— à confirmer',
-    tierLabels: { flexible: 'Flexible', moderate: 'Modérée', strict: 'Stricte' } as Record<string, string>,
+    tierLabels: { flexible: '24 heures', moderate: '48 heures', strict: '3 jours', firm: '5 jours' } as Record<string, string>,
     notesPh: 'Autre chose à savoir pour les clients (facultatif)',
     addons: 'Choix & extras',
     ao_q: 'Les clients doivent-ils choisir ou ajouter quelque chose en réservant ?',
@@ -176,7 +176,7 @@ const M = {
     oneOffDesc: 'A single date — an event.',
     instantDesc: 'The guest is confirmed immediately.',
     approveDesc: 'You accept or decline each request — within 24h. Email reminder after 12h without a response.',
-    cancelDesc: (h: number | undefined) => h != null ? `Free cancellation up to ${h}h before.` : '',
+    cancelDesc: (h: number | undefined) => h != null ? `Full refund up to ${h >= 48 ? `${h / 24} days` : `${h}h`} before · no refund after that.` : '',
     changeLater: 'You can change this later',
     price: 'Price (XOF) *', priceIs: 'This price is', perGroup: 'For the whole group', perPerson: 'Per person',
     minGroup: 'Smallest group', maxGroup: 'Largest group', noLimit: 'No limit', unlimited: 'Unlimited',
@@ -212,7 +212,7 @@ const M = {
     langLabels: { French: 'French', English: 'English', Wolof: 'Wolof', Arabic: 'Arabic', Spanish: 'Spanish' } as Record<string, string>,
     whenBooks: 'When a group books', instant: 'Confirmed instantly', approve: 'I approve each booking',
     cancelPolicy: 'Cancellation policy', confirmTier: '— please confirm',
-    tierLabels: { flexible: 'Flexible', moderate: 'Moderate', strict: 'Strict' } as Record<string, string>,
+    tierLabels: { flexible: '24 hours', moderate: '48 hours', strict: '3 days', firm: '5 days' } as Record<string, string>,
     notesPh: 'Anything else guests should know (optional)',
     addons: 'Choices & extras',
     ao_q: 'Do guests need to choose or add anything when they book?',

@@ -147,7 +147,12 @@ export type PriceUnit = 'flat' | 'per_person'        // v3.2
 export type ConfirmationType = 'instant' | 'provider_confirmed'
 export type ScheduleType = 'one_time' | 'ongoing' | 'scheduled'
 export type ExperienceStatus = 'draft' | 'pending_review' | 'published' | 'unpublished' | 'archived'
-export type CancellationTier = 'flexible' | 'moderate' | 'strict'
+// Jordan's final call (2026-08-23): four free-cancellation windows — 24h,
+// 48h, 3 days, 5 days. OUTSIDE the window: full refund. INSIDE: no refund
+// (the business is paid in full, commission applies). Tier ids are stable
+// labels; the hours live in config/policies and are denormalized onto each
+// listing as cancelDeadlineHours.
+export type CancellationTier = 'flexible' | 'moderate' | 'strict' | 'firm'
 
 export interface CancellationPolicy {
   tier: CancellationTier
@@ -263,6 +268,8 @@ export interface PolicyTier {
 export interface PoliciesConfig {
   tiers: Record<CancellationTier, PolicyTier>
   version: string
+  /** The refund matrix, stated once for both clients. */
+  refundRules?: { outsideWindow: 'full'; insideWindow: 'none'; noShow: 'none'; businessCancelsPaid: 'full' }
 }
 
 // ══════════════════════════════════════════════════════════════════════════

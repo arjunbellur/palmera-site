@@ -39,7 +39,7 @@ Numbering follows the doc. Effort: 🟢 quick (hours) · 🟡 medium (a session)
 | 24 | ✅ "Required Choice" / "Optional Add-ons" wording | 🟢 | Aligns with the question-first editor we shipped. |
 
 ## Confirmation & cancellation
-| 25 | Policies must state financial outcomes | 🟡 | Copy once the refund rules are DECIDED (business decision first — ties to SYNC item 16, money on declined bookings). |
+| 25 | ✅ Policies must state financial outcomes | 🟡 | Copy once the refund rules are DECIDED (business decision first — ties to SYNC item 16, money on declined bookings). |
 | 26 | ✅ Manual-approval response deadline + reminder emails | 🟡 | Reminder = second pass in the existing notify poller (pending >N hrs → nudge). Auto-expiry after deadline would be ⚠ joint. |
 
 ## Settings & support
@@ -58,7 +58,7 @@ Numbering follows the doc. Effort: 🟢 quick (hours) · 🟡 medium (a session)
 | 6 | "Any time" needs operating hours | Same model as #5 — hours are fiction unless the app respects them. Could ship as informational-only, but that misleads partners. | Part of the availability design above. |
 | 17 | Per-day hours, booking lead time, min notice, same-day toggle | Same family; designed once as ONE availability model, not three patches. | Same. |
 | 9 | Payout statements / downloadable CSV-PDF per payout | No payouts exist yet (ledger + payouts collections empty; completion mechanism — SYNC item 11 — not built). Nothing to itemise. CSV export of the ledger already exists for when entries appear. | First real payout batch; then build "open a payout → see its bookings → download". |
-| 25 | Cancellation policies must state financial outcomes | Copy is easy; the RULES aren't decided (what happens inside the window — refund %, does the business still get paid, does Palmera keep commission). Also ties to SYNC item 16 (money collected on declined bookings) and the app's refund trigger. | Arjun + Jordan decide the refund matrix per tier → write it into the tier cards + listing policy field (the 24h/48h field from the Dashboard Time call). |
+| 25 | ✅ Cancellation policies must state financial outcomes | Copy is easy; the RULES aren't decided (what happens inside the window — refund %, does the business still get paid, does Palmera keep commission). Also ties to SYNC item 16 (money collected on declined bookings) and the app's refund trigger. | Arjun + Jordan decide the refund matrix per tier → write it into the tier cards + listing policy field (the 24h/48h field from the Dashboard Time call). |
 | 30 | Granular notification preferences (event × channel; WhatsApp) | Email preferences alone are a session; WhatsApp needs a WhatsApp Business API provider (Twilio/360dialog), template approval, and a phone-number strategy — separate infrastructure project. | Decide on a WhatsApp provider; then build prefs with email first, WhatsApp second. |
 | 20b | ✨ "Improve description" AI rewrite | Nice-to-have; guidance line shipped instead. Small API route + a button. | One session whenever wanted — no blockers. |
 | 3b | "Message customer" via in-app chat (vs WhatsApp) | In-app chat is Samson's surface (chat_threads/messages are membership-gated; a partner isn't a member). WhatsApp deep link shipped as the zero-impact version. | Samson adds partner↔guest threads; then the dashboard can embed them. |

@@ -84,6 +84,22 @@ it writes a booking (⚠ would need Samson).
 Every dashboard change that touches documents/rules/indexes the app consumes
 gets a line here, newest first. Pure-UI dashboard changes are never listed.
 
+- 2026-08-23 ⚠ **Cancellation & refund policy — DECIDED (Jordan).** Four
+  free-cancellation windows: **24 h / 48 h / 3 days / 5 days**. Outside the
+  window → full refund. Inside → no refund (business paid in full,
+  commission applies). No-show → no refund. Business cancels/declines a
+  PAID booking → full refund, no commission.
+  Data: `config/policies` rewritten (version 2026-08-23) — tiers
+  `flexible: 24h, moderate: 48h (was 72), strict: 72h (was 168), firm: 120h
+  (NEW)`, `partialRefundPct: 0` everywhere, plus an explicit `refundRules`
+  map. `cancelDeadlineHours` BACKFILLED on all 35 experiences from the new
+  windows — read that field; it's authoritative. Existing bookings keep the
+  tier they were created with; the window for refund decisions is the
+  listing's `cancelDeadlineHours` at cancel time.
+  **App work (Samson):** execute the refund in Stripe/PayDunya per these
+  rules on guest cancel; refund in full on partner decline of a paid
+  booking (closes items 16/17's money leg).
+
 - 2026-08-22 ⚠ FYI **Companies gain optional `email`, `instagram`, `tiktok`,
   `description`** (Jordan/ChatGPT #28 — fuller public profile). Additive,
   null/absent on existing docs. If the app renders a company card, it can

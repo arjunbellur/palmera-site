@@ -37,10 +37,12 @@ const categories = {
 const policies = {
   version: 'v1',
   tiers: {
-    flexible: { cancelDeadlineHours: 24, fullRefundBeforeDeadline: true, partialRefundPct: 0, noShowPolicy: 'No refund for no-shows.', reschedulingRules: 'Free rescheduling up to 24h before.', feesRefundable: true },
-    moderate: { cancelDeadlineHours: 72, fullRefundBeforeDeadline: true, partialRefundPct: 50, noShowPolicy: 'No refund for no-shows.', reschedulingRules: 'Free rescheduling up to 72h before.', feesRefundable: false },
-    strict: { cancelDeadlineHours: 168, fullRefundBeforeDeadline: true, partialRefundPct: 0, noShowPolicy: 'No refund for no-shows.', reschedulingRules: 'Rescheduling at provider discretion.', feesRefundable: false },
+    flexible: { cancelDeadlineHours: 24, fullRefundBeforeDeadline: true, partialRefundPct: 0, noShowPolicy: 'No refund for no-shows.', reschedulingRules: 'At provider discretion.', feesRefundable: true },
+    moderate: { cancelDeadlineHours: 48, fullRefundBeforeDeadline: true, partialRefundPct: 0, noShowPolicy: 'No refund for no-shows.', reschedulingRules: 'At provider discretion.', feesRefundable: true },
+    strict:   { cancelDeadlineHours: 72, fullRefundBeforeDeadline: true, partialRefundPct: 0, noShowPolicy: 'No refund for no-shows.', reschedulingRules: 'At provider discretion.', feesRefundable: true },
+    firm:     { cancelDeadlineHours: 120, fullRefundBeforeDeadline: true, partialRefundPct: 0, noShowPolicy: 'No refund for no-shows.', reschedulingRules: 'At provider discretion.', feesRefundable: true },
   },
+  refundRules: { outsideWindow: 'full', insideWindow: 'none', noShow: 'none', businessCancelsPaid: 'full' },
 }
 
 // Palmera's fixed human countersignatory. Merged (not overwritten) so an
