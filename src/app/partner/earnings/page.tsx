@@ -188,6 +188,22 @@ export default function EarningsScreen() {
           <div style={eyebrow}>{L('lifetime')}</div>
           <div style={{ marginTop: '6px' }}><Money amount={formatAmount(lifetime)} size={26} /></div>
         </div>
+        {/* Jordan/ChatGPT #23: extras are the upsell engine — show what they bring in. */}
+        {(() => {
+          const live = bookings.filter(b => ['confirmed', 'completed'].includes(b.status))
+          const extras = live.reduce((s, b) => s + (b.selections || []).reduce((t, sel) => t + (sel.price || 0) * (sel.quantity || 1), 0), 0)
+          const withExtras = live.filter(b => (b.selections?.length ?? 0) > 0).length
+          if (live.length === 0) return null
+          return (
+            <div className="pf-glass" style={cardShape}>
+              <div style={eyebrow}>{L('extras_rev')}</div>
+              <div style={{ marginTop: '6px' }}><Money amount={formatAmount(extras)} size={26} /></div>
+              <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'var(--pf-faint)', marginTop: '5px' }}>
+                {withExtras}/{live.length} {L('extras_rev_sub')}
+              </div>
+            </div>
+          )
+        })()}
         <div className="pf-glass" style={cardShape}>
           <div style={eyebrow}>{L('comm_title')}</div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: '26px', color: 'var(--pf-text)', marginTop: '6px' }}>

@@ -68,6 +68,7 @@ const FR: Record<string, string> = {
   upcoming_earn_note: 'Réservations confirmées à venir. Payable après l’expérience.',
   perf_title: 'Votre activité sur Palmera', perf_month_res: 'Réservations ce mois', perf_month_rev: 'Revenus ce mois',
   perf_completed: 'Expériences réalisées', perf_cancel: 'Taux d’annulation', perf_avg: 'Panier moyen', perf_top: 'Expérience la plus réservée',
+  extras_rev: 'Revenus des extras', extras_rev_sub: 'réservations avec extras',
   comm_title: 'Commission Palmera', comm_per_booking: 'par réservation éligible', comm_first_year: 'Première année · se termine le',
   lc_title: 'Le parcours de votre argent',
   lc_paid: 'Client a payé', lc_upcoming: 'Réservation à venir', lc_done: 'Expérience réalisée', lc_eligible: 'Éligible au versement', lc_paidout: 'Versé',
@@ -112,6 +113,7 @@ const FR: Record<string, string> = {
   list_intro: 'Les expériences que vous proposez sur Palmera.',
   new_listing: 'Nouvelle expérience', from: 'à partir de',
   list_empty_t: 'Aucune expérience', list_empty_b: 'Ajoutez votre première expérience pour commencer à recevoir des réservations.',
+  preview_guest: 'Aperçu côté client',
   st_published: 'En ligne', st_draft: 'Brouillon', st_pending: 'En révision', st_unpublished: 'Retirée', st_archived: 'Archivée',
 
   set_label: 'Réglages', set_title: 'Réglages',
@@ -221,6 +223,7 @@ const EN: Record<string, string> = {
   upcoming_earn_note: 'Confirmed bookings still to come. Payable after the experience.',
   perf_title: 'How you are doing on Palmera', perf_month_res: 'Reservations this month', perf_month_rev: 'Earnings this month',
   perf_completed: 'Completed experiences', perf_cancel: 'Cancellation rate', perf_avg: 'Average booking value', perf_top: 'Most-booked experience',
+  extras_rev: 'Revenue from extras', extras_rev_sub: 'bookings with extras',
   comm_title: 'Palmera commission', comm_per_booking: 'per eligible booking', comm_first_year: 'First year · ends',
   lc_title: 'Where your money is',
   lc_paid: 'Customer paid', lc_upcoming: 'Booking upcoming', lc_done: 'Experience completed', lc_eligible: 'Eligible for payout', lc_paidout: 'Paid out',
@@ -265,6 +268,7 @@ const EN: Record<string, string> = {
   list_intro: 'The experiences you offer on Palmera.',
   new_listing: 'New experience', from: 'from',
   list_empty_t: 'No experiences yet', list_empty_b: 'Add your first experience to start receiving bookings.',
+  preview_guest: 'Preview as guest',
   st_published: 'Live', st_draft: 'Draft', st_pending: 'In review', st_unpublished: 'Unpublished', st_archived: 'Archived',
 
   set_label: 'Settings', set_title: 'Settings',

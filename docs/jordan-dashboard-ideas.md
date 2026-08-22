@@ -28,14 +28,14 @@ Numbering follows the doc. Effort: 🟢 quick (hours) · 🟡 medium (a session)
 
 ## Listings
 | 11 | ✅ Status filters All/Live/Draft/Unpublished | 🟢 | Category chips exist; add status chips. |
-| 12 | "Preview as guest" on every listing card | 🟡 | Step-8 preview exists — extract into a reusable modal. |
+| 12 | ✅ "Preview as guest" on every listing card | 🟡 | Step-8 preview exists — extract into a reusable modal. |
 | 14 | ✅ Pricing step shows commission + "you earn" net | 🟢 | Company rate is loaded; pure display. |
 | 15 | ✅ Group-price example uses real max group + price | 🟢 | |
 | 16 | ✅ Category-aware group-size language (occupancy/party size/passengers…) | 🟢 | i18n label map keyed on category. |
-| 18 | Structured duration ([2][hours]) | 🟡⚠ | Additive schema field alongside the free-text one; app can ignore. |
+| 18 | ✅ Structured duration ([2][hours]) | 🟡⚠ | Additive schema field alongside the free-text one; app can ignore. |
 | 19 | ✅ Drag-reorder photos | 🟡 | We shipped drag for option sets — same pattern on the photo grid. |
 | 20 | ✅ Description guidance + later ✨ AI improve | 🟢 / 🟡 | Placeholder copy now; AI rewrite is a small API route later. |
-| 23 | Category-based extras suggestions + track extras revenue | 🟡 | Suggestion chips per category (pure dashboard). Extras revenue needs `checkout.selections` totals — derivable. |
+| 23 | ✅ Category-based extras suggestions + track extras revenue | 🟡 | Suggestion chips per category (pure dashboard). Extras revenue needs `checkout.selections` totals — derivable. |
 | 24 | ✅ "Required Choice" / "Optional Add-ons" wording | 🟢 | Aligns with the question-first editor we shipped. |
 
 ## Confirmation & cancellation
@@ -48,7 +48,7 @@ Numbering follows the doc. Effort: 🟢 quick (hours) · 🟡 medium (a session)
 | 33 | ✅ "Get help with this booking" pre-filled support | 🟢 | `support_messages` collection + rules already exist — attach booking context. |
 
 ## Status (2026-08-21)
-✅ = shipped. Batch 1 complete (1, 1b, 7, 8, 10, 11, 14, 15, 16, 20, 24, 33) + 19 (photo drag). Batch 2 complete (2, 3 via WhatsApp, 26).
+✅ = shipped. Batch 1 complete (1, 1b, 7, 8, 10, 11, 14, 15, 16, 20, 24, 33) + 19 (photo drag). Batch 2 complete (2, 3 via WhatsApp, 26). Batch 3 complete (12, 18, 23).
 
 ## Suggested batches
 1. **Copy + display batch (all 🟢):** 1, 1b, 7, 8, 10, 11, 14, 15, 16, 20, 24, 33 — one to two sessions, zero shared-surface impact.

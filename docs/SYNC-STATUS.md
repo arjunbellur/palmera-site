@@ -84,6 +84,12 @@ it writes a booking (⚠ would need Samson).
 Every dashboard change that touches documents/rules/indexes the app consumes
 gets a line here, newest first. Pure-UI dashboard changes are never listed.
 
+- 2026-08-21 ⚠ **Experiences gain optional `durationValue` (number) +
+  `durationUnit` ('minutes'|'hours'|'days'|'nights')** — structured duration
+  from the editor. Purely additive: the legacy `duration` string is STILL
+  written (synthesized, e.g. "2 heures"), so nothing the app renders
+  changes. Null on older listings until edited.
+
 - 2026-08-21 ⚠ FYI **Partners can now write to `support_messages`** ("Get help
   with this booking" in the reservation drawer). Docs use the app's
   snake_case convention under the existing create rule (`user_id` = caller)

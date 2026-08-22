@@ -14,6 +14,7 @@ import { useEffect, useState } from 'react'
 import PhotoUpload from './PhotoUpload'
 import MenuUpload from './MenuUpload'
 import GalleryUpload from './GalleryUpload'
+import ListingPreview from './ListingPreview'
 import { getEnabledCategories, getEnabledCities, getPolicies } from '@/lib/config'
 import { useLocale } from '@/lib/use-locale'
 import type { Experience, OptionGroup, Option, CancellationTier, ExperienceMode, PriceUnit, ConfirmationType, ScheduleType } from '@/lib/schema'
@@ -86,6 +87,8 @@ const M = {
     eventDate: 'Date de l’événement', startTime: 'Heure de début',
     where: 'Où est-ce ? (nom du lieu)', wherePh: 'ex. « Plage de Ngor »',
     duration: 'Combien de temps ça dure ?', durationPh: 'ex. « 2 heures »',
+    durUnits: { minutes: 'minutes', hours: 'heures', days: 'jours', nights: 'nuits' } as Record<string, string>,
+    durFree: 'Texte libre', durStructured: 'Durée',
     maps: 'Lien Google Maps', needPub: '*requis pour publier',
     mapsPh: 'Collez le lien Google Maps de votre lieu',
     mapsHint: 'Dans Google Maps : trouvez votre lieu → Partager → Copier le lien, puis collez-le ici. Les clients l’utilisent pour s’y rendre.',
@@ -126,6 +129,7 @@ const M = {
     optNamePhChoice: 'ex. « Vue mer »', optNamePhExtras: 'ex. « Formule boissons »',
     optPricePh: '+ Prix (XOF)',
     addOptChoice: '+ Ajouter une option', addOptExtras: '+ Ajouter un extra',
+    suggTitle: 'Suggestions pour cette catégorie — touchez pour ajouter',
     optDescPh: 'Courte description (facultatif)', photo: 'Photo',
     toPublish: 'Pour publier, ajoutez :', blockPhoto: 'une photo', blockMaps: 'un lien Google Maps', blockCancel: 'la politique d’annulation',
     back: '← Retour', next: 'Suivant →', saveDraft: 'Enregistrer le brouillon',
@@ -186,6 +190,8 @@ const M = {
     eventDate: 'Event date', startTime: 'Start time',
     where: 'Where is it? (name of the place)', wherePh: 'e.g. "Plage de Ngor"',
     duration: 'How long does it last?', durationPh: 'e.g. "2 hours"',
+    durUnits: { minutes: 'minutes', hours: 'hours', days: 'days', nights: 'nights' } as Record<string, string>,
+    durFree: 'Free text', durStructured: 'Duration',
     maps: 'Google Maps link', needPub: '*needed to publish',
     mapsPh: 'Paste the Google Maps link to your spot',
     mapsHint: 'In Google Maps: find your spot → Share → Copy link, and paste it here. Guests use it to navigate.',
@@ -226,6 +232,7 @@ const M = {
     optNamePhChoice: 'e.g. "Sea view"', optNamePhExtras: 'e.g. "Drinks package"',
     optPricePh: '+ Price (XOF)',
     addOptChoice: '+ Add an option', addOptExtras: '+ Add an extra',
+    suggTitle: 'Suggestions for this category — tap to add',
     optDescPh: 'Short description (optional)', photo: 'Photo',
     toPublish: 'To publish, add:', blockPhoto: 'a photo', blockMaps: 'a Google Maps link', blockCancel: 'cancellation policy',
     back: '← Back', next: 'Next →', saveDraft: 'Save as draft',
@@ -307,6 +314,24 @@ const emptyOption = (groupId: string): Option & { _isNew?: boolean } => ({
 })
 
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR').format(Math.round(n))
+
+// Jordan/ChatGPT #23: extras are Palmera's upsell engine — seed each category
+// with the add-ons a business would otherwise forget to list.
+const EXTRAS_SUGGESTIONS: Record<string, { fr: string; en: string }[]> = {
+  hotels: [{ fr: 'Petit-déjeuner', en: 'Breakfast' }, { fr: 'Transfert aéroport', en: 'Airport transfer' }, { fr: 'Départ tardif', en: 'Late checkout' }, { fr: 'Dîner', en: 'Dinner' }, { fr: 'Spa', en: 'Spa' }],
+  villas: [{ fr: 'Chef privé', en: 'Private chef' }, { fr: 'Ménage quotidien', en: 'Daily housekeeping' }, { fr: 'Transfert aéroport', en: 'Airport transfer' }, { fr: 'Petit-déjeuner', en: 'Breakfast' }],
+  yachts: [{ fr: 'Traiteur', en: 'Catering' }, { fr: 'Champagne', en: 'Champagne' }, { fr: 'Photographe', en: 'Photographer' }, { fr: 'DJ', en: 'DJ' }],
+  islands: [{ fr: 'Déjeuner', en: 'Lunch' }, { fr: 'Équipement snorkeling', en: 'Snorkeling gear' }, { fr: 'Photographe', en: 'Photographer' }],
+  safari: [{ fr: 'Transport', en: 'Transportation' }, { fr: 'Repas', en: 'Meal' }, { fr: 'Guide privé', en: 'Private guide' }],
+  rentals: [{ fr: 'Chauffeur', en: 'Driver' }, { fr: 'Siège enfant', en: 'Child seat' }, { fr: 'Livraison à l’aéroport', en: 'Airport delivery' }, { fr: 'Plein d’essence', en: 'Full tank' }],
+  dining: [{ fr: 'Accord mets-vins', en: 'Wine pairing' }, { fr: 'Gâteau d’anniversaire', en: 'Birthday cake' }, { fr: 'Salle privée', en: 'Private room' }, { fr: 'Bouteille de champagne', en: 'Bottle of champagne' }],
+  nightlife: [{ fr: 'Service bouteille', en: 'Bottle service' }, { fr: 'Table VIP', en: 'VIP table' }, { fr: 'Coupe-file', en: 'Skip the line' }],
+  wellness: [{ fr: 'Séance prolongée', en: 'Extended session' }, { fr: 'Formule duo', en: 'Couples package' }, { fr: 'Thé & collation', en: 'Tea & snack' }],
+  activities: [{ fr: 'Photos souvenir', en: 'Souvenir photos' }, { fr: 'Équipement', en: 'Equipment' }, { fr: 'Transport', en: 'Transportation' }, { fr: 'Collation', en: 'Snack' }],
+  entertainment: [{ fr: 'Place VIP', en: 'VIP seat' }, { fr: 'Rencontre avec les artistes', en: 'Meet & greet' }, { fr: 'Boisson offerte', en: 'Welcome drink' }],
+  sports: [{ fr: 'Équipement', en: 'Equipment' }, { fr: 'Coach privé', en: 'Private coach' }, { fr: 'Boissons', en: 'Drinks' }],
+  lifestyle: [{ fr: 'Photographe', en: 'Photographer' }, { fr: 'Transport', en: 'Transportation' }, { fr: 'Champagne', en: 'Champagne' }],
+}
 
 // One-tap starter examples for the Choices & extras step, keyed by category id
 // (config/categories). Tapping a chip creates a correctly-kinded, pre-named set
@@ -422,7 +447,7 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
     cancellationPolicy: { tier: 'moderate', customNotes: null, policyVersion: 'v1' },
     scheduleType: 'ongoing', schedule: null, optionGroups: [],
     title: '', location: '', category: defaultCategory || '', city: defaultCity || '',
-    mapsLink: null, lat: null, lng: null, duration: '', minGuests: 1, maxGuests: 10,
+    mapsLink: null, lat: null, lng: null, duration: '', durationValue: null, durationUnit: null, minGuests: 1, maxGuests: 10,
     menuUrl: null, menuType: null,
     img: '', gallery: [], description: '', includes: [], highlights: [],
     languages: [], excludes: [], dressCode: null,
@@ -497,6 +522,7 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
   const removeGroup = (id: string) => setGroups((g) => g.filter((x) => x.id !== id))
   const updateGroup = (id: string, patch: Partial<OptionGroup>) => setGroups((g) => g.map((x) => (x.id === id ? { ...x, ...patch } : x)))
   const addOption = (groupId: string) => setGroups((g) => g.map((x) => (x.id === groupId ? { ...x, options: [...x.options, emptyOption(groupId)] } : x)))
+  const addNamedOption = (groupId: string, name: string) => setGroups((g) => g.map((x) => (x.id === groupId ? { ...x, options: [...x.options, { ...emptyOption(groupId), name }] } : x)))
   const removeOption = (groupId: string, idx: number) => setGroups((g) => g.map((x) => (x.id === groupId ? { ...x, options: x.options.filter((_, i) => i !== idx) } : x)))
   const moveOption = (groupId: string, from: number, to: number) => setGroups((g) => g.map((x) => {
     if (x.id !== groupId || to < 0 || to >= x.options.length) return x
@@ -695,7 +721,30 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
 
       <div style={rowStyle}>
         <div><label style={labelStyle}>{T.where}</label><input style={inputStyle} placeholder={T.wherePh} value={form.location} onChange={(e) => set('location', e.target.value)} /></div>
-        <div><label style={labelStyle}>{T.duration}</label><input style={inputStyle} placeholder={T.durationPh} value={form.duration} onChange={(e) => set('duration', e.target.value)} /></div>
+        <div>
+          <label style={labelStyle}>{T.duration}</label>
+          {/* Jordan/ChatGPT #18: structured [2][hours] — data Palmera can schedule
+              with later. Writes durationValue/durationUnit AND the legacy
+              `duration` string the app already renders. Hotels default to nights. */}
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <input style={{ ...inputStyle, flex: '0 0 5.5rem' }} type="number" min="0" inputMode="numeric" placeholder="2"
+              value={form.durationValue ?? ''}
+              onChange={(e) => {
+                const v = e.target.value === '' ? null : Math.max(0, parseFloat(e.target.value) || 0)
+                const u = form.durationUnit || (form.category === 'hotels' || form.category === 'villas' ? 'nights' : 'hours')
+                setForm((f) => ({ ...f, durationValue: v, durationUnit: u, duration: v ? `${v} ${T.durUnits[u]}` : '' }))
+              }} />
+            <select style={{ ...inputStyle, flex: 1 }}
+              value={form.durationUnit || (form.category === 'hotels' || form.category === 'villas' ? 'nights' : 'hours')}
+              onChange={(e) => {
+                const u = e.target.value as NonNullable<typeof form.durationUnit>
+                setForm((f) => ({ ...f, durationUnit: u, duration: f.durationValue ? `${f.durationValue} ${T.durUnits[u]}` : f.duration }))
+              }}>
+              {(['minutes', 'hours', 'days', 'nights'] as const).map((u) => <option key={u} value={u}>{T.durUnits[u]}</option>)}
+            </select>
+          </div>
+          {form.duration && form.durationValue == null && <p style={{ ...hintStyle, margin: '0.375rem 0 0' }}>{T.durFree}: {form.duration}</p>}
+        </div>
       </div>
 
       <div style={{ marginBottom: '1rem' }}>
@@ -912,6 +961,19 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
                   </div>
                 )})}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', marginTop: '0.25rem' }}>
+                  {kind === 'extras' && (EXTRAS_SUGGESTIONS[form.category || ''] || []).filter((sg) => !g.options.some((o) => o.name.trim().toLowerCase() === sg[locale].toLowerCase())).length > 0 && (
+                    <div style={{ margin: '0 0 0.75rem' }}>
+                      <p style={{ ...hintStyle, margin: '0 0 0.375rem' }}>{T.suggTitle}</p>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
+                        {(EXTRAS_SUGGESTIONS[form.category || ''] || []).filter((sg) => !g.options.some((o) => o.name.trim().toLowerCase() === sg[locale].toLowerCase())).map((sg) => (
+                          <button key={sg.en} onClick={() => addNamedOption(g.id, sg[locale])}
+                            style={{ padding: '0.3rem 0.7rem', borderRadius: '999px', border: '1px dashed var(--db-border-gold)', background: 'transparent', color: '#be9a56', fontFamily: 'var(--font-sans)', fontSize: '0.75rem', cursor: 'pointer' }}>
+                            + {sg[locale]}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <button onClick={() => addOption(g.id)} style={{ background: 'transparent', border: 'none', color: '#be9a56', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', textDecoration: 'underline', cursor: 'pointer', padding: 0 }}>{kind === 'choice' ? T.addOptChoice : T.addOptExtras}</button>
                   <button onClick={() => removeGroup(g.id)} style={{ background: 'transparent', border: 'none', color: '#e07070', fontSize: '0.6875rem', fontFamily: 'var(--font-sans)', textDecoration: 'underline', cursor: 'pointer', padding: 0 }}>{T.remove}</button>
                 </div>
@@ -950,67 +1012,7 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
 
   // ─── Guest-card preview — matched to the real app listing screen (navy
   // sheet, gold pin eyebrow, serif cream title, provider chip, FROM bar). ───
-  const stepPreview = (() => {
-    const APP = { sheet: '#0E2233', chip: '#16324a', gold: '#E9BC4F', goldDeep: '#D9A62E', cream: '#F3EBD8', dim: 'rgba(243,235,216,0.65)' }
-    const sectionLabel = (txt: string) => (
-      <p style={{ fontSize: '0.6875rem', color: '#be9a56', letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: 'var(--font-sans)', margin: '0 0 0.625rem', textAlign: 'center' }}>{txt}</p>
-    )
-    return (
-      <div>
-        {/* Home-feed card — the compact tile guests scroll past (Jordan's ask):
-            photo with a bottom gradient, title + city over it, FROM price. */}
-        {sectionLabel(T.prevHomeCard)}
-        <div style={{ maxWidth: '17rem', margin: '0 auto 1.75rem', borderRadius: '1.125rem', overflow: 'hidden', border: '1px solid var(--db-border-subtle)', background: APP.sheet, position: 'relative' }}>
-          <div style={{ height: '13rem', background: form.img ? `center/cover url(${form.img})` : '#1a2f44', display: 'grid', placeItems: 'center' }}>
-            {!form.img && <span style={{ color: APP.dim, fontFamily: 'var(--font-sans)', fontSize: '0.75rem' }}>{T.mainPhoto}</span>}
-          </div>
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(14,34,51,0) 40%, rgba(14,34,51,0.92) 100%)' }} />
-          <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '0.875rem 1rem' }}>
-            {form.city && <div style={{ color: APP.gold, fontFamily: 'var(--font-sans)', fontSize: '0.5625rem', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '0.25rem' }}>⚲ {form.city}</div>}
-            <div style={{ color: APP.cream, fontFamily: 'var(--font-serif)', fontSize: '1.0625rem', fontWeight: 600, lineHeight: 1.2, marginBottom: '0.25rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{form.title || '…'}</div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
-              <span style={{ color: APP.dim, fontFamily: 'var(--font-sans)', fontSize: '0.6875rem' }}><span style={{ color: APP.gold }}>★</span> 0.00</span>
-              <span style={{ color: APP.cream, fontFamily: 'var(--font-sans)', fontSize: '0.75rem' }}><span style={{ color: APP.dim, fontSize: '0.5625rem', letterSpacing: '0.1em' }}>{T.fromLabel}</span> {fmt(isPaid ? (form.price || 0) : 0)} XOF</span>
-            </div>
-          </div>
-        </div>
-
-        {sectionLabel(T.prevDetail)}
-        <div style={{ maxWidth: '23rem', margin: '0 auto', borderRadius: '1.25rem', overflow: 'hidden', border: '1px solid var(--db-border-subtle)', background: APP.sheet }}>
-          <div style={{ height: '11rem', background: form.img ? `center/cover url(${form.img})` : '#1a2f44', display: 'grid', placeItems: 'center' }}>
-            {!form.img && <span style={{ color: APP.dim, fontFamily: 'var(--font-sans)', fontSize: '0.75rem' }}>{T.mainPhoto}</span>}
-          </div>
-          <div style={{ padding: '1.125rem 1.25rem 0' }}>
-            {form.location && (
-              <div style={{ color: APP.gold, fontFamily: 'var(--font-sans)', fontSize: '0.625rem', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>⚲ {form.location} ↗</div>
-            )}
-            <div style={{ color: APP.cream, fontFamily: 'var(--font-serif)', fontSize: '1.5rem', fontWeight: 600, lineHeight: 1.15, marginBottom: '0.5rem' }}>{form.title || '…'}</div>
-            <div style={{ color: APP.dim, fontFamily: 'var(--font-sans)', fontSize: '0.75rem', marginBottom: '0.875rem' }}>
-              <span style={{ color: APP.gold }}>★</span> 0.00 (0) · ◍ {form.minGuests}–{form.maxGuests} {T.guestsWord}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', background: APP.chip, borderRadius: '0.875rem', padding: '0.75rem 0.875rem', marginBottom: '0.875rem' }}>
-              <span style={{ width: '2rem', height: '2rem', borderRadius: '50%', background: APP.gold, color: '#132638', display: 'grid', placeItems: 'center', fontFamily: 'var(--font-serif)', fontWeight: 700 }}>{(companyName || 'P').charAt(0).toUpperCase()}</span>
-              <span style={{ color: APP.cream, fontFamily: 'var(--font-sans)', fontSize: '0.8125rem' }}>{companyName || '—'} <span style={{ color: APP.gold }}>✓</span></span>
-            </div>
-            {form.description && (
-              <>
-                <div style={{ color: APP.gold, fontFamily: 'var(--font-sans)', fontSize: '0.625rem', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '0.375rem' }}>The Experience</div>
-                <p style={{ color: APP.dim, fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', lineHeight: 1.6, margin: 0, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{form.description}</p>
-              </>
-            )}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', margin: '1rem', padding: '0.75rem 1rem', background: APP.chip, borderRadius: '1rem' }}>
-            <div>
-              <div style={{ color: APP.dim, fontFamily: 'var(--font-sans)', fontSize: '0.5625rem', letterSpacing: '0.12em' }}>{T.fromLabel}</div>
-              <div style={{ color: APP.cream, fontFamily: 'var(--font-serif)', fontSize: '1.25rem', fontWeight: 600 }}>{fmt(isPaid ? (form.price || 0) : 0)} XOF</div>
-            </div>
-            <div style={{ background: APP.gold, color: '#132638', borderRadius: '999px', padding: '0.625rem 1.375rem', fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', fontWeight: 600 }}>{T.bookNow}</div>
-          </div>
-        </div>
-        <p style={{ ...hintStyle, textAlign: 'center', marginTop: '0.875rem' }}>{T.previewNote}</p>
-      </div>
-    )
-  })()
+  const stepPreview = <ListingPreview exp={form} companyName={companyName} locale={locale} />
 
   const stepBodies = [stepIdentity, stepPricing, stepParty, stepWhenWhere, stepPhotos, stepAddons, stepBooking, stepPreview]
   const isLast = step === T.steps.length - 1

@@ -12,7 +12,8 @@ import type { Experience, ExperienceStatus, Option, OptionGroup } from '@/lib/sc
 import { formatAmount } from '@/lib/money'
 import { ScreenHeader, EmptyState, PrimaryButton, Skeleton, card, cardShape, eyebrow, Chip, type Tone } from '@/components/partner/ui'
 import ExperienceModal from '@/components/dashboard/ExperienceModal'
-import { LayoutGrid } from 'lucide-react'
+import { LayoutGrid, Eye, Copy, X } from 'lucide-react'
+import ListingPreview from '@/components/dashboard/ListingPreview'
 
 const STATUS: Record<ExperienceStatus, { key: string; tone: Tone }> = {
   published: { key: 'st_published', tone: 'green' },
@@ -47,6 +48,7 @@ export default function ListingsScreen() {
   }
 
   const [catFilter, setCatFilter] = useState<string>('all')
+  const [preview, setPreview] = useState<Experience | null>(null)
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft' | 'unpublished'>('all')
   const [toDelete, setToDelete] = useState<Experience | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -145,13 +147,18 @@ export default function ListingsScreen() {
             return (
               <div key={e.id} onClick={() => openEdit(e)} role="button" tabIndex={0} className="pf-glass" style={{ ...cardShape, textAlign: 'left', cursor: 'pointer', padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
                 <div style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 2, display: 'flex', gap: '6px' }}>
+                  {/* Jordan/ChatGPT #12: see exactly what guests see, without entering the editor. */}
+                  <button onClick={(ev) => { ev.stopPropagation(); setPreview(e) }} title={L('preview_guest')}
+                    style={{ padding: '4px 8px', borderRadius: '7px', border: '1px solid var(--pf-border-strong)', background: 'var(--pf-sheet)', color: 'var(--pf-gold)', cursor: 'pointer', display: 'grid', placeItems: 'center' }}>
+                    <Eye size={12} strokeWidth={1.75} />
+                  </button>
                   <button onClick={(ev) => { ev.stopPropagation(); duplicate(e) }} title={L('dup')}
-                    style={{ padding: '4px 8px', borderRadius: '7px', border: '1px solid var(--pf-border-strong)', background: 'var(--pf-sheet)', color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '10px', cursor: 'pointer', opacity: dupBusyId === e.id ? 0.5 : 1 }}>
-                    {dupBusyId === e.id ? '…' : '⧉'}
+                    style={{ padding: '4px 8px', borderRadius: '7px', border: '1px solid var(--pf-border-strong)', background: 'var(--pf-sheet)', color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '10px', cursor: 'pointer', opacity: dupBusyId === e.id ? 0.5 : 1, display: 'grid', placeItems: 'center' }}>
+                    {dupBusyId === e.id ? '…' : <Copy size={12} strokeWidth={1.75} />}
                   </button>
                   <button onClick={(ev) => { ev.stopPropagation(); setToDelete(e) }} title={L('del')}
-                    style={{ padding: '4px 8px', borderRadius: '7px', border: '1px solid rgba(196,124,124,0.4)', background: 'var(--pf-sheet)', color: 'var(--pf-alert)', fontFamily: 'var(--font-sans)', fontSize: '10px', cursor: 'pointer' }}>
-                    ✕
+                    style={{ padding: '4px 8px', borderRadius: '7px', border: '1px solid rgba(196,124,124,0.4)', background: 'var(--pf-sheet)', color: 'var(--pf-alert)', cursor: 'pointer', display: 'grid', placeItems: 'center' }}>
+                    <X size={12} strokeWidth={1.75} />
                   </button>
                 </div>
                 {/* Compact cover (Jordan: density over drama — the full
@@ -183,6 +190,18 @@ export default function ListingsScreen() {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {preview && (
+        <div onClick={() => setPreview(null)} style={{ position: 'fixed', inset: 0, zIndex: 90, background: 'var(--pf-scrim)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '18px' }}>
+          <div onClick={ev => ev.stopPropagation()} className="pf-glass" style={{ width: 'min(30rem, 100%)', maxHeight: '92vh', overflowY: 'auto', borderRadius: '18px', padding: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <span style={eyebrow}>{L('preview_guest')}</span>
+              <button onClick={() => setPreview(null)} style={{ background: 'transparent', border: 'none', color: 'var(--pf-faint)', cursor: 'pointer' }}><X size={16} strokeWidth={1.75} /></button>
+            </div>
+            <ListingPreview exp={preview} companyName={company?.name} locale={locale} />
+          </div>
         </div>
       )}
 

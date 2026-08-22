@@ -193,7 +193,11 @@ export interface Experience {
   menuType?: 'pdf' | 'image' | null
   lat: number | null              // derived from mapsLink when parseable; app's pin. Partners never type these.
   lng: number | null
-  duration: string
+  duration: string            // legacy free text the app renders ("2 hours") — still written
+  /** Structured duration (2026-08-21, additive): the dashboard writes these
+   *  AND synthesizes `duration` from them. Null on older listings. */
+  durationValue?: number | null
+  durationUnit?: 'minutes' | 'hours' | 'days' | 'nights' | null
   guests: string                  // derived from min/maxGuests
   minGuests: number
   maxGuests: number
