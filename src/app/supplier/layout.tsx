@@ -152,8 +152,8 @@ function Shell({ children }: { children: React.ReactNode }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--pf-faint)' }}>{supplier?.name}</span>
             {LangToggle}
-            <button onClick={toggleTheme} aria-label="Theme" style={{ width: '30px', height: '30px', borderRadius: '8px', border: '1px solid var(--pf-border)', background: 'transparent', color: 'var(--pf-gold)', cursor: 'pointer', fontSize: '12px' }}>{theme === 'dark' ? <Moon size={14} strokeWidth={1.75} /> : <Sun size={14} strokeWidth={1.75} />}</button>
-            <button onClick={signOutAll} title={L('sign_out')} style={{ width: '30px', height: '30px', borderRadius: '8px', border: '1px solid var(--pf-border)', background: 'transparent', color: 'var(--pf-faint)', cursor: 'pointer', fontSize: '13px' }}><LogOut size={14} strokeWidth={1.75} /></button>
+            <IconButton onClick={toggleTheme} label="Toggle theme" tone="gold">{theme === 'dark' ? <Moon size={16} strokeWidth={1.75} /> : <Sun size={16} strokeWidth={1.75} />}</IconButton>
+            <IconButton onClick={signOutAll} label={L('sign_out')}><LogOut size={16} strokeWidth={1.75} /></IconButton>
           </div>
         </header>
         <main className="pf-scroll pf-ambient" style={{ flex: 1, padding: '28px 22px 48px', maxWidth: '1100px', width: '100%', margin: '0 auto' }}>

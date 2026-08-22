@@ -188,8 +188,8 @@ function Shell({ children }: { children: React.ReactNode }) {
                 <LogOut size={14} strokeWidth={1.75} /> {!collapsed && L('signout')}
               </button>
               <button onClick={toggleNav} aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
-                style={{ width: collapsed ? '30px' : '100%', height: '30px', borderRadius: '8px', border: '1px solid var(--pf-border)', background: 'transparent', color: 'var(--pf-faint)', cursor: 'pointer', fontSize: '12px' }}>
-                {collapsed ? <PanelLeftOpen size={14} strokeWidth={1.75} /> : <PanelLeftClose size={14} strokeWidth={1.75} />}
+                style={{ width: collapsed ? '40px' : '100%', height: '40px', padding: 0, borderRadius: '10px', border: '1px solid var(--pf-border)', background: 'transparent', color: 'var(--pf-faint)', cursor: 'pointer', lineHeight: 0 }}>
+                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', lineHeight: 0 }}>{collapsed ? <PanelLeftOpen size={15} strokeWidth={1.75} /> : <PanelLeftClose size={15} strokeWidth={1.75} />}</span>
               </button>
             </div>
           </aside>
@@ -204,13 +204,9 @@ function Shell({ children }: { children: React.ReactNode }) {
                   <button key={l} onClick={() => setLocale(l)} style={{ padding: '5px 9px', background: locale === l ? 'var(--pf-card)' : 'transparent', border: 'none', color: locale === l ? 'var(--pf-gold)' : 'var(--pf-faint)', fontFamily: 'var(--font-sans)', fontSize: '10px', letterSpacing: '0.06em', cursor: 'pointer' }}>{l.toUpperCase()}</button>
                 ))}
               </div>
-              <button onClick={toggleTheme} aria-label="Toggle theme" style={{ width: '30px', height: '30px', borderRadius: '8px', border: '1px solid var(--pf-border)', background: 'transparent', color: 'var(--pf-gold)', cursor: 'pointer', fontSize: '12px' }}>
-                {theme === 'dark' ? <Moon size={14} strokeWidth={1.75} /> : <Sun size={14} strokeWidth={1.75} />}
-              </button>
+              <IconButton onClick={toggleTheme} label="Toggle theme" tone="gold">{theme === 'dark' ? <Moon size={16} strokeWidth={1.75} /> : <Sun size={16} strokeWidth={1.75} />}</IconButton>
               {isMobile && (
-                <button onClick={signOut} aria-label={L('signout')} title={L('signout')} style={{ width: '30px', height: '30px', borderRadius: '8px', border: '1px solid var(--pf-border)', background: 'transparent', color: 'var(--pf-faint)', cursor: 'pointer', fontSize: '13px' }}>
-                  <LogOut size={14} strokeWidth={1.75} />
-                </button>
+                <IconButton onClick={signOut} label={L('signout')}><LogOut size={16} strokeWidth={1.75} /></IconButton>
               )}
             </div>
           </header>

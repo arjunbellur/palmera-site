@@ -151,10 +151,16 @@ export function GhostButton({ children, onClick, tone = 'neutral', ariaLabel, di
 /** 40×40 icon-only button for shell headers (theme, sign out, close). */
 export function IconButton({ children, onClick, label, tone = 'neutral' }: { children: ReactNode; onClick?: () => void; label: string; tone?: 'neutral' | 'gold' }) {
   return (
+    // Safari doesn't reliably lay out grid/flex children of a <button>, so the
+    // button is a fixed box with zero padding and an inner span does the
+    // centering. flexShrink:0 stops rails/headers from squeezing it.
     <button type="button" onClick={onClick} aria-label={label} title={label} style={{
-      width: '40px', height: '40px', borderRadius: '10px', border: '1px solid var(--pf-border)', background: 'transparent',
-      color: tone === 'gold' ? 'var(--pf-gold)' : 'var(--pf-faint)', cursor: 'pointer', display: 'grid', placeItems: 'center',
-    }}>{children}</button>
+      width: '40px', height: '40px', minWidth: '40px', minHeight: '40px', flexShrink: 0, padding: 0, margin: 0, boxSizing: 'border-box',
+      borderRadius: '10px', border: '1px solid var(--pf-border)', background: 'transparent',
+      color: tone === 'gold' ? 'var(--pf-gold)' : 'var(--pf-faint)', cursor: 'pointer', lineHeight: 0, overflow: 'hidden',
+    }}>
+      <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', lineHeight: 0 }}>{children}</span>
+    </button>
   )
 }
 

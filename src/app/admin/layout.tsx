@@ -72,11 +72,7 @@ function Shell({ children }: { children: React.ReactNode }) {
     </div>
   )
 
-  const ThemeButton = (
-    <button onClick={toggleTheme} aria-label="Toggle theme" style={{ width: '30px', height: '30px', borderRadius: '8px', border: '1px solid var(--pf-border)', background: 'transparent', color: 'var(--pf-gold)', cursor: 'pointer', fontSize: '12px' }}>
-      {theme === 'dark' ? <Moon size={14} strokeWidth={1.75} /> : <Sun size={14} strokeWidth={1.75} />}
-    </button>
-  )
+  const ThemeButton = <IconButton onClick={toggleTheme} label="Toggle theme" tone="gold">{theme === 'dark' ? <Moon size={16} strokeWidth={1.75} /> : <Sun size={16} strokeWidth={1.75} />}</IconButton>
 
   const navLink = (item: typeof NAV[number], mobile = false) => {
     // Company detail pages belong to the Directory's world.
@@ -121,8 +117,8 @@ function Shell({ children }: { children: React.ReactNode }) {
               </div>
               {/* Collapse toggle — reclaim the full width for the content. */}
               <button onClick={toggleNav} aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
-                style={{ width: collapsed ? '30px' : '100%', height: '30px', borderRadius: '8px', border: '1px solid var(--pf-border)', background: 'transparent', color: 'var(--pf-faint)', cursor: 'pointer', fontSize: '12px' }}>
-                {collapsed ? <PanelLeftOpen size={14} strokeWidth={1.75} /> : <PanelLeftClose size={14} strokeWidth={1.75} />}
+                style={{ width: collapsed ? '40px' : '100%', height: '40px', padding: 0, borderRadius: '10px', border: '1px solid var(--pf-border)', background: 'transparent', color: 'var(--pf-faint)', cursor: 'pointer', lineHeight: 0 }}>
+                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', lineHeight: 0 }}>{collapsed ? <PanelLeftOpen size={15} strokeWidth={1.75} /> : <PanelLeftClose size={15} strokeWidth={1.75} />}</span>
               </button>
             </div>
           </aside>
@@ -134,7 +130,7 @@ function Shell({ children }: { children: React.ReactNode }) {
               {Logo}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 {ThemeButton}
-                <button onClick={signOut} aria-label="Sign out" title="Sign out" style={{ width: '30px', height: '30px', borderRadius: '8px', border: '1px solid var(--pf-border)', background: 'transparent', color: 'var(--pf-faint)', cursor: 'pointer', fontSize: '13px' }}><LogOut size={14} strokeWidth={1.75} /></button>
+                <IconButton onClick={signOut} label="Sign out"><LogOut size={16} strokeWidth={1.75} /></IconButton>
               </div>
             </header>
           )}
