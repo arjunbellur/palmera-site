@@ -84,6 +84,48 @@ it writes a booking (⚠ would need Samson).
 Every dashboard change that touches documents/rules/indexes the app consumes
 gets a line here, newest first. Pure-UI dashboard changes are never listed.
 
+- 2026-08-23 ⚠ **Listing time model: NO DURATION. Bookable hours / check-in–out / event window instead.** (Jordan's call.)
+
+  **Why.** A listing-level "duration" contradicted opening hours and
+  check-in/out, and it was redundant: how long a guest gets (2 h vs 4 h on a
+  yacht, 60 vs 90 min at a spa, standard vs suite) is already a **required
+  choice** (`optionGroups` with `required: true`) on the listing. So the
+  listing now only says WHEN it's bookable.
+
+  **What the dashboard writes now (all additive; see `src/lib/schema.ts`):**
+  | Shape | Categories | Fields |
+  |---|---|---|
+  | Regular (default) | everything except hotels/villas, when `scheduleType: 'ongoing'` | `schedule.days: ['Mon'…]` (empty = every day) · `schedule.hours: { same: { open: 'HH:MM', close: 'HH:MM' }, byDay?: { Mon: {open,close} | null … } }` — `byDay[d] === null` means closed that day; a missing key means "same" applies |
+  | Stay | hotels, villas (`scheduleType: 'ongoing'`) | `schedule.days` · `checkInTime: 'HH:MM'` · `checkOutTime: 'HH:MM'` · `minNights: number` · `schedule.hours: null` |
+  | Event | any category, `scheduleType: 'one_time'` | `eventDate` (START, as before) · **`eventEnd`** (NEW, Timestamp) · `schedule: null` |
+
+  **What the dashboard no longer writes:** `duration` (now `''`),
+  `durationValue`, `durationUnit`, `schedule.timeSlots` (the free-text
+  "9h, 14h" list). `scheduleType: 'scheduled'` is no longer produced —
+  legacy docs with it should be read as `'ongoing'` + `schedule.days`.
+  Older docs keep whatever they had; nothing was bulk-rewritten.
+
+  **What the app should do:**
+  1. Booking picker for regular listings: offer START times inside
+     `schedule.hours` for the chosen day (`byDay[day] ?? same`; `null` =
+     closed; day not in `schedule.days` = closed). No end time is chosen by
+     the guest — the selected required option defines what they get.
+  2. Stays: date range picker; nights ≥ `minNights`; show check-in/out times.
+  3. Events: show `eventDate` → `eventEnd`.
+  4. Stop rendering `duration` on cards/details — it will be empty on every
+     listing saved from now on. If a card needs a "length" label, take it
+     from the required choice's option names.
+  This is the precise shape for the "availability" item already on your
+  list; enforcing it at checkout is the app's half.
+
+- 2026-08-23 ⚠ **Experiences: `duration` is no longer collected.** Jordan:
+  a start time + a duration contradicts operating hours / check-in–out.
+  The editor field is gone; new listings write `duration: ''` and never
+  write `durationValue`/`durationUnit`. Older listings keep their strings.
+  If the app renders "2 hours" on a card, expect it empty on new listings
+  — timing will come from the schedule model (start times / opening hours
+  / check-in–out) once the availability design lands (joint).
+
 - 2026-08-23 ⚠ **Cancellation & refund policy — DECIDED (Jordan).** Four
   free-cancellation windows: **24 h / 48 h / 3 days / 5 days**. Outside the
   window → full refund. Inside → no refund (business paid in full,

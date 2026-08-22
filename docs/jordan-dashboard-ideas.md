@@ -17,7 +17,7 @@ Numbering follows the doc. Effort: 🟢 quick (hours) · 🟡 medium (a session)
 
 ## Availability — the big operational gap
 | 5 | Block dates/times/weekdays per listing or business | 🔴⚠ | Needs schema (`blockedDates`/availability doc) AND the app must respect it at booking time — joint design with Samson. Dashboard UI is the easy half. |
-| 6 | "Any time" needs operating hours | 🟡⚠ | Additive schema (`hours` per weekday); app must enforce at checkout. Can ship dashboard-side first (informational), enforcement follows. |
+| 6 | ✅ (capture) "Any time" needs operating hours | 🟡⚠ | Additive schema (`hours` per weekday); app must enforce at checkout. Can ship dashboard-side first (informational), enforcement follows. |
 | 17 | Per-day hours, booking lead time, min notice, same-day toggle | 🔴⚠ | Same family as 5/6 — design once as one "Availability" model, not three patches. |
 
 ## Earnings & payouts
@@ -32,7 +32,7 @@ Numbering follows the doc. Effort: 🟢 quick (hours) · 🟡 medium (a session)
 | 14 | ✅ Pricing step shows commission + "you earn" net | 🟢 | Company rate is loaded; pure display. |
 | 15 | ✅ Group-price example uses real max group + price | 🟢 | |
 | 16 | ✅ Category-aware group-size language (occupancy/party size/passengers…) | 🟢 | i18n label map keyed on category. |
-| 18 | ✅ Structured duration ([2][hours]) | 🟡⚠ | Additive schema field alongside the free-text one; app can ignore. |
+| 18 | ❌ REMOVED — no duration concept (Jordan 2026-08-23); was: Structured duration ([2][hours]) | 🟡⚠ | Additive schema field alongside the free-text one; app can ignore. |
 | 19 | ✅ Drag-reorder photos | 🟡 | We shipped drag for option sets — same pattern on the photo grid. |
 | 20 | ✅ Description guidance + later ✨ AI improve | 🟢 / 🟡 | Placeholder copy now; AI rewrite is a small API route later. |
 | 23 | ✅ Category-based extras suggestions + track extras revenue | 🟡 | Suggestion chips per category (pure dashboard). Extras revenue needs `checkout.selections` totals — derivable. |
@@ -55,7 +55,7 @@ Numbering follows the doc. Effort: 🟢 quick (hours) · 🟡 medium (a session)
 | # | Idea | Why it's parked | What unblocks it |
 |---|---|---|---|
 | 5 | Block dates / times / weekdays per listing or business | Dashboard UI is the easy half; the app must ENFORCE availability at booking time or partners get bookings they can't honour. Needs a shared availability model (⚠ schema + Samson). | Design session with Samson: one `availability` shape covering 5/6/17, app reads it at checkout. |
-| 6 | "Any time" needs operating hours | Same model as #5 — hours are fiction unless the app respects them. Could ship as informational-only, but that misleads partners. | Part of the availability design above. |
+| 6 | ✅ (capture) "Any time" needs operating hours | Same model as #5 — hours are fiction unless the app respects them. Could ship as informational-only, but that misleads partners. | Part of the availability design above. |
 | 17 | Per-day hours, booking lead time, min notice, same-day toggle | Same family; designed once as ONE availability model, not three patches. | Same. |
 | 9 | Payout statements / downloadable CSV-PDF per payout | No payouts exist yet (ledger + payouts collections empty; completion mechanism — SYNC item 11 — not built). Nothing to itemise. CSV export of the ledger already exists for when entries appear. | First real payout batch; then build "open a payout → see its bookings → download". |
 | 25 | ✅ Cancellation policies must state financial outcomes | Copy is easy; the RULES aren't decided (what happens inside the window — refund %, does the business still get paid, does Palmera keep commission). Also ties to SYNC item 16 (money collected on declined bookings) and the app's refund trigger. | Arjun + Jordan decide the refund matrix per tier → write it into the tier cards + listing policy field (the 24h/48h field from the Dashboard Time call). |

@@ -67,7 +67,7 @@ const M = {
     payFreeDesc: 'Réserver une table ou une entrée, sans paiement. Les extras restent possibles.',
     perPersonDesc: 'Le prix × le nombre de personnes.',
     perGroupDesc: 'Un seul prix, quelle que soit la taille du groupe.',
-    anytimeDesc: 'Réservable n’importe quel jour.',
+    anytimeDesc: 'Jours d’ouverture + horaires réservables.',
     setDaysDesc: 'Des jours et heures fixes chaque semaine.',
     oneOffDesc: 'Une date unique — un événement.',
     instantDesc: 'Le client est confirmé immédiatement.',
@@ -84,14 +84,16 @@ const M = {
     partyHint: 'Palmera est fait pour réserver entre amis — c’est la taille de groupe que vous pouvez accueillir.',
     preview: 'Ce que les clients verront',
     previewLine: (n: number, total: string, each: string) => <>Un groupe de {n} amis paie <strong style={{ color: 'var(--db-text)' }}>{total} XOF</strong> — soit environ <strong style={{ color: 'var(--db-text)' }}>{each} XOF chacun</strong> une fois partagé dans l’app.</>,
-    when: 'Quand peut-on réserver ?', anytime: 'À tout moment', setDays: 'Jours & horaires fixes', oneOff: 'Événement unique',
+    when: 'Quand peut-on réserver ?', anytime: 'Horaires réguliers', setDays: 'Jours & horaires fixes', oneOff: 'Événement unique',
     daysRun: 'Jours d’ouverture', startTimes: 'Heures de début', slotsPh: 'ex. « 9h, 14h, 17h »',
+    hoursTitle: 'Horaires réservables', hoursFrom: 'De', hoursTo: 'À', hoursSame: 'Mêmes horaires tous les jours', hoursByDay: 'Horaires différents selon le jour', closed: 'Fermé',
+    hoursHint: 'Le client choisit une heure de début dans ces horaires. La durée de ce qu’il réserve (2 h, 4 h, 60 min…) se définit comme un choix obligatoire à l’étape 6 — jamais ici.',
+    stayTitle: 'Arrivée & départ', checkIn: 'Heure d’arrivée', checkOut: 'Heure de départ', minNights: 'Nuits minimum',
+    stayHint: 'Le client choisit ses dates. Les types de chambre ou formules se définissent comme un choix obligatoire à l’étape 6.',
+    eventEnd: 'Heure de fin',
     dayLabels: { Mon: 'Lun', Tue: 'Mar', Wed: 'Mer', Thu: 'Jeu', Fri: 'Ven', Sat: 'Sam', Sun: 'Dim' } as Record<string, string>,
     eventDate: 'Date de l’événement', startTime: 'Heure de début',
     where: 'Où est-ce ? (nom du lieu)', wherePh: 'ex. « Plage de Ngor »',
-    duration: 'Combien de temps ça dure ?', durationPh: 'ex. « 2 heures »',
-    durUnits: { minutes: 'minutes', hours: 'heures', days: 'jours', nights: 'nuits' } as Record<string, string>,
-    durFree: 'Texte libre', durStructured: 'Durée',
     makeMain: 'Photo principale',
     maps: 'Lien Google Maps', needPub: '*requis pour publier',
     mapsPh: 'Collez le lien Google Maps de votre lieu',
@@ -171,7 +173,7 @@ const M = {
     payFreeDesc: 'Reserve a table or a spot, no payment. Extras still possible.',
     perPersonDesc: 'The price × the number of people.',
     perGroupDesc: 'One price, whatever the group size.',
-    anytimeDesc: 'Bookable any day.',
+    anytimeDesc: 'Opening days + bookable hours.',
     setDaysDesc: 'Fixed days and times each week.',
     oneOffDesc: 'A single date — an event.',
     instantDesc: 'The guest is confirmed immediately.',
@@ -188,14 +190,16 @@ const M = {
     partyHint: 'Palmera is built for friends booking together — this is the party size you can host.',
     preview: 'What guests will see',
     previewLine: (n: number, total: string, each: string) => <>A group of {n} friends pays <strong style={{ color: 'var(--db-text)' }}>{total} XOF</strong> — about <strong style={{ color: 'var(--db-text)' }}>{each} XOF each</strong> when they split it in the app.</>,
-    when: 'When can guests book this?', anytime: 'Any time', setDays: 'Set days & times', oneOff: 'One-off event',
+    when: 'When can guests book this?', anytime: 'Regular hours', setDays: 'Set days & times', oneOff: 'One-off event',
     daysRun: 'Days it runs', startTimes: 'Start times', slotsPh: 'e.g. "9am, 2pm, 5pm"',
+    hoursTitle: 'Bookable hours', hoursFrom: 'From', hoursTo: 'To', hoursSame: 'Same hours every day', hoursByDay: 'Different hours per day', closed: 'Closed',
+    hoursHint: 'Guests pick a start time within these hours. How long what they book lasts (2h, 4h, 60 min…) is a required choice in step 6 — never here.',
+    stayTitle: 'Check-in & check-out', checkIn: 'Check-in time', checkOut: 'Check-out time', minNights: 'Minimum nights',
+    stayHint: 'Guests pick their dates. Room types or packages are a required choice in step 6.',
+    eventEnd: 'End time',
     dayLabels: { Mon: 'Mon', Tue: 'Tue', Wed: 'Wed', Thu: 'Thu', Fri: 'Fri', Sat: 'Sat', Sun: 'Sun' } as Record<string, string>,
     eventDate: 'Event date', startTime: 'Start time',
     where: 'Where is it? (name of the place)', wherePh: 'e.g. "Plage de Ngor"',
-    duration: 'How long does it last?', durationPh: 'e.g. "2 hours"',
-    durUnits: { minutes: 'minutes', hours: 'hours', days: 'days', nights: 'nights' } as Record<string, string>,
-    durFree: 'Free text', durStructured: 'Duration',
     makeMain: 'Make main',
     maps: 'Google Maps link', needPub: '*needed to publish',
     mapsPh: 'Paste the Google Maps link to your spot',
@@ -456,7 +460,7 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
     cancellationPolicy: { tier: 'moderate', customNotes: null, policyVersion: 'v1' },
     scheduleType: 'ongoing', schedule: null, optionGroups: [],
     title: '', location: '', category: defaultCategory || '', city: defaultCity || '',
-    mapsLink: null, lat: null, lng: null, duration: '', durationValue: null, durationUnit: null, minGuests: 1, maxGuests: 10,
+    mapsLink: null, lat: null, lng: null, duration: '', minGuests: 1, maxGuests: 10,
     menuUrl: null, menuType: null,
     img: '', gallery: [], description: '', includes: [], highlights: [],
     languages: [], excludes: [], dressCode: null,
@@ -469,7 +473,8 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
 
   const [eventDateStr, setEventDateStr] = useState(() => toDateTimeInputs(experience?.eventDate).date)
   const [eventTimeStr, setEventTimeStr] = useState(() => toDateTimeInputs(experience?.eventDate).time || '19:00')
-  const [timeSlotsInput, setTimeSlotsInput] = useState((experience?.schedule?.timeSlots || []).join(', '))
+  const [eventEndStr, setEventEndStr] = useState(() => toDateTimeInputs(experience?.eventEnd).time || '23:00')
+  const [hoursByDay, setHoursByDay] = useState<boolean>(() => !!experience?.schedule?.hours?.byDay && Object.keys(experience.schedule.hours.byDay).length > 0)
 
   useEffect(() => {
     getEnabledCategories().then(setCategories)
@@ -507,7 +512,6 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
   }
 
   const isPaid = form.mode === 'paid'
-  const isScheduled = form.scheduleType === 'scheduled'
   const isOneTime = form.scheduleType === 'one_time'
   const canSave = !!form.title && !!form.category && !!form.city && (!isPaid || !!form.price)
 
@@ -557,9 +561,15 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
     const eventDate = isOneTime && eventDateStr
       ? (new Date(`${eventDateStr}T${eventTimeStr || '00:00'}`) as unknown as Experience['eventDate'])
       : null
-    const schedule = isScheduled
-      ? { ...(form.schedule || {}), timeSlots: timeSlotsInput.split(',').map((s) => s.trim()).filter(Boolean) }
-      : form.schedule
+    const eventEnd = isOneTime && eventDateStr
+      ? (new Date(`${eventDateStr}T${eventEndStr || '23:59'}`) as unknown as Experience['eventEnd'])
+      : null
+    // Regular listings: days + bookable hours. No timeSlots, no duration —
+    // ever. Legacy 'scheduled' collapses into 'ongoing'.
+    const scheduleType: ScheduleType = isOneTime ? 'one_time' : 'ongoing'
+    const { timeSlots: _legacySlots, ...scheduleRest } = form.schedule || {}
+    void _legacySlots
+    const schedule = isOneTime ? null : { ...scheduleRest, hours: isStay ? null : (form.schedule?.hours || { same: { open: '09:00', close: '18:00' } }) }
     // Group size can never be inverted — clamp max up to min on save.
     const minGuests = Math.max(1, form.minGuests || 1)
     // 0 = no limit (Jordan) — preserve it; otherwise clamp to >= minGuests.
@@ -569,7 +579,8 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
       : mode === 'unpublish' ? 'unpublished'
       : (experience?.status === 'published' ? 'published' : 'draft')
     await onSave(
-      { ...form, minGuests, maxGuests, eventDate, schedule, optionGroups, providerId, companyId, status, active: status === 'published',
+      { ...form, scheduleType, minGuests, maxGuests, eventDate, eventEnd, schedule, optionGroups, providerId, companyId, status, active: status === 'published',
+        duration: '', durationValue: null, durationUnit: null, // no such concept (Jordan, 2026-08-23)
         // Samson reads this one number (Dashboard Time call): hours before the
         // experience during which a guest may still cancel for a refund.
         cancelDeadlineHours: tierHours[form.cancellationPolicy?.tier || 'moderate'] ?? null },
@@ -696,68 +707,103 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
     </>
   )
 
+  const miniLabel: React.CSSProperties = { ...labelStyle, fontSize: '0.625rem', marginBottom: '0.25rem' }
+  const isStay = form.category === 'hotels' || form.category === 'villas'
+  const hours = form.schedule?.hours || { same: { open: '09:00', close: '18:00' } }
+  const setHours = (patch: Partial<NonNullable<Experience['schedule']>['hours']> & object) =>
+    setSchedule({ hours: { ...hours, ...(patch as object) } as NonNullable<Experience['schedule']>['hours'] })
+  const timeInput = (value: string, onChange: (v: string) => void) => (
+    <input type="time" style={{ ...inputStyle, width: '7.5rem' }} value={value} onChange={(e) => onChange(e.target.value)} />
+  )
   const stepWhenWhere = (
     <>
+      {/* A listing has NO duration (Jordan). It has bookable hours (or, for
+          stays, check-in/out; for events, a start→end). What a guest gets —
+          2h vs 4h, 60 vs 90 min, suite vs standard — is a required CHOICE. */}
       <div style={{ marginBottom: '1rem' }}>
         <label style={labelStyle}>{T.when}</label>
-        <ChoiceCards value={form.scheduleType} onChange={(a) => set('scheduleType', a)} options={[
-          { v: 'ongoing' as ScheduleType, icon: '∞', label: T.anytime, desc: T.anytimeDesc },
-          { v: 'scheduled' as ScheduleType, icon: '▤', label: T.setDays, desc: T.setDaysDesc },
+        <ChoiceCards value={form.scheduleType === 'scheduled' ? 'ongoing' : form.scheduleType} onChange={(a) => set('scheduleType', a)} options={[
+          { v: 'ongoing' as ScheduleType, icon: '◷', label: T.anytime, desc: T.anytimeDesc },
           { v: 'one_time' as ScheduleType, icon: '✦', label: T.oneOff, desc: T.oneOffDesc },
         ]} />
       </div>
 
-      {isScheduled && (
+      {!isOneTime && (
         <div style={{ marginBottom: '1rem' }}>
           <label style={labelStyle}>{T.daysRun}</label>
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '0.875rem' }}>
             {DAYS.map((d) => (
-              <button key={d} onClick={() => toggleDay(d)} style={{ padding: '5px 10px', borderRadius: '0.25rem', border: `1px solid ${form.schedule?.days?.includes(d) ? 'var(--db-gold)' : 'var(--db-border-subtle)'}`, background: form.schedule?.days?.includes(d) ? 'rgba(190,154,86,0.15)' : 'transparent', color: form.schedule?.days?.includes(d) ? 'var(--db-gold)' : 'var(--db-text-faint)', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>{T.dayLabels[d]}</button>
+              <button key={d} onClick={() => toggleDay(d)} style={{ padding: '7px 12px', minHeight: '36px', borderRadius: '0.375rem', border: `1px solid ${form.schedule?.days?.includes(d) ? 'var(--db-gold)' : 'var(--db-border-subtle)'}`, background: form.schedule?.days?.includes(d) ? 'rgba(190,154,86,0.15)' : 'transparent', color: form.schedule?.days?.includes(d) ? 'var(--db-gold)' : 'var(--db-text-faint)', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>{T.dayLabels[d]}</button>
             ))}
           </div>
-          <label style={labelStyle}>{T.startTimes}</label>
-          <input style={inputStyle} placeholder={T.slotsPh} value={timeSlotsInput} onChange={(e) => setTimeSlotsInput(e.target.value)} />
+
+          {isStay ? (
+            <>
+              <label style={labelStyle}>{T.stayTitle}</label>
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                <div><label style={miniLabel}>{T.checkIn}</label>{timeInput(form.checkInTime || '15:00', (v) => set('checkInTime', v))}</div>
+                <div><label style={miniLabel}>{T.checkOut}</label>{timeInput(form.checkOutTime || '11:00', (v) => set('checkOutTime', v))}</div>
+                <div><label style={miniLabel}>{T.minNights}</label><Stepper value={form.minNights || 1} onChange={(v) => set('minNights', v)} /></div>
+              </div>
+              <p style={{ ...hintStyle, margin: '0.5rem 0 0' }}>{T.stayHint}</p>
+            </>
+          ) : (
+            <>
+              <label style={labelStyle}>{T.hoursTitle}</label>
+              {!hoursByDay ? (
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                  <div><label style={miniLabel}>{T.hoursFrom}</label>{timeInput(hours.same.open, (v) => setHours({ same: { ...hours.same, open: v } }))}</div>
+                  <div><label style={miniLabel}>{T.hoursTo}</label>{timeInput(hours.same.close, (v) => setHours({ same: { ...hours.same, close: v } }))}</div>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gap: '0.5rem' }}>
+                  {DAYS.filter((d) => !form.schedule?.days?.length || form.schedule.days.includes(d)).map((d) => {
+                    const r = hours.byDay?.[d] === undefined ? hours.same : hours.byDay[d]
+                    return (
+                      <div key={d} style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <span style={{ width: '3rem', fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: 'var(--db-text-muted)' }}>{T.dayLabels[d]}</span>
+                        {r ? (<>
+                          {timeInput(r.open, (v) => setHours({ byDay: { ...(hours.byDay || {}), [d]: { ...r, open: v } } }))}
+                          <span style={{ color: 'var(--db-text-faint)' }}>→</span>
+                          {timeInput(r.close, (v) => setHours({ byDay: { ...(hours.byDay || {}), [d]: { ...r, close: v } } }))}
+                          <button onClick={() => setHours({ byDay: { ...(hours.byDay || {}), [d]: null } })} style={{ background: 'transparent', border: 'none', color: 'var(--db-text-faint)', fontSize: '0.6875rem', fontFamily: 'var(--font-sans)', textDecoration: 'underline', cursor: 'pointer' }}>{T.closed}</button>
+                        </>) : (
+                          <button onClick={() => setHours({ byDay: { ...(hours.byDay || {}), [d]: { ...hours.same } } })} style={{ background: 'transparent', border: '1px dashed var(--db-border-subtle)', color: 'var(--db-text-faint)', fontSize: '0.6875rem', fontFamily: 'var(--font-sans)', padding: '0.3rem 0.6rem', borderRadius: '0.375rem', cursor: 'pointer' }}>{T.closed} · +</button>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+              <button onClick={() => { setHoursByDay((v) => !v); if (hoursByDay) setHours({ byDay: undefined }) }}
+                style={{ marginTop: '0.625rem', background: 'transparent', border: 'none', color: 'var(--db-gold)', fontSize: '0.6875rem', fontFamily: 'var(--font-sans)', textDecoration: 'underline', cursor: 'pointer', padding: 0 }}>
+                {hoursByDay ? T.hoursSame : T.hoursByDay}
+              </button>
+              <p style={{ ...hintStyle, margin: '0.625rem 0 0' }}>{T.hoursHint}</p>
+            </>
+          )}
         </div>
       )}
+
       {isOneTime && (
-        <div style={rowStyle}>
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
           <div>
             <label style={labelStyle}>{T.eventDate}</label>
             <input type="date" style={inputStyle} value={eventDateStr} onChange={(e) => setEventDateStr(e.target.value)} />
           </div>
           <div>
             <label style={labelStyle}>{T.startTime}</label>
-            <input type="time" style={inputStyle} value={eventTimeStr} onChange={(e) => setEventTimeStr(e.target.value)} />
+            {timeInput(eventTimeStr, setEventTimeStr)}
+          </div>
+          <div>
+            <label style={labelStyle}>{T.eventEnd}</label>
+            {timeInput(eventEndStr, setEventEndStr)}
           </div>
         </div>
       )}
 
       <div style={rowStyle}>
         <div><label style={labelStyle}>{T.where}</label><input style={inputStyle} placeholder={T.wherePh} value={form.location} onChange={(e) => set('location', e.target.value)} /></div>
-        <div>
-          <label style={labelStyle}>{T.duration}</label>
-          {/* Jordan/ChatGPT #18: structured [2][hours] — data Palmera can schedule
-              with later. Writes durationValue/durationUnit AND the legacy
-              `duration` string the app already renders. Hotels default to nights. */}
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <input style={{ ...inputStyle, flex: '0 0 5.5rem' }} type="number" min="0" inputMode="numeric" placeholder="2"
-              value={form.durationValue ?? ''}
-              onChange={(e) => {
-                const v = e.target.value === '' ? null : Math.max(0, parseFloat(e.target.value) || 0)
-                const u = form.durationUnit || (form.category === 'hotels' || form.category === 'villas' ? 'nights' : 'hours')
-                setForm((f) => ({ ...f, durationValue: v, durationUnit: u, duration: v ? `${v} ${T.durUnits[u]}` : '' }))
-              }} />
-            <select style={{ ...inputStyle, flex: 1 }}
-              value={form.durationUnit || (form.category === 'hotels' || form.category === 'villas' ? 'nights' : 'hours')}
-              onChange={(e) => {
-                const u = e.target.value as NonNullable<typeof form.durationUnit>
-                setForm((f) => ({ ...f, durationUnit: u, duration: f.durationValue ? `${f.durationValue} ${T.durUnits[u]}` : f.duration }))
-              }}>
-              {(['minutes', 'hours', 'days', 'nights'] as const).map((u) => <option key={u} value={u}>{T.durUnits[u]}</option>)}
-            </select>
-          </div>
-          {form.duration && form.durationValue == null && <p style={{ ...hintStyle, margin: '0.375rem 0 0' }}>{T.durFree}: {form.duration}</p>}
-        </div>
       </div>
 
       <div style={{ marginBottom: '1rem' }}>
@@ -856,7 +902,6 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
     </>
   )
 
-  const miniLabel: React.CSSProperties = { ...labelStyle, fontSize: '0.625rem', marginBottom: '0.25rem' }
   const APP_PREV = { sheet: '#0E2233', gold: '#E9BC4F', cream: '#F3EBD8', dim: 'rgba(243,235,216,0.65)', line: 'rgba(243,235,216,0.12)' }
   const suggestions = SUGGEST[form.category || ''] || SUGGEST_DEFAULT
   const chipName = (sg: { fr: string; en: string }) => (locale === 'fr' ? sg.fr : sg.en).replace(/\s*\(.*\)$/, '')
@@ -1084,7 +1129,7 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
                 i === 0 ? [form.title, form.category, form.city].filter(Boolean).join(' · ')
                 : i === 1 ? (isPaid ? `${fmt(form.price || 0)} XOF` : T.payFree)
                 : i === 2 ? `${form.minGuests}–${form.maxGuests}`
-                : i === 3 ? [form.location, form.scheduleType === 'ongoing' ? T.anytime : form.scheduleType === 'scheduled' ? T.setDays : T.oneOff].filter(Boolean).join(' · ')
+                : i === 3 ? [form.location, isOneTime ? T.oneOff : isStay ? `${form.checkInTime || '15:00'} → ${form.checkOutTime || '11:00'}` : `${(form.schedule?.hours?.same.open) || '09:00'} → ${(form.schedule?.hours?.same.close) || '18:00'}`].filter(Boolean).join(' · ')
                 : i === 4 ? `${form.img ? '📷 ' : ''}${(form.gallery?.length || 0) + (form.img ? 1 : 0)} photo(s)`
                 : i === 5 ? `${groups.length} ${T.addons.toLowerCase()}`
                 : i === 6 ? `${form.confirmationType === 'instant' ? T.instant : T.approve} · ${T.tierLabels[form.cancellationPolicy?.tier || 'moderate']}`

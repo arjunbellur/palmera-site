@@ -160,8 +160,19 @@ export interface CancellationPolicy {
   policyVersion: string
 }
 
+/** "HH:MM" 24h strings. */
+export interface HoursRange { open: string; close: string }
+
 export interface Schedule {
+  /** Days the listing is bookable: 'Mon'…'Sun'. Empty/absent = every day. */
   days?: string[]
+  /** Bookable hours (2026-08-23 — replaces duration + free-text start
+   *  times). `same` applies to every open day unless `byDay` overrides it.
+   *  The guest picks a START time inside these hours; what they get (2h vs
+   *  4h, 60 vs 90 min) is a required choice on the listing, never a
+   *  listing-level duration. */
+  hours?: { same: HoursRange; byDay?: Partial<Record<string, HoursRange | null>> } | null
+  /** @deprecated free-text start times — no longer written; older docs only */
   timeSlots?: string[]
   leadTime?: string
   blackoutDates?: string
@@ -192,8 +203,17 @@ export interface Experience {
    *  denormalized from config/policies[tier] at save (2026-08-22, additive).
    *  The app reads THIS to decide refund eligibility — no config join. */
   cancelDeadlineHours?: number | null
+  /** 'ongoing' = bookable hours (default for every category), 'one_time' =
+   *  a dated event. 'scheduled' is legacy (old listings) and reads as
+   *  'ongoing' with `schedule.days`. */
   scheduleType: ScheduleType
-  eventDate: TS | null            // required iff one_time
+  eventDate: TS | null            // event START (required iff one_time)
+  eventEnd?: TS | null            // event END (2026-08-23, additive)
+  /** Stays (hotels, villas): check-in / check-out times + minimum nights.
+   *  Replaces any notion of duration for lodging. */
+  checkInTime?: string | null     // "15:00"
+  checkOutTime?: string | null    // "11:00"
+  minNights?: number | null
   schedule: Schedule | null
   optionGroups: OptionGroup[]     // [] = simple experience
   title: string
@@ -207,9 +227,12 @@ export interface Experience {
   menuType?: 'pdf' | 'image' | null
   lat: number | null              // derived from mapsLink when parseable; app's pin. Partners never type these.
   lng: number | null
-  duration: string            // legacy free text the app renders ("2 hours") — still written
-  /** Structured duration (2026-08-21, additive): the dashboard writes these
-   *  AND synthesizes `duration` from them. Null on older listings. */
+  /** REMOVED as a concept (Jordan, 2026-08-23). A listing has no duration —
+   *  it has bookable hours / check-in–out / an event window, and the
+   *  length of what a guest gets is a required CHOICE on the listing
+   *  (2h / 4h, 60 / 90 min). The dashboard no longer writes any of these;
+   *  older docs may still carry values. */
+  duration?: string
   durationValue?: number | null
   durationUnit?: 'minutes' | 'hours' | 'days' | 'nights' | null
   guests: string                  // derived from min/maxGuests
