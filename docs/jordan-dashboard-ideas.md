@@ -50,6 +50,21 @@ Numbering follows the doc. Effort: 🟢 quick (hours) · 🟡 medium (a session)
 ## Status (2026-08-21)
 ✅ = shipped. Batch 1 complete (1, 1b, 7, 8, 10, 11, 14, 15, 16, 20, 24, 33) + 19 (photo drag). Batch 2 complete (2, 3 via WhatsApp, 26). Batch 3 complete (12, 18, 23).
 
+## Not built yet — and why (as of 2026-08-22)
+
+| # | Idea | Why it's parked | What unblocks it |
+|---|---|---|---|
+| 5 | Block dates / times / weekdays per listing or business | Dashboard UI is the easy half; the app must ENFORCE availability at booking time or partners get bookings they can't honour. Needs a shared availability model (⚠ schema + Samson). | Design session with Samson: one `availability` shape covering 5/6/17, app reads it at checkout. |
+| 6 | "Any time" needs operating hours | Same model as #5 — hours are fiction unless the app respects them. Could ship as informational-only, but that misleads partners. | Part of the availability design above. |
+| 17 | Per-day hours, booking lead time, min notice, same-day toggle | Same family; designed once as ONE availability model, not three patches. | Same. |
+| 9 | Payout statements / downloadable CSV-PDF per payout | No payouts exist yet (ledger + payouts collections empty; completion mechanism — SYNC item 11 — not built). Nothing to itemise. CSV export of the ledger already exists for when entries appear. | First real payout batch; then build "open a payout → see its bookings → download". |
+| 25 | Cancellation policies must state financial outcomes | Copy is easy; the RULES aren't decided (what happens inside the window — refund %, does the business still get paid, does Palmera keep commission). Also ties to SYNC item 16 (money collected on declined bookings) and the app's refund trigger. | Arjun + Jordan decide the refund matrix per tier → write it into the tier cards + listing policy field (the 24h/48h field from the Dashboard Time call). |
+| 30 | Granular notification preferences (event × channel; WhatsApp) | Email preferences alone are a session; WhatsApp needs a WhatsApp Business API provider (Twilio/360dialog), template approval, and a phone-number strategy — separate infrastructure project. | Decide on a WhatsApp provider; then build prefs with email first, WhatsApp second. |
+| 20b | ✨ "Improve description" AI rewrite | Nice-to-have; guidance line shipped instead. Small API route + a button. | One session whenever wanted — no blockers. |
+| 3b | "Message customer" via in-app chat (vs WhatsApp) | In-app chat is Samson's surface (chat_threads/messages are membership-gated; a partner isn't a member). WhatsApp deep link shipped as the zero-impact version. | Samson adds partner↔guest threads; then the dashboard can embed them. |
+| 3c | Partners cancelling CONFIRMED reservations themselves | Deliberately not added — Jordan's doc says "think carefully". Consequences (refund, guest notification, reliability score) aren't defined. Decline (pending) and no-show (past) exist. | Decide policy: allowed? reason required? penalty? Then it's a small drawer action. |
+| 28 | Fuller company profile (WhatsApp, socials, hours, photos) | Partially exists (logo, photos, website/business page). Hours belong to the availability model; WhatsApp/socials are easy additive fields. | Fold into the availability session (hours) + a short fields pass. |
+
 ## Suggested batches
 1. **Copy + display batch (all 🟢):** 1, 1b, 7, 8, 10, 11, 14, 15, 16, 20, 24, 33 — one to two sessions, zero shared-surface impact.
 2. **Reservation depth:** 2, 3 (WhatsApp variant), 26 reminders.
