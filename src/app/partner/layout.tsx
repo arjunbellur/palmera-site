@@ -126,6 +126,14 @@ function Shell({ children }: { children: React.ReactNode }) {
   const L = (k: string) => t(locale, k)
   const initial = (company?.name || '?').trim().charAt(0).toUpperCase()
 
+  const LocaleToggle = (
+    <div role="group" aria-label="Language" style={{ display: 'flex', border: '1px solid var(--pf-border)', borderRadius: '10px', overflow: 'hidden', height: '40px' }}>
+      {(['fr', 'en'] as const).map(l => (
+        <button key={l} onClick={() => setLocale(l)} aria-pressed={locale === l} style={{ padding: '0 12px', minWidth: '40px', background: locale === l ? 'var(--pf-card)' : 'transparent', border: 'none', color: locale === l ? 'var(--pf-gold)' : 'var(--pf-faint)', fontFamily: 'var(--font-sans)', fontSize: '11px', letterSpacing: '0.06em', cursor: 'pointer' }}>{l.toUpperCase()}</button>
+      ))}
+    </div>
+  )
+
   // Always opens the sheet — with one company it's how you ADD another.
   const CompanyPill = (
     <button onClick={() => setSwitcherOpen(true)}
@@ -184,9 +192,13 @@ function Shell({ children }: { children: React.ReactNode }) {
             <nav style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>{NAV.map(n => navLink(n, false))}</nav>
             <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid var(--pf-border)', display: 'flex', flexDirection: 'column', gap: '14px', alignItems: collapsed ? 'center' : 'stretch' }}>
               {!collapsed && CompanyPill}
-              <button onClick={signOut} title={L('signout')} style={{ display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start', gap: '9px', background: 'transparent', border: 'none', padding: '2px 0', cursor: 'pointer', color: 'var(--pf-faint)', fontFamily: 'var(--font-sans)', fontSize: '11.5px', letterSpacing: '0.04em' }}>
-                <LogOut size={14} strokeWidth={1.75} /> {!collapsed && L('signout')}
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexDirection: collapsed ? 'column' : 'row', justifyContent: 'space-between' }}>
+                {!collapsed && LocaleToggle}
+                <div style={{ display: 'flex', gap: '8px', flexDirection: collapsed ? 'column' : 'row' }}>
+                  <IconButton onClick={toggleTheme} label="Toggle theme" tone="gold">{theme === 'dark' ? <Moon size={16} strokeWidth={1.75} /> : <Sun size={16} strokeWidth={1.75} />}</IconButton>
+                  <IconButton onClick={signOut} label={L('signout')}><LogOut size={16} strokeWidth={1.75} /></IconButton>
+                </div>
+              </div>
               <button onClick={toggleNav} aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
                 style={{ width: collapsed ? '40px' : '100%', height: '40px', padding: 0, borderRadius: '10px', border: '1px solid var(--pf-border)', background: 'transparent', color: 'var(--pf-faint)', cursor: 'pointer', lineHeight: 0 }}>
                 <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', lineHeight: 0 }}>{collapsed ? <PanelLeftOpen size={15} strokeWidth={1.75} /> : <PanelLeftClose size={15} strokeWidth={1.75} />}</span>
@@ -196,22 +208,21 @@ function Shell({ children }: { children: React.ReactNode }) {
         )}
 
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-          <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: isMobile ? '14px 18px' : '18px 34px', borderBottom: '1px solid var(--pf-border)', background: 'var(--pf-nav)', position: 'sticky', top: 0, zIndex: 20 }}>
-            {isMobile ? CompanyPill : <span />}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ display: 'flex', border: '1px solid var(--pf-border)', borderRadius: '8px', overflow: 'hidden' }}>
-                {(['fr', 'en'] as const).map(l => (
-                  <button key={l} onClick={() => setLocale(l)} style={{ padding: '5px 9px', background: locale === l ? 'var(--pf-card)' : 'transparent', border: 'none', color: locale === l ? 'var(--pf-gold)' : 'var(--pf-faint)', fontFamily: 'var(--font-sans)', fontSize: '10px', letterSpacing: '0.06em', cursor: 'pointer' }}>{l.toUpperCase()}</button>
-                ))}
-              </div>
-              <IconButton onClick={toggleTheme} label="Toggle theme" tone="gold">{theme === 'dark' ? <Moon size={16} strokeWidth={1.75} /> : <Sun size={16} strokeWidth={1.75} />}</IconButton>
-              {isMobile && (
+          {/* Desktop has NO top bar — the rail carries language, theme and
+              sign-out, and the content gets the full height. Mobile keeps a
+              compact header (company pill + controls). */}
+          {isMobile && (
+            <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '12px 18px', borderBottom: '1px solid var(--pf-border)', background: 'var(--pf-nav)', position: 'sticky', top: 0, zIndex: 20 }}>
+              {CompanyPill}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {LocaleToggle}
+                <IconButton onClick={toggleTheme} label="Toggle theme" tone="gold">{theme === 'dark' ? <Moon size={16} strokeWidth={1.75} /> : <Sun size={16} strokeWidth={1.75} />}</IconButton>
                 <IconButton onClick={signOut} label={L('signout')}><LogOut size={16} strokeWidth={1.75} /></IconButton>
-              )}
-            </div>
-          </header>
+              </div>
+            </header>
+          )}
 
-          <main className="pf-scroll pf-ambient" style={{ flex: 1, padding: isMobile ? '20px 18px 84px' : '30px 38px 52px', maxWidth: '1280px', width: '100%', margin: '0 auto' }}>
+          <main className="pf-scroll pf-ambient" style={{ flex: 1, padding: isMobile ? '20px 18px 84px' : '34px 40px 52px', maxWidth: '1320px', width: '100%', margin: '0 auto' }}>
             {children}
           </main>
 

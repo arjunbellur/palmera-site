@@ -10,7 +10,7 @@ import type { Booking, LedgerEntry, LedgerEntryType, Payout, PayoutStatus } from
 import { formatAmount, formatDate, toDate, isDelivered, isUpcoming, nextPayoutDate, moneySplit } from '@/lib/money'
 import { ScreenHeader, Money, EmptyState, SectionTitle, Skeleton, card, cardShape, eyebrow } from '@/components/partner/ui'
 import { BarChart, RankPills } from '@/components/charts'
-import { CalendarClock, TrendingUp, BadgeCheck, Wallet, Clock, Check } from 'lucide-react'
+import { CalendarClock, TrendingUp, Wallet, Clock, Check, ChevronDown } from 'lucide-react'
 
 const PAYOUT_COLOR: Record<PayoutStatus, string> = {
   scheduled: 'var(--pf-gold)', processing: 'var(--pf-gold)', paid: 'var(--pf-success)', failed: 'var(--pf-alert)',
@@ -39,6 +39,20 @@ export default function EarningsScreen() {
   const [ledger, setLedger] = useState<LedgerEntry[]>([])
   const [payouts, setPayouts] = useState<Payout[]>([])
   const [period, setPeriod] = useState<'all' | 'month' | 'last' | '30'>('all')
+  // Jordan (Stripe-style): the big number is the partner's earnings for a
+  // period THEY pick; next payout lives in the small stats.
+  type HeroPeriod = 'today' | '7d' | '4w' | 'mtd' | 'qtd' | 'all'
+  const [heroPeriod, setHeroPeriod] = useState<HeroPeriod>('4w')
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const periodStart = (k: HeroPeriod): Date | null => {
+    const n = new Date(); const d0 = new Date(n.getFullYear(), n.getMonth(), n.getDate())
+    if (k === 'today') return d0
+    if (k === '7d') return new Date(d0.getTime() - 6 * 86400_000)
+    if (k === '4w') return new Date(d0.getTime() - 27 * 86400_000)
+    if (k === 'mtd') return new Date(n.getFullYear(), n.getMonth(), 1)
+    if (k === 'qtd') return new Date(n.getFullYear(), Math.floor(n.getMonth() / 3) * 3, 1)
+    return null
+  }
   const [loaded, setLoaded] = useState(false)
   const [rate, setRate] = useState<number | null>(null)
   const [extrasGroupIds, setExtrasGroupIds] = useState<Set<string>>(new Set())
@@ -70,6 +84,15 @@ export default function EarningsScreen() {
   const split = moneySplit(earning)
   const upcomingEarn = split.upcoming.net
   const deliveredEarn = split.delivered.net
+  // Earnings in the chosen period = net on bookings DELIVERED in that window.
+  const heroFrom = periodStart(heroPeriod)
+  const heroBookings = earning.filter(b => isDelivered(b) && (!heroFrom || ((toDate(b.scheduledFor)?.getTime() ?? 0) >= heroFrom.getTime())))
+  const heroNet = heroBookings.reduce((s, b) => s + (b.payoutAmount || 0), 0)
+  const heroGross = heroBookings.reduce((s, b) => s + (b.bookingTotal || 0), 0)
+  const PERIODS: { k: HeroPeriod; label: string }[] = [
+    { k: 'today', label: L('hp_today') }, { k: '7d', label: L('hp_7d') }, { k: '4w', label: L('hp_4w') },
+    { k: 'mtd', label: L('hp_mtd') }, { k: 'qtd', label: L('hp_qtd') }, { k: 'all', label: L('hp_all') },
+  ]
   const derived = ledger.length === 0
   // Jordan's vocabulary: Upcoming earnings (confirmed, not yet delivered) /
   // Available for payout (delivered, not yet paid out) / Paid to date.
@@ -176,17 +199,31 @@ export default function EarningsScreen() {
       {/* Hero: gradient balance card with circled stats. */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 14rem), 1fr))', gap: '12px' }}>
         <div style={{ gridColumn: '1 / -1', padding: '24px', borderRadius: '18px', background: 'linear-gradient(150deg, rgba(190,154,86,0.12), var(--pf-card))', border: '1px solid var(--pf-border-strong)', display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '22px' }}>
-          <div>
-            <div style={{ ...eyebrow, fontSize: '10.5px', letterSpacing: '0.16em' }}>{L('next_payout_amt')}</div>
-            <div style={{ marginTop: '8px' }}><Money amount={formatAmount(balance)} size={52} /></div>
-            <div style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-muted)', marginTop: '8px', maxWidth: '24rem', lineHeight: 1.55 }}>
-              {L('next_payout_when').replace('{date}', formatDate(next?.scheduledFor ?? nextPayoutDate()))}{split.delivered.count > 0 ? ` · ${split.delivered.count} ${L('bookings_n')}` : ''}
+          <div style={{ position: 'relative' }}>
+            {/* Period picker — the big number is whatever window the partner wants. */}
+            <button onClick={() => setPickerOpen(o => !o)} aria-haspopup="listbox" aria-expanded={pickerOpen}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'transparent', border: '1px solid var(--pf-border-strong)', borderRadius: '999px', padding: '6px 12px 6px 14px', cursor: 'pointer', color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '10.5px', letterSpacing: '0.14em', textTransform: 'uppercase' }}>
+              {L('hp_earnings')} · {PERIODS.find(p => p.k === heroPeriod)?.label} <ChevronDown size={13} strokeWidth={1.75} />
+            </button>
+            {pickerOpen && (
+              <div role="listbox" onMouseLeave={() => setPickerOpen(false)} style={{ position: 'absolute', top: '36px', left: 0, zIndex: 30, minWidth: '13rem', background: 'var(--pf-sheet)', border: '1px solid var(--pf-border-strong)', borderRadius: '14px', padding: '6px', boxShadow: '0 16px 36px rgba(0,0,0,0.35)' }}>
+                {PERIODS.map(p => (
+                  <button key={p.k} role="option" aria-selected={heroPeriod === p.k} onClick={() => { setHeroPeriod(p.k); setPickerOpen(false) }}
+                    style={{ display: 'block', width: '100%', textAlign: 'left', padding: '9px 12px', borderRadius: '9px', border: 'none', cursor: 'pointer', background: heroPeriod === p.k ? 'var(--pf-gold-soft)' : 'transparent', color: heroPeriod === p.k ? 'var(--pf-gold)' : 'var(--pf-text)', fontFamily: 'var(--font-sans)', fontSize: '13px' }}>
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div style={{ marginTop: '10px' }}><Money amount={formatAmount(heroNet)} size={52} /></div>
+            <div style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-muted)', marginTop: '8px', maxWidth: '26rem', lineHeight: 1.55 }}>
+              {heroBookings.length} {L('bookings_n')} · {L('flow_gross').toLowerCase()} {formatAmount(heroGross)} XOF{rate != null ? ` · ${L('flow_commission').toLowerCase()} ${+(rate * 100).toFixed(2)}%` : ''}
             </div>
           </div>
           <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+            <CircleStat icon={<Wallet size={14} strokeWidth={1.75} />} label={`${L('next_payout')} · ${formatDate(next?.scheduledFor ?? nextPayoutDate())}`} value={<>{formatAmount(balance)} <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'var(--pf-muted)' }}>XOF</span></>} tone="var(--pf-success)" />
             <CircleStat icon={<TrendingUp size={14} strokeWidth={1.75} />} label={L('upcoming_earn')} value={<>{formatAmount(upcomingEarn)} <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'var(--pf-muted)' }}>XOF</span></>} />
             <CircleStat icon={<CalendarClock size={14} strokeWidth={1.75} />} label={L('upcoming_count')} value={String(split.upcoming.count)} />
-            <CircleStat icon={<BadgeCheck size={14} strokeWidth={1.75} />} label={L('status_lbl')} value={company?.active ? (locale === 'fr' ? 'Actif' : 'Active') : '—'} tone="var(--pf-success)" />
           </div>
         </div>
 
