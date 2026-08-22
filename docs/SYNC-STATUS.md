@@ -84,6 +84,13 @@ it writes a booking (⚠ would need Samson).
 Every dashboard change that touches documents/rules/indexes the app consumes
 gets a line here, newest first. Pure-UI dashboard changes are never listed.
 
+- 2026-08-21 ⚠ FYI **Partners can now write to `support_messages`** ("Get help
+  with this booking" in the reservation drawer). Docs use the app's
+  snake_case convention under the existing create rule (`user_id` = caller)
+  and carry `source: 'partner_dashboard'` plus a `booking{}` context map —
+  filter on `source` if the app's support inbox should only show member
+  messages. No rule change.
+
 - 2026-08-21 🔴 **Storage rules: partner uploads were DENIED since 2026-08-12.**
   Samson's Storage ruleset (console deploy, Aug 12 23:47 UTC) scoped the
   bucket to avatars/moments/chat with a catch-all deny — the dashboard

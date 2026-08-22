@@ -7,6 +7,9 @@ import { subscribeBookingsByCompany, setBookingStatus } from '@/lib/firestore'
 import type { Booking } from '@/lib/schema'
 import { toDate } from '@/lib/money'
 import { ScreenHeader, EmptyState, Chip, Money, eyebrow, GhostButton, Skeleton } from '@/components/partner/ui'
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
+import { LifeBuoy } from 'lucide-react'
 import ReservationCard from '@/components/partner/ReservationCard'
 import { formatAmount, formatDate } from '@/lib/money'
 import { Clock } from 'lucide-react'
@@ -14,7 +17,7 @@ import { Clock } from 'lucide-react'
 type Filter = 'all' | 'action' | 'upcoming' | 'done' | 'cancelled' | 'noshow'
 
 export default function ReservationsScreen() {
-  const { uid, company, locale } = usePartner()
+  const { uid, email, company, locale } = usePartner()
   const L = (k: string) => t(locale, k)
   const [bookings, setBookings] = useState<Booking[]>([])
   // Jordan: the page must OPEN on what's coming next, past excluded.
@@ -52,12 +55,34 @@ export default function ReservationsScreen() {
     else if (f === 'next') setFilter('upcoming')
   }, [])
 
+  // Jordan/ChatGPT #33: "Get help with this booking" — pre-filled context so
+  // the partner never has to explain which booking from scratch. Writes to
+  // Samson's support_messages (snake_case, user_id = caller, per its rule).
+  const [help, setHelp] = useState<{ open: boolean; text: string; sent: boolean; busy: boolean }>({ open: false, text: '', sent: false, busy: false })
+  const sendHelp = async (b: Booking) => {
+    if (!help.text.trim() || help.busy) return
+    setHelp(h => ({ ...h, busy: true }))
+    try {
+      await addDoc(collection(db, 'support_messages'), {
+        user_id: uid, source: 'partner_dashboard', created_at: serverTimestamp(),
+        message: help.text.trim(),
+        email: email || null, company_name: company?.name || null,
+        booking: {
+          id: b.id, title: b.title, customer: b.customerName || null, status: b.status,
+          scheduled_for: b.scheduledFor ?? null, experience_id: b.experienceId ?? null, guests: b.guestCount ?? null,
+        },
+      })
+      setHelp({ open: false, text: '', sent: true, busy: false })
+    } catch (e) { console.error('support message failed:', e); setHelp(h => ({ ...h, busy: false })) }
+  }
+
   const respond = async (b: Booking, status: 'confirmed' | 'declined' | 'no_show') => {
     if (!b.id) return
     setBusyId(b.id); setError('')
     try {
       await setBookingStatus(b.id, status)
       setDetail(null) // the live snapshot delivers the updated list
+      setHelp({ open: false, text: '', sent: false, busy: false })
     } catch {
       // Most likely cause: the security rule for partner-side confirmation
       // isn't deployed, or the booking already moved on. Say so plainly.
@@ -461,6 +486,30 @@ export default function ReservationsScreen() {
                   <GhostButton tone="alert" onClick={() => respond(b, 'no_show')}>{L('mark_noshow')}</GhostButton>
                 </div>
               )}
+
+              {/* Get help with this booking */}
+              <div style={{ marginTop: '18px', borderTop: '1px solid var(--pf-border)', paddingTop: '14px' }}>
+                {help.sent ? (
+                  <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--pf-success)', margin: 0 }}>✓ {L('help_sent')}</p>
+                ) : !help.open ? (
+                  <button onClick={() => setHelp(h => ({ ...h, open: true }))} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'transparent', border: 'none', padding: 0, color: 'var(--pf-faint)', fontFamily: 'var(--font-sans)', fontSize: '12px', cursor: 'pointer' }}>
+                    <LifeBuoy size={13} strokeWidth={1.75} /> {L('help_btn')}
+                  </button>
+                ) : (
+                  <div>
+                    <p style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-faint)', margin: '0 0 8px' }}>{L('help_intro')}</p>
+                    <textarea value={help.text} onChange={e => setHelp(h => ({ ...h, text: e.target.value }))} rows={3} placeholder={L('help_ph')} autoFocus
+                      style={{ width: '100%', padding: '9px 11px', borderRadius: '10px', border: '1px solid var(--pf-border)', background: 'var(--pf-bg)', color: 'var(--pf-text)', fontFamily: 'var(--font-sans)', fontSize: '12.5px', resize: 'vertical', marginBottom: '8px' }} />
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                      <GhostButton onClick={() => setHelp(h => ({ ...h, open: false }))}>{L('help_cancel')}</GhostButton>
+                      <button onClick={() => sendHelp(b)} disabled={help.busy || !help.text.trim()}
+                        style={{ padding: '8px 16px', background: 'var(--pf-gold-deep)', border: 'none', borderRadius: '10px', color: '#ebe8db', fontFamily: 'var(--font-sans)', fontSize: '12px', cursor: 'pointer', opacity: help.busy || !help.text.trim() ? 0.6 : 1 }}>
+                        {help.busy ? '…' : L('help_send')}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )

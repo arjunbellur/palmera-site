@@ -72,6 +72,10 @@ const M = {
     changeLater: 'Modifiable à tout moment',
     price: 'Prix (XOF) *', priceIs: 'Ce prix s’applique', perGroup: 'Au groupe entier', perPerson: 'Par personne',
     minGroup: 'Groupe minimum', maxGroup: 'Groupe maximum', noLimit: 'Sans limite', unlimited: 'Illimité',
+    netTitle: 'Ce que vous gagnez', netGuestPays: 'Le client paie', netCommission: 'Commission Palmera', netYouEarn: 'Vous recevez',
+    netUnit: (u: string) => u === 'per_person' ? 'par personne' : 'par groupe',
+    partyWord: (c: string) => ({ hotels: 'Occupation', villas: 'Voyageurs', dining: 'Taille de la table', nightlife: 'Taille du groupe', rentals: 'Passagers', yachts: 'Passagers', wellness: 'Participants', safari: 'Participants', islands: 'Passagers' } as Record<string, string>)[c] || 'Groupe',
+    descGuide: 'Dites aux clients ce qu’ils vont vivre, ce qui rend l’expérience spéciale et ce qu’ils doivent savoir avant de réserver.',
     reorder: 'Glissez pour réordonner',
     partyHint: 'Palmera est fait pour réserver entre amis — c’est la taille de groupe que vous pouvez accueillir.',
     preview: 'Ce que les clients verront',
@@ -102,12 +106,12 @@ const M = {
     addons: 'Choix & extras',
     ao_q: 'Les clients doivent-ils choisir ou ajouter quelque chose en réservant ?',
     ao_optional: 'Facultatif — beaucoup d’expériences se réservent simplement au prix de base.',
-    ao_card_choice_t: 'Un choix à faire',
+    ao_card_choice_t: 'Choix obligatoire',
     ao_card_choice_d: 'Le client doit choisir une option pour réserver — type de chambre, durée, placement.',
-    ao_card_extras_t: 'Des extras',
+    ao_card_extras_t: 'Options facultatives',
     ao_card_extras_d: 'Le client ajoute ce qu’il veut en plus — petit-déjeuner, transfert, GoPro.',
     ao_suggest: 'Ou partez d’un exemple :',
-    ao_kind_choice_d: 'Le client doit en choisir une', ao_kind_extras_d: 'Le client ajoute ce qu’il veut',
+    ao_kind_choice_d: 'Le client doit choisir une option', ao_kind_extras_d: 'Le client ajoute les extras qu’il veut',
     ao_prev: 'Aperçu côté client',
     ao_prev_pickone: 'Choisissez-en une · obligatoire',
     ao_prev_optional: 'Facultatif — ajoutez ce que vous voulez',
@@ -168,6 +172,10 @@ const M = {
     changeLater: 'You can change this later',
     price: 'Price (XOF) *', priceIs: 'This price is', perGroup: 'For the whole group', perPerson: 'Per person',
     minGroup: 'Smallest group', maxGroup: 'Largest group', noLimit: 'No limit', unlimited: 'Unlimited',
+    netTitle: 'What you earn', netGuestPays: 'Guest pays', netCommission: 'Palmera commission', netYouEarn: 'You receive',
+    netUnit: (u: string) => u === 'per_person' ? 'per person' : 'per group',
+    partyWord: (c: string) => ({ hotels: 'Occupancy', villas: 'Guests', dining: 'Party size', nightlife: 'Party size', rentals: 'Passengers', yachts: 'Passengers', wellness: 'Participants', safari: 'Participants', islands: 'Passengers' } as Record<string, string>)[c] || 'Group',
+    descGuide: 'Tell guests what they’ll experience, what makes it special, and anything they should know before booking.',
     reorder: 'Drag to reorder',
     partyHint: 'Palmera is built for friends booking together — this is the party size you can host.',
     preview: 'What guests will see',
@@ -198,12 +206,12 @@ const M = {
     addons: 'Choices & extras',
     ao_q: 'Do guests need to choose or add anything when they book?',
     ao_optional: 'Optional — many experiences are simply booked at the base price.',
-    ao_card_choice_t: 'A choice to make',
+    ao_card_choice_t: 'Required choice',
     ao_card_choice_d: 'The guest must pick one option to book — room type, duration, seating.',
-    ao_card_extras_t: 'Extras',
+    ao_card_extras_t: 'Optional add-ons',
     ao_card_extras_d: 'The guest adds whatever they like on top — breakfast, transfer, GoPro.',
     ao_suggest: 'Or start from an example:',
-    ao_kind_choice_d: 'Guest must pick one', ao_kind_extras_d: 'Guest adds what they like',
+    ao_kind_choice_d: 'Guest must select one option', ao_kind_extras_d: 'Guest can add any extras they want',
     ao_prev: 'Guest preview',
     ao_prev_pickone: 'Pick one · required',
     ao_prev_optional: 'Optional — add what you like',
@@ -270,6 +278,8 @@ interface ExperienceModalProps {
   companyId: string
   /** Company display name — shown on the guest-card preview. */
   companyName?: string
+  /** Company's commission rate (0.118 = 11.8%) — powers the "you earn" line in pricing. */
+  commissionRate?: number | null
   defaultCategory?: string
   defaultCity?: string
   experience?: Experience
@@ -393,7 +403,7 @@ function Stepper({ value, min = 1, onChange, noLimit, noLimitLabel, unlimitedLab
   )
 }
 
-export default function ExperienceModal({ providerId, storageUid, companyId, companyName, defaultCategory, defaultCity, experience, existingOptions, onSave, onClose }: ExperienceModalProps) {
+export default function ExperienceModal({ providerId, storageUid, companyId, companyName, commissionRate, defaultCategory, defaultCity, experience, existingOptions, onSave, onClose }: ExperienceModalProps) {
   const uploadUid = storageUid || providerId
   const locale = useLocale()
   const T = M[locale]
@@ -613,14 +623,32 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
           </p>
         </div>
       )}
+
+      {/* Jordan/ChatGPT #14: the partner must know their NET before publishing. */}
+      {isPaid && !!form.price && commissionRate != null && (() => {
+        const comm = Math.round(form.price * commissionRate)
+        const row = (label: string, val: string, strong = false) => (
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', padding: '0.375rem 0', fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', color: strong ? 'var(--db-text)' : 'var(--db-text-muted)', fontWeight: strong ? 600 : 400 }}>
+            <span>{label}</span><span>{val}</span>
+          </div>
+        )
+        return (
+          <div style={{ border: '1px solid var(--db-border-subtle)', borderRadius: '0.5rem', padding: '0.75rem 1rem', marginTop: '0.875rem' }}>
+            <p style={{ fontSize: '0.6875rem', color: '#be9a56', letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: 'var(--font-sans)', margin: '0 0 0.25rem' }}>{T.netTitle} · {T.netUnit(form.priceUnit || 'per_person')}</p>
+            {row(T.netGuestPays, `${fmt(form.price)} XOF`)}
+            {row(`${T.netCommission} (${+(commissionRate * 100).toFixed(2)}%)`, `− ${fmt(comm)} XOF`)}
+            <div style={{ borderTop: '1px solid var(--db-border-subtle)', marginTop: '0.25rem' }}>{row(T.netYouEarn, `${fmt(form.price - comm)} XOF`, true)}</div>
+          </div>
+        )
+      })()}
     </>
   )
 
   const stepParty = (
     <>
       <div style={rowStyle}>
-        <div><label style={labelStyle}>{T.minGroup}</label><Stepper value={form.minGuests || 1} onChange={(v) => set('minGuests', v)} /></div>
-        <div><label style={labelStyle}>{T.maxGroup}</label><Stepper value={form.maxGuests ?? 1} onChange={(v) => set('maxGuests', v)} noLimit noLimitLabel={T.noLimit} unlimitedLabel={T.unlimited} /></div>
+        <div><label style={labelStyle}>{T.minGroup} · {T.partyWord(form.category || '')}</label><Stepper value={form.minGuests || 1} onChange={(v) => set('minGuests', v)} /></div>
+        <div><label style={labelStyle}>{T.maxGroup} · {T.partyWord(form.category || '')}</label><Stepper value={form.maxGuests ?? 1} onChange={(v) => set('maxGuests', v)} noLimit noLimitLabel={T.noLimit} unlimitedLabel={T.unlimited} /></div>
       </div>
       <p style={{ ...hintStyle, margin: '-0.5rem 0 1rem' }}>{T.partyHint}</p>
       {groupInverted && (
@@ -713,7 +741,8 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
           </div>
         )}
         <label style={labelStyle}>{T.describe}</label>
-        <textarea style={{ ...inputStyle, height: '90px', resize: 'vertical' }} placeholder={T.describePh} value={form.description} onChange={(e) => set('description', e.target.value)} />
+        <p style={{ ...hintStyle, margin: '-0.25rem 0 0.5rem' }}>{T.descGuide}</p>
+        <textarea style={{ ...inputStyle, height: '110px', resize: 'vertical' }} placeholder={T.describePh} value={form.description} onChange={(e) => set('description', e.target.value)} />
       </div>
       <div style={rowStyle}>
         <div><label style={labelStyle}>{T.included}</label><textarea style={{ ...inputStyle, height: '80px', resize: 'vertical' }} placeholder={T.includedPh} value={listText.includes} onChange={(e) => setList('includes', e.target.value)} /><p style={hintStyle}>{T.includedHint}</p></div>

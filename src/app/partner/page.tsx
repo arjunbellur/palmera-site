@@ -39,11 +39,11 @@ export default function PartnerHome() {
   const ledgerBalance = ledger.reduce((s, e) => s + (e.amount || 0), 0)
   // Same fallback as /partner/earnings: until the ledger writer exists, show
   // the money already sitting on confirmed/completed bookings.
-  const derivedEarn = bookings
-    .filter(b => ['confirmed', 'completed'].includes(b.status))
-    .reduce((s, b) => s + (b.payoutAmount || 0), 0)
+  const upcomingEarn = bookings.filter(b => b.status === 'confirmed').reduce((s, b) => s + (b.payoutAmount || 0), 0)
+  const deliveredEarn = bookings.filter(b => b.status === 'completed').reduce((s, b) => s + (b.payoutAmount || 0), 0)
   const derived = ledger.length === 0
-  const balance = derived ? derivedEarn : ledgerBalance
+  // Jordan's vocabulary: available for payout = delivered, not yet paid out.
+  const balance = derived ? deliveredEarn : ledgerBalance
   const lifetime = payouts.filter(p => p.status === 'paid').reduce((s, p) => s + (p.netAmount || 0), 0)
   const next = payouts.find(p => p.status === 'scheduled' || p.status === 'processing')
   const pending = bookings.filter(b => b.status === 'pending')
@@ -153,16 +153,56 @@ export default function PartnerHome() {
       {/* Metrics: balance leads full-width, the two smaller tiles sit beside it. */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 15rem), 1fr))', gap: '12px' }}>
         <div className="pf-glass" style={{ ...cardShape, gridColumn: '1 / -1', padding: '20px 22px', borderRadius: '18px', background: 'linear-gradient(150deg, rgba(190,154,86,0.12), var(--pf-card))', borderColor: 'var(--pf-border-strong)' }}>
-          <div style={{ ...eyebrow, fontSize: '10.5px', letterSpacing: '0.16em' }}>{derived ? L('exp_earn') : L('balance')}</div>
-          <div style={{ marginTop: '8px' }}><Money amount={formatAmount(balance)} size={46} /></div>
+          <div style={{ ...eyebrow, fontSize: '10.5px', letterSpacing: '0.16em' }}>{L('upcoming_earn')}</div>
+          <div style={{ marginTop: '8px' }}><Money amount={formatAmount(upcomingEarn)} size={46} /></div>
           <div style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-muted)', marginTop: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ color: 'var(--pf-gold)' }}>◆</span>
-            {derived && balance > 0 ? L('exp_earn_note') : <>{L('next_payout')} · {next ? formatDate(next.scheduledFor) : '—'}</>}
+            <Wallet size={12} strokeWidth={1.75} style={{ color: 'var(--pf-gold)' }} />
+            {L('upcoming_earn_note')}
           </div>
         </div>
-        <StatTile label={L('next_amt')} amount={formatAmount(next?.netAmount ?? 0)} />
+        <StatTile label={L('balance')} amount={formatAmount(balance)} sub={next ? `${L('next_payout')} · ${formatDate(next.scheduledFor)}` : undefined} />
         <StatTile label={L('lifetime')} amount={formatAmount(lifetime)} />
       </div>
+
+      {/* Performance this month (Jordan/ChatGPT #1): "How is my business doing
+          on Palmera?" answered in one row. All derived from bookings. */}
+      {loaded && (() => {
+        const now = new Date()
+        const thisMonth = (b: Booking) => { const d = toDate(b.scheduledFor); return !!d && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() }
+        const monthAll = bookings.filter(thisMonth)
+        const monthLive = monthAll.filter(b => ['pending', 'confirmed', 'completed'].includes(b.status))
+        const monthRevenue = monthLive.reduce((s, b) => s + (b.payoutAmount || 0), 0)
+        const completedAll = bookings.filter(b => b.status === 'completed').length
+        const decided = bookings.filter(b => ['confirmed', 'completed', 'cancelled', 'declined', 'no_show'].includes(b.status)).length
+        const cancelled = bookings.filter(b => ['cancelled', 'declined'].includes(b.status)).length
+        const cancelRate = decided > 0 ? Math.round((cancelled / decided) * 100) : 0
+        const valued = bookings.filter(b => (b.bookingTotal || 0) > 0 && ['confirmed', 'completed'].includes(b.status))
+        const avgValue = valued.length ? Math.round(valued.reduce((s, b) => s + (b.bookingTotal || 0), 0) / valued.length) : 0
+        const counts = new Map<string, number>()
+        for (const b of bookings) if (['confirmed', 'completed'].includes(b.status)) counts.set(b.title, (counts.get(b.title) || 0) + 1)
+        const top = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]
+        const Tile = ({ label, value, sub }: { label: string; value: string; sub?: string }) => (
+          <div className="pf-glass" style={{ ...cardShape, padding: '14px 16px' }}>
+            <div style={{ ...eyebrow, fontSize: '9.5px' }}>{label}</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--pf-text)', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{value}</div>
+            {sub && <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'var(--pf-faint)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub}</div>}
+          </div>
+        )
+        if (bookings.length === 0) return null
+        return (
+          <div style={{ marginTop: '12px' }}>
+            <div style={{ ...eyebrow, margin: '0 0 8px 2px' }}>{L('perf_title')}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr))', gap: '10px' }}>
+              <Tile label={L('perf_month_res')} value={String(monthLive.length)} />
+              <Tile label={L('perf_month_rev')} value={formatAmount(monthRevenue)} sub="XOF" />
+              <Tile label={L('perf_completed')} value={String(completedAll)} />
+              <Tile label={L('perf_cancel')} value={`${cancelRate}%`} sub={decided > 0 ? `${cancelled}/${decided}` : undefined} />
+              <Tile label={L('perf_avg')} value={formatAmount(avgValue)} sub="XOF" />
+              <Tile label={L('perf_top')} value={top ? top[0] : '—'} sub={top ? `${top[1]} ${L('bookings_n')}` : undefined} />
+            </div>
+          </div>
+        )
+      })()}
 
       <SectionTitle action={upcoming.length > 0 ? <a href="/partner/reservations" style={{ fontFamily: 'var(--font-sans)', fontSize: '11.5px', color: 'var(--pf-gold)' }}>{L('see_all')}</a> : undefined}>
         {L('upcoming')}

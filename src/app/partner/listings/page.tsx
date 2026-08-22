@@ -5,6 +5,7 @@ import { usePartner } from '../PartnerContext'
 import { t } from '../i18n'
 import {
   getExperiencesByCompany, addExperience, deleteExperience, getOptions, addOption, saveExperienceWithOptions,
+  getCompanyAdmin,
 } from '@/lib/firestore'
 import ConfirmDialog from '@/components/dashboard/ConfirmDialog'
 import type { Experience, ExperienceStatus, Option, OptionGroup } from '@/lib/schema'
@@ -25,6 +26,7 @@ export default function ListingsScreen() {
   const { uid, company, locale } = usePartner()
   const L = (k: string) => t(locale, k)
   const [items, setItems] = useState<Experience[]>([])
+  const [rate, setRate] = useState<number | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<Experience | undefined>()
   const [editingOptions, setEditingOptions] = useState<Option[]>([])
@@ -32,7 +34,9 @@ export default function ListingsScreen() {
 
   const load = async () => {
     if (!uid || !company?.id) return
-    setItems(await getExperiencesByCompany(uid, company.id))
+    const [exps, adm] = await Promise.all([getExperiencesByCompany(uid, company.id), getCompanyAdmin(company.id).catch(() => null)])
+    setItems(exps)
+    setRate(typeof adm?.commissionRate === 'number' ? adm.commissionRate : null)
     setLoaded(true)
   }
   useEffect(() => { load() /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [uid, company?.id])
@@ -43,6 +47,7 @@ export default function ListingsScreen() {
   }
 
   const [catFilter, setCatFilter] = useState<string>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft' | 'unpublished'>('all')
   const [toDelete, setToDelete] = useState<Experience | null>(null)
   const [deleting, setDeleting] = useState(false)
   const handleDelete = async () => {
@@ -90,14 +95,29 @@ export default function ListingsScreen() {
   // Jordan: filter by experience type — "if they just want to look at all
   // their activity experiences". Only categories the partner actually uses.
   const cats = [...new Set(items.map(e => e.category).filter(Boolean))] as string[]
-  const shown = catFilter === 'all' ? items : items.filter(e => e.category === catFilter)
+  const byCat = catFilter === 'all' ? items : items.filter(e => e.category === catFilter)
+  // Jordan/ChatGPT #11: Live / Draft / Unpublished — matters as listings grow.
+  const shown = statusFilter === 'all' ? byCat : byCat.filter(e => e.status === statusFilter)
+  const statusCount = (st: string) => byCat.filter(e => e.status === st).length
 
   return (
     <div className="pf-in">
       <ScreenHeader label={L('list_label')} title={L('list_title')} intro={L('list_intro')} />
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '14px', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+          {items.length > 0 && ([['all', L('cat_all'), byCat.length], ['published', L('st_published'), statusCount('published')], ['draft', L('st_draft'), statusCount('draft')], ['unpublished', L('st_unpublished'), statusCount('unpublished')]] as const)
+            .filter(([k, , n]) => k === 'all' || n > 0)
+            .map(([k, label, n]) => (
+            <button key={`s-${k}`} onClick={() => setStatusFilter(k)}
+              style={{ padding: '6px 13px', borderRadius: '999px', cursor: 'pointer', fontFamily: 'var(--font-sans)', fontSize: '11px', letterSpacing: '0.03em',
+                border: `1px solid ${statusFilter === k ? 'var(--pf-border-strong)' : 'var(--pf-border)'}`,
+                background: statusFilter === k ? 'var(--pf-card)' : 'transparent',
+                color: statusFilter === k ? 'var(--pf-text)' : 'var(--pf-faint)' }}>
+              {label} <span style={{ opacity: 0.6 }}>{n}</span>
+            </button>
+          ))}
+          {cats.length > 1 && <span style={{ width: '1px', height: '18px', background: 'var(--pf-border)', margin: '0 4px' }} />}
           {cats.length > 1 && [['all', L('cat_all')] as const, ...cats.map(c => [c, c] as const)].map(([k, label]) => (
             <button key={k} onClick={() => setCatFilter(k)}
               style={{ padding: '6px 13px', borderRadius: '999px', cursor: 'pointer', fontFamily: 'var(--font-sans)', fontSize: '11px', letterSpacing: '0.03em', textTransform: 'capitalize',
@@ -188,6 +208,7 @@ export default function ListingsScreen() {
 
       {showModal && company && (
         <ExperienceModal
+          commissionRate={rate}
           providerId={uid}
           companyId={company.id!}
           companyName={company.name}

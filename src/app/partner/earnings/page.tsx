@@ -6,12 +6,12 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import { usePartner } from '../PartnerContext'
 import { t } from '../i18n'
-import { getBookingsByCompany, getLedgerByProvider, getPayoutsByProvider } from '@/lib/firestore'
+import { getBookingsByCompany, getLedgerByProvider, getPayoutsByProvider, getCompanyAdmin } from '@/lib/firestore'
 import type { Booking, LedgerEntry, LedgerEntryType, Payout, PayoutStatus } from '@/lib/schema'
 import { formatAmount, formatDate, toDate } from '@/lib/money'
 import { ScreenHeader, Money, EmptyState, SectionTitle, Skeleton, card, cardShape, eyebrow } from '@/components/partner/ui'
 import { BarChart, RankPills } from '@/components/charts'
-import { CalendarClock, TrendingUp, BadgeCheck, Wallet, Clock } from 'lucide-react'
+import { CalendarClock, TrendingUp, BadgeCheck, Wallet, Clock, Check } from 'lucide-react'
 
 const PAYOUT_COLOR: Record<PayoutStatus, string> = {
   scheduled: 'var(--pf-gold)', processing: 'var(--pf-gold)', paid: 'var(--pf-success)', failed: 'var(--pf-alert)',
@@ -42,13 +42,16 @@ export default function EarningsScreen() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [period, setPeriod] = useState<'all' | 'month' | 'last' | '30'>('all')
   const [loaded, setLoaded] = useState(false)
+  const [rate, setRate] = useState<number | null>(null)
 
   useEffect(() => {
     if (!uid || !company?.id) return
     ;(async () => {
-      const [l, p, b] = await Promise.all([
+      const [l, p, b, adm] = await Promise.all([
         getLedgerByProvider(uid), getPayoutsByProvider(uid), getBookingsByCompany(uid, company.id!),
+        getCompanyAdmin(company.id!).catch(() => null),
       ])
+      setRate(typeof adm?.commissionRate === 'number' ? adm.commissionRate : null)
       setLedger(l.filter(e => e.companyId === company.id))
       setPayouts(p.filter(x => x.companyId === company.id))
       setBookings(b)
@@ -64,7 +67,9 @@ export default function EarningsScreen() {
   const upcomingEarn = earning.filter(b => b.status === 'confirmed').reduce((s, b) => s + (b.payoutAmount || 0), 0)
   const deliveredEarn = earning.filter(b => b.status === 'completed').reduce((s, b) => s + (b.payoutAmount || 0), 0)
   const derived = ledger.length === 0
-  const balance = derived ? upcomingEarn + deliveredEarn : ledgerBalance
+  // Jordan's vocabulary: Upcoming earnings (confirmed, not yet delivered) /
+  // Available for payout (delivered, not yet paid out) / Paid to date.
+  const balance = derived ? deliveredEarn : ledgerBalance
   const lifetime = payouts.filter(p => p.status === 'paid').reduce((s, p) => s + (p.netAmount || 0), 0)
   const next = payouts.find(p => p.status === 'scheduled' || p.status === 'processing')
 
@@ -168,15 +173,13 @@ export default function EarningsScreen() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 14rem), 1fr))', gap: '12px' }}>
         <div style={{ gridColumn: '1 / -1', padding: '24px', borderRadius: '18px', background: 'linear-gradient(150deg, rgba(190,154,86,0.12), var(--pf-card))', border: '1px solid var(--pf-border-strong)', display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '22px' }}>
           <div>
-            <div style={{ ...eyebrow, fontSize: '10.5px', letterSpacing: '0.16em' }}>{derived ? L('exp_earn') : L('balance')}</div>
+            <div style={{ ...eyebrow, fontSize: '10.5px', letterSpacing: '0.16em' }}>{L('avail_payout')}</div>
             <div style={{ marginTop: '8px' }}><Money amount={formatAmount(balance)} size={52} /></div>
-            {derived && balance > 0 && (
-              <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-muted)', marginTop: '8px', maxWidth: '22rem', lineHeight: 1.5 }}>{L('exp_earn_note')}</div>
-            )}
+            <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-muted)', marginTop: '8px', maxWidth: '22rem', lineHeight: 1.5 }}>{L('avail_payout_note')}</div>
           </div>
           <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+            <CircleStat icon={<TrendingUp size={14} strokeWidth={1.75} />} label={L('upcoming_earn')} value={<>{formatAmount(upcomingEarn)} <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'var(--pf-muted)' }}>XOF</span></>} />
             <CircleStat icon={<CalendarClock size={14} strokeWidth={1.75} />} label={L('next_payout')} value={next ? formatDate(next.scheduledFor) : '—'} />
-            <CircleStat icon={<TrendingUp size={14} strokeWidth={1.75} />} label={L('next_amt')} value={<>{formatAmount(next?.netAmount ?? 0)} <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'var(--pf-muted)' }}>XOF</span></>} />
             <CircleStat icon={<BadgeCheck size={14} strokeWidth={1.75} />} label={L('status_lbl')} value={company?.active ? (locale === 'fr' ? 'Actif' : 'Active') : '—'} tone="var(--pf-success)" />
           </div>
         </div>
@@ -186,15 +189,46 @@ export default function EarningsScreen() {
           <div style={{ marginTop: '6px' }}><Money amount={formatAmount(lifetime)} size={26} /></div>
         </div>
         <div className="pf-glass" style={cardShape}>
-          <div style={eyebrow}>{L('comm_window')}</div>
+          <div style={eyebrow}>{L('comm_title')}</div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: '26px', color: 'var(--pf-text)', marginTop: '6px' }}>
-            10%{monthsLeft != null && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-muted)', marginLeft: '6px' }}>{monthsLeft} {locale === 'fr' ? 'mois' : 'mo'} {L('months_left')}</span>}
+            {rate != null ? `${+(rate * 100).toFixed(2)}%` : '—'}<span style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-muted)', marginLeft: '6px' }}>{L('comm_per_booking')}</span>
           </div>
           <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'var(--pf-faint)', marginTop: '5px' }}>
-            {ends ? `${L('window_ends')} ${formatDate(ends)}` : locale === 'fr' ? 'Pas encore activée' : 'Not activated yet'}
+            {ends ? `${L('comm_first_year')} ${formatDate(ends)}${monthsLeft != null ? ` · ${monthsLeft} ${locale === 'fr' ? 'mois' : 'mo'} ${L('months_left')}` : ''}` : locale === 'fr' ? 'Pas encore activée' : 'Not activated yet'}
           </div>
         </div>
       </div>
+
+      {/* Money lifecycle (Jordan #8): where a franc is on its way to you. */}
+      {(() => {
+        const paidCount = earning.filter(b => ['confirmed', 'completed'].includes(b.status)).length
+        const upcomingCount = earning.filter(b => b.status === 'confirmed').length
+        const doneCount = earning.filter(b => b.status === 'completed').length
+        const paidOut = payouts.filter(p => p.status === 'paid').length
+        const steps = [
+          { k: 'lc_paid', n: paidCount }, { k: 'lc_upcoming', n: upcomingCount },
+          { k: 'lc_done', n: doneCount }, { k: 'lc_eligible', n: derived ? doneCount : unsettled.filter(e => e.type === 'commission_earned').length },
+          { k: 'lc_paidout', n: paidOut },
+        ]
+        return (
+          <div className="pf-glass" style={{ ...cardShape, marginTop: '12px' }}>
+            <div style={{ ...eyebrow, marginBottom: '12px' }}>{L('lc_title')}</div>
+            <div style={{ display: 'flex', alignItems: 'stretch', gap: '0', overflowX: 'auto' }}>
+              {steps.map((st, i) => (
+                <div key={st.k} style={{ flex: '1 1 0', minWidth: '6.5rem', position: 'relative', padding: '0 6px', textAlign: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
+                    <span style={{ width: '26px', height: '26px', borderRadius: '50%', border: `1px solid ${st.n > 0 ? 'var(--pf-gold)' : 'var(--pf-border)'}`, background: st.n > 0 ? 'rgba(190,154,86,0.14)' : 'transparent', color: st.n > 0 ? 'var(--pf-gold)' : 'var(--pf-faint)', display: 'grid', placeItems: 'center', fontFamily: 'var(--font-sans)', fontSize: '11px', flexShrink: 0 }}>
+                      {st.n > 0 ? st.n : <Check size={12} strokeWidth={2} style={{ opacity: 0.35 }} />}
+                    </span>
+                    {i < steps.length - 1 && <span style={{ position: 'absolute', left: '50%', right: '-50%', top: '13px', height: '1px', background: 'var(--pf-border)', zIndex: -1 }} />}
+                  </div>
+                  <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: st.n > 0 ? 'var(--pf-text)' : 'var(--pf-faint)', lineHeight: 1.35 }}>{L(st.k)}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Derived breakdown: what's coming vs what's already delivered. */}
       {derived && balance > 0 && (
@@ -298,7 +332,35 @@ export default function EarningsScreen() {
         </div>
       )}
       {ledger.length === 0 ? (
-        <EmptyState icon={<Clock size={22} strokeWidth={1.75} />} title={L('ledger_empty_t')} body={L('ledger_empty_b')} />
+        earning.length === 0 ? (
+          <EmptyState icon={<Clock size={22} strokeWidth={1.75} />} title={L('ledger_empty_t')} body={L('ledger_empty_b')} />
+        ) : (
+          /* Jordan #7: the reconciliation table — every booking with money on it. */
+          <div className="pf-glass" style={{ ...listCard, overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'var(--font-sans)', fontSize: '12px', minWidth: '38rem' }}>
+              <thead>
+                <tr style={{ color: 'var(--pf-faint)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  {['tx_date', 'tx_booking', 'tx_customer', 'tx_total', 'tx_commission', 'tx_net', 'tx_status'].map((k, i) => (
+                    <th key={k} style={{ textAlign: i >= 3 && i <= 5 ? 'right' : 'left', padding: '11px 14px', borderBottom: '1px solid var(--pf-border)', fontWeight: 400 }}>{L(k)}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {[...earning].sort((a, b) => (toDate(b.scheduledFor)?.getTime() ?? 0) - (toDate(a.scheduledFor)?.getTime() ?? 0)).map((b, i, arr) => (
+                  <tr key={b.id} style={{ borderBottom: i < arr.length - 1 ? '1px solid var(--pf-border)' : 'none' }}>
+                    <td style={{ padding: '10px 14px', color: 'var(--pf-muted)', whiteSpace: 'nowrap' }}>{formatDate(b.scheduledFor)}</td>
+                    <td style={{ padding: '10px 14px', color: 'var(--pf-text)', fontFamily: 'var(--font-serif)', fontSize: '13px' }}>{b.title}</td>
+                    <td style={{ padding: '10px 14px', color: 'var(--pf-muted)' }}>{b.customerName || '—'}</td>
+                    <td style={{ padding: '10px 14px', textAlign: 'right', color: 'var(--pf-text)' }}>{formatAmount(b.bookingTotal)}</td>
+                    <td style={{ padding: '10px 14px', textAlign: 'right', color: 'var(--pf-faint)' }}>−{formatAmount(b.commissionAmount)}</td>
+                    <td style={{ padding: '10px 14px', textAlign: 'right', color: b.status === 'completed' ? 'var(--pf-success)' : 'var(--pf-gold)', fontWeight: 600 }}>{formatAmount(b.payoutAmount)}</td>
+                    <td style={{ padding: '10px 14px', color: 'var(--pf-muted)', whiteSpace: 'nowrap' }}>{L(b.status === 'completed' ? 'lc_eligible_s' : 'lc_upcoming_s')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
       ) : shownLedger.length === 0 ? (
         <div className="pf-glass" style={{ ...cardShape, textAlign: 'center', fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--pf-faint)' }}>—</div>
       ) : (

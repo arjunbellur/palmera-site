@@ -402,6 +402,7 @@ export default function AdminCompanyDetailPage({ params }: { params: Promise<{ c
 
       {showExpModal && company && (
         <ExperienceModal
+          commissionRate={companyAdmin?.commissionRate ?? null}
           providerId={company.providerId}
           storageUid={adminUid}
           companyId={companyId}
