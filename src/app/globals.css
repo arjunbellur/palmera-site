@@ -358,3 +358,39 @@ input:focus-visible, textarea:focus-visible, select:focus-visible {
 .pf-scroll { scrollbar-width: thin; scrollbar-color: var(--pf-border-strong, rgba(190,154,86,0.35)) transparent; }
 .pf-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
 .pf-scroll::-webkit-scrollbar-thumb { background: var(--pf-border-strong, rgba(190,154,86,0.35)); border-radius: 999px; }
+
+/* ── Page ambience for the app shells (partner / admin / supplier) ──
+   The cards got glass and glow; the ground under them stayed flat. A soft
+   gold light behind the header, a cooler counter-light low right, and a
+   faint grain so large dark areas don't band. Theme-aware via tokens. */
+.pf-ambient {
+  position: relative;
+  isolation: isolate;
+}
+.pf-ambient::before {
+  content: '';
+  position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(60rem 26rem at 12% -6rem, var(--pf-ambient-gold, rgba(190,154,86,0.16)), transparent 60%),
+    radial-gradient(44rem 30rem at 100% 110%, var(--pf-ambient-cool, rgba(150,172,220,0.07)), transparent 65%);
+}
+.pf-ambient::after {
+  content: '';
+  position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: var(--pf-grain, 0.035);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+}
+[data-theme="light"] .pf-ambient::before {
+  background:
+    radial-gradient(60rem 26rem at 12% -6rem, rgba(158,118,59,0.14), transparent 60%),
+    radial-gradient(44rem 30rem at 100% 110%, rgba(120,84,30,0.05), transparent 65%);
+}
+[data-theme="light"] .pf-ambient::after { opacity: 0.025; }
+
+/* Title sheen — a gold-to-cream gradient clipped to the display face. */
+.pf-title-sheen {
+  background: linear-gradient(100deg, var(--pf-head) 0%, var(--pf-head) 55%, var(--pf-gold) 130%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+}
+@keyframes pfRule { from { transform: scaleX(0) } to { transform: scaleX(1) } }

@@ -46,13 +46,22 @@ export const bodyText: CSSProperties = {
 export const mono: CSSProperties = { fontFamily: 'var(--font-sans)', color: 'var(--pf-muted)' }
 
 /** Section heading with the small gold eyebrow above it. */
-export function ScreenHeader({ label, title, intro }: { label: string; title: string; intro?: string }) {
+/** Page header — eyebrow with a gold rule, display title with a sheen, serif
+ *  intro; an optional `aside` slot (actions, a chip) sits on the right. The
+ *  page ground behind it carries the ambient light (.pf-ambient on <main>). */
+export function ScreenHeader({ label, title, intro, aside }: { label: string; title: string; intro?: string; aside?: ReactNode }) {
   return (
-    <div style={{ marginBottom: '22px' }}>
-      <div style={{ ...eyebrow, color: 'var(--pf-eyebrow)', marginBottom: '8px' }}>{label}</div>
-      <h1 style={{ fontFamily: 'var(--font-display)', color: 'var(--pf-head)', fontSize: 'clamp(1.5rem, 3.4vw, 2rem)', fontWeight: 400, letterSpacing: '0.04em', margin: 0 }}>{title}</h1>
-      {intro && <p style={{ ...bodyText, margin: '10px 0 0', maxWidth: '38rem' }}>{intro}</p>}
-    </div>
+    <header style={{ marginBottom: '26px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '18px', flexWrap: 'wrap' }}>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+          <span aria-hidden style={{ width: '22px', height: '1px', background: 'var(--pf-gold)', transformOrigin: 'left', animation: 'pfRule 0.5s cubic-bezier(0.22,1,0.36,1)' }} />
+          <span style={{ ...eyebrow, color: 'var(--pf-gold)', letterSpacing: '0.18em' }}>{label}</span>
+        </div>
+        <h1 className="pf-title-sheen" style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.75rem, 3.8vw, 2.5rem)', fontWeight: 400, letterSpacing: '0.03em', lineHeight: 1.08, margin: 0 }}>{title}</h1>
+        {intro && <p style={{ ...bodyText, color: 'var(--pf-muted)', margin: '12px 0 0', maxWidth: '40rem' }}>{intro}</p>}
+      </div>
+      {aside && <div style={{ flexShrink: 0 }}>{aside}</div>}
+    </header>
   )
 }
 

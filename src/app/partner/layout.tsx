@@ -215,7 +215,7 @@ function Shell({ children }: { children: React.ReactNode }) {
             </div>
           </header>
 
-          <main className="pf-scroll" style={{ flex: 1, padding: isMobile ? '20px 18px 84px' : '30px 38px 52px', maxWidth: '1280px', width: '100%', margin: '0 auto' }}>
+          <main className="pf-scroll pf-ambient" style={{ flex: 1, padding: isMobile ? '20px 18px 84px' : '30px 38px 52px', maxWidth: '1280px', width: '100%', margin: '0 auto' }}>
             {children}
           </main>
 

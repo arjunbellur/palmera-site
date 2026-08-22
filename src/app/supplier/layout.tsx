@@ -156,7 +156,7 @@ function Shell({ children }: { children: React.ReactNode }) {
             <button onClick={signOutAll} title={L('sign_out')} style={{ width: '30px', height: '30px', borderRadius: '8px', border: '1px solid var(--pf-border)', background: 'transparent', color: 'var(--pf-faint)', cursor: 'pointer', fontSize: '13px' }}><LogOut size={14} strokeWidth={1.75} /></button>
           </div>
         </header>
-        <main className="pf-scroll" style={{ flex: 1, padding: '28px 22px 48px', maxWidth: '1100px', width: '100%', margin: '0 auto' }}>
+        <main className="pf-scroll pf-ambient" style={{ flex: 1, padding: '28px 22px 48px', maxWidth: '1100px', width: '100%', margin: '0 auto' }}>
           {children}
         </main>
       </div>
