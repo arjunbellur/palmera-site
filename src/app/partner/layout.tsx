@@ -1,7 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { onAuthChange } from '@/lib/auth'
+import { onAuthChange, needsEmailVerification } from '@/lib/auth'
+import VerifyEmailGate from '@/components/dashboard/VerifyEmailGate'
 import { ThemeProvider, useTheme } from '@/lib/theme'
 import { getProvider, getCompanies, subscribeBookingsByCompany } from '@/lib/firestore'
 import type { Company, Provider } from '@/lib/schema'
@@ -35,6 +36,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   const [companyId, setCompanyIdState] = useState('')
   const [locale, setLocaleState] = useState<Locale>('fr')
   const [loading, setLoading] = useState(true)
+  const [unverified, setUnverified] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [switcherOpen, setSwitcherOpen] = useState(false)
   const [pendingCount, setPendingCount] = useState(0)
@@ -57,6 +59,10 @@ function Shell({ children }: { children: React.ReactNode }) {
       if (!user) { router.replace('/dashboard'); return }
       if (isAdminEmail(user.email)) { router.replace('/admin'); return }
       setUid(user.uid); setEmail(user.email || '')
+      // Email verification gate — accounts created after the cutoff must
+      // confirm their address before they see anything.
+      if (needsEmailVerification(user)) { setUnverified(true); setLoading(false); return }
+      setUnverified(false)
       const [p, all] = await Promise.all([getProvider(user.uid), getCompanies(user.uid)])
       // GRADUATION GATE (mirror of the /dashboard guard): the dashboard is for
       // partners who have finished onboarding by publishing a listing. Anyone
@@ -99,6 +105,8 @@ function Shell({ children }: { children: React.ReactNode }) {
     await logOut()
     router.push('/dashboard')
   }
+
+  if (unverified) return <div data-theme={theme}><VerifyEmailGate email={email} onVerified={() => window.location.reload()} /></div>
 
   if (loading) return (
     <div data-theme={theme} style={{ minHeight: '100vh', background: 'var(--pf-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

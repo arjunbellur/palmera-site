@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import { usePartner } from './PartnerContext'
 import { t } from './i18n'
-import { getBookingsByCompany, getLedgerByProvider, getPayoutsByProvider, getExperiencesByCompany, getPayoutProfile } from '@/lib/firestore'
+import { subscribeBookingsByCompany, getLedgerByProvider, getPayoutsByProvider, getExperiencesByCompany, getPayoutProfile } from '@/lib/firestore'
 import type { Booking, Experience, LedgerEntry, Payout } from '@/lib/schema'
 import { formatAmount, formatDate, toDate } from '@/lib/money'
 import { ScreenHeader, StatTile, Money, EmptyState, SectionTitle, Skeleton, card, cardShape, eyebrow } from '@/components/partner/ui'
@@ -20,14 +20,20 @@ export default function PartnerHome() {
   const [hasPayoutProfile, setHasPayoutProfile] = useState(true)
   const [loaded, setLoaded] = useState(false)
 
+  // Bookings are LIVE here (same subscription Reservations uses) — a new
+  // request lights up "needs attention" without a reload (Arjun, call).
+  useEffect(() => {
+    if (!uid || !company?.id) return
+    const unsub = subscribeBookingsByCompany(uid, company.id, setBookings)
+    return () => unsub()
+  }, [uid, company?.id])
   useEffect(() => {
     if (!uid || !company?.id) return
     ;(async () => {
-      const [b, l, p, e, pp] = await Promise.all([
-        getBookingsByCompany(uid, company.id!), getLedgerByProvider(uid), getPayoutsByProvider(uid),
+      const [l, p, e, pp] = await Promise.all([
+        getLedgerByProvider(uid), getPayoutsByProvider(uid),
         getExperiencesByCompany(uid, company.id!), getPayoutProfile(company.id!),
       ])
-      setBookings(b)
       setLedger(l.filter(x => x.companyId === company.id))
       setPayouts(p.filter(x => x.companyId === company.id))
       setExperiences(e)

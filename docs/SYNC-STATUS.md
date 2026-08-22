@@ -84,6 +84,14 @@ it writes a booking (⚠ would need Samson).
 Every dashboard change that touches documents/rules/indexes the app consumes
 gets a line here, newest first. Pure-UI dashboard changes are never listed.
 
+- 2026-08-22 ⚠ **Experiences gain `cancelDeadlineHours: number|null`** — the
+  resolved free-cancellation window (hours before `scheduledFor`) for the
+  listing's policy tier, denormalized from `config/policies` at every save.
+  This is the "cancel within 24h / 48h" field from the Aug 19 call: the
+  app should read it to decide refund eligibility instead of joining
+  config. Additive; null on listings not re-saved yet (fall back to the
+  tier lookup until then).
+
 - 2026-08-21 ⚠ **Experiences gain optional `durationValue` (number) +
   `durationUnit` ('minutes'|'hours'|'days'|'nights')** — structured duration
   from the editor. Purely additive: the legacy `duration` string is STILL

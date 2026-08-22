@@ -7,12 +7,41 @@ import {
   EmailAuthProvider,
   reauthenticateWithCredential,
   updatePassword,
+  sendEmailVerification,
   User,
 } from 'firebase/auth'
 import { auth } from './firebase'
 
-export const signUp = (email: string, password: string) =>
-  createUserWithEmailAndPassword(auth, email, password)
+// Accounts created from this date must verify their email before using any
+// surface (Dashboard Time call, 2026-08-19). Older accounts are grandfathered
+// so no existing partner gets locked out by a policy they never saw.
+export const VERIFY_CUTOFF = new Date('2026-08-22T00:00:00Z')
+
+export const signUp = async (email: string, password: string) => {
+  const cred = await createUserWithEmailAndPassword(auth, email, password)
+  auth.languageCode = 'fr'
+  await sendEmailVerification(cred.user).catch((e) => console.error('verification email failed:', e))
+  return cred
+}
+
+export const resendVerification = async () => {
+  if (!auth.currentUser) throw new Error('not-signed-in')
+  auth.languageCode = 'fr'
+  await sendEmailVerification(auth.currentUser)
+}
+
+/** Re-fetches the user record so a just-clicked verification link is seen. */
+export const refreshVerified = async (): Promise<boolean> => {
+  if (!auth.currentUser) return false
+  await auth.currentUser.reload()
+  return auth.currentUser.emailVerified
+}
+
+export const needsEmailVerification = (user: User) => {
+  if (user.emailVerified) return false
+  const created = user.metadata.creationTime ? new Date(user.metadata.creationTime) : null
+  return !!created && created >= VERIFY_CUTOFF
+}
 
 export const signIn = (email: string, password: string) =>
   signInWithEmailAndPassword(auth, email, password)

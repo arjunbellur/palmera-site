@@ -562,7 +562,10 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
       : mode === 'unpublish' ? 'unpublished'
       : (experience?.status === 'published' ? 'published' : 'draft')
     await onSave(
-      { ...form, minGuests, maxGuests, eventDate, schedule, optionGroups, providerId, companyId, status, active: status === 'published' },
+      { ...form, minGuests, maxGuests, eventDate, schedule, optionGroups, providerId, companyId, status, active: status === 'published',
+        // Samson reads this one number (Dashboard Time call): hours before the
+        // experience during which a guest may still cancel for a refund.
+        cancelDeadlineHours: tierHours[form.cancellationPolicy?.tier || 'moderate'] ?? null },
       groups,
     )
     setSaving(false)
@@ -900,7 +903,7 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
                 style={{ borderRadius: '0.5rem', padding: '1rem', marginBottom: '0.875rem', opacity: dragIdx === gi ? 0.5 : 1 }}>
                 {groups.length > 1 && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.625rem' }}>
-                    <span title={T.reorder} style={{ cursor: 'grab', color: 'var(--db-text-faint)', fontSize: '0.875rem', letterSpacing: '2px' }}>⠿</span>
+                    <span title={T.reorder} style={{ cursor: 'grab', color: '#be9a56', fontSize: '1.125rem', letterSpacing: '2px', padding: '0 0.25rem', borderRadius: '0.25rem', background: 'rgba(190,154,86,0.12)' }}>⠿</span>
                     <span style={{ fontSize: '0.6875rem', color: 'var(--db-text-ghost)', fontFamily: 'var(--font-sans)', flex: 1 }}>{T.reorder}</span>
                     <button onClick={() => moveGroup(gi, gi - 1)} disabled={gi === 0}
                       style={{ width: '24px', height: '24px', borderRadius: '6px', border: '1px solid var(--db-border-subtle)', background: 'transparent', color: 'var(--db-text-faint)', cursor: gi === 0 ? 'default' : 'pointer', opacity: gi === 0 ? 0.35 : 1, fontSize: '0.75rem' }}>↑</button>

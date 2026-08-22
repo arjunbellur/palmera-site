@@ -5,7 +5,8 @@
 // auth uid. No record for the email → friendly "contact Palmera" screen.
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { onAuthChange, signIn, signUp, resetPassword, logOut } from '@/lib/auth'
+import { onAuthChange, signIn, signUp, resetPassword, logOut, needsEmailVerification } from '@/lib/auth'
+import VerifyEmailGate from '@/components/dashboard/VerifyEmailGate'
 import { ThemeProvider, useTheme } from '@/lib/theme'
 import { getSupplierByUid, claimSupplierByEmail } from '@/lib/firestore'
 import type { Supplier } from '@/lib/schema'
@@ -20,7 +21,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   const [uid, setUid] = useState('')
   const [email, setEmail] = useState('')
   const [supplier, setSupplier] = useState<Supplier | null>(null)
-  const [authed, setAuthed] = useState<'loading' | 'out' | 'unclaimed' | 'in'>('loading')
+  const [authed, setAuthed] = useState<'loading' | 'out' | 'unverified' | 'unclaimed' | 'in'>('loading')
   const [locale, setLocaleState] = useState<Locale>('fr')
 
   // Login form state
@@ -42,6 +43,7 @@ function Shell({ children }: { children: React.ReactNode }) {
     const unsub = onAuthChange(async user => {
       if (!user) { setSupplier(null); setAuthed('out'); return }
       setUid(user.uid); setEmail(user.email || '')
+      if (needsEmailVerification(user)) { setAuthed('unverified'); return }
       // A failed lookup (offline, rules) must land on the friendly screen,
       // never hang the spinner.
       try {
@@ -84,6 +86,7 @@ function Shell({ children }: { children: React.ReactNode }) {
     </div>
   )
   if (authed === 'loading') return spinner
+  if (authed === 'unverified') return <div data-theme={theme}><VerifyEmailGate email={email} locale={locale} onVerified={() => window.location.reload()} /></div>
 
   const field: React.CSSProperties = {
     width: '100%', padding: '11px 13px', borderRadius: '10px',

@@ -1,7 +1,8 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { onAuthChange } from '@/lib/auth'
+import { onAuthChange, needsEmailVerification } from '@/lib/auth'
+import VerifyEmailGate from '@/components/dashboard/VerifyEmailGate'
 import { isAdminEmail } from '@/lib/admin'
 import { ThemeProvider, useTheme } from '@/lib/theme'
 import DashboardNav from '@/components/dashboard/DashboardNav'
@@ -18,6 +19,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
   const { theme } = useTheme()
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(true)
+  const [unverified, setUnverified] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [isTablet, setIsTablet] = useState(false)
   const [locale, setLocale] = useState('fr')
@@ -54,6 +56,10 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
       if (!user) { router.replace('/dashboard'); return }
       const userEmail = user.email || ''
       setEmail(userEmail)
+      // Email verification gate — accounts created after the cutoff must
+      // confirm their address before they see anything.
+      if (needsEmailVerification(user)) { setUnverified(true); setLoading(false); return }
+      setUnverified(false)
       // Admins live on their own /admin surface now; the old /dashboard/admin
       // pages are redirect stubs that land there too.
       if (isAdminEmail(userEmail)) { router.replace('/admin' + window.location.search); return }
@@ -96,6 +102,8 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
   }
 
   if (isLoginPage) return <>{children}</>
+
+  if (unverified) return <div data-theme={theme}><VerifyEmailGate email={email} onVerified={() => window.location.reload()} /></div>
 
   if (loading) return (
     <div data-theme={theme} style={{ minHeight: '100vh', background: 'var(--db-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

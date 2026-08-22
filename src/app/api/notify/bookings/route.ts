@@ -179,7 +179,55 @@ export async function POST(req: NextRequest) {
       reminders.push({ booking: doc.id, to })
     }
 
-    return NextResponse.json({ ok: true, dry, checked: snap.size, sent: results, reminders })
+    // ── Guest confirmation pass (Jordan: "a notification is not enough —
+    // luxury app"). When a booking is CONFIRMED (instant or partner-approved)
+    // the guest gets one email. Keyed `${id}_guest` in email_log. Window: the
+    // same 24h create window plus the last 7 days for late approvals.
+    const guestMails: { booking: string; to?: string; skipped?: string }[] = []
+    const gSnap = await db.collection('bookings')
+      .where('createdAt', '>=', new Date(Date.now() - 7 * 24 * 3600 * 1000))
+      .get()
+    for (const doc of gSnap.docs) {
+      const b = doc.data()
+      if (b.status !== 'confirmed') continue
+      if (typeof b.providerId !== 'string' || typeof b.bookingTotal !== 'number') continue
+      const to = b.customerEmail || b.checkout?.customerEmail
+      if (!to) { continue }
+      const logRef = db.collection('email_log').doc(`${doc.id}_guest`)
+      if ((await logRef.get()).exists) continue
+      // One per party (the app's duplicate-doc bug): skip if a sibling already got it.
+      const sib = await db.collection('email_log').where('party', '==', partyKey(b)).where('kind', '==', 'guest_confirmation').limit(1).get()
+      if (!sib.empty) { if (!dry) await logRef.set({ kind: 'duplicate_suppressed', party: partyKey(b), sentAt: new Date() }); continue }
+      if (dry) { guestMails.push({ booking: doc.id, to }); continue }
+      const when = b.scheduledFor?.toDate?.()
+      const whenStr = when ? when.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) : '—'
+      const company = (await db.collection('companies').doc(b.companyId).get()).data()
+      const row = (label: string, value: string) =>
+        `<tr><td style="padding:6px 14px 6px 0;color:#8a8577;font-size:13px">${label}</td><td style="padding:6px 0;color:#2a2119;font-size:14px"><strong>${value}</strong></td></tr>`
+      await sendEmail({
+        to,
+        subject: `✓ Réservation confirmée — ${b.title}`,
+        html: `
+<div style="font-family:Georgia,serif;max-width:520px;margin:0 auto;padding:24px">
+  <p style="letter-spacing:0.14em;font-size:11px;color:#9e763b;text-transform:uppercase">Palmera</p>
+  <h2 style="color:#2a2119;font-weight:500">Votre réservation est confirmée</h2>
+  <table style="border-collapse:collapse">
+    ${row('Expérience', String(b.title || '—'))}
+    ${row('Chez', String(company?.name || b.provider || '—'))}
+    ${row('Date', whenStr)}
+    ${row('Personnes', String((b.guestCount as number) || 1))}
+    ${b.bookingTotal > 0 ? row('Montant', `${fmtXof(b.bookingTotal)} XOF`) : ''}
+    ${row('Référence', doc.id)}
+  </table>
+  <p style="color:#2a2119;font-size:14px">Tout est prêt. Retrouvez les détails dans l’app Palmera.</p>
+  <p style="color:#8a8577;font-size:11px">Your booking is confirmed — details are in the Palmera app.</p>
+</div>`,
+      })
+      await logRef.set({ kind: 'guest_confirmation', to, sentAt: new Date(), title: b.title ?? null, party: partyKey(b) })
+      guestMails.push({ booking: doc.id, to })
+    }
+
+    return NextResponse.json({ ok: true, dry, checked: snap.size, sent: results, reminders, guestMails })
   } catch (e) {
     console.error('notify/bookings failed:', e)
     return NextResponse.json({ ok: false, error: String(e) }, { status: 500 })

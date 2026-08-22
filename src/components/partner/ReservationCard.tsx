@@ -30,7 +30,9 @@ export default function ReservationCard({
   busy?: boolean
 }) {
   const L = (k: string) => t(locale, k)
-  const s = STATUS[b.status] ?? STATUS.pending
+  const past = (() => { const d = toDate(b.scheduledFor); return !!d && d.getTime() < Date.now() })()
+  // Confirmed + date passed = delivered (interim until auto-completion exists).
+  const s = b.status === 'confirmed' && past ? { key: 'f_done_auto', tone: 'neutral' as Tone } : (STATUS[b.status] ?? STATUS.pending)
   const when = toDate(b.scheduledFor)
   const time = when ? when.toLocaleTimeString(locale === 'fr' ? 'fr-FR' : 'en-GB', { hour: '2-digit', minute: '2-digit' }) : '—'
   const guestsLabel = `${b.guestCount} ${b.guestCount === 1 ? L('guest') : L('guests')}`

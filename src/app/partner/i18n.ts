@@ -45,7 +45,7 @@ const FR: Record<string, string> = {
 
   res_label: 'Réservations', res_title: 'Vos réservations',
   res_intro: 'Confirmez ou refusez les demandes, et suivez les réservations à venir.',
-  f_all: 'Toutes', f_pending: 'À confirmer', f_confirmed: 'Confirmées', f_done: 'Terminées',
+  f_all: 'Toutes', f_pending: 'À confirmer', f_confirmed: 'Confirmées', f_done: 'Terminées', f_done_auto: 'Terminée',
   res_empty_t: 'Rien à afficher', res_empty_b: 'Les réservations de vos expériences apparaîtront ici.',
   instant: 'Confirmation immédiate', you_earn: 'Vous gagnez', total: 'Total', commission: 'Commission',
   accept: 'Confirmer', decline: 'Refuser', guests: 'personnes', guest: 'personne',
@@ -202,7 +202,7 @@ const EN: Record<string, string> = {
 
   res_label: 'Reservations', res_title: 'Your reservations',
   res_intro: 'Confirm or decline requests, and keep track of what’s coming up.',
-  f_all: 'All', f_pending: 'Needs response', f_confirmed: 'Confirmed', f_done: 'Completed',
+  f_all: 'All', f_pending: 'Needs response', f_confirmed: 'Confirmed', f_done: 'Completed', f_done_auto: 'Completed',
   res_empty_t: 'Nothing here yet', res_empty_b: 'Bookings for your experiences will appear here.',
   instant: 'Instant confirm', you_earn: 'You earn', total: 'Total', commission: 'Commission',
   accept: 'Confirm', decline: 'Decline', guests: 'guests', guest: 'guest',

@@ -178,6 +178,10 @@ export interface Experience {
   currency: string | null         // 'XOF' at launch; required if paid or any paid option
   confirmationType: ConfirmationType
   cancellationPolicy: CancellationPolicy
+  /** Resolved free-cancellation window in HOURS before `scheduledFor`,
+   *  denormalized from config/policies[tier] at save (2026-08-22, additive).
+   *  The app reads THIS to decide refund eligibility — no config join. */
+  cancelDeadlineHours?: number | null
   scheduleType: ScheduleType
   eventDate: TS | null            // required iff one_time
   schedule: Schedule | null

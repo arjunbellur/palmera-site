@@ -9,7 +9,7 @@ import { toDate } from '@/lib/money'
 import { ScreenHeader, EmptyState, Chip, Money, eyebrow, GhostButton, Skeleton } from '@/components/partner/ui'
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import { LifeBuoy, Phone, Mail, MessageCircle, Wallet } from 'lucide-react'
+import { LifeBuoy, Phone, Mail, MessageCircle, Wallet, List, CalendarDays } from 'lucide-react'
 import { getPolicies } from '@/lib/config'
 import ReservationCard from '@/components/partner/ReservationCard'
 import { formatAmount, formatDate } from '@/lib/money'
@@ -131,6 +131,11 @@ export default function ReservationsScreen() {
   }
 
   const isPastNow = (b: Booking) => { const d = toDate(b.scheduledFor); return !!d && d.getTime() < Date.now() }
+  // INTERIM (SYNC item 11): nothing marks bookings `completed` yet, so the
+  // Completed tab was always empty (Jordan). Until auto-completion exists,
+  // a confirmed booking whose date has passed is shown here as done — the
+  // partner delivered it. Display-only; the stored status is untouched.
+  const isDone = (b: Booking) => b.status === 'completed' || (b.status === 'confirmed' && isPastNow(b))
   // Pending on an INSTANT listing = the guest's checkout is unfinished; the
   // payment confirms it automatically. Not the partner's queue.
   const awaitingPayment = (b: Booking) => b.status === 'pending' && b.confirmationType === 'instant'
@@ -143,7 +148,7 @@ export default function ReservationsScreen() {
     if (filter === 'upcoming' && !(['pending', 'confirmed'].includes(b.status) && !isPastNow(b))) return false
     // "Terminées" is DELIVERED only — cancellations and no-shows have their
     // own pills now.
-    if (filter === 'done' && b.status !== 'completed') return false
+    if (filter === 'done' && !isDone(b)) return false
     if (filter === 'cancelled' && !['cancelled', 'declined'].includes(b.status)) return false
     if (filter === 'noshow' && b.status !== 'no_show') return false
     if (q && !`${b.title} ${b.customerName} ${b.id}`.toLowerCase().includes(q)) return false
@@ -180,7 +185,7 @@ export default function ReservationsScreen() {
   const matchesStatus = (b: Booking) => {
     if (filter === 'action' && !needsAction(b)) return false
     if (filter === 'upcoming' && !(['pending', 'confirmed'].includes(b.status) && !isPastNow(b))) return false
-    if (filter === 'done' && b.status !== 'completed') return false
+    if (filter === 'done' && !isDone(b)) return false
     if (filter === 'cancelled' && !['cancelled', 'declined'].includes(b.status)) return false
     if (filter === 'noshow' && b.status !== 'no_show') return false
     if (q && !`${b.title} ${b.customerName} ${b.id}`.toLowerCase().includes(q)) return false
@@ -225,10 +230,12 @@ export default function ReservationsScreen() {
 
       <div style={{ display: 'flex', gap: '7px', flexWrap: 'wrap', marginBottom: '16px', alignItems: 'center' }}>
         <div style={{ display: 'flex', border: '1px solid var(--pf-border)', borderRadius: '10px', overflow: 'hidden', marginRight: '4px' }}>
-          {([['list', 'view_list', '▤'], ['calendar', 'view_cal', '▦']] as const).map(([v, key, icon]) => (
-            <button key={v} onClick={() => setView(v)}
+          {([['list', 'view_list', <List key="l" size={12} strokeWidth={1.75} />], ['calendar', 'view_cal', <CalendarDays key="c" size={12} strokeWidth={1.75} />]] as const).map(([v, key, icon]) => (
+            // Jordan: switching to the calendar must show EVERYTHING — a status
+            // filter carried over from the list ("needs action") made it look empty.
+            <button key={v} onClick={() => { setView(v); if (v === 'calendar') setFilter('all') }}
               style={{ padding: '7px 13px', background: view === v ? 'var(--pf-card)' : 'transparent', border: 'none', color: view === v ? 'var(--pf-gold)' : 'var(--pf-faint)', fontFamily: 'var(--font-sans)', fontSize: '11.5px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '12px' }}>{icon}</span> {L(key)}
+              {icon} {L(key)}
             </button>
           ))}
         </div>
