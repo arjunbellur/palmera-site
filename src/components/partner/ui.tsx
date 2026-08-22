@@ -5,7 +5,7 @@
 // Font mapping: the mockup used Google stand-ins (Cormorant / Source Serif /
 // IBM Plex Mono) because it couldn't load our licensed faces. We keep the same
 // ROLES but bind them to the real brand fonts:
-//   display numerals + headings → var(--font-display)  (Raveo Display)
+//   display numerals + headings → var(--font-display)  (Google Sans Flex)
 //   body copy                   → var(--font-serif)    (LT Superior Serif)
 //   labels, data, chrome        → var(--font-sans)     (Geist Mono)
 import type { CSSProperties, ReactNode } from 'react'
@@ -57,7 +57,7 @@ export function ScreenHeader({ label, title, intro, aside }: { label: string; ti
           <span aria-hidden style={{ width: '22px', height: '1px', background: 'var(--pf-gold)', transformOrigin: 'left', animation: 'pfRule 0.5s cubic-bezier(0.22,1,0.36,1)' }} />
           <span style={{ ...eyebrow, color: 'var(--pf-gold)', letterSpacing: '0.18em' }}>{label}</span>
         </div>
-        <h1 className="pf-title-sheen" style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.75rem, 3.8vw, 2.5rem)', fontWeight: 400, letterSpacing: '0.03em', lineHeight: 1.08, margin: 0 }}>{title}</h1>
+        <h1 className="pf-title-sheen" style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.75rem, 3.8vw, 2.5rem)', fontWeight: 600, letterSpacing: '0.03em', lineHeight: 1.08, margin: 0 }}>{title}</h1>
         {intro && <p style={{ ...bodyText, color: 'var(--pf-muted)', margin: '12px 0 0', maxWidth: '40rem' }}>{intro}</p>}
       </div>
       {aside && <div style={{ flexShrink: 0 }}>{aside}</div>}

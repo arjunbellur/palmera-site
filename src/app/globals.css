@@ -10,13 +10,6 @@
    ============================================ */
 
 @font-face {
-  font-family: 'Raveo Display';
-  src: url('/fonts/Raveo-Display-Medium.woff2') format('woff2');
-  font-weight: 500;
-  font-display: swap;
-}
-
-@font-face {
   font-family: 'LT Superior Serif';
   src: url('/fonts/LTSuperiorSerif-Regular.otf') format('opentype');
   font-weight: 400;
@@ -93,7 +86,8 @@ body {
   --accent-2: #0f2723;
   --accent-3: #9e763b;
   --accent-4: #be9a56;
-  --font-display: 'Raveo Display', Arial, sans-serif;
+  /* Google Sans Flex (SIL OFL, Google Fonts) — variable: wght 100–900, opsz. */
+  --font-display: 'Google Sans Flex', 'Google Sans', Arial, sans-serif;
   --font-serif: 'LT Superior Serif', Arial, sans-serif;
   /* Deliberate: the 'sans' role (labels, chrome, data) is set in Geist Mono —
      the monospace texture IS the Palmera dashboard look. Self-hosted above;
@@ -394,3 +388,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible {
   -webkit-text-fill-color: transparent; color: transparent;
 }
 @keyframes pfRule { from { transform: scaleX(0) } to { transform: scaleX(1) } }
+
+/* Display face defaults: Google Sans Flex is a true variable font; the
+   display role (titles, numerals) sits at 500 unless a style says otherwise. */
+h1, h2, .pf-title-sheen { font-weight: 500; }
