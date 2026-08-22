@@ -1,5 +1,4 @@
 'use client'
-export const dynamic = 'force-dynamic'
 // Company detail — the admin's working view of one company: profile,
 // experiences (publish/unpublish + curation), agreement sign-off, and the
 // account-level controls. pf design language; behavior identical to the old
@@ -14,9 +13,10 @@ import {
   getOptions, saveExperienceWithOptions,
   type Countersignature, type Countersignatory,
 } from '@/lib/firestore'
-import ExperienceModal from '@/components/dashboard/ExperienceModal'
+import dynamic from 'next/dynamic'
+const ExperienceModal = dynamic(() => import('@/components/dashboard/ExperienceModal'), { ssr: false })
 import ConfirmDialog from '@/components/dashboard/ConfirmDialog'
-import AgreementDocument from '@/components/dashboard/AgreementDocument'
+const AgreementDocument = dynamic(() => import('@/components/dashboard/AgreementDocument'), { ssr: false })
 import CompanyForm, { type CompanyFormValues } from '@/components/dashboard/CompanyForm'
 import { getAgreement, formatAgreementDate, PALMERA_SIGNATORY, AGREEMENT_VERSION } from '@/lib/partner-agreement'
 import { ScreenHeader, Chip, EmptyState, Skeleton, PrimaryButton, GhostButton, card, bodyText } from '@/components/partner/ui'

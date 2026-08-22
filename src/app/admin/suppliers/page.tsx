@@ -10,8 +10,9 @@ import { getAllSuppliers, createSupplier, updateSupplier, getProductsBySupplier,
 import ProductModal from '@/components/supplier/ProductModal'
 import { ScreenHeader, PrimaryButton, GhostButton, Chip, EmptyState, Skeleton, cardShape, eyebrow } from '@/components/partner/ui'
 import { Store, Package } from 'lucide-react'
+import { formatAmount } from '@/lib/money'
 
-const fmtXof = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
+const fmtXof = formatAmount
 const pctText = (rate: number) => String(+(rate * 100).toFixed(2))
 
 const field: React.CSSProperties = {
@@ -114,7 +115,7 @@ export default function AdminSuppliers() {
           action={<PrimaryButton onClick={() => setForm({ show: true, supplier: null })}>+ Add supplier</PrimaryButton>} />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {suppliers.sort((a, b) => a.name.localeCompare(b.name)).map(s => (
+          {[...suppliers].sort((a, b) => a.name.localeCompare(b.name)).map(s => (
             <div key={s.id} className="pf-glass" style={cardShape}>
               <div onClick={() => expand(s)} style={{ display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer', flexWrap: 'wrap' }}>
                 <div style={{ minWidth: 0, flex: 1 }}>
@@ -141,7 +142,7 @@ export default function AdminSuppliers() {
                     <p style={{ fontFamily: 'var(--font-sans)', color: 'var(--pf-faint)', fontSize: '12.5px' }}>No products yet — author their catalog with “+ Add product”.</p>
                   ) : (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(14rem, 1fr))', gap: '10px' }}>
-                      {products[s.id!].sort((a, b) => a.name.localeCompare(b.name)).map(p => (
+                      {[...products[s.id!]].sort((a, b) => a.name.localeCompare(b.name)).map(p => (
                         <div key={p.id} style={{ border: '1px solid var(--pf-border)', borderRadius: '12px', padding: '12px', display: 'flex', gap: '10px', alignItems: 'center', opacity: p.status === 'hidden' ? 0.6 : 1 }}>
                           <span style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'var(--pf-green-soft)', flexShrink: 0, overflow: 'hidden', display: 'grid', placeItems: 'center', color: 'var(--pf-gold)' }}>
                             {p.photo ? <img loading="lazy" decoding="async" src={p.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Package size={16} strokeWidth={1.75} />}

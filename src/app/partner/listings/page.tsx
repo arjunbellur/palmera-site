@@ -1,5 +1,4 @@
 'use client'
-export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import { usePartner } from '../PartnerContext'
 import { t } from '../i18n'
@@ -11,7 +10,8 @@ import ConfirmDialog from '@/components/dashboard/ConfirmDialog'
 import type { Experience, ExperienceStatus, Option, OptionGroup } from '@/lib/schema'
 import { formatAmount } from '@/lib/money'
 import { ScreenHeader, EmptyState, PrimaryButton, Skeleton, card, cardShape, eyebrow, Chip, type Tone } from '@/components/partner/ui'
-import ExperienceModal from '@/components/dashboard/ExperienceModal'
+import dynamic from 'next/dynamic'
+const ExperienceModal = dynamic(() => import('@/components/dashboard/ExperienceModal'), { ssr: false })
 import { LayoutGrid, Eye, Copy, X } from 'lucide-react'
 import ListingPreview from '@/components/dashboard/ListingPreview'
 

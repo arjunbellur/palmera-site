@@ -14,8 +14,9 @@ import { doc, updateDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { ScreenHeader, PrimaryButton, GhostButton, Chip, EmptyState, Skeleton, cardShape, eyebrow } from '@/components/partner/ui'
 import { ShoppingBasket, ClipboardList, Package } from 'lucide-react'
+import { formatAmount } from '@/lib/money'
 
-const fmtXof = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
+const fmtXof = formatAmount
 
 const ORDER_TONES: Record<string, 'gold' | 'green' | 'alert' | 'neutral'> = {
   awaiting_payment: 'neutral', paid: 'gold', accepted: 'gold',
@@ -130,7 +131,7 @@ export default function Marketplace() {
               <div key={supplierName} style={{ marginBottom: '22px' }}>
                 <p style={{ ...eyebrow, margin: '0 0 10px' }}>{supplierName} · {ps[0].city}</p>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(13.5rem, 1fr))', gap: '12px' }}>
-                  {ps.sort((a, b) => a.name.localeCompare(b.name)).map(p => (
+                  {[...ps].sort((a, b) => a.name.localeCompare(b.name)).map(p => (
                     <div key={p.id} className="pf-glass" style={{ ...cardShape, display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                         <span style={{ width: '44px', height: '44px', borderRadius: '10px', background: 'var(--pf-green-soft)', flexShrink: 0, overflow: 'hidden', display: 'grid', placeItems: 'center', color: 'var(--pf-gold)' }}>

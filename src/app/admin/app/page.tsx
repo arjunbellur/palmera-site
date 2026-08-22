@@ -1,12 +1,11 @@
 'use client'
-export const dynamic = 'force-dynamic'
 // Growth ("App") — how the mobile app is doing: signups, engagement, the
 // social graph, the points economy, and which experiences convert. One-shot
 // reads of the app's collections (all admin-readable under existing rules)
 // with a refresh button; charts from the shared pf kit.
 import { useEffect, useState } from 'react'
 import {
-  getAppProfiles, getAppMoments, getAppMomentLikes, getAppMomentComments,
+  getAppProfiles, getAppMoments, countDocs, getAppMomentComments,
   getAppFriends, getAppFavorites, getAppReviews, getAppPointsLedger,
   getAppChatMessages, getAllBookingsAdmin, getAllExperiencesAdmin,
 } from '@/lib/firestore'
@@ -16,14 +15,15 @@ import { BarChart, RankPills } from '@/components/charts'
 import { CountTile, SparkTile, FilterChip, glass } from '../ui'
 import type { AppProfile, AppDoc, Booking, Experience } from '@/lib/schema'
 import { Users, Gem, Camera, Heart, PencilLine, MessageSquare, Coins, ListOrdered, LayoutGrid, UserPlus, Clock } from 'lucide-react'
+import { formatAmount } from '@/lib/money'
 
-const fmt = (n: number) => new Intl.NumberFormat('fr-FR').format(Math.round(n))
+const fmt = formatAmount
 
 type RankMode = 'favorites' | 'bookings' | 'revenue'
 
 export default function AdminAppGrowth() {
   const [data, setData] = useState<{
-    profiles: AppProfile[]; moments: AppDoc[]; likes: AppDoc[]; comments: AppDoc[]
+    profiles: AppProfile[]; moments: AppDoc[]; likes: number; comments: AppDoc[]
     friends: AppDoc[]; favorites: AppDoc[]; reviews: AppDoc[]; points: AppDoc[]
     messages: AppDoc[]; bookings: Booking[]; experiences: Experience[]
   } | null>(null)
@@ -32,7 +32,7 @@ export default function AdminAppGrowth() {
   const load = async () => {
     setData(null)
     const [profiles, moments, likes, comments, friends, favorites, reviews, points, messages, bookingsRaw, experiences] = await Promise.all([
-      getAppProfiles(), getAppMoments(), getAppMomentLikes(), getAppMomentComments(),
+      getAppProfiles(), getAppMoments(), countDocs('moment_likes'), getAppMomentComments(),
       getAppFriends(), getAppFavorites(), getAppReviews(), getAppPointsLedger(),
       getAppChatMessages(), getAllBookingsAdmin(), getAllExperiencesAdmin(),
     ])
@@ -60,7 +60,7 @@ export default function AdminAppGrowth() {
   const content = [...moments, ...comments, ...messages]
   const contentBuckets = bucketByPeriod(content, { period: 'week', buckets: 10 })
   const momentsPerUser = profiles.length ? (moments.length / profiles.length).toFixed(1) : '0'
-  const likesPerMoment = moments.length ? (likes.length / moments.length).toFixed(1) : '0'
+  const likesPerMoment = moments.length ? (likes / moments.length).toFixed(1) : '0'
 
   // ── 3. Social graph ──
   const accepted = friends.filter((f) => f.status === 'accepted').length
@@ -147,7 +147,7 @@ export default function AdminAppGrowth() {
       <SectionTitle>Engagement</SectionTitle>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '12px', marginBottom: '12px' }}>
         <CountTile icon={<Camera size={14} strokeWidth={1.75} />} label="Moments" value={moments.length} />
-        <CountTile icon={<Heart size={14} strokeWidth={1.75} />} label="Likes" value={likes.length} />
+        <CountTile icon={<Heart size={14} strokeWidth={1.75} />} label="Likes" value={likes} />
         <CountTile icon={<PencilLine size={14} strokeWidth={1.75} />} label="Comments" value={comments.length} />
         <CountTile icon={<MessageSquare size={14} strokeWidth={1.75} />} label="Chat messages" value={messages.length} />
       </div>

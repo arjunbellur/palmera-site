@@ -1,6 +1,6 @@
 'use client'
 import { createContext, useContext } from 'react'
-import type { Company, Provider } from '@/lib/schema'
+import type { Booking, Company, Provider } from '@/lib/schema'
 
 export interface PartnerCtx {
   uid: string
@@ -9,6 +9,11 @@ export interface PartnerCtx {
   /** Every ACTIVATED company this provider owns — the dashboard only shows live ones. */
   companies: Company[]
   company: Company | null
+  /** LIVE bookings for the selected company — ONE subscription owned by the
+   *  layout; Home/Reservations/Earnings read from here instead of opening
+   *  their own (halves Firestore reads and listener count). */
+  bookings: Booking[]
+  bookingsLoaded: boolean
   setCompanyId: (id: string) => void
   locale: 'fr' | 'en'
   setLocale: (l: 'fr' | 'en') => void

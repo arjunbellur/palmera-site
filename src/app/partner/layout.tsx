@@ -5,7 +5,7 @@ import { onAuthChange, needsEmailVerification } from '@/lib/auth'
 import VerifyEmailGate from '@/components/dashboard/VerifyEmailGate'
 import { ThemeProvider, useTheme } from '@/lib/theme'
 import { getProvider, getCompanies, subscribeBookingsByCompany } from '@/lib/firestore'
-import type { Company, Provider } from '@/lib/schema'
+import type { Booking, Company, Provider } from '@/lib/schema'
 import { PartnerContext } from './PartnerContext'
 import { t, type Locale } from './i18n'
 import { isAdminEmail } from '@/lib/admin'
@@ -82,10 +82,17 @@ function Shell({ children }: { children: React.ReactNode }) {
     setSwitcherOpen(false)
   }
 
+  const [bookings, setBookings] = useState<Booking[]>([])
+  const [bookingsLoaded, setBookingsLoaded] = useState(false)
   useEffect(() => {
     if (!uid || !companyId) return
-    // Live badge: a new booking from the app lights the tab up immediately.
-    const unsub = subscribeBookingsByCompany(uid, companyId, (bs) => setPendingCount(bs.filter((b) => b.status === 'pending').length))
+    setBookingsLoaded(false)
+    // The one live bookings subscription for the whole partner surface:
+    // powers the nav badge AND every page that reads usePartner().bookings.
+    const unsub = subscribeBookingsByCompany(uid, companyId, (bs) => {
+      setBookings(bs); setBookingsLoaded(true)
+      setPendingCount(bs.filter((b) => b.status === 'pending' && b.confirmationType !== 'instant').length)
+    })
     return () => unsub()
   }, [uid, companyId])
 
@@ -166,7 +173,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <PartnerContext.Provider value={{ uid, email, provider, companies, company, setCompanyId, locale, setLocale, refresh }}>
+    <PartnerContext.Provider value={{ uid, email, provider, companies, company, bookings, bookingsLoaded, setCompanyId, locale, setLocale, refresh }}>
       <div data-theme={theme} style={{ minHeight: '100vh', background: 'var(--pf-bg)', display: 'flex' }}>
         {!isMobile && (
           <aside style={{ width: collapsed ? '68px' : '236px', flexShrink: 0, background: 'var(--pf-nav)', borderRight: '1px solid var(--pf-border)', padding: collapsed ? '22px 10px' : '22px 16px', position: 'sticky', top: 0, height: '100vh', display: 'flex', flexDirection: 'column', gap: '20px', transition: 'width 0.25s cubic-bezier(0.22,1,0.36,1), padding 0.25s ease', overflow: 'hidden' }}>

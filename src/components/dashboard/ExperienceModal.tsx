@@ -19,6 +19,7 @@ import PriceInput from './PriceInput'
 import { getEnabledCategories, getEnabledCities, getPolicies } from '@/lib/config'
 import { useLocale } from '@/lib/use-locale'
 import type { Experience, OptionGroup, Option, CancellationTier, ExperienceMode, PriceUnit, ConfirmationType, ScheduleType } from '@/lib/schema'
+import { formatAmount } from '@/lib/money'
 
 type Opt = { id: string; name: string }
 
@@ -316,7 +317,7 @@ const emptyOption = (groupId: string): Option & { _isNew?: boolean } => ({
   groupId, name: '', description: '', img: null, gallery: [], price: 0, maxQuantityPerBooking: 1, active: true, sortOrder: 0, _isNew: true,
 })
 
-const fmt = (n: number) => new Intl.NumberFormat('fr-FR').format(Math.round(n))
+const fmt = formatAmount
 
 // Jordan/ChatGPT #23: extras are Palmera's upsell engine — seed each category
 // with the add-ons a business would otherwise forget to list.

@@ -1,5 +1,4 @@
 'use client'
-export const dynamic = 'force-dynamic'
 // Messages — a first-class tab (Airbnb host pattern) shipped BEFORE the
 // feature: the tab teaches partners it's coming and where it will live.
 // Wire to real data when the app's chat collections gain a partner side.

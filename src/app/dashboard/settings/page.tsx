@@ -1,10 +1,10 @@
 'use client'
-export const dynamic = 'force-dynamic'
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { onAuthChange } from '@/lib/auth'
 import { getProvider, updateProvider, getCountersignature, type Countersignature } from '@/lib/firestore'
-import AgreementDocument from '@/components/dashboard/AgreementDocument'
+import dynamic from 'next/dynamic'
+const AgreementDocument = dynamic(() => import('@/components/dashboard/AgreementDocument'), { ssr: false })
 import {
   getAgreement, formatAgreementDate,
   AGREEMENT_VERSION, PALMERA_SIGNATORY,

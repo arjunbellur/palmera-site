@@ -1,32 +1,35 @@
 'use client'
-export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import { usePartner } from './PartnerContext'
 import { t } from './i18n'
-import { subscribeBookingsByCompany, getLedgerByProvider, getPayoutsByProvider, getExperiencesByCompany, getPayoutProfile } from '@/lib/firestore'
+import { getLedgerByProvider, getPayoutsByProvider, getExperiencesByCompany, getPayoutProfile } from '@/lib/firestore'
 import type { Booking, Experience, LedgerEntry, Payout } from '@/lib/schema'
 import { formatAmount, formatDate, toDate } from '@/lib/money'
 import { ScreenHeader, StatTile, Money, EmptyState, SectionTitle, Skeleton, card, cardShape, eyebrow } from '@/components/partner/ui'
 import ReservationCard from '@/components/partner/ReservationCard'
 import { Clock, Wallet, LayoutGrid, Image as ImageIcon, Sparkles } from 'lucide-react'
 
+// Module-level so React keeps the DOM between renders (defined inside the
+// page it would remount on every live-bookings tick).
+function Tile({ label, value, sub }: { label: string; value: string; sub?: string }) {
+  return (
+    <div className="pf-glass" style={{ ...cardShape, padding: '14px 16px' }}>
+      <div style={{ ...eyebrow, fontSize: '9.5px' }}>{label}</div>
+      <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--pf-text)', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{value}</div>
+      {sub && <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'var(--pf-faint)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub}</div>}
+    </div>
+  )
+}
+
 export default function PartnerHome() {
-  const { uid, company, provider, locale } = usePartner()
+  const { uid, company, provider, locale, bookings } = usePartner()
   const L = (k: string) => t(locale, k)
-  const [bookings, setBookings] = useState<Booking[]>([])
   const [ledger, setLedger] = useState<LedgerEntry[]>([])
   const [payouts, setPayouts] = useState<Payout[]>([])
   const [experiences, setExperiences] = useState<Experience[]>([])
   const [hasPayoutProfile, setHasPayoutProfile] = useState(true)
   const [loaded, setLoaded] = useState(false)
 
-  // Bookings are LIVE here (same subscription Reservations uses) — a new
-  // request lights up "needs attention" without a reload (Arjun, call).
-  useEffect(() => {
-    if (!uid || !company?.id) return
-    const unsub = subscribeBookingsByCompany(uid, company.id, setBookings)
-    return () => unsub()
-  }, [uid, company?.id])
   useEffect(() => {
     if (!uid || !company?.id) return
     ;(async () => {
@@ -187,13 +190,6 @@ export default function PartnerHome() {
         const counts = new Map<string, number>()
         for (const b of bookings) if (['confirmed', 'completed'].includes(b.status)) counts.set(b.title, (counts.get(b.title) || 0) + 1)
         const top = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]
-        const Tile = ({ label, value, sub }: { label: string; value: string; sub?: string }) => (
-          <div className="pf-glass" style={{ ...cardShape, padding: '14px 16px' }}>
-            <div style={{ ...eyebrow, fontSize: '9.5px' }}>{label}</div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--pf-text)', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{value}</div>
-            {sub && <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'var(--pf-faint)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub}</div>}
-          </div>
-        )
         if (bookings.length === 0) return null
         return (
           <div style={{ marginTop: '12px' }}>

@@ -12,6 +12,7 @@ import {
   where,
   orderBy,
   onSnapshot,
+  getCountFromServer,
 } from 'firebase/firestore'
 import { db } from './firebase'
 import {
@@ -69,24 +70,6 @@ export const getPartner = async (uid: string) => {
   return snap.exists() ? snap.data() : null
 }
 
-export const createPartner = async (uid: string, email: string) => {
-  const ref = doc(db, 'partners', uid)
-  await setDoc(ref, {
-    uid,
-    email,
-    createdAt: serverTimestamp(),
-    onboardingComplete: false,
-    sections: {
-      basics: 'incomplete',
-      payouts: 'incomplete',
-      listings: 'incomplete',
-      photos: 'incomplete',
-      operations: 'incomplete',
-      documents: 'incomplete',
-      signoff: 'incomplete',
-    },
-  })
-}
 
 export const updatePartner = async (uid: string, data: Record<string, unknown>) => {
   const ref = doc(db, 'partners', uid)
@@ -131,11 +114,6 @@ export const deleteListing = async (uid: string, listingId: string) => {
   await deleteDoc(ref)
 }
 
-// ── Admin ─────────────────────────────────────────────────────────
-export const getAllPartners = async () => {
-  const snap = await getDocs(collection(db, 'partners'))
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-}
 
 // ── Countersignature ─────────────────────────────────────────────
 // Palmera's manual approval of a partner's signed agreement. Stored in its own
@@ -190,15 +168,6 @@ export const setCountersignature = async (uid: string, data: Countersignature) =
   await setDoc(doc(db, 'countersignatures', uid), data)
 }
 
-// Permanently delete a partner application: its listings subcollection first
-// (deleting the parent doc alone would leave those orphaned), then the doc.
-// Admin-only — enforced by firestore.rules. Does not remove Storage uploads or
-// the Firebase Auth login (those must be cleared separately).
-export const deletePartner = async (uid: string) => {
-  const listingsSnap = await getDocs(collection(db, 'partners', uid, 'listings'))
-  await Promise.all(listingsSnap.docs.map((d) => deleteDoc(d.ref)))
-  await deleteDoc(doc(db, 'partners', uid))
-}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SCHEMA v3.2 DATA LAYER — providers / companies / experiences / options.
@@ -268,12 +237,6 @@ export const updateCompany = async (companyId: string, data: Partial<Company>) =
   await updateDoc(doc(db, COLLECTIONS.companies, companyId), { ...data, updatedAt: serverTimestamp() })
 }
 
-export const updateCompanyCompleteness = async (companyId: string, key: string, done: boolean) => {
-  await updateDoc(doc(db, COLLECTIONS.companies, companyId), {
-    [`completeness.${key}`]: done,
-    updatedAt: serverTimestamp(),
-  })
-}
 
 /** companies/{companyId}/private/admin — provider may read (own rate). */
 export const getCompanyAdmin = async (companyId: string): Promise<CompanyPrivateAdmin | null> => {
@@ -340,13 +303,6 @@ export const deleteOption = async (experienceId: string, optionId: string) => {
   await deleteDoc(doc(db, COLLECTIONS.experiences, experienceId, SUB.options, optionId))
 }
 
-// ── Admin (all-collection reads + admin-only writes) ────────────────────────
-// Reads here return every doc in the collection: rules allow it because
-// isAdmin() doesn't depend on the returned doc's own fields.
-export const getAllProviders = async (): Promise<Provider[]> => {
-  const snap = await getDocs(collection(db, COLLECTIONS.providers))
-  return snap.docs.map((d) => ({ ...(d.data() as Provider), uid: d.id }))
-}
 
 /**
  * LIVE full-collection listeners for the admin directory — every provider/
@@ -385,13 +341,11 @@ const readAll = async <T extends { id?: string }>(name: string): Promise<T[]> =>
 
 export const getAppProfiles = () => readAll<AppProfile>('profiles')
 export const getAppMoments = () => readAll<AppDoc>('moments')
-export const getAppMomentLikes = () => readAll<AppDoc>('moment_likes')
 export const getAppMomentComments = () => readAll<AppDoc>('moment_comments')
 export const getAppFriends = () => readAll<AppDoc>('friends')
 export const getAppFavorites = () => readAll<AppDoc>('favorites')
 export const getAppReviews = () => readAll<AppDoc>('reviews')
 export const getAppPointsLedger = () => readAll<AppDoc>('points_ledger')
-export const getAppChatThreads = () => readAll<AppDoc>('chat_threads')
 export const getAppChatMessages = () => readAll<AppDoc>('chat_messages')
 
 /** LIVE app-user roster for the admin Pulse — a signup appears the moment
@@ -414,11 +368,28 @@ export const getAllBookingsAdmin = async (): Promise<Booking[]> => {
   }
 }
 
-export const subscribeAllBookings = (cb: (bs: Booking[]) => void): (() => void) =>
-  onSnapshot(collection(db, COLLECTIONS.bookings),
+/** Bookings created in the last `days` (default 90) — every Overview tile
+ *  derives from ≤8-week windows, so a lifetime listener was pure waste that
+ *  grew with the platform. Pass Infinity for the full collection. */
+export const subscribeAllBookings = (cb: (bs: Booking[]) => void, days = 90): (() => void) => {
+  const q = Number.isFinite(days)
+    ? query(collection(db, COLLECTIONS.bookings), where('createdAt', '>=', new Date(Date.now() - days * 86400_000)))
+    : collection(db, COLLECTIONS.bookings)
+  return onSnapshot(q,
     (snap) => cb(snap.docs.map((d) => ({ id: d.id, ...(d.data() as object) })) as Booking[]),
     (e) => { console.error('subscribeAllBookings failed:', e); cb([]) },
   )
+}
+
+/** Server-side count — 1 read per 1,000 docs instead of one per doc. */
+export const countDocs = async (name: string): Promise<number> =>
+  (await getCountFromServer(collection(db, name))).data().count
+
+/** All countersigned provider uids in ONE query (was one getDoc per provider). */
+export const getCountersignedUids = async (): Promise<Set<string>> => {
+  const snap = await getDocs(collection(db, 'countersignatures'))
+  return new Set(snap.docs.map((d) => d.id))
+}
 
 export const getAllCompanies = async (): Promise<Company[]> => {
   const snap = await getDocs(collection(db, COLLECTIONS.companies))
@@ -570,11 +541,6 @@ export const getLedgerByProvider = async (uid: string): Promise<LedgerEntry[]> =
   }
 }
 
-/** Current balance owed to a provider = Σ signed ledger amounts. */
-export const getBalanceByProvider = async (uid: string): Promise<number> => {
-  const entries = await getLedgerByProvider(uid)
-  return entries.reduce((sum, e) => sum + (e.amount || 0), 0)
-}
 
 /** Payout batches for a provider, newest scheduled first. */
 export const getPayoutsByProvider = async (uid: string): Promise<Payout[]> => {

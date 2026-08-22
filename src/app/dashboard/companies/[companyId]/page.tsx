@@ -1,5 +1,4 @@
 'use client'
-export const dynamic = 'force-dynamic'
 import { useEffect, useState, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { onAuthChange } from '@/lib/auth'
@@ -9,7 +8,8 @@ import {
 } from '@/lib/firestore'
 import GraduationModal from '@/components/dashboard/GraduationModal'
 import CompanyForm, { type CompanyFormValues } from '@/components/dashboard/CompanyForm'
-import ExperienceModal from '@/components/dashboard/ExperienceModal'
+import dynamic from 'next/dynamic'
+const ExperienceModal = dynamic(() => import('@/components/dashboard/ExperienceModal'), { ssr: false })
 import ConfirmDialog from '@/components/dashboard/ConfirmDialog'
 import PhotoUpload from '@/components/dashboard/PhotoUpload'
 import GalleryUpload from '@/components/dashboard/GalleryUpload'

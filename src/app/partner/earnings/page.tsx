@@ -1,12 +1,11 @@
 'use client'
-export const dynamic = 'force-dynamic'
 // Earnings — ported faithfully from the Claude Design mockup: gradient hero
 // card with circled stat icons, a monthly bar chart and per-experience revenue
 // pills (real data, shown once it exists), and list-card payout/ledger rows.
 import { useEffect, useState } from 'react'
 import { usePartner } from '../PartnerContext'
 import { t } from '../i18n'
-import { getBookingsByCompany, getLedgerByProvider, getPayoutsByProvider, getCompanyAdmin, getExperiencesByCompany } from '@/lib/firestore'
+import { getLedgerByProvider, getPayoutsByProvider, getCompanyAdmin, getExperiencesByCompany } from '@/lib/firestore'
 import type { Booking, LedgerEntry, LedgerEntryType, Payout, PayoutStatus } from '@/lib/schema'
 import { formatAmount, formatDate, toDate } from '@/lib/money'
 import { ScreenHeader, Money, EmptyState, SectionTitle, Skeleton, card, cardShape, eyebrow } from '@/components/partner/ui'
@@ -35,11 +34,10 @@ function CircleStat({ icon, label, value, tone = 'var(--pf-gold)' }: { icon: Rea
 }
 
 export default function EarningsScreen() {
-  const { uid, company, locale } = usePartner()
+  const { uid, company, locale, bookings } = usePartner()
   const L = (k: string) => t(locale, k)
   const [ledger, setLedger] = useState<LedgerEntry[]>([])
   const [payouts, setPayouts] = useState<Payout[]>([])
-  const [bookings, setBookings] = useState<Booking[]>([])
   const [period, setPeriod] = useState<'all' | 'month' | 'last' | '30'>('all')
   const [loaded, setLoaded] = useState(false)
   const [rate, setRate] = useState<number | null>(null)
@@ -48,8 +46,8 @@ export default function EarningsScreen() {
   useEffect(() => {
     if (!uid || !company?.id) return
     ;(async () => {
-      const [l, p, b, adm, exps] = await Promise.all([
-        getLedgerByProvider(uid), getPayoutsByProvider(uid), getBookingsByCompany(uid, company.id!),
+      const [l, p, adm, exps] = await Promise.all([
+        getLedgerByProvider(uid), getPayoutsByProvider(uid),
         getCompanyAdmin(company.id!).catch(() => null),
         getExperiencesByCompany(uid, company.id!).catch(() => []),
       ])
@@ -58,7 +56,6 @@ export default function EarningsScreen() {
       setExtrasGroupIds(new Set(exps.flatMap(e => (e.optionGroups || []).filter(g => !g.required).map(g => g.id))))
       setLedger(l.filter(e => e.companyId === company.id))
       setPayouts(p.filter(x => x.companyId === company.id))
-      setBookings(b)
       setLoaded(true)
     })()
   }, [uid, company?.id])

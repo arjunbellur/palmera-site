@@ -1,6 +1,4 @@
 import type { Metadata } from 'next'
-import { NextIntlClientProvider } from 'next-intl'
-import { getLocale, getMessages } from 'next-intl/server'
 import './globals.css'
 import Preloader from '@/components/Preloader'
 import SmoothScroll from '@/components/SmoothScroll'
@@ -15,12 +13,11 @@ export const metadata: Metadata = {
   },
 }
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const locale = await getLocale()
-  const messages = await getMessages()
-
+// Static: no request-time reads here. Locale-aware bits live in
+// (marketing)/layout.tsx; app surfaces set their own document language.
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang={locale}>
+    <html lang="fr">
       <head>
         <meta name="google" content="notranslate" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -31,9 +28,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <Preloader />
         <SmoothScroll />
-        <NextIntlClientProvider messages={messages} locale={locale}>
-          {children}
-        </NextIntlClientProvider>
+        {children}
       </body>
     </html>
   )

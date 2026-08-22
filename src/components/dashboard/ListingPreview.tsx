@@ -3,8 +3,9 @@
 // home-feed card and the experience page. Shared by the editor's Preview
 // step and the "Preview as guest" button on listing cards (Jordan #12).
 import type { Experience } from '@/lib/schema'
+import { formatAmount } from '@/lib/money'
 
-const fmt = (n: number) => new Intl.NumberFormat('fr-FR').format(Math.round(n))
+const fmt = formatAmount
 const hintStyle: React.CSSProperties = { fontSize: '0.6875rem', color: 'var(--db-text-ghost)', fontFamily: 'var(--font-sans)', margin: 0, lineHeight: 1.5 }
 
 const STR = {

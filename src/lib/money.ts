@@ -14,8 +14,10 @@ export function formatXOF(amount: number | null | undefined, currency = 'XOF'): 
  * the amount and a separate "XOF" suffix, so the two need to be independent.
  * Uses a narrow no-break space (fr-FR grouping) e.g. 45 000.
  */
+// One formatter instance — admin/money calls this hundreds of times per render.
+const XOF = new Intl.NumberFormat('fr-FR')
 export function formatAmount(amount: number | null | undefined): string {
-  return new Intl.NumberFormat('fr-FR').format(Math.round(amount || 0))
+  return XOF.format(Math.round(amount || 0))
 }
 
 /** A Firestore Timestamp, a JS Date, or an ISO string → a JS Date, or null. */

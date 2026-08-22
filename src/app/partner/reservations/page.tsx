@@ -1,9 +1,8 @@
 'use client'
-export const dynamic = 'force-dynamic'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { usePartner } from '../PartnerContext'
 import { t } from '../i18n'
-import { subscribeBookingsByCompany, setBookingStatus } from '@/lib/firestore'
+import { setBookingStatus } from '@/lib/firestore'
 import type { Booking } from '@/lib/schema'
 import { toDate } from '@/lib/money'
 import { ScreenHeader, EmptyState, Chip, Money, eyebrow, GhostButton, Skeleton } from '@/components/partner/ui'
@@ -18,9 +17,8 @@ import { Clock } from 'lucide-react'
 type Filter = 'all' | 'action' | 'upcoming' | 'done' | 'cancelled' | 'noshow'
 
 export default function ReservationsScreen() {
-  const { uid, email, company, locale } = usePartner()
+  const { uid, email, company, locale, bookings, bookingsLoaded: loaded } = usePartner()
   const L = (k: string) => t(locale, k)
-  const [bookings, setBookings] = useState<Booking[]>([])
   // Jordan: the page must OPEN on what's coming next, past excluded.
   const [filter, setFilter] = useState<Filter>('upcoming')
   const [search, setSearch] = useState('')
@@ -43,15 +41,7 @@ export default function ReservationsScreen() {
   const setDetail = (b: Booking | null) => { setDetailRaw(b); setHelp({ open: false, text: '', sent: false, busy: false }) }
   const [busyId, setBusyId] = useState('')
   const [error, setError] = useState('')
-  const [loaded, setLoaded] = useState(false)
 
-  // LIVE feed — the app's writes (new bookings, cancellations) appear without
-  // a refresh; this is what makes cancel-in-app show up here in real time.
-  useEffect(() => {
-    if (!uid || !company?.id) return
-    const unsub = subscribeBookingsByCompany(uid, company.id, (bs) => { setBookings(bs); setLoaded(true) })
-    return () => unsub()
-  }, [uid, company?.id])
 
   // Deep links (Home tiles, notification emails): ?f=today → today's date
   // preset; ?f=pending → the À traiter filter; ?f=next → upcoming.
@@ -105,30 +95,33 @@ export default function ReservationsScreen() {
   // Same guest + same experience + same slot = one party the app wrote more
   // than once (a new doc per checkout attempt). Flag the later copies so a
   // partner doesn't hold three tables for one booking.
-  const dupIds = (() => {
-    const firstSeen = new Map<string, number>()
+  // Recomputed only when the live list changes — not on every keystroke.
+  const dupIds = useMemo(() => {
+    const firstSeen = new Set<string>()
     const dups = new Set<string>()
     ;[...bookings]
       .sort((a, b) => (toDate(a.createdAt)?.getTime() ?? 0) - (toDate(b.createdAt)?.getTime() ?? 0))
       .forEach(b => {
         const key = `${b.customerId}__${b.experienceId}__${toDate(b.scheduledFor)?.getTime() ?? ''}`
         if (firstSeen.has(key)) dups.add(b.id!)
-        else firstSeen.set(key, 1)
+        else firstSeen.add(key)
       })
     return dups
-  })()
+  }, [bookings])
 
-  const guestStats = (customerId: string) => {
-    const mine = bookings.filter(x => x.customerId === customerId)
-    const counted = mine.filter(x => !['cancelled', 'declined'].includes(x.status))
-    const dates = mine.map(x => toDate(x.scheduledFor)).filter(Boolean) as Date[]
-    dates.sort((a, b) => a.getTime() - b.getTime())
-    return {
-      visits: counted.length,
-      spend: counted.reduce((sum, x) => sum + (x.bookingTotal || 0), 0),
-      since: dates[0] ?? null,
+  // One pass over bookings → per-guest stats (was O(N) per rendered card).
+  const guestStatsMap = useMemo(() => {
+    const m = new Map<string, { visits: number; spend: number; since: Date | null }>()
+    for (const x of bookings) {
+      const g = m.get(x.customerId) || { visits: 0, spend: 0, since: null }
+      if (!['cancelled', 'declined'].includes(x.status)) { g.visits++; g.spend += x.bookingTotal || 0 }
+      const d = toDate(x.scheduledFor)
+      if (d && (!g.since || d < g.since)) g.since = d
+      m.set(x.customerId, g)
     }
-  }
+    return m
+  }, [bookings])
+  const guestStats = (customerId: string) => guestStatsMap.get(customerId) || { visits: 0, spend: 0, since: null }
 
   const isPastNow = (b: Booking) => { const d = toDate(b.scheduledFor); return !!d && d.getTime() < Date.now() }
   // INTERIM (SYNC item 11): nothing marks bookings `completed` yet, so the

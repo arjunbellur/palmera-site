@@ -1,5 +1,4 @@
 'use client'
-export const dynamic = 'force-dynamic'
 // Money — every booking across all partners, revenue, and what Palmera will
 // owe each company. Read-only over collections the admin rules already allow;
 // all filtering client-side (no query shapes → no indexes). Filters live in
@@ -13,8 +12,9 @@ import { BarChart, RankPills, Donut } from '@/components/charts'
 import { FilterChip, inputStyle, formatDate, glass } from '../ui'
 import type { Booking, BookingStatus, Company, AppProfile, CompanyPayoutProfile } from '@/lib/schema'
 import { Wallet, CalendarDays } from 'lucide-react'
+import { formatAmount } from '@/lib/money'
 
-const fmt = (n: number) => new Intl.NumberFormat('fr-FR').format(Math.round(n))
+const fmt = formatAmount
 
 const STATUS_TONE: Record<string, Tone> = {
   pending: 'gold', confirmed: 'green', completed: 'neutral', declined: 'alert', cancelled: 'alert', no_show: 'alert',

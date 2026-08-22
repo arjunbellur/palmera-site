@@ -3,7 +3,9 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { onAuthChange } from '@/lib/auth'
 import { getListings, addListing, updateListing, deleteListing, updateSectionStatus } from '@/lib/firestore'
-import ListingModal, { ListingData } from '@/components/dashboard/ListingModal'
+import type { ListingData } from '@/components/dashboard/ListingModal'
+import dynamic from 'next/dynamic'
+const ListingModal = dynamic(() => import('@/components/dashboard/ListingModal'), { ssr: false })
 
 function ModeBadge({ mode }: { mode?: string }) {
   const isPaid = mode === 'paid'

@@ -1,5 +1,4 @@
 'use client'
-export const dynamic = 'force-dynamic'
 // Admin home — a PARTNER directory, matching the real hierarchy: one row per
 // provider (person), their companies nested inside the row. Live-updating
 // (collection listeners), filters carried in the URL so views are shareable

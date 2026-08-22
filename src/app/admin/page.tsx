@@ -1,13 +1,12 @@
 'use client'
-export const dynamic = 'force-dynamic'
 // Overview ("Pulse") — the screen Arjun + Jordan open every morning: app
 // growth (Samson's live data), the business numbers, what needs action, and
 // a feed of what just happened. App + booking tiles are LIVE listeners;
 // the activity feed is a one-shot merge with a refresh button.
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import {
   subscribeAppProfiles, subscribeAllBookings, subscribeAllProviders, subscribeAllCompanies,
-  getAppMoments, getAppReviews, getCountersignature,
+  getAppMoments, getAppReviews, getCountersignedUids,
 } from '@/lib/firestore'
 import { isAdminEmail } from '@/lib/admin'
 import { docDate, countSince, startOfToday, startOfWeek, startOfMonth, isRealBooking, sumField, bucketByPeriod } from '@/lib/analytics'
@@ -15,8 +14,9 @@ import { ScreenHeader, Chip, Skeleton, Money, SectionTitle, eyebrow } from '@/co
 import { CountTile, SparkTile, timeAgo, glass } from './ui'
 import type { AppProfile, AppDoc, Booking, Provider, Company } from '@/lib/schema'
 import { Sparkles, CalendarDays, Camera, Star, Users, TrendingUp, CalendarRange, Gem, Clock, Check } from 'lucide-react'
+import { formatAmount } from '@/lib/money'
 
-const fmtXof = (n: number) => new Intl.NumberFormat('fr-FR').format(Math.round(n))
+const fmtXof = formatAmount
 
 interface Activity {
   icon: React.ReactNode
@@ -53,8 +53,8 @@ export default function AdminOverview() {
     if (signed.length === 0) { setUncountersigned(providers.length ? 0 : null); return }
     let cancelled = false
     ;(async () => {
-      const css = await Promise.all(signed.map((p) => getCountersignature(p.uid)))
-      if (!cancelled) setUncountersigned(css.filter((c) => !c).length)
+      const done = await getCountersignedUids()   // one query, not one read per provider
+      if (!cancelled) setUncountersigned(signed.filter((p) => !done.has(p.uid)).length)
     })()
     return () => { cancelled = true }
   }, [providers])
@@ -72,7 +72,7 @@ export default function AdminOverview() {
   const STATUS_TONE: Record<string, 'gold' | 'green' | 'alert' | 'neutral'> = {
     pending: 'gold', confirmed: 'green', completed: 'neutral', declined: 'alert', cancelled: 'alert', no_show: 'alert',
   }
-  const activity: Activity[] | null = (() => {
+  const activity: Activity[] | null = useMemo(() => {
     if (!social || !profilesLoaded || !bookingsLoaded) return null
     const byId = new Map(profiles.map((p) => [p.id, p]))
     // Some handles are stored WITH the @ already — normalize either way.
@@ -103,7 +103,8 @@ export default function AdminOverview() {
     })
     items.sort((a, b) => b.when.getTime() - a.when.getTime())
     return items.slice(0, 15)
-  })()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [social, profiles, bookings, profilesLoaded, bookingsLoaded])
 
   const loading = !(profilesLoaded && bookingsLoaded)
 

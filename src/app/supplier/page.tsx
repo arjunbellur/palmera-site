@@ -9,8 +9,9 @@ import { getProductsBySupplier, updateSupplyProduct, deleteSupplyProduct } from 
 import ProductModal from '@/components/supplier/ProductModal'
 import { ScreenHeader, PrimaryButton, GhostButton, Chip, EmptyState, Skeleton, cardShape } from '@/components/partner/ui'
 import { Package } from 'lucide-react'
+import { formatAmount } from '@/lib/money'
 
-const fmtXof = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
+const fmtXof = formatAmount
 
 export default function SupplierInventory() {
   const { supplier, uid, locale } = useSupplier()
@@ -54,7 +55,7 @@ export default function SupplierInventory() {
           action={<PrimaryButton onClick={() => setModal({ open: true, product: null })}>{L('add_product')}</PrimaryButton>} />
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(15rem, 1fr))', gap: '14px' }}>
-          {products.sort((a, b) => a.name.localeCompare(b.name)).map(p => (
+          {[...products].sort((a, b) => a.name.localeCompare(b.name)).map(p => (
             <div key={p.id} className="pf-glass" style={{ ...cardShape, display: 'flex', flexDirection: 'column', gap: '10px', opacity: p.status === 'hidden' ? 0.6 : 1 }}>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                 <span style={{ width: '52px', height: '52px', borderRadius: '12px', background: 'var(--pf-green-soft)', flexShrink: 0, overflow: 'hidden', display: 'grid', placeItems: 'center', color: 'var(--pf-gold)', fontSize: '18px' }}>
