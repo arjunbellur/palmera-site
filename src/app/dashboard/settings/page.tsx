@@ -134,7 +134,7 @@ export default function SettingsPage() {
   const inputStyle: React.CSSProperties = {
     width: '100%', background: 'var(--db-bg-input)', border: '1px solid var(--db-border-subtle)',
     borderRadius: '0.375rem', padding: '0.75rem 1rem', color: 'var(--db-text)', fontSize: '0.9375rem',
-    fontFamily: 'var(--font-sans)', outline: 'none', boxSizing: 'border-box',
+    fontFamily: 'var(--font-sans)', boxSizing: 'border-box',
   }
   const labelStyle: React.CSSProperties = {
     display: 'block', fontSize: '0.6875rem', color: 'var(--db-text-faint)', letterSpacing: '0.08em',
@@ -161,8 +161,8 @@ export default function SettingsPage() {
 
       {alreadySigned && (
         <div className="no-print" style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', background: 'rgba(158,118,59,0.08)', border: '1px solid rgba(158,118,59,0.25)', borderRadius: '0.5rem', padding: '0.875rem 1.25rem', marginBottom: '1.75rem' }}>
-          <div style={{ width: '0.5rem', height: '0.5rem', borderRadius: '50%', background: '#9e763b', flexShrink: 0 }} />
-          <p style={{ fontSize: '0.8125rem', color: '#be9a56', fontFamily: 'var(--font-sans)', margin: 0 }}>
+          <div style={{ width: '0.5rem', height: '0.5rem', borderRadius: '50%', background: 'var(--db-gold-deep)', flexShrink: 0 }} />
+          <p style={{ fontSize: '0.8125rem', color: 'var(--db-gold)', fontFamily: 'var(--font-sans)', margin: 0 }}>
             {t('signedOff')} {formatAgreementDate(signoff!.signedAt!, locale)} {t('by')} {signoff?.typedSignature || signoff?.signedBy}
             {signoff?.agreementVersion ? ` · ${t('version')} ${signoff.agreementVersion}` : ''}
           </p>
@@ -206,7 +206,7 @@ export default function SettingsPage() {
 
           <div onClick={() => setAcknowledged(v => !v)}
             style={{ display: 'flex', alignItems: 'flex-start', gap: '0.875rem', padding: '1rem 1.25rem', background: acknowledged ? 'var(--db-bg-card-active)' : 'var(--db-bg-card)', border: `1px solid ${acknowledged ? 'rgba(158,118,59,0.2)' : 'var(--db-border-subtle)'}`, borderRadius: '0.5rem', cursor: 'pointer', marginBottom: '1.25rem' }}>
-            <div style={{ width: '1.25rem', height: '1.25rem', borderRadius: '0.25rem', flexShrink: 0, marginTop: '0.0625rem', border: `1.5px solid ${acknowledged ? '#9e763b' : 'var(--db-text-ghost)'}`, background: acknowledged ? '#9e763b' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: '1.25rem', height: '1.25rem', borderRadius: '0.25rem', flexShrink: 0, marginTop: '0.0625rem', border: `1.5px solid ${acknowledged ? 'var(--db-gold-deep)' : 'var(--db-text-ghost)'}`, background: acknowledged ? 'var(--db-gold-deep)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {acknowledged && <span style={{ color: '#fff', fontSize: '0.75rem', lineHeight: 1 }}>✓</span>}
             </div>
             <p style={{ fontSize: '0.875rem', color: 'var(--db-text)', fontFamily: 'var(--font-sans)', margin: 0, lineHeight: 1.4 }}>{t('ack')}</p>
@@ -217,7 +217,7 @@ export default function SettingsPage() {
           )}
 
           <button onClick={handleSign} disabled={!canSign}
-            style={{ padding: '0.8125rem 2.25rem', background: canSign ? '#9e763b' : 'var(--db-bg-card)', border: `1px solid ${canSign ? 'transparent' : 'var(--db-border-subtle)'}`, borderRadius: '0.375rem', color: canSign ? '#ebe8db' : 'var(--db-text-ghost)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', cursor: canSign ? 'pointer' : 'not-allowed', transition: 'all 0.2s' }}>
+            style={{ padding: '0.8125rem 2.25rem', background: canSign ? 'var(--db-gold-deep)' : 'var(--db-bg-card)', border: `1px solid ${canSign ? 'transparent' : 'var(--db-border-subtle)'}`, borderRadius: '0.375rem', color: canSign ? '#ebe8db' : 'var(--db-text-ghost)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', cursor: canSign ? 'pointer' : 'not-allowed', transition: 'all 0.2s' }}>
             {saving ? t('processing') : t('sign')}
           </button>
         </div>

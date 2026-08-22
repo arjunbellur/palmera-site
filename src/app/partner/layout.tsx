@@ -8,6 +8,7 @@ import { getProvider, getCompanies, subscribeBookingsByCompany } from '@/lib/fir
 import type { Booking, Company, Provider } from '@/lib/schema'
 import { PartnerContext } from './PartnerContext'
 import { t, type Locale } from './i18n'
+import { IconButton, Spinner } from '@/components/partner/ui'
 import { isAdminEmail } from '@/lib/admin'
 import { House, CalendarDays, Wallet, LayoutGrid, ShoppingBasket, MessageCircle, Settings, Moon, Sun, LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 
@@ -117,8 +118,7 @@ function Shell({ children }: { children: React.ReactNode }) {
 
   if (loading) return (
     <div data-theme={theme} style={{ minHeight: '100vh', background: 'var(--pf-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ width: '2rem', height: '2rem', border: '2px solid rgba(190,154,86,0.15)', borderTopColor: 'var(--pf-gold)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <Spinner />
     </div>
   )
 
@@ -161,7 +161,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           <item.icon size={mobile ? 17 : 15} strokeWidth={1.75} />
           {/* Attention badge — the partner learns they're needed WITHOUT visiting the tab. */}
           {item.key === 'nav_res' && pendingCount > 0 && (mobile || collapsed) && (
-            <span style={{ position: 'absolute', top: '-4px', right: '-8px', minWidth: '14px', height: '14px', borderRadius: '999px', background: 'var(--pf-gold)', color: '#0a0e18', fontSize: '9px', fontFamily: 'var(--font-sans)', display: 'grid', placeItems: 'center', padding: '0 3px', lineHeight: 1 }}>{pendingCount}</span>
+            <span style={{ position: 'absolute', top: '-4px', right: '-8px', minWidth: '14px', height: '14px', borderRadius: '999px', background: 'var(--pf-gold)', color: '#0a0e18', fontSize: '10px', fontFamily: 'var(--font-sans)', display: 'grid', placeItems: 'center', padding: '0 3px', lineHeight: 1 }}>{pendingCount}</span>
           )}
         </span>
         {!iconOnly && <span style={{ fontFamily: 'var(--font-sans)', fontSize: mobile ? '9.5px' : '12.5px', letterSpacing: '0.04em', marginTop: mobile ? '5px' : 0 }}>{L(item.key)}</span>}

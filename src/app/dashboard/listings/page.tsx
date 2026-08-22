@@ -10,8 +10,8 @@ const ListingModal = dynamic(() => import('@/components/dashboard/ListingModal')
 function ModeBadge({ mode }: { mode?: string }) {
   const isPaid = mode === 'paid'
   const s = isPaid
-    ? { bg: 'rgba(190,154,86,0.12)', border: 'rgba(190,154,86,0.35)', color: '#be9a56', label: 'Paid' }
-    : { bg: 'rgba(223,201,166,0.08)', border: 'rgba(223,201,166,0.25)', color: '#dfc9a6', label: 'Reservation' }
+    ? { bg: 'rgba(190,154,86,0.12)', border: 'rgba(190,154,86,0.35)', color: 'var(--db-gold)', label: 'Paid' }
+    : { bg: 'var(--db-bg-card)', border: 'var(--db-border-subtle)', color: 'var(--db-text-muted)', label: 'Reservation' }
   return (
     <span style={{
       fontSize: '0.625rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.08em',
@@ -30,7 +30,7 @@ function EventBadge({ availabilityType }: { availabilityType?: string }) {
     <span style={{
       fontSize: '0.625rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.08em',
       textTransform: 'uppercase', padding: '2px 8px', borderRadius: '2px',
-      border: '1px solid rgba(158,118,59,0.35)', background: 'rgba(158,118,59,0.1)', color: '#9e763b',
+      border: '1px solid rgba(158,118,59,0.35)', background: 'rgba(158,118,59,0.1)', color: 'var(--db-gold-deep)',
     }}>
       Event
     </span>
@@ -89,7 +89,7 @@ export default function ListingsPage() {
 
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '20rem' }}>
-      <div style={{ width: '1.75rem', height: '1.75rem', border: '2px solid rgba(190,154,86,0.15)', borderTopColor: '#be9a56', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      <div style={{ width: '1.75rem', height: '1.75rem', border: '2px solid rgba(190,154,86,0.15)', borderTopColor: 'var(--db-gold)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
@@ -108,7 +108,7 @@ export default function ListingsPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'var(--db-bg-banner)', border: '1px solid var(--db-border)', borderRadius: '0.5rem', padding: '0.875rem 1.25rem', marginBottom: '1.75rem' }}>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="#be9a56" strokeWidth="1.25"/><path d="M8 5v3.5M8 11h.01" stroke="#be9a56" strokeWidth="1.25" strokeLinecap="round"/></svg>
           <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', color: 'var(--db-text-muted)', margin: 0, lineHeight: 1.5 }}>
-            Complete your <a href="/dashboard/profile" style={{ color: '#be9a56', textDecoration: 'underline' }}>Business Profile</a> first — listings won&apos;t go live until your profile is approved.
+            Complete your <a href="/dashboard/profile" style={{ color: 'var(--db-gold)', textDecoration: 'underline' }}>Business Profile</a> first — listings won&apos;t go live until your profile is approved.
           </p>
         </div>
       )}

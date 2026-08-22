@@ -12,7 +12,7 @@ import { getSupplierByUid, claimSupplierByEmail } from '@/lib/firestore'
 import type { Supplier } from '@/lib/schema'
 import { SupplierContext } from './SupplierContext'
 import { t, type Locale } from './i18n'
-import { Chip, PrimaryButton, EmptyState } from '@/components/partner/ui'
+import { Chip, PrimaryButton, EmptyState, IconButton, Spinner } from '@/components/partner/ui'
 import { Moon, Sun, LogOut, Store, PauseCircle } from 'lucide-react'
 
 function Shell({ children }: { children: React.ReactNode }) {
@@ -81,8 +81,7 @@ function Shell({ children }: { children: React.ReactNode }) {
 
   const spinner = (
     <div data-theme={theme} style={{ minHeight: '100vh', background: 'var(--pf-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ width: '2rem', height: '2rem', border: '2px solid rgba(190,154,86,0.15)', borderTopColor: 'var(--pf-gold)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <Spinner />
     </div>
   )
   if (authed === 'loading') return spinner
@@ -115,7 +114,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <input style={field} type="email" placeholder={L('email')} value={formEmail} onChange={e => setFormEmail(e.target.value)} />
           <input style={field} type="password" placeholder={L('password')} value={formPw} onChange={e => setFormPw(e.target.value)} onKeyDown={e => e.key === 'Enter' && submit()} />
-          {err && <p style={{ color: 'var(--pf-red, #c0564f)', fontFamily: 'var(--font-sans)', fontSize: '12.5px', margin: 0 }}>{err}</p>}
+          {err && <p style={{ color: 'var(--pf-red)', fontFamily: 'var(--font-sans)', fontSize: '12.5px', margin: 0 }}>{err}</p>}
           {notice && <p style={{ color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '12.5px', margin: 0 }}>{notice}</p>}
           <PrimaryButton onClick={submit}>{busy ? '…' : mode === 'signin' ? L('sign_in') : L('create_account')}</PrimaryButton>
           <button onClick={() => { setMode(m => m === 'signin' ? 'signup' : 'signin'); setErr('') }} style={{ background: 'none', border: 'none', color: 'var(--pf-gold)', cursor: 'pointer', fontFamily: 'var(--font-sans)', fontSize: '12.5px', padding: '4px 0' }}>

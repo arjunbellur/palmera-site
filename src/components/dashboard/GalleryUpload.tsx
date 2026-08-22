@@ -109,7 +109,7 @@ export default function GalleryUpload({ uid, value, onChange, max = 12, onPromot
       <p style={{ fontSize: '0.6875rem', color: 'var(--db-text-ghost)', fontFamily: 'var(--font-sans)', margin: '0.625rem 0 0' }}>
         {gs.multi}{value.length > 1 ? ` · ${gs.reorder}` : ''} · {value.length}/{max}
       </p>
-      {error && <p role="alert" style={{ fontSize: '0.75rem', color: '#e07070', fontFamily: 'var(--font-sans)', margin: '0.375rem 0 0' }}>{error}</p>}
+      {error && <p role="alert" style={{ fontSize: '0.75rem', color: 'var(--db-alert)', fontFamily: 'var(--font-sans)', margin: '0.375rem 0 0' }}>{error}</p>}
     </div>
   )
 }

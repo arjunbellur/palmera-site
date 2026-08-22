@@ -13,7 +13,7 @@ import PhotoUpload from '@/components/dashboard/PhotoUpload'
 import GalleryUpload from '@/components/dashboard/GalleryUpload'
 import { ScreenHeader, SectionTitle, card, cardShape, eyebrow, GhostButton, bodyText } from '@/components/partner/ui'
 
-const inputStyle: React.CSSProperties = { width: '100%', background: 'var(--pf-card)', border: '1px solid var(--pf-border)', borderRadius: '10px', padding: '9px 13px', color: 'var(--pf-text)', fontFamily: 'var(--font-sans)', fontSize: '12.5px', outline: 'none', boxSizing: 'border-box' }
+const inputStyle: React.CSSProperties = { width: '100%', background: 'var(--pf-card)', border: '1px solid var(--pf-border)', borderRadius: '10px', padding: '9px 13px', color: 'var(--pf-text)', fontFamily: 'var(--font-sans)', fontSize: '12.5px', boxSizing: 'border-box' }
 
 type PoMethod = CompanyPayoutProfile['method']
 

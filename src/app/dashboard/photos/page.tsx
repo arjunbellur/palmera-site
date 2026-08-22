@@ -61,7 +61,7 @@ export default function PhotosPage() {
   }
 
   const badge = (label: string, gold = false) => (
-    <span style={{ fontSize: '0.625rem', color: gold ? '#be9a56' : 'var(--db-text-muted)', border: `1px solid ${gold ? 'rgba(190,154,86,0.4)' : 'var(--db-border-subtle)'}`, padding: '0.125rem 0.5rem', borderRadius: '0.1875rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>{label}</span>
+    <span style={{ fontSize: '0.625rem', color: gold ? 'var(--db-gold)' : 'var(--db-text-muted)', border: `1px solid ${gold ? 'rgba(190,154,86,0.4)' : 'var(--db-border-subtle)'}`, padding: '0.125rem 0.5rem', borderRadius: '0.1875rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>{label}</span>
   )
 
   return (
@@ -103,10 +103,10 @@ export default function PhotosPage() {
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', paddingTop: '0.5rem', borderTop: '1px solid var(--db-border-subtle)' }}>
         <button onClick={handleSave} disabled={saving}
-          style={{ padding: '0.75rem 2rem', background: '#9e763b', border: 'none', borderRadius: '0.375rem', color: '#ebe8db', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', cursor: saving ? 'wait' : 'pointer', opacity: saving ? 0.7 : 1 }}>
+          style={{ padding: '0.75rem 2rem', background: 'var(--db-gold-deep)', border: 'none', borderRadius: '0.375rem', color: '#ebe8db', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', cursor: saving ? 'wait' : 'pointer', opacity: saving ? 0.7 : 1 }}>
           {saving ? 'Saving...' : 'Save photos'}
         </button>
-        {saved && <span style={{ fontSize: '0.8125rem', color: '#be9a56', fontFamily: 'var(--font-sans)' }}>✓ Saved</span>}
+        {saved && <span style={{ fontSize: '0.8125rem', color: 'var(--db-gold)', fontFamily: 'var(--font-sans)' }}>✓ Saved</span>}
       </div>
     </div>
   )

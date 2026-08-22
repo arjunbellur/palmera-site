@@ -25,14 +25,14 @@ export default function DashboardNav({ email, locale = 'fr' }: { email?: string;
           onClick={toggle}
           title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
           style={{ background: 'transparent', border: '1px solid var(--db-border)', color: 'var(--db-text-faint)', width: '2rem', height: '2rem', borderRadius: '0.25rem', fontSize: '0.875rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s', flexShrink: 0 }}
-          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#be9a56'; (e.currentTarget as HTMLButtonElement).style.color = '#be9a56' }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--db-gold)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--db-gold)' }}
           onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--db-border)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--db-text-faint)' }}
         >
           {theme === 'dark' ? '☀' : '☽'}
         </button>
         <button onClick={handleLogout}
           style={{ background: 'transparent', border: '1px solid var(--db-border)', color: 'var(--db-text)', padding: '0.4375rem 1.125rem', borderRadius: '0.25rem', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', cursor: 'pointer', letterSpacing: '0.05em', transition: 'all 0.2s' }}
-          onMouseEnter={e => { (e.target as HTMLButtonElement).style.borderColor = '#be9a56'; (e.target as HTMLButtonElement).style.color = '#be9a56' }}
+          onMouseEnter={e => { (e.target as HTMLButtonElement).style.borderColor = 'var(--db-gold)'; (e.target as HTMLButtonElement).style.color = 'var(--db-gold)' }}
           onMouseLeave={e => { (e.target as HTMLButtonElement).style.borderColor = 'var(--db-border)'; (e.target as HTMLButtonElement).style.color = 'var(--db-text)' }}>
           {logoutLabel}
         </button>

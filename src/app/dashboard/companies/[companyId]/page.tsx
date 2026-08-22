@@ -98,7 +98,7 @@ const CONFIRMATION_SPEEDS = ['Real-time', 'Within 1 hour', 'Same day', 'Within 2
 
 const photoLabel: React.CSSProperties = { display: 'block', fontSize: '0.6875rem', color: 'var(--db-text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.5rem', fontFamily: 'var(--font-sans)' }
 const opsLabel = photoLabel
-const opsInput: React.CSSProperties = { width: '100%', background: 'var(--db-bg-input)', border: '1px solid var(--db-border-gold)', borderRadius: '0.375rem', padding: '0.6875rem 0.875rem', color: 'var(--db-text)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', outline: 'none', boxSizing: 'border-box' }
+const opsInput: React.CSSProperties = { width: '100%', background: 'var(--db-bg-input)', border: '1px solid var(--db-border-gold)', borderRadius: '0.375rem', padding: '0.6875rem 0.875rem', color: 'var(--db-text)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', boxSizing: 'border-box' }
 
 export default function CompanyPage({ params }: { params: Promise<{ companyId: string }> }) {
   const { companyId } = use(params)
@@ -221,7 +221,7 @@ export default function CompanyPage({ params }: { params: Promise<{ companyId: s
     if (!to) return null
     return (
       <button onClick={() => { setTab(to); window.scrollTo({ top: 0 }) }}
-        style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '0.625rem 1.5rem', background: 'transparent', border: '1px solid var(--db-border-gold)', borderRadius: '0.375rem', color: '#be9a56', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', cursor: 'pointer' }}>
+        style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '0.625rem 1.5rem', background: 'transparent', border: '1px solid var(--db-border-gold)', borderRadius: '0.375rem', color: 'var(--db-gold)', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', cursor: 'pointer' }}>
         {s.next} : {s.tabs[to]} →
       </button>
     )
@@ -229,7 +229,7 @@ export default function CompanyPage({ params }: { params: Promise<{ companyId: s
 
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '40vh' }}>
-      <div style={{ width: '1.75rem', height: '1.75rem', border: '2px solid rgba(190,154,86,0.15)', borderTopColor: '#be9a56', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      <div style={{ width: '1.75rem', height: '1.75rem', border: '2px solid rgba(190,154,86,0.15)', borderTopColor: 'var(--db-gold)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
@@ -249,7 +249,7 @@ export default function CompanyPage({ params }: { params: Promise<{ companyId: s
       <div style={{ display: 'flex', overflowX: 'auto', borderBottom: '1px solid var(--db-border-subtle)', marginBottom: '1.75rem', scrollbarWidth: 'none' }}>
         {TABS.map(tb => (
           <button key={tb} onClick={() => setTab(tb)}
-            style={{ flexShrink: 0, padding: '0.625rem 1.25rem', background: 'transparent', border: 'none', borderBottom: tab === tb ? '2px solid #be9a56' : '2px solid transparent', color: tab === tb ? '#be9a56' : 'var(--db-text-muted)', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.04em', cursor: 'pointer', marginBottom: '-1px' }}>
+            style={{ flexShrink: 0, padding: '0.625rem 1.25rem', background: 'transparent', border: 'none', borderBottom: tab === tb ? '2px solid #be9a56' : '2px solid transparent', color: tab === tb ? 'var(--db-gold)' : 'var(--db-text-muted)', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.04em', cursor: 'pointer', marginBottom: '-1px' }}>
             {s.tabs[tb]}
           </button>
         ))}
@@ -259,7 +259,7 @@ export default function CompanyPage({ params }: { params: Promise<{ companyId: s
         <>
           <CompanyForm initial={company} submitLabel={s.save} saving={saving} onSubmit={handleSubmit} />
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
-            {saved && <span style={{ fontSize: '0.8125rem', color: '#be9a56', fontFamily: 'var(--font-sans)' }}>{s.saved}</span>}
+            {saved && <span style={{ fontSize: '0.8125rem', color: 'var(--db-gold)', fontFamily: 'var(--font-sans)' }}>{s.saved}</span>}
             {profileDone && <NextButton from="Profile" />}
           </div>
         </>
@@ -268,7 +268,7 @@ export default function CompanyPage({ params }: { params: Promise<{ companyId: s
       {tab === 'Experiences' && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1.25rem' }}>
-            <button onClick={openNewExperience} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0.625rem 1.25rem', background: '#9e763b', border: 'none', borderRadius: '6px', color: '#ebe8db', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', cursor: 'pointer' }}>
+            <button onClick={openNewExperience} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0.625rem 1.25rem', background: 'var(--db-gold-deep)', border: 'none', borderRadius: '6px', color: '#ebe8db', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', cursor: 'pointer' }}>
               {s.addExp}
             </button>
           </div>
@@ -293,7 +293,7 @@ export default function CompanyPage({ params }: { params: Promise<{ companyId: s
                     <span style={{ flexShrink: 0, fontSize: '0.625rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', textTransform: 'uppercase', padding: '2px 8px', borderRadius: '2px', border: '1px solid var(--db-border-subtle)', color: 'var(--db-text-muted)' }}>{s.stLabels[e.status] || e.status}</span>
                   </div>
                   {(e.needsReview?.length ?? 0) > 0 && (
-                    <p style={{ fontSize: '0.6875rem', color: '#e07070', fontFamily: 'var(--font-sans)', margin: '0 0 0.625rem' }}>{s.needs}: {e.needsReview!.join(', ')}</p>
+                    <p style={{ fontSize: '0.6875rem', color: 'var(--db-alert)', fontFamily: 'var(--font-sans)', margin: '0 0 0.625rem' }}>{s.needs}: {e.needsReview!.join(', ')}</p>
                   )}
                   <p style={{ fontSize: '0.75rem', color: 'var(--db-text-faint)', fontFamily: 'var(--font-sans)', margin: '0 0 1rem', textTransform: 'capitalize' }}>
                     {[e.category, e.city].filter(Boolean).join(' · ') || '—'}{e.price != null ? ` · ${e.price.toLocaleString()} XOF` : ''}
@@ -317,13 +317,13 @@ export default function CompanyPage({ params }: { params: Promise<{ companyId: s
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 16rem), 1fr))', gap: '1.25rem', marginBottom: '1.75rem' }}>
             <div>
-              <label style={photoLabel}>{s.hero} {!company.heroPhoto && <span style={{ color: '#be9a56' }}>*</span>}</label>
+              <label style={photoLabel}>{s.hero} {!company.heroPhoto && <span style={{ color: 'var(--db-gold)' }}>*</span>}</label>
               <PhotoUpload uid={uid} label={s.hero} fieldName={`company_${companyId}_hero`} existingUrl={company.heroPhoto || ''}
                 hint={s.heroHint}
                 onUploaded={(url) => persistPhotos({ heroPhoto: url })} />
             </div>
             <div>
-              <label style={photoLabel}>{s.logo} {!company.logo && <span style={{ color: '#be9a56' }}>*</span>}</label>
+              <label style={photoLabel}>{s.logo} {!company.logo && <span style={{ color: 'var(--db-gold)' }}>*</span>}</label>
               <PhotoUpload uid={uid} label={s.logo} fieldName={`company_${companyId}_logo`} existingUrl={company.logo || ''}
                 hint={s.logoHint}
                 onUploaded={(url) => persistPhotos({ logo: url })} />
@@ -373,10 +373,10 @@ export default function CompanyPage({ params }: { params: Promise<{ companyId: s
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
             <button onClick={handleSaveOps} disabled={savingOps}
-              style={{ padding: '0.625rem 1.5rem', background: '#9e763b', border: 'none', borderRadius: '0.375rem', color: '#ebe8db', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', cursor: savingOps ? 'default' : 'pointer', opacity: savingOps ? 0.6 : 1 }}>
+              style={{ padding: '0.625rem 1.5rem', background: 'var(--db-gold-deep)', border: 'none', borderRadius: '0.375rem', color: '#ebe8db', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', cursor: savingOps ? 'default' : 'pointer', opacity: savingOps ? 0.6 : 1 }}>
               {savingOps ? s.saving : s.save}
             </button>
-            {savedOps && <span style={{ fontSize: '0.8125rem', color: '#be9a56', fontFamily: 'var(--font-sans)' }}>{s.saved}</span>}
+            {savedOps && <span style={{ fontSize: '0.8125rem', color: 'var(--db-gold)', fontFamily: 'var(--font-sans)' }}>{s.saved}</span>}
             {opsDone && <NextButton from="Operations" />}
           </div>
         </div>
@@ -411,7 +411,7 @@ export default function CompanyPage({ params }: { params: Promise<{ companyId: s
       )}
 
       {toast && (
-        <div style={{ position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)', zIndex: 90, background: 'var(--db-bg-modal)', border: '1px solid var(--db-border-gold)', borderRadius: '2rem', padding: '0.625rem 1.25rem', color: '#be9a56', fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', letterSpacing: '0.03em', boxShadow: '0 8px 24px rgba(0,0,0,0.35)' }}>
+        <div style={{ position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)', zIndex: 90, background: 'var(--db-bg-modal)', border: '1px solid var(--db-border-gold)', borderRadius: '2rem', padding: '0.625rem 1.25rem', color: 'var(--db-gold)', fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', letterSpacing: '0.03em', boxShadow: '0 8px 24px rgba(0,0,0,0.35)' }}>
           {toast}
         </div>
       )}

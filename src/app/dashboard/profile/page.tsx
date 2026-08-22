@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { onAuthChange } from '@/lib/auth'
 import { getPartner, updatePartner, updateSectionStatus } from '@/lib/firestore'
 
-const inp: React.CSSProperties = { width: '100%', background: 'var(--db-bg-input)', border: '1px solid var(--db-border-gold)', borderRadius: '0.375rem', padding: '0.6875rem 0.875rem', color: 'var(--db-text)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', outline: 'none', boxSizing: 'border-box' }
+const inp: React.CSSProperties = { width: '100%', background: 'var(--db-bg-input)', border: '1px solid var(--db-border-gold)', borderRadius: '0.375rem', padding: '0.6875rem 0.875rem', color: 'var(--db-text)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', boxSizing: 'border-box' }
 const sel: React.CSSProperties = { ...inp, appearance: 'none' as const }
 const lbl: React.CSSProperties = { display: 'block', fontSize: '0.6875rem', color: 'var(--db-text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.375rem', fontFamily: 'var(--font-sans)' }
 const row: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 12rem), 1fr))', gap: '1rem', marginBottom: '1rem' }
@@ -65,7 +65,7 @@ export default function ProfilePage() {
   const [beneficialOwners, setBeneficialOwners] = useState<BeneficialOwner[]>([])
   const set = (f: string, v: string) => { setForm(p => ({ ...p, [f]: v })); setErrors(p => { const n = { ...p }; delete n[f]; return n }) }
   const err = (f: string) => errors[f] ? { border: '1px solid rgba(224,112,112,0.6)' } : {}
-  const errMsg = (f: string) => errors[f] ? <p style={{ fontSize: '0.6875rem', color: '#e07070', fontFamily: 'var(--font-sans)', margin: '0.25rem 0 0' }}>{errors[f]}</p> : null
+  const errMsg = (f: string) => errors[f] ? <p style={{ fontSize: '0.6875rem', color: 'var(--db-alert)', fontFamily: 'var(--font-sans)', margin: '0.25rem 0 0' }}>{errors[f]}</p> : null
 
   const isWestAfrica = WEST_AFRICA_CODES.has(form.country)
   const isStripe = STRIPE_SUPPORTED_CODES.has(form.country)
@@ -159,7 +159,7 @@ export default function ProfilePage() {
       <div style={{ display: 'flex', marginBottom: '2rem', borderBottom: '1px solid var(--db-border-subtle)' }}>
         {TABS.map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-            style={{ padding: '0.625rem 1.5rem', background: 'transparent', border: 'none', borderBottom: activeTab === tab.key ? '2px solid #be9a56' : '2px solid transparent', color: activeTab === tab.key ? '#be9a56' : 'var(--db-text-muted)', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', cursor: 'pointer', textTransform: 'uppercase', transition: 'color 0.15s' }}>
+            style={{ padding: '0.625rem 1.5rem', background: 'transparent', border: 'none', borderBottom: activeTab === tab.key ? '2px solid #be9a56' : '2px solid transparent', color: activeTab === tab.key ? 'var(--db-gold)' : 'var(--db-text-muted)', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', cursor: 'pointer', textTransform: 'uppercase', transition: 'color 0.15s' }}>
             {tab.label}
           </button>
         ))}
@@ -236,7 +236,7 @@ export default function ProfilePage() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
                 <h2 style={{ ...h2s, margin: 0 }}>Beneficial owners</h2>
                 <button onClick={addBO}
-                  style={{ padding: '0.375rem 0.875rem', background: 'transparent', border: '1px solid rgba(190,154,86,0.3)', borderRadius: '0.25rem', color: '#be9a56', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', cursor: 'pointer', letterSpacing: '0.04em' }}>
+                  style={{ padding: '0.375rem 0.875rem', background: 'transparent', border: '1px solid rgba(190,154,86,0.3)', borderRadius: '0.25rem', color: 'var(--db-gold)', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', cursor: 'pointer', letterSpacing: '0.04em' }}>
                   + Add owner
                 </button>
               </div>
@@ -330,8 +330,8 @@ export default function ProfilePage() {
           {isWestAfrica && (
             <div>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(158,118,59,0.08)', border: '1px solid rgba(158,118,59,0.25)', borderRadius: '0.25rem', padding: '0.375rem 0.875rem', marginBottom: '1.5rem' }}>
-                <div style={{ width: '0.375rem', height: '0.375rem', borderRadius: '50%', background: '#9e763b' }} />
-                <span style={{ fontSize: '0.75rem', color: '#be9a56', fontFamily: 'var(--font-sans)', letterSpacing: '0.04em' }}>Payout rail: PayDunya</span>
+                <div style={{ width: '0.375rem', height: '0.375rem', borderRadius: '50%', background: 'var(--db-gold-deep)' }} />
+                <span style={{ fontSize: '0.75rem', color: 'var(--db-gold)', fontFamily: 'var(--font-sans)', letterSpacing: '0.04em' }}>Payout rail: PayDunya</span>
               </div>
               <div style={row}>
                 <div>
@@ -382,8 +382,8 @@ export default function ProfilePage() {
           {isStripe && (
             <div>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(158,118,59,0.08)', border: '1px solid rgba(158,118,59,0.25)', borderRadius: '0.25rem', padding: '0.375rem 0.875rem', marginBottom: '1.5rem' }}>
-                <div style={{ width: '0.375rem', height: '0.375rem', borderRadius: '50%', background: '#9e763b' }} />
-                <span style={{ fontSize: '0.75rem', color: '#be9a56', fontFamily: 'var(--font-sans)', letterSpacing: '0.04em' }}>Payout rail: Stripe Connect</span>
+                <div style={{ width: '0.375rem', height: '0.375rem', borderRadius: '50%', background: 'var(--db-gold-deep)' }} />
+                <span style={{ fontSize: '0.75rem', color: 'var(--db-gold)', fontFamily: 'var(--font-sans)', letterSpacing: '0.04em' }}>Payout rail: Stripe Connect</span>
               </div>
               <div style={row}>
                 <div><label style={lbl}>Account holder name *</label><input style={inp} placeholder="As on bank account" value={form.stripeAccountHolderName} onChange={e => set('stripeAccountHolderName', e.target.value)} /></div>
@@ -414,10 +414,10 @@ export default function ProfilePage() {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--db-border-subtle)', marginTop: '1.5rem' }}>
         <button onClick={handleSave} disabled={saving}
-          style={{ padding: '0.75rem 2rem', background: '#9e763b', border: 'none', borderRadius: '0.375rem', color: '#ebe8db', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', cursor: saving ? 'wait' : 'pointer', opacity: saving ? 0.7 : 1 }}>
+          style={{ padding: '0.75rem 2rem', background: 'var(--db-gold-deep)', border: 'none', borderRadius: '0.375rem', color: '#ebe8db', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', cursor: saving ? 'wait' : 'pointer', opacity: saving ? 0.7 : 1 }}>
           {saving ? 'Saving...' : 'Save changes'}
         </button>
-        {saved && <span style={{ fontSize: '0.8125rem', color: '#be9a56', fontFamily: 'var(--font-sans)' }}>✓ Saved</span>}
+        {saved && <span style={{ fontSize: '0.8125rem', color: 'var(--db-gold)', fontFamily: 'var(--font-sans)' }}>✓ Saved</span>}
       </div>
     </div>
   )

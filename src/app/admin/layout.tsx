@@ -7,7 +7,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { onAuthChange } from '@/lib/auth'
 import { ThemeProvider, useTheme } from '@/lib/theme'
 import { isAdminEmail } from '@/lib/admin'
-import { Chip } from '@/components/partner/ui'
+import { Chip, IconButton, Spinner } from '@/components/partner/ui'
 import { AdminContext } from './AdminContext'
 import { LayoutDashboard, Smartphone, CircleDollarSign, Building2, Truck, Moon, Sun, LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 
@@ -58,8 +58,7 @@ function Shell({ children }: { children: React.ReactNode }) {
 
   if (loading) return (
     <div data-theme={theme} style={{ minHeight: '100vh', background: 'var(--pf-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ width: '2rem', height: '2rem', border: '2px solid rgba(190,154,86,0.15)', borderTopColor: 'var(--pf-gold)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <Spinner />
     </div>
   )
 
@@ -79,11 +78,18 @@ function Shell({ children }: { children: React.ReactNode }) {
     </button>
   )
 
-  const navLink = (item: typeof NAV[number]) => {
+  const navLink = (item: typeof NAV[number], mobile = false) => {
     // Company detail pages belong to the Directory's world.
     const active = item.href === '/admin'
       ? pathname === '/admin'
       : pathname.startsWith(item.href) || (item.href === '/admin/directory' && pathname.startsWith('/admin/companies'))
+    if (mobile) return (
+      // Bottom tab bar (same pattern as the partner shell) — ≥44px targets.
+      <a key={item.href} href={item.href} aria-label={item.label} style={{ flex: 1, minHeight: '56px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', textDecoration: 'none', color: active ? 'var(--pf-gold)' : 'var(--pf-faint)', borderTop: `2px solid ${active ? 'var(--pf-gold)' : 'transparent'}` }}>
+        <item.icon size={17} strokeWidth={1.75} />
+        <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', letterSpacing: '0.04em' }}>{item.label}</span>
+      </a>
+    )
     return (
       <a key={item.href} href={item.href} title={collapsed ? item.label : undefined} style={{
         display: 'flex', alignItems: 'center', gap: collapsed ? 0 : '11px',
@@ -104,7 +110,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         {!isMobile && (
           <aside style={{ width: collapsed ? '68px' : '236px', flexShrink: 0, background: 'var(--pf-nav)', borderRight: '1px solid var(--pf-border)', padding: collapsed ? '22px 10px' : '22px 16px', position: 'sticky', top: 0, height: '100vh', display: 'flex', flexDirection: 'column', gap: '20px', transition: 'width 0.25s cubic-bezier(0.22,1,0.36,1), padding 0.25s ease', overflow: 'hidden' }}>
             <div style={{ padding: collapsed ? 0 : '0 6px', display: 'flex', justifyContent: collapsed ? 'center' : 'flex-start' }}>{Logo}</div>
-            <nav style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>{NAV.map(navLink)}</nav>
+            <nav style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>{NAV.map(n => navLink(n, false))}</nav>
             <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid var(--pf-border)', display: 'flex', flexDirection: 'column', gap: '12px', alignItems: collapsed ? 'center' : 'stretch' }}>
               {!collapsed && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-faint)', wordBreak: 'break-all' }}>{email}</span>}
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexDirection: collapsed ? 'column' : 'row' }}>
@@ -133,9 +139,14 @@ function Shell({ children }: { children: React.ReactNode }) {
             </header>
           )}
 
-          <main className="pf-scroll" style={{ flex: 1, padding: isMobile ? '20px 18px 40px' : '30px 38px 52px', maxWidth: '1440px', width: '100%', margin: '0 auto' }}>
+          <main className="pf-scroll" style={{ flex: 1, padding: isMobile ? '20px 18px 84px' : '30px 38px 52px', maxWidth: '1440px', width: '100%', margin: '0 auto' }}>
             {children}
           </main>
+          {isMobile && (
+            <nav aria-label="Admin" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, display: 'flex', background: 'var(--pf-nav)', borderTop: '1px solid var(--pf-border)', zIndex: 30 }}>
+              {NAV.map(n => navLink(n, true))}
+            </nav>
+          )}
         </div>
       </div>
     </AdminContext.Provider>

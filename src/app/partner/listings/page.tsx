@@ -14,6 +14,7 @@ import dynamic from 'next/dynamic'
 const ExperienceModal = dynamic(() => import('@/components/dashboard/ExperienceModal'), { ssr: false })
 import { LayoutGrid, Eye, Copy, X } from 'lucide-react'
 import ListingPreview from '@/components/dashboard/ListingPreview'
+import { useEscape } from '@/lib/use-escape'
 
 const STATUS: Record<ExperienceStatus, { key: string; tone: Tone }> = {
   published: { key: 'st_published', tone: 'green' },
@@ -49,6 +50,7 @@ export default function ListingsScreen() {
 
   const [catFilter, setCatFilter] = useState<string>('all')
   const [preview, setPreview] = useState<Experience | null>(null)
+  useEscape(() => setPreview(null), !!preview)
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft' | 'unpublished'>('all')
   const [toDelete, setToDelete] = useState<Experience | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -124,7 +126,7 @@ export default function ListingsScreen() {
             <button key={k} onClick={() => setCatFilter(k)}
               style={{ padding: '6px 13px', borderRadius: '999px', cursor: 'pointer', fontFamily: 'var(--font-sans)', fontSize: '11px', letterSpacing: '0.03em', textTransform: 'capitalize',
                 border: `1px solid ${catFilter === k ? 'var(--pf-gold)' : 'var(--pf-border)'}`,
-                background: catFilter === k ? 'rgba(190,154,86,0.14)' : 'transparent',
+                background: catFilter === k ? 'var(--pf-gold-soft)' : 'transparent',
                 color: catFilter === k ? 'var(--pf-gold)' : 'var(--pf-faint)' }}>
               {label}
             </button>
@@ -165,9 +167,9 @@ export default function ListingsScreen() {
                     app-shaped preview lives in the editor). Landscape 16:9,
                     cover-fit so it still can't stretch. */}
                 <div style={{ aspectRatio: '16 / 9', background: e.img ? `center/cover no-repeat url(${e.img})` : 'var(--pf-card-solid)', display: 'grid', placeItems: 'center', position: 'relative' }}>
-                  {!e.img && <span style={{ ...eyebrow, opacity: 0.6, fontSize: '9px' }}>{locale === 'fr' ? 'Sans photo' : 'No photo'}</span>}
+                  {!e.img && <span style={{ ...eyebrow, opacity: 0.6, fontSize: '10px' }}>{locale === 'fr' ? 'Sans photo' : 'No photo'}</span>}
                   {/* Status reads at a glance: LIVE is solid, everything else quiet. */}
-                  <span style={{ position: 'absolute', left: '8px', bottom: '8px', fontFamily: 'var(--font-sans)', fontSize: '9px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 9px', borderRadius: '999px',
+                  <span style={{ position: 'absolute', left: '8px', bottom: '8px', fontFamily: 'var(--font-sans)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 9px', borderRadius: '999px',
                     background: e.status === 'published' ? 'var(--pf-success)' : 'rgba(10,14,24,0.72)',
                     color: e.status === 'published' ? '#0a0e18' : 'var(--pf-muted)',
                     border: e.status === 'published' ? 'none' : '1px solid var(--pf-border-strong)',
@@ -176,7 +178,7 @@ export default function ListingsScreen() {
                   </span>
                 </div>
                 <div style={{ padding: '10px 12px 12px', flex: 1 }}>
-                  <div style={{ ...eyebrow, fontSize: '8.5px', letterSpacing: '0.1em', marginBottom: '4px' }}>
+                  <div style={{ ...eyebrow, fontSize: '10px', letterSpacing: '0.1em', marginBottom: '4px' }}>
                     {[e.category, e.city].filter(Boolean).join(' · ') || '—'}
                   </div>
                   <div style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '13.5px', lineHeight: 1.25, marginBottom: '4px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{e.title || L('untitled')}</div>
@@ -195,10 +197,10 @@ export default function ListingsScreen() {
 
       {preview && (
         <div onClick={() => setPreview(null)} style={{ position: 'fixed', inset: 0, zIndex: 90, background: 'var(--pf-scrim)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '18px' }}>
-          <div onClick={ev => ev.stopPropagation()} className="pf-glass" style={{ width: 'min(30rem, 100%)', maxHeight: '92vh', overflowY: 'auto', borderRadius: '18px', padding: '20px' }}>
+          <div role="dialog" aria-modal="true" aria-label={L('preview_guest')} onClick={ev => ev.stopPropagation()} className="pf-glass" style={{ width: 'min(30rem, 100%)', maxHeight: '92vh', overflowY: 'auto', borderRadius: '18px', padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
               <span style={eyebrow}>{L('preview_guest')}</span>
-              <button onClick={() => setPreview(null)} style={{ background: 'transparent', border: 'none', color: 'var(--pf-faint)', cursor: 'pointer' }}><X size={16} strokeWidth={1.75} /></button>
+              <button onClick={() => setPreview(null)} aria-label="Close" style={{ background: 'transparent', border: 'none', color: 'var(--pf-faint)', cursor: 'pointer', width: '40px', height: '40px', display: 'grid', placeItems: 'center' }}><X size={16} strokeWidth={1.75} /></button>
             </div>
             <ListingPreview exp={preview} companyName={company?.name} locale={locale} />
           </div>

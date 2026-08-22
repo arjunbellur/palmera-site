@@ -15,6 +15,7 @@ import PhotoUpload from './PhotoUpload'
 import MenuUpload from './MenuUpload'
 import GalleryUpload from './GalleryUpload'
 import ListingPreview from './ListingPreview'
+import { useEscape } from '@/lib/use-escape'
 import PriceInput from './PriceInput'
 import { getEnabledCategories, getEnabledCities, getPolicies } from '@/lib/config'
 import { useLocale } from '@/lib/use-locale'
@@ -271,7 +272,7 @@ function parseMapsLink(url: string): { lat: number; lng: number } | null {
   return null
 }
 
-const inputStyle: React.CSSProperties = { width: '100%', background: 'var(--db-bg-input)', border: '1px solid var(--db-border-subtle)', borderRadius: '0.25rem', padding: '0.625rem 0.75rem', color: 'var(--db-text)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', outline: 'none', boxSizing: 'border-box' }
+const inputStyle: React.CSSProperties = { width: '100%', background: 'var(--db-bg-input)', border: '1px solid var(--db-border-subtle)', borderRadius: '0.25rem', padding: '0.625rem 0.75rem', color: 'var(--db-text)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', boxSizing: 'border-box' }
 const labelStyle: React.CSSProperties = { display: 'block', fontSize: '0.6875rem', color: 'var(--db-text-faint)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.375rem', fontFamily: 'var(--font-sans)' }
 const hintStyle: React.CSSProperties = { fontSize: '0.6875rem', color: 'var(--db-text-ghost)', fontFamily: 'var(--font-sans)', margin: '0.25rem 0 0', lineHeight: 1.5 }
 const rowStyle: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 12rem), 1fr))', gap: '1rem', marginBottom: '1rem' }
@@ -388,8 +389,8 @@ function ChoiceCards<T extends string>({ value, onChange, options }: {
           <button key={o.v} onClick={() => onChange(o.v)}
             className={active ? 'pf-glass pf-glass-gold' : 'pf-glass'}
             style={{ textAlign: 'left', padding: '0.875rem 1rem', borderRadius: '0.5rem', cursor: 'pointer' }}>
-            <div style={{ fontSize: '1rem', marginBottom: '0.375rem', color: active ? '#be9a56' : 'var(--db-text-faint)' }}>{o.icon}</div>
-            <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', color: active ? '#be9a56' : 'var(--db-text)', marginBottom: o.desc ? '0.25rem' : 0 }}>{o.label}</div>
+            <div style={{ fontSize: '1rem', marginBottom: '0.375rem', color: active ? 'var(--db-gold)' : 'var(--db-text-faint)' }}>{o.icon}</div>
+            <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', color: active ? 'var(--db-gold)' : 'var(--db-text)', marginBottom: o.desc ? '0.25rem' : 0 }}>{o.label}</div>
             {o.desc && <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6875rem', color: 'var(--db-text-ghost)', lineHeight: 1.45 }}>{o.desc}</div>}
           </button>
         )
@@ -412,19 +413,19 @@ function Stepper({ value, min = 1, onChange, noLimit, noLimitLabel, unlimitedLab
         <button onClick={() => onChange(Math.max(min, (unlimited ? min : value) - 1))} disabled={unlimited || value <= min}
           style={{ ...btn, opacity: unlimited || value <= min ? 0.35 : 1, cursor: unlimited || value <= min ? 'default' : 'pointer' }}>−</button>
         {unlimited ? (
-          <span style={{ fontFamily: 'var(--font-display)', color: '#be9a56', fontSize: '1.05rem', minWidth: '4.5rem', textAlign: 'center' }}>∞ {unlimitedLabel}</span>
+          <span style={{ fontFamily: 'var(--font-display)', color: 'var(--db-gold)', fontSize: '1.05rem', minWidth: '4.5rem', textAlign: 'center' }}>∞ {unlimitedLabel}</span>
         ) : (
           // Jordan: type the number directly instead of tapping + eleven times.
           <input type="number" min={min} value={value}
             onChange={(e) => { const n = parseInt(e.target.value, 10); onChange(isNaN(n) ? min : Math.max(min, n)) }}
-            style={{ width: '4.5rem', textAlign: 'center', background: 'var(--db-bg-input)', border: '1px solid var(--db-border-subtle)', borderRadius: '0.375rem', padding: '0.4375rem 0.25rem', color: 'var(--db-text)', fontFamily: 'var(--font-display)', fontSize: '1.125rem', outline: 'none' }} />
+            style={{ width: '4.5rem', textAlign: 'center', background: 'var(--db-bg-input)', border: '1px solid var(--db-border-subtle)', borderRadius: '0.375rem', padding: '0.4375rem 0.25rem', color: 'var(--db-text)', fontFamily: 'var(--font-display)', fontSize: '1.125rem' }} />
         )}
         <button onClick={() => onChange((unlimited ? min : value) + 1)} disabled={unlimited}
           style={{ ...btn, opacity: unlimited ? 0.35 : 1, cursor: unlimited ? 'default' : 'pointer' }}>+</button>
       </div>
       {noLimit && (
         <button onClick={() => onChange(unlimited ? Math.max(min, 10) : 0)}
-          style={{ marginTop: '0.5rem', background: 'transparent', border: 'none', color: unlimited ? '#be9a56' : 'var(--db-text-faint)', fontSize: '0.6875rem', fontFamily: 'var(--font-sans)', textDecoration: 'underline', cursor: 'pointer', padding: 0 }}>
+          style={{ marginTop: '0.5rem', background: 'transparent', border: 'none', color: unlimited ? 'var(--db-gold)' : 'var(--db-text-faint)', fontSize: '0.6875rem', fontFamily: 'var(--font-sans)', textDecoration: 'underline', cursor: 'pointer', padding: 0 }}>
           {noLimitLabel}
         </button>
       )}
@@ -436,6 +437,7 @@ function Stepper({ value, min = 1, onChange, noLimit, noLimitLabel, unlimitedLab
 export default function ExperienceModal({ providerId, storageUid, companyId, companyName, commissionRate, defaultCategory, defaultCity, experience, existingOptions, onSave, onClose }: ExperienceModalProps) {
   const uploadUid = storageUid || providerId
   const locale = useLocale()
+  useEscape(onClose)
   const T = M[locale]
   const [categories, setCategories] = useState<Opt[]>([])
   const [cities, setCities] = useState<Opt[]>([])
@@ -652,7 +654,7 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
       {/* What a group actually pays — the partner sees their pricing the way guests will. */}
       {isPaid && !!form.price && (
         <div style={{ background: 'var(--db-bg-banner)', border: '1px solid var(--db-border-gold)', borderRadius: '0.5rem', padding: '0.875rem 1rem' }}>
-          <p style={{ fontSize: '0.6875rem', color: '#be9a56', letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: 'var(--font-sans)', margin: '0 0 0.375rem' }}>{T.preview}</p>
+          <p style={{ fontSize: '0.6875rem', color: 'var(--db-gold)', letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: 'var(--font-sans)', margin: '0 0 0.375rem' }}>{T.preview}</p>
           <p style={{ fontSize: '0.8125rem', color: 'var(--db-text-muted)', fontFamily: 'var(--font-sans)', margin: 0, lineHeight: 1.6 }}>
             {T.previewLine(exampleParty, fmt(exampleTotal), fmt(perFriend))}
           </p>
@@ -669,7 +671,7 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
         )
         return (
           <div style={{ border: '1px solid var(--db-border-subtle)', borderRadius: '0.5rem', padding: '0.75rem 1rem', marginTop: '0.875rem' }}>
-            <p style={{ fontSize: '0.6875rem', color: '#be9a56', letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: 'var(--font-sans)', margin: '0 0 0.25rem' }}>{T.netTitle} · {T.netUnit(form.priceUnit || 'per_person')}</p>
+            <p style={{ fontSize: '0.6875rem', color: 'var(--db-gold)', letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: 'var(--font-sans)', margin: '0 0 0.25rem' }}>{T.netTitle} · {T.netUnit(form.priceUnit || 'per_person')}</p>
             {row(T.netGuestPays, `${fmt(form.price)} XOF`)}
             {row(`${T.netCommission} (${+(commissionRate * 100).toFixed(2)}%)`, `− ${fmt(comm)} XOF`)}
             <div style={{ borderTop: '1px solid var(--db-border-subtle)', marginTop: '0.25rem' }}>{row(T.netYouEarn, `${fmt(form.price - comm)} XOF`, true)}</div>
@@ -687,7 +689,7 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
       </div>
       <p style={{ ...hintStyle, margin: '-0.5rem 0 1rem' }}>{T.partyHint}</p>
       {groupInverted && (
-        <p style={{ fontSize: '0.75rem', color: '#e07070', fontFamily: 'var(--font-sans)', margin: '-0.5rem 0 1rem' }}>{T.groupWarn}</p>
+        <p style={{ fontSize: '0.75rem', color: 'var(--db-alert)', fontFamily: 'var(--font-sans)', margin: '-0.5rem 0 1rem' }}>{T.groupWarn}</p>
       )}
     </>
   )
@@ -708,7 +710,7 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
           <label style={labelStyle}>{T.daysRun}</label>
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
             {DAYS.map((d) => (
-              <button key={d} onClick={() => toggleDay(d)} style={{ padding: '5px 10px', borderRadius: '0.25rem', border: `1px solid ${form.schedule?.days?.includes(d) ? '#be9a56' : 'var(--db-border-subtle)'}`, background: form.schedule?.days?.includes(d) ? 'rgba(190,154,86,0.15)' : 'transparent', color: form.schedule?.days?.includes(d) ? '#be9a56' : 'var(--db-text-faint)', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>{T.dayLabels[d]}</button>
+              <button key={d} onClick={() => toggleDay(d)} style={{ padding: '5px 10px', borderRadius: '0.25rem', border: `1px solid ${form.schedule?.days?.includes(d) ? 'var(--db-gold)' : 'var(--db-border-subtle)'}`, background: form.schedule?.days?.includes(d) ? 'rgba(190,154,86,0.15)' : 'transparent', color: form.schedule?.days?.includes(d) ? 'var(--db-gold)' : 'var(--db-text-faint)', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>{T.dayLabels[d]}</button>
             ))}
           </div>
           <label style={labelStyle}>{T.startTimes}</label>
@@ -757,7 +759,7 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
       </div>
 
       <div style={{ marginBottom: '1rem' }}>
-        <label style={labelStyle}>{T.maps} {!form.mapsLink && <span style={{ color: '#e07070' }}>{T.needPub}</span>}</label>
+        <label style={labelStyle}>{T.maps} {!form.mapsLink && <span style={{ color: 'var(--db-alert)' }}>{T.needPub}</span>}</label>
         <input style={inputStyle} type="url" placeholder={T.mapsPh}
           value={form.mapsLink || ''}
           onChange={(e) => {
@@ -778,7 +780,7 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
   const stepPhotos = (
     <>
       <div style={{ marginBottom: '1rem' }}>
-        <label style={labelStyle}>{T.mainPhoto} {!form.img && <span style={{ color: '#e07070' }}>{T.needPub}</span>}</label>
+        <label style={labelStyle}>{T.mainPhoto} {!form.img && <span style={{ color: 'var(--db-alert)' }}>{T.needPub}</span>}</label>
         <PhotoUpload uid={uploadUid} label={T.mainPhoto} fieldName={`experience_${experience?.id || 'new'}_hero`} existingUrl={form.img} onUploaded={(url) => set('img', url)} hint={T.photoHint} />
       </div>
       <div style={{ marginBottom: '1.25rem' }}>
@@ -821,7 +823,7 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
         <label style={labelStyle}>{T.langs}</label>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           {LANGUAGES.map((lang) => (
-            <button key={lang} onClick={() => toggleLanguage(lang)} style={{ padding: '6px 14px', borderRadius: '0.25rem', border: `1px solid ${form.languages?.includes(lang) ? '#be9a56' : 'var(--db-border-subtle)'}`, background: form.languages?.includes(lang) ? 'rgba(190,154,86,0.15)' : 'transparent', color: form.languages?.includes(lang) ? '#be9a56' : 'var(--db-text-faint)', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>{T.langLabels[lang]}</button>
+            <button key={lang} onClick={() => toggleLanguage(lang)} style={{ padding: '6px 14px', borderRadius: '0.25rem', border: `1px solid ${form.languages?.includes(lang) ? 'var(--db-gold)' : 'var(--db-border-subtle)'}`, background: form.languages?.includes(lang) ? 'rgba(190,154,86,0.15)' : 'transparent', color: form.languages?.includes(lang) ? 'var(--db-gold)' : 'var(--db-text-faint)', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>{T.langLabels[lang]}</button>
           ))}
         </div>
       </div>
@@ -839,7 +841,7 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
       </div>
 
       <div style={{ marginBottom: '1.25rem' }}>
-        <label style={labelStyle}>{T.cancelPolicy} {needsReview.includes('cancellationTier') && <span style={{ color: '#e07070' }}>{T.confirmTier}</span>}</label>
+        <label style={labelStyle}>{T.cancelPolicy} {needsReview.includes('cancellationTier') && <span style={{ color: 'var(--db-alert)' }}>{T.confirmTier}</span>}</label>
         <div style={{ marginBottom: '0.625rem' }}>
           <ChoiceCards value={form.cancellationPolicy?.tier} onChange={(t) => setCancelTier(t)} options={CANCELLATION_TIERS.map((t) => ({
             v: t, icon: t === 'flexible' ? '◌' : t === 'moderate' ? '◑' : '●',
@@ -857,7 +859,7 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
   const suggestions = SUGGEST[form.category || ''] || SUGGEST_DEFAULT
   const chipName = (sg: { fr: string; en: string }) => (locale === 'fr' ? sg.fr : sg.en).replace(/\s*\(.*\)$/, '')
 
-  const addSetBtn: React.CSSProperties = { background: 'transparent', border: '1px solid var(--db-border-gold)', borderRadius: '0.25rem', color: '#be9a56', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', padding: '0.3125rem 0.75rem', cursor: 'pointer' }
+  const addSetBtn: React.CSSProperties = { background: 'transparent', border: '1px solid var(--db-border-gold)', borderRadius: '0.25rem', color: 'var(--db-gold)', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', padding: '0.3125rem 0.75rem', cursor: 'pointer' }
 
   const stepAddons = (
     <>
@@ -874,7 +876,7 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
                 <button key={k} onClick={() => addGroupNamed(k, '')}
                   className="pf-glass"
                   style={{ textAlign: 'left', padding: '1rem', borderRadius: '0.5rem', cursor: 'pointer' }}>
-                  <div style={{ fontSize: '1.125rem', color: '#be9a56', marginBottom: '0.375rem' }}>{icon}</div>
+                  <div style={{ fontSize: '1.125rem', color: 'var(--db-gold)', marginBottom: '0.375rem' }}>{icon}</div>
                   <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.875rem', color: 'var(--db-text)', marginBottom: '0.25rem' }}>{ct}</div>
                   <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6875rem', color: 'var(--db-text-ghost)', lineHeight: 1.5 }}>{cd}</div>
                 </button>
@@ -884,7 +886,7 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.125rem' }}>
               {suggestions.map((sg) => (
                 <button key={sg.fr} onClick={() => addGroupNamed(sg.kind, chipName(sg))}
-                  style={{ background: 'transparent', border: '1px solid var(--db-border-gold)', borderRadius: '999px', color: '#be9a56', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', padding: '0.375rem 0.875rem', cursor: 'pointer' }}>
+                  style={{ background: 'transparent', border: '1px solid var(--db-border-gold)', borderRadius: '999px', color: 'var(--db-gold)', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', padding: '0.375rem 0.875rem', cursor: 'pointer' }}>
                   {locale === 'fr' ? sg.fr : sg.en}
                 </button>
               ))}
@@ -906,7 +908,7 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
                 style={{ borderRadius: '0.5rem', padding: '1rem', marginBottom: '0.875rem', opacity: dragIdx === gi ? 0.5 : 1 }}>
                 {groups.length > 1 && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.625rem' }}>
-                    <span title={T.reorder} style={{ cursor: 'grab', color: '#be9a56', fontSize: '1.125rem', letterSpacing: '2px', padding: '0 0.25rem', borderRadius: '0.25rem', background: 'rgba(190,154,86,0.12)' }}>⠿</span>
+                    <span title={T.reorder} style={{ cursor: 'grab', color: 'var(--db-gold)', fontSize: '1.125rem', letterSpacing: '2px', padding: '0 0.25rem', borderRadius: '0.25rem', background: 'rgba(190,154,86,0.12)' }}>⠿</span>
                     <span style={{ fontSize: '0.6875rem', color: 'var(--db-text-ghost)', fontFamily: 'var(--font-sans)', flex: 1 }}>{T.reorder}</span>
                     <button onClick={() => moveGroup(gi, gi - 1)} disabled={gi === 0}
                       style={{ width: '24px', height: '24px', borderRadius: '6px', border: '1px solid var(--db-border-subtle)', background: 'transparent', color: 'var(--db-text-faint)', cursor: gi === 0 ? 'default' : 'pointer', opacity: gi === 0 ? 0.35 : 1, fontSize: '0.75rem' }}>↑</button>
@@ -952,7 +954,7 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
                         style={{ background: 'transparent', border: 'none', color: i === 0 ? 'var(--db-border-subtle)' : 'var(--db-text-faint)', fontSize: '0.8125rem', cursor: i === 0 ? 'default' : 'pointer', padding: '0 0.25rem 0.625rem' }}>↑</button>
                       <button onClick={() => moveOption(g.id, i, i + 1)} disabled={i === g.options.length - 1}
                         style={{ background: 'transparent', border: 'none', color: i === g.options.length - 1 ? 'var(--db-border-subtle)' : 'var(--db-text-faint)', fontSize: '0.8125rem', cursor: i === g.options.length - 1 ? 'default' : 'pointer', padding: '0 0.25rem 0.625rem' }}>↓</button>
-                      <button onClick={() => removeOption(g.id, i)} style={{ background: 'transparent', border: 'none', color: '#e07070', fontSize: '1rem', cursor: 'pointer', padding: '0 0.5rem 0.625rem' }}>×</button>
+                      <button onClick={() => removeOption(g.id, i)} style={{ background: 'transparent', border: 'none', color: 'var(--db-alert)', fontSize: '1rem', cursor: 'pointer', padding: '0 0.5rem 0.625rem' }}>×</button>
                     </div>
                     <input style={{ ...inputStyle, marginTop: '0.5rem' }} placeholder={T.optDescPh} value={o.description || ''} onChange={(e) => updateOptionAt(g.id, i, { description: e.target.value })} />
                     {/* Photos are the exception, not the rule (room types yes, drink
@@ -983,15 +985,15 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
                         {(EXTRAS_SUGGESTIONS[form.category || ''] || []).filter((sg) => !g.options.some((o) => o.name.trim().toLowerCase() === sg[locale].toLowerCase())).map((sg) => (
                           <button key={sg.en} onClick={() => addNamedOption(g.id, sg[locale])}
-                            style={{ padding: '0.3rem 0.7rem', borderRadius: '999px', border: '1px dashed var(--db-border-gold)', background: 'transparent', color: '#be9a56', fontFamily: 'var(--font-sans)', fontSize: '0.75rem', cursor: 'pointer' }}>
+                            style={{ padding: '0.3rem 0.7rem', borderRadius: '999px', border: '1px dashed var(--db-border-gold)', background: 'transparent', color: 'var(--db-gold)', fontFamily: 'var(--font-sans)', fontSize: '0.75rem', cursor: 'pointer' }}>
                             + {sg[locale]}
                           </button>
                         ))}
                       </div>
                     </div>
                   )}
-                  <button onClick={() => addOption(g.id)} style={{ background: 'transparent', border: 'none', color: '#be9a56', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', textDecoration: 'underline', cursor: 'pointer', padding: 0 }}>{kind === 'choice' ? T.addOptChoice : T.addOptExtras}</button>
-                  <button onClick={() => removeGroup(g.id)} style={{ background: 'transparent', border: 'none', color: '#e07070', fontSize: '0.6875rem', fontFamily: 'var(--font-sans)', textDecoration: 'underline', cursor: 'pointer', padding: 0 }}>{T.remove}</button>
+                  <button onClick={() => addOption(g.id)} style={{ background: 'transparent', border: 'none', color: 'var(--db-gold)', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', textDecoration: 'underline', cursor: 'pointer', padding: 0 }}>{kind === 'choice' ? T.addOptChoice : T.addOptExtras}</button>
+                  <button onClick={() => removeGroup(g.id)} style={{ background: 'transparent', border: 'none', color: 'var(--db-alert)', fontSize: '0.6875rem', fontFamily: 'var(--font-sans)', textDecoration: 'underline', cursor: 'pointer', padding: 0 }}>{T.remove}</button>
                 </div>
 
                 {/* Live guest mini-preview — shows exactly how the app renders
@@ -1041,7 +1043,7 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
 
   return (
     <div data-lenis-prevent style={{ position: 'fixed', inset: 0, background: 'var(--db-overlay)', zIndex: 200, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-      <div style={{ background: 'var(--db-bg-modal)', border: '1px solid var(--db-border-subtle)', borderRadius: '0.75rem', width: '100%', maxWidth: '46rem', maxHeight: 'calc(100vh - 40px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div role="dialog" aria-modal="true" aria-label={experience ? T.editTitle : T.newTitle} style={{ background: 'var(--db-bg-modal)', border: '1px solid var(--db-border-subtle)', borderRadius: '0.75rem', width: '100%', maxWidth: '46rem', maxHeight: 'calc(100vh - 40px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div data-lenis-prevent style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 'clamp(1.25rem, 4vw, 2rem)', paddingBottom: '1rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
           <div>
@@ -1052,7 +1054,7 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
               {view === 'summary' ? T.summaryTitle : <>{T.stepOf(step + 1, T.steps.length)} · {T.steps[step].title} — {T.steps[step].sub}</>}
             </p>
           </div>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--db-text-faint)', fontSize: '1.375rem', cursor: 'pointer', lineHeight: 1 }}>×</button>
+          <button onClick={onClose} aria-label="Close" style={{ background: 'transparent', border: 'none', color: 'var(--db-text-faint)', fontSize: '1.375rem', cursor: 'pointer', lineHeight: 1, width: '40px', height: '40px' }}>×</button>
         </div>
 
         {/* Step indicator — labeled and tappable once the basics are valid. */}
@@ -1060,14 +1062,14 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
           <div style={{ display: 'flex', gap: '6px', marginBottom: '1.5rem' }}>
             {T.steps.map((st, i) => (
               <button key={st.title} onClick={() => (i === 0 || canSave) && setStep(i)} title={st.title}
-                style={{ flex: 1, height: '3px', borderRadius: '2px', border: 'none', padding: 0, cursor: 'pointer', background: i === step ? '#be9a56' : i < step ? 'rgba(190,154,86,0.45)' : 'var(--db-border-subtle)' }} />
+                style={{ flex: 1, height: '3px', borderRadius: '2px', border: 'none', padding: 0, cursor: 'pointer', background: i === step ? 'var(--db-gold)' : i < step ? 'rgba(190,154,86,0.45)' : 'var(--db-border-subtle)' }} />
             ))}
           </div>
         )}
 
         {needsReview.length > 0 && step === 0 && (
           <div style={{ background: 'rgba(224,112,112,0.08)', border: '1px solid rgba(224,112,112,0.3)', borderRadius: '0.375rem', padding: '0.75rem 1rem', marginBottom: '1.25rem' }}>
-            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: '#e07070', margin: 0 }}>
+            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: 'var(--db-alert)', margin: 0 }}>
               {T.migrated} {needsReview.map((n) => n === 'cancellationTier' ? T.nr_cancel : n === 'photos' ? T.nr_photos : n === 'coords' ? T.nr_coords : n).join(', ')}.
             </p>
           </div>
@@ -1092,7 +1094,7 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
                     <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', color: 'var(--db-text)' }}>{st.title}</span>
                     <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontSize: '0.6875rem', color: 'var(--db-text-ghost)', marginTop: '0.125rem', textTransform: 'capitalize', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{summary || '—'}</span>
                   </span>
-                  <span style={{ color: '#be9a56', flexShrink: 0 }}>›</span>
+                  <span style={{ color: 'var(--db-gold)', flexShrink: 0 }}>›</span>
                 </button>
               )
             })}
@@ -1127,7 +1129,7 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
             {experience?.status === 'published' && (
               <button onClick={() => handleSave('unpublish')} disabled={saving}
-                style={{ padding: '10px 16px', background: 'transparent', border: '1px solid rgba(224,112,112,0.4)', borderRadius: '0.25rem', color: '#e07070', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>
+                style={{ padding: '10px 16px', background: 'transparent', border: '1px solid rgba(224,112,112,0.4)', borderRadius: '0.25rem', color: 'var(--db-alert)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>
                 {T.unpublish}
               </button>
             )}
@@ -1136,11 +1138,11 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
             </button>
             {/* Wizard walks Next→…→Publish; edit/summary saves directly. */}
             {!experience && view === 'steps' && !isLast ? (
-              <button onClick={() => canNext && setStep(step + 1)} disabled={!canNext} style={{ padding: '10px 24px', background: canNext ? '#9e763b' : 'var(--db-bg-card)', border: 'none', borderRadius: '0.25rem', color: canNext ? '#ebe8db' : 'var(--db-text-ghost)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', cursor: canNext ? 'pointer' : 'not-allowed' }}>
+              <button onClick={() => canNext && setStep(step + 1)} disabled={!canNext} style={{ padding: '10px 24px', background: canNext ? 'var(--db-gold-deep)' : 'var(--db-bg-card)', border: 'none', borderRadius: '0.25rem', color: canNext ? '#ebe8db' : 'var(--db-text-ghost)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', cursor: canNext ? 'pointer' : 'not-allowed' }}>
                 {T.next}
               </button>
             ) : (
-              <button onClick={() => handleSave('publish')} disabled={!canPublish || saving} title={canPublish ? '' : publishBlockers.join(', ')} style={{ padding: '10px 24px', background: canPublish ? '#9e763b' : 'var(--db-bg-card)', border: 'none', borderRadius: '0.25rem', color: canPublish ? '#ebe8db' : 'var(--db-text-ghost)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', cursor: canPublish ? 'pointer' : 'not-allowed' }}>
+              <button onClick={() => handleSave('publish')} disabled={!canPublish || saving} title={canPublish ? '' : publishBlockers.join(', ')} style={{ padding: '10px 24px', background: canPublish ? 'var(--db-gold-deep)' : 'var(--db-bg-card)', border: 'none', borderRadius: '0.25rem', color: canPublish ? '#ebe8db' : 'var(--db-text-ghost)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', cursor: canPublish ? 'pointer' : 'not-allowed' }}>
                 {saving ? T.saving : experience?.status === 'published' ? T.keepLive : T.publish}
               </button>
             )}

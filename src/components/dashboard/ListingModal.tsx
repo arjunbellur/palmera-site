@@ -90,7 +90,6 @@ const inputStyle = {
   color: 'var(--db-text)',
   fontSize: '0.875rem',
   fontFamily: 'var(--font-sans)',
-  outline: 'none',
   boxSizing: 'border-box' as const,
 }
 
@@ -172,7 +171,7 @@ export default function ListingModal({ listing, partnerBusinessName, onSave, onC
     flex: 1, padding: '9px 0',
     background: active ? 'rgba(190,154,86,0.15)' : 'transparent',
     border: 'none',
-    color: active ? '#be9a56' : 'var(--db-text-faint)',
+    color: active ? 'var(--db-gold)' : 'var(--db-text-faint)',
     fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.04em', cursor: 'pointer',
     transition: 'all 0.15s',
   })
@@ -348,9 +347,9 @@ export default function ListingModal({ listing, partnerBusinessName, onSave, onC
               {DAYS.map(d => (
                 <button key={d} onClick={() => toggleDay(d)} style={{
                   padding: '5px 10px', borderRadius: '0.25rem',
-                  border: `1px solid ${form.scheduledDays.includes(d) ? '#be9a56' : 'var(--db-border-subtle)'}`,
+                  border: `1px solid ${form.scheduledDays.includes(d) ? 'var(--db-gold)' : 'var(--db-border-subtle)'}`,
                   background: form.scheduledDays.includes(d) ? 'rgba(190,154,86,0.15)' : 'transparent',
-                  color: form.scheduledDays.includes(d) ? '#be9a56' : 'var(--db-text-faint)',
+                  color: form.scheduledDays.includes(d) ? 'var(--db-gold)' : 'var(--db-text-faint)',
                   fontSize: '0.75rem', fontFamily: 'var(--font-sans)', cursor: 'pointer',
                   transition: 'all 0.15s',
                 }}>{d}</button>
@@ -408,7 +407,7 @@ export default function ListingModal({ listing, partnerBusinessName, onSave, onC
           <label style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', cursor: 'pointer', marginBottom: '1rem' }}>
             <input type="checkbox" checked={form.requiresReservation}
               onChange={e => set('requiresReservation', e.target.checked)}
-              style={{ width: '1rem', height: '1rem', accentColor: '#be9a56', cursor: 'pointer' }} />
+              style={{ width: '1rem', height: '1rem', accentColor: 'var(--db-gold)', cursor: 'pointer' }} />
             <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', color: 'var(--db-text-muted)' }}>Requires advance reservation</span>
           </label>
           {form.requiresReservation && (

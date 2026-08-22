@@ -68,7 +68,7 @@ export default function SupplierInventory() {
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
                 <span style={{ fontFamily: 'var(--font-display)', color: 'var(--pf-text)', fontSize: '17px' }}>{fmtXof(p.price)} <span style={{ fontSize: '11px', color: 'var(--pf-faint)' }}>XOF</span></span>
-                <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11.5px', color: p.stock > 0 ? 'var(--pf-muted)' : 'var(--pf-red, #c0564f)' }}>{L('stock')}: {p.stock}</span>
+                <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11.5px', color: p.stock > 0 ? 'var(--pf-muted)' : 'var(--pf-red)' }}>{L('stock')}: {p.stock}</span>
               </div>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: 'auto', flexWrap: 'wrap' }}>
                 <Chip tone={p.status === 'live' ? 'green' : 'neutral'}>{p.status === 'live' ? L('live') : L('hidden')}</Chip>

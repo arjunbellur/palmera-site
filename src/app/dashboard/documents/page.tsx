@@ -68,7 +68,7 @@ export default function DocumentsPage() {
       </div>
       <div style={{ background: 'var(--db-bg-card)', border: '1px solid var(--db-border-subtle)', borderRadius: '0.5rem', padding: '1rem 1.25rem', marginBottom: '1.75rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
         <div style={{ flex: 1, height: '0.25rem', background: 'var(--db-border-subtle)', borderRadius: '0.125rem', overflow: 'hidden' }}>
-          <div style={{ height: '100%', width: `${(uploadedCount / DOCUMENTS.length) * 100}%`, background: '#9e763b', transition: 'width 0.4s ease' }} />
+          <div style={{ height: '100%', width: `${(uploadedCount / DOCUMENTS.length) * 100}%`, background: 'var(--db-gold-deep)', transition: 'width 0.4s ease' }} />
         </div>
         <span style={{ fontSize: '0.75rem', color: 'var(--db-text-muted)', fontFamily: 'var(--font-sans)', flexShrink: 0 }}>{uploadedCount} / {DOCUMENTS.length} uploaded</span>
       </div>
@@ -79,13 +79,13 @@ export default function DocumentsPage() {
           const isUploading = progress !== undefined
           return (
             <div key={doc.field} style={{ background: uploaded ? 'var(--db-bg-card-active)' : 'var(--db-bg-card)', border: `1px solid ${uploaded ? 'rgba(158,118,59,0.2)' : 'var(--db-border-subtle)'}`, borderRadius: '0.5rem', padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <div style={{ width: '2rem', height: '2rem', borderRadius: '50%', background: uploaded ? 'rgba(158,118,59,0.15)' : 'var(--db-bg-card)', border: `1px solid ${uploaded ? 'rgba(158,118,59,0.3)' : 'var(--db-border-subtle)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '0.875rem', color: uploaded ? '#9e763b' : 'var(--db-text-faint)' }}>
+              <div style={{ width: '2rem', height: '2rem', borderRadius: '50%', background: uploaded ? 'rgba(158,118,59,0.15)' : 'var(--db-bg-card)', border: `1px solid ${uploaded ? 'rgba(158,118,59,0.3)' : 'var(--db-border-subtle)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '0.875rem', color: uploaded ? 'var(--db-gold-deep)' : 'var(--db-text-faint)' }}>
                 {uploaded ? '✓' : '○'}
               </div>
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: '0.875rem', color: 'var(--db-text)', fontFamily: 'var(--font-sans)', margin: '0 0 0.125rem' }}>{doc.label}</p>
                 <p style={{ fontSize: '0.75rem', color: 'var(--db-text-muted)', fontFamily: 'var(--font-sans)', margin: 0 }}>{uploaded ? `Uploaded: ${uploaded.name}` : doc.hint}</p>
-                {isUploading && <div style={{ marginTop: '0.375rem', height: '0.1875rem', background: 'var(--db-border-subtle)', borderRadius: '0.125rem', overflow: 'hidden' }}><div style={{ height: '100%', width: `${progress}%`, background: '#be9a56', transition: 'width 0.2s' }} /></div>}
+                {isUploading && <div style={{ marginTop: '0.375rem', height: '0.1875rem', background: 'var(--db-border-subtle)', borderRadius: '0.125rem', overflow: 'hidden' }}><div style={{ height: '100%', width: `${progress}%`, background: 'var(--db-gold)', transition: 'width 0.2s' }} /></div>}
               </div>
               <label style={{ padding: '0.4375rem 1rem', background: 'transparent', border: `1px solid ${uploaded ? 'var(--db-border-subtle)' : 'var(--db-border-gold)'}`, borderRadius: '0.25rem', color: uploaded ? 'var(--db-text-muted)' : 'var(--db-text)', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}>
                 {isUploading ? `${progress}%` : uploaded ? 'Replace' : 'Upload'}
@@ -97,10 +97,10 @@ export default function DocumentsPage() {
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', paddingTop: '0.5rem', borderTop: '1px solid var(--db-border-subtle)' }}>
         <button onClick={handleSave} disabled={saving || uploadedCount === 0}
-          style={{ padding: '0.75rem 2rem', background: '#9e763b', border: 'none', borderRadius: '0.375rem', color: '#ebe8db', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', cursor: (saving || uploadedCount === 0) ? 'not-allowed' : 'pointer', opacity: (saving || uploadedCount === 0) ? 0.4 : 1 }}>
+          style={{ padding: '0.75rem 2rem', background: 'var(--db-gold-deep)', border: 'none', borderRadius: '0.375rem', color: '#ebe8db', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', cursor: (saving || uploadedCount === 0) ? 'not-allowed' : 'pointer', opacity: (saving || uploadedCount === 0) ? 0.4 : 1 }}>
           {saving ? 'Saving...' : 'Save documents'}
         </button>
-        {saved && <span style={{ fontSize: '0.8125rem', color: '#be9a56', fontFamily: 'var(--font-sans)' }}>✓ Saved</span>}
+        {saved && <span style={{ fontSize: '0.8125rem', color: 'var(--db-gold)', fontFamily: 'var(--font-sans)' }}>✓ Saved</span>}
       </div>
     </div>
   )

@@ -1,6 +1,7 @@
 'use client'
 import React from 'react'
 import { useLocale } from '@/lib/use-locale'
+import { useEscape } from '@/lib/use-escape'
 
 const STR = {
   fr: { cancel: 'Annuler', confirm: 'Confirmer', busy: 'En cours…' },
@@ -17,6 +18,8 @@ interface ConfirmDialogProps {
   busy?: boolean
   onConfirm: () => void
   onCancel: () => void
+  /** Admin is English-only; pass 'en' so a fr cookie can't flip these buttons. */
+  locale?: 'fr' | 'en'
 }
 
 /**
@@ -34,14 +37,17 @@ export default function ConfirmDialog({
   busy = false,
   onConfirm,
   onCancel,
+  locale: forcedLocale,
 }: ConfirmDialogProps) {
-  const s = STR[useLocale()]
+  const cookieLocale = useLocale()
+  const s = STR[forcedLocale || cookieLocale]
+  useEscape(busy ? undefined : onCancel)
   const confirmText = confirmLabel || s.confirm
   const busyText = busyLabel || s.busy
   return (
     <div
       onClick={() => { if (!busy) onCancel() }}
-      style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}
+      style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'var(--db-overlay)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}
     >
       <div
         onClick={e => e.stopPropagation()}
@@ -52,7 +58,7 @@ export default function ConfirmDialog({
         {note && (
           <p style={{ fontFamily: 'var(--font-sans)', color: 'var(--db-text-faint)', fontSize: '0.6875rem', lineHeight: 1.5, margin: '0 0 1.25rem' }}>{note}</p>
         )}
-        {error && <p style={{ fontSize: '0.75rem', color: '#e07070', fontFamily: 'var(--font-sans)', margin: '0 0 0.75rem' }}>{error}</p>}
+        {error && <p style={{ fontSize: '0.75rem', color: 'var(--db-alert)', fontFamily: 'var(--font-sans)', margin: '0 0 0.75rem' }}>{error}</p>}
         <div style={{ display: 'flex', gap: '0.625rem', justifyContent: 'flex-end' }}>
           <button
             onClick={onCancel}
@@ -64,7 +70,7 @@ export default function ConfirmDialog({
           <button
             onClick={onConfirm}
             disabled={busy}
-            style={{ background: '#c0392b', border: 'none', color: '#fff', padding: '0.5rem 1rem', borderRadius: '0.25rem', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.02em', cursor: busy ? 'wait' : 'pointer', opacity: busy ? 0.7 : 1 }}
+            style={{ background: 'var(--db-alert)', border: 'none', color: '#fff', padding: '0.5rem 1rem', borderRadius: '0.25rem', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.02em', cursor: busy ? 'wait' : 'pointer', opacity: busy ? 0.7 : 1 }}
           >
             {busy ? busyText : confirmText}
           </button>

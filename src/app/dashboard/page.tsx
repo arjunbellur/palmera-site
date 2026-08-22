@@ -104,11 +104,11 @@ export default function DashboardPage() {
     } finally { setLoading(false) }
   }
 
-  const inp: React.CSSProperties = { width: '100%', background: 'var(--db-bg-input)', border: '1px solid var(--db-border-gold)', borderRadius: '0.375rem', padding: '0.8125rem 1rem', color: 'var(--db-text)', fontSize: '0.9375rem', fontFamily: 'var(--font-sans)', outline: 'none', boxSizing: 'border-box', marginBottom: '0.75rem' }
+  const inp: React.CSSProperties = { width: '100%', background: 'var(--db-bg-input)', border: '1px solid var(--db-border-gold)', borderRadius: '0.375rem', padding: '0.8125rem 1rem', color: 'var(--db-text)', fontSize: '0.9375rem', fontFamily: 'var(--font-sans)', boxSizing: 'border-box', marginBottom: '0.75rem' }
 
   if (checking) return (
     <div style={{ minHeight: '100vh', background: 'var(--db-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ width: '2rem', height: '2rem', border: '2px solid rgba(190,154,86,0.15)', borderTopColor: '#be9a56', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      <div style={{ width: '2rem', height: '2rem', border: '2px solid rgba(190,154,86,0.15)', borderTopColor: 'var(--db-gold)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
@@ -117,7 +117,7 @@ export default function DashboardPage() {
     <div style={{ minHeight: '100vh', background: 'var(--db-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
       {/* Back to home — top left */}
       <a href="/" style={{ position: 'fixed', top: '1.25rem', left: '1.5rem', zIndex: 10, display: 'flex', alignItems: 'center', gap: '0.375rem', textDecoration: 'none', color: 'var(--db-text-muted)', fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'color 0.2s' }}
-        onMouseEnter={e => (e.currentTarget.style.color = '#be9a56')}
+        onMouseEnter={e => (e.currentTarget.style.color = 'var(--db-gold)')}
         onMouseLeave={e => (e.currentTarget.style.color = 'var(--db-text-muted)')}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.75 2.5L4.25 7L8.75 11.5" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round"/></svg>
         {t('backHome')}
@@ -151,12 +151,12 @@ export default function DashboardPage() {
               </button>
             </div>
           )}
-          {error && <p style={{ fontSize: '0.8125rem', color: '#e07070', fontFamily: 'var(--font-sans)', margin: '-0.25rem 0 0.75rem' }}>{error}</p>}
-          {info && <p style={{ fontSize: '0.8125rem', color: '#9e763b', fontFamily: 'var(--font-sans)', margin: '-0.25rem 0 0.75rem', lineHeight: 1.5 }}>{info}</p>}
+          {error && <p style={{ fontSize: '0.8125rem', color: 'var(--db-alert)', fontFamily: 'var(--font-sans)', margin: '-0.25rem 0 0.75rem' }}>{error}</p>}
+          {info && <p style={{ fontSize: '0.8125rem', color: 'var(--db-gold-deep)', fontFamily: 'var(--font-sans)', margin: '-0.25rem 0 0.75rem', lineHeight: 1.5 }}>{info}</p>}
           <button onClick={handleSubmit} disabled={loading}
-            style={{ width: '100%', padding: '0.875rem', background: '#9e763b', border: 'none', borderRadius: '0.375rem', color: '#ebe8db', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.08em', cursor: loading ? 'wait' : 'pointer', marginBottom: '1.25rem', opacity: loading ? 0.7 : 1, transition: 'background 0.2s' }}
-            onMouseEnter={e => { if (!loading) (e.target as HTMLButtonElement).style.background = '#be9a56' }}
-            onMouseLeave={e => { if (!loading) (e.target as HTMLButtonElement).style.background = '#9e763b' }}>
+            style={{ width: '100%', padding: '0.875rem', background: 'var(--db-gold-deep)', border: 'none', borderRadius: '0.375rem', color: '#ebe8db', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.08em', cursor: loading ? 'wait' : 'pointer', marginBottom: '1.25rem', opacity: loading ? 0.7 : 1, transition: 'background 0.2s' }}
+            onMouseEnter={e => { if (!loading) (e.target as HTMLButtonElement).style.background = 'var(--db-gold)' }}
+            onMouseLeave={e => { if (!loading) (e.target as HTMLButtonElement).style.background = 'var(--db-gold-deep)' }}>
             {loading ? t('pleaseWait') : mode === 'login' ? t('login') : t('signup')}
           </button>
           <div style={{ textAlign: 'center' }}>
@@ -164,13 +164,13 @@ export default function DashboardPage() {
               {mode === 'login' ? t('noAccount') : t('hasAccount')}
             </span>
             <button onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError('') }}
-              style={{ background: 'none', border: 'none', color: '#be9a56', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', cursor: 'pointer', textDecoration: 'underline' }}>
+              style={{ background: 'none', border: 'none', color: 'var(--db-gold)', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', cursor: 'pointer', textDecoration: 'underline' }}>
               {mode === 'login' ? t('signupLink') : t('loginLink')}
             </button>
           </div>
         </div>
         <p style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.8125rem', color: 'var(--db-text-faint)', fontFamily: 'var(--font-sans)' }}>
-          {t('providerOnly')}<a href="/partners" style={{ color: '#be9a56', textDecoration: 'underline' }}>{t('applyHere')}</a>
+          {t('providerOnly')}<a href="/partners" style={{ color: 'var(--db-gold)', textDecoration: 'underline' }}>{t('applyHere')}</a>
         </p>
       </div>
     </div>

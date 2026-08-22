@@ -95,6 +95,9 @@ body {
   --accent-4: #be9a56;
   --font-display: 'Raveo Display', Arial, sans-serif;
   --font-serif: 'LT Superior Serif', Arial, sans-serif;
+  /* Deliberate: the 'sans' role (labels, chrome, data) is set in Geist Mono —
+     the monospace texture IS the Palmera dashboard look. Self-hosted above;
+     no Google Fonts request. */
   --font-sans: 'Geist Mono', 'Courier New', monospace;
   --font-mono: 'Geist Mono', 'Geist Mono Variable', 'Courier New', monospace;
 }
@@ -162,7 +165,7 @@ body {
   --db-bg-banner: rgba(158,118,59,0.06);
   --db-text: #dfc9a6;
   --db-text-muted: rgba(223,201,166,0.75);
-  --db-text-faint: rgba(223,201,166,0.45);
+  --db-text-faint: rgba(223,201,166,0.62);
   --db-text-ghost: rgba(223,201,166,0.28);
   --db-border: rgba(190,154,86,0.15);
   --db-border-gold: rgba(190,154,86,0.2);
@@ -181,7 +184,7 @@ body {
   --pf-text: #dfc9a6;
   --pf-head: #f0e2c4;
   --pf-muted: rgba(223,201,166,0.75);
-  --pf-faint: rgba(223,201,166,0.45);
+  --pf-faint: rgba(223,201,166,0.62);
   --pf-border: rgba(190,154,86,0.15);
   --pf-border-strong: rgba(190,154,86,0.28);
   --pf-gold: #be9a56;
@@ -193,6 +196,17 @@ body {
   --pf-alert: #c47c7c;
   --pf-sheet: #0d111c;
   --pf-scrim: rgba(2,4,9,0.66);
+  /* Soft fills + aliases (UI audit 2026-08-22) */
+  --pf-gold-soft: rgba(190,154,86,0.14);
+  --pf-alert-soft: rgba(196,124,124,0.14);
+  --pf-red: var(--pf-alert);
+  --db-gold: #be9a56;
+  --db-gold-deep: #9e763b;
+  --db-alert: #e07070;
+  /* Type scale — use these instead of ad-hoc px */
+  --fs-xs: 10px; --fs-sm: 11px; --fs-base: 12.5px; --fs-md: 13.5px; --fs-lg: 15px;
+  /* Radius scale */
+  --r-sm: 8px; --r-md: 10px; --r-lg: 16px; --r-xl: 18px; --r-pill: 999px;
 }
 
 /* Partner dashboard micro-motion (from the Claude Design mockup): every screen
@@ -273,7 +287,7 @@ body {
   --db-bg-banner: rgba(158,118,59,0.05);
   --db-text: #2a2119;
   --db-text-muted: rgba(42,33,25,0.72);
-  --db-text-faint: rgba(42,33,25,0.45);
+  --db-text-faint: rgba(42,33,25,0.62);
   --db-text-ghost: rgba(42,33,25,0.3);
   --db-border: rgba(158,118,59,0.2);
   --db-border-gold: rgba(158,118,59,0.25);
@@ -290,7 +304,7 @@ body {
   --pf-text: #2a2119;
   --pf-head: #1f4436;
   --pf-muted: rgba(42,33,25,0.72);
-  --pf-faint: rgba(42,33,25,0.5);
+  --pf-faint: rgba(42,33,25,0.62);
   --pf-border: rgba(158,118,59,0.2);
   --pf-border-strong: rgba(158,118,59,0.34);
   --pf-gold: #9e763b;
@@ -302,6 +316,12 @@ body {
   --pf-alert: #b25f5f;
   --pf-sheet: #fffdf8;
   --pf-scrim: rgba(42,33,25,0.4);
+  --pf-gold-soft: rgba(158,118,59,0.14);
+  --pf-alert-soft: rgba(178,95,95,0.14);
+  --pf-red: var(--pf-alert);
+  --db-gold: #9e763b;
+  --db-gold-deep: #7d5b2b;
+  --db-alert: #b25f5f;
 }
 
 [data-theme="light"] input::placeholder,
@@ -322,3 +342,19 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--accent-4); }
 
 [data-theme="light"] ::-webkit-scrollbar-track { background: var(--db-bg); }
+
+/* ── Accessibility: a visible keyboard focus ring everywhere (UI audit) ── */
+:focus-visible {
+  outline: 2px solid var(--pf-gold, #be9a56);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+input:focus-visible, textarea:focus-visible, select:focus-visible {
+  outline: 2px solid var(--pf-gold, #be9a56);
+  outline-offset: 1px;
+}
+
+/* Main content scroll areas in the app shells — thin, theme-aware thumb. */
+.pf-scroll { scrollbar-width: thin; scrollbar-color: var(--pf-border-strong, rgba(190,154,86,0.35)) transparent; }
+.pf-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+.pf-scroll::-webkit-scrollbar-thumb { background: var(--pf-border-strong, rgba(190,154,86,0.35)); border-radius: 999px; }

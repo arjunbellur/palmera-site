@@ -68,7 +68,7 @@ const COUNTRIES = [
 const ROLES = ['Owner', 'Director', 'Representative']
 
 const lbl: React.CSSProperties = { display: 'block', fontSize: '0.6875rem', color: 'var(--db-text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.375rem', fontFamily: 'var(--font-sans)' }
-const inp: React.CSSProperties = { width: '100%', background: 'var(--db-bg-input)', border: '1px solid var(--db-border-gold)', borderRadius: '0.375rem', padding: '0.6875rem 0.875rem', color: 'var(--db-text)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', outline: 'none', boxSizing: 'border-box' }
+const inp: React.CSSProperties = { width: '100%', background: 'var(--db-bg-input)', border: '1px solid var(--db-border-gold)', borderRadius: '0.375rem', padding: '0.6875rem 0.875rem', color: 'var(--db-text)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', boxSizing: 'border-box' }
 const row: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 14rem), 1fr))', gap: '1rem', marginBottom: '1rem' }
 
 type Form = Pick<Provider, 'fullName' | 'role' | 'primaryPhone' | 'whatsapp' | 'country'>
@@ -202,7 +202,7 @@ export default function AccountPage() {
       <div style={{ margin: '0 0 1.75rem', padding: '1rem 1.25rem', background: 'var(--db-bg-card)', border: '1px solid var(--db-border-subtle)', borderRadius: '0.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
           <label style={{ ...lbl, marginBottom: 0 }}>{s.pwTitle}</label>
-          {pwMsg?.ok && <span style={{ fontSize: '0.75rem', color: '#9e763b', fontFamily: 'var(--font-sans)' }}>{pwMsg.text}</span>}
+          {pwMsg?.ok && <span style={{ fontSize: '0.75rem', color: 'var(--db-gold-deep)', fontFamily: 'var(--font-sans)' }}>{pwMsg.text}</span>}
           {!pwOpen && (
             <button onClick={() => { setPwOpen(true); setPwMsg(null) }}
               style={{ background: 'transparent', border: '1px solid var(--db-border-gold)', borderRadius: '0.375rem', color: 'var(--db-text-muted)', padding: '0.4375rem 0.875rem', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>
@@ -217,10 +217,10 @@ export default function AccountPage() {
               <div><label style={lbl}>{s.pwNew}</label><input style={inp} type="password" autoComplete="new-password" value={pw.next} onChange={e => setPw(p => ({ ...p, next: e.target.value }))} /></div>
               <div><label style={lbl}>{s.pwConfirm}</label><input style={inp} type="password" autoComplete="new-password" value={pw.confirm} onChange={e => setPw(p => ({ ...p, confirm: e.target.value }))} /></div>
             </div>
-            {pwMsg && !pwMsg.ok && <p style={{ fontSize: '0.75rem', color: '#e07070', fontFamily: 'var(--font-sans)', margin: '0 0 0.75rem' }}>{pwMsg.text}</p>}
+            {pwMsg && !pwMsg.ok && <p style={{ fontSize: '0.75rem', color: 'var(--db-alert)', fontFamily: 'var(--font-sans)', margin: '0 0 0.75rem' }}>{pwMsg.text}</p>}
             <div style={{ display: 'flex', gap: '0.625rem' }}>
               <button onClick={savePassword} disabled={pwBusy || !pw.current || !pw.next || !pw.confirm}
-                style={{ padding: '0.5625rem 1.25rem', background: pw.current && pw.next && pw.confirm ? '#9e763b' : 'var(--db-bg-card)', border: 'none', borderRadius: '0.375rem', color: pw.current && pw.next && pw.confirm ? '#ebe8db' : 'var(--db-text-ghost)', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', cursor: pwBusy ? 'wait' : 'pointer', opacity: pwBusy ? 0.6 : 1 }}>
+                style={{ padding: '0.5625rem 1.25rem', background: pw.current && pw.next && pw.confirm ? 'var(--db-gold-deep)' : 'var(--db-bg-card)', border: 'none', borderRadius: '0.375rem', color: pw.current && pw.next && pw.confirm ? '#ebe8db' : 'var(--db-text-ghost)', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', cursor: pwBusy ? 'wait' : 'pointer', opacity: pwBusy ? 0.6 : 1 }}>
                 {s.save}
               </button>
               <button onClick={() => { setPwOpen(false); setPw({ current: '', next: '', confirm: '' }); setPwMsg(null) }}
@@ -234,10 +234,10 @@ export default function AccountPage() {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
         <button onClick={handleSave} disabled={saving}
-          style={{ padding: '0.625rem 1.5rem', background: '#9e763b', border: 'none', borderRadius: '0.375rem', color: '#ebe8db', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.6 : 1 }}>
+          style={{ padding: '0.625rem 1.5rem', background: 'var(--db-gold-deep)', border: 'none', borderRadius: '0.375rem', color: '#ebe8db', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.06em', cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.6 : 1 }}>
           {saving ? s.saving : s.save}
         </button>
-        {saved && <span style={{ fontSize: '0.8125rem', color: '#be9a56', fontFamily: 'var(--font-sans)' }}>{s.saved}</span>}
+        {saved && <span style={{ fontSize: '0.8125rem', color: 'var(--db-gold)', fontFamily: 'var(--font-sans)' }}>{s.saved}</span>}
       </div>
     </div>
   )

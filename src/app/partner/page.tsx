@@ -14,7 +14,7 @@ import { Clock, Wallet, LayoutGrid, Image as ImageIcon, Sparkles } from 'lucide-
 function Tile({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="pf-glass" style={{ ...cardShape, padding: '14px 16px' }}>
-      <div style={{ ...eyebrow, fontSize: '9.5px' }}>{label}</div>
+      <div style={{ ...eyebrow, fontSize: '10px' }}>{label}</div>
       <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--pf-text)', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{value}</div>
       {sub && <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'var(--pf-faint)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub}</div>}
     </div>
@@ -106,7 +106,7 @@ export default function PartnerHome() {
                 <span style={{ width: '28px', height: '28px', borderRadius: '9px', background: TONE_BG[it.tone], color: TONE_FG[it.tone], display: 'grid', placeItems: 'center', fontSize: '13px', flexShrink: 0 }}>{it.icon}</span>
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ display: 'block', fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '13.5px', lineHeight: 1.35 }}>{it.label}</span>
-                  <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontSize: '9.5px', letterSpacing: '0.06em', textTransform: 'uppercase', color: TONE_FG[it.tone], marginTop: '2px' }}>{it.when}</span>
+                  <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase', color: TONE_FG[it.tone], marginTop: '2px' }}>{it.when}</span>
                 </span>
                 <span style={{ flexShrink: 0, fontFamily: 'var(--font-sans)', fontSize: '10.5px', letterSpacing: '0.04em', color: TONE_FG[it.tone], background: TONE_BG[it.tone], border: `1px solid ${it.tone === 'neutral' ? 'var(--pf-border)' : TONE_FG[it.tone]}`, borderRadius: '999px', padding: '5px 12px' }}>
                   {it.act} →
@@ -133,11 +133,11 @@ export default function PartnerHome() {
 
       {/* Today first — a partner opening the app wants operations, then money. */}
       {!loaded && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 10rem), 1fr))', gap: '12px', marginBottom: '12px' }}>
           <Skeleton height="86px" /><Skeleton height="86px" />
         </div>
       )}
-      {loaded && <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+      {loaded && <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 10rem), 1fr))', gap: '12px', marginBottom: '12px' }}>
         <a href="/partner/reservations?f=today" className="pf-glass" style={{ ...cardShape, textDecoration: 'none', display: 'block' }}>
           <div style={eyebrow}>{L('today_res')}</div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: '27px', color: 'var(--pf-text)', marginTop: '6px' }}>

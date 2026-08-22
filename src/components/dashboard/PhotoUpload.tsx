@@ -98,7 +98,7 @@ export default function PhotoUpload({ uid, label, fieldName, existingUrl, onUplo
         )}
       </div>
       <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) handleFile(e.target.files[0]); e.target.value = '' }} />
-      {error && <p role="alert" style={{ fontSize: '0.75rem', color: '#e07070', fontFamily: 'var(--font-sans)', margin: '0.5rem 0 0' }}>{error}</p>}
+      {error && <p role="alert" style={{ fontSize: '0.75rem', color: 'var(--db-alert)', fontFamily: 'var(--font-sans)', margin: '0.5rem 0 0' }}>{error}</p>}
     </div>
   )
 }

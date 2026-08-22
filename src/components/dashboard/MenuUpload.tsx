@@ -102,11 +102,11 @@ export default function MenuUpload({ uid, fieldName, existingUrl, existingKind, 
           </>
         )}
       </div>
-      {error && <p style={{ fontSize: '0.75rem', color: '#e07070', fontFamily: 'var(--font-sans)', margin: '0.5rem 0 0' }}>{error}</p>}
+      {error && <p style={{ fontSize: '0.75rem', color: 'var(--db-alert)', fontFamily: 'var(--font-sans)', margin: '0.5rem 0 0' }}>{error}</p>}
       {current && !uploading && (
         <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-          <a href={current.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.75rem', color: '#be9a56', fontFamily: 'var(--font-sans)' }}>{s.view} ↗</a>
-          <button onClick={() => { setCurrent(null); onRemove() }} style={{ background: 'transparent', border: 'none', color: '#e07070', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', textDecoration: 'underline', cursor: 'pointer', padding: 0 }}>{s.remove}</button>
+          <a href={current.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.75rem', color: 'var(--db-gold)', fontFamily: 'var(--font-sans)' }}>{s.view} ↗</a>
+          <button onClick={() => { setCurrent(null); onRemove() }} style={{ background: 'transparent', border: 'none', color: 'var(--db-alert)', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', textDecoration: 'underline', cursor: 'pointer', padding: 0 }}>{s.remove}</button>
         </div>
       )}
       <input ref={inputRef} type="file" accept="image/*,application/pdf" style={{ display: 'none' }} onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />

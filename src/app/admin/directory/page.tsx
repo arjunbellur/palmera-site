@@ -268,6 +268,7 @@ function AdminDirectory() {
 
       {toDeleteProvider && (
         <ConfirmDialog
+          locale="en"
           title="Delete this partner account?"
           note="Removes ALL their companies, listings, payout details, countersignature, and the provider record. Their login is NOT deleted — signing in again starts a fresh, blank account."
           error={deleteError} confirmLabel="Delete account" busyLabel="Deleting…" busy={deletingProvider}
@@ -277,6 +278,7 @@ function AdminDirectory() {
       )}
       {toDelete && (
         <ConfirmDialog
+          locale="en"
           title="Delete this company?"
           note="Removes the company and its experiences. The partner keeps their account and any other companies."
           error={deleteError} confirmLabel="Delete permanently" busyLabel="Deleting…" busy={deleting}

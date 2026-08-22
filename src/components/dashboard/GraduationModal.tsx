@@ -41,7 +41,7 @@ export default function GraduationModal({ companyName, onEnter }: { companyName:
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 200, display: 'grid', placeItems: 'center', padding: '1.5rem',
-      background: 'rgba(4,4,4,0.86)', backdropFilter: 'blur(6px)',
+      background: 'var(--db-overlay)', backdropFilter: 'blur(6px)',
       opacity: leaving ? 0 : shown ? 1 : 0, transition: 'opacity 0.36s ease',
     }}>
       <div style={{
@@ -50,7 +50,7 @@ export default function GraduationModal({ companyName, onEnter }: { companyName:
         transform: leaving ? 'scale(0.97)' : shown ? 'none' : 'translateY(14px)',
         opacity: shown && !leaving ? 1 : 0, transition: 'all 0.44s cubic-bezier(0.22,1,0.36,1)',
       }}>
-        <div style={{ fontSize: '1.75rem', color: '#be9a56', marginBottom: '1rem' }}>✦</div>
+        <div style={{ fontSize: '1.75rem', color: 'var(--db-gold)', marginBottom: '1rem' }}>✦</div>
 
         <p style={{ fontFamily: 'var(--font-sans)', color: 'rgba(190,154,86,0.85)', fontSize: '0.6875rem', letterSpacing: '0.16em', textTransform: 'uppercase', margin: '0 0 0.75rem' }}>
           {s.eyebrow}
@@ -63,7 +63,7 @@ export default function GraduationModal({ companyName, onEnter }: { companyName:
         </p>
 
         <button onClick={enter} style={{
-          width: '100%', padding: '0.875rem 1.5rem', background: '#9e763b', border: 'none', borderRadius: '0.5rem',
+          width: '100%', padding: '0.875rem 1.5rem', background: 'var(--db-gold-deep)', border: 'none', borderRadius: '0.5rem',
           color: '#ebe8db', fontFamily: 'var(--font-sans)', fontSize: '0.875rem', letterSpacing: '0.06em', cursor: 'pointer',
         }}>
           {s.cta}

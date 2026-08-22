@@ -70,7 +70,7 @@ export function FilterChip({ active, onClick, children }: { active: boolean; onC
       padding: '6px 13px', borderRadius: '999px', cursor: 'pointer',
       fontFamily: 'var(--font-sans)', fontSize: '11px', letterSpacing: '0.03em',
       border: `1px solid ${active ? 'var(--pf-gold)' : 'var(--pf-border)'}`,
-      background: active ? 'rgba(190,154,86,0.14)' : 'transparent',
+      background: active ? 'var(--pf-gold-soft)' : 'transparent',
       color: active ? 'var(--pf-gold)' : 'var(--pf-faint)',
     }}>{children}</button>
   )
@@ -108,7 +108,7 @@ export function DangerButton({ children, onClick, disabled, solid }: { children:
 export const inputStyle: CSSProperties = {
   background: 'var(--pf-card)', border: '1px solid var(--pf-border)', borderRadius: '10px',
   padding: '9px 14px', color: 'var(--pf-text)', fontSize: '13px',
-  fontFamily: 'var(--font-sans)', outline: 'none', boxSizing: 'border-box',
+  fontFamily: 'var(--font-sans)', boxSizing: 'border-box',
 }
 
 export function formatDate(ts: unknown): string {

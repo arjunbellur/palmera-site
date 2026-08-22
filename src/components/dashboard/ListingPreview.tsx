@@ -17,7 +17,7 @@ export default function ListingPreview({ exp, companyName, locale }: { exp: Part
   const S = STR[locale]
   const APP = { sheet: '#0E2233', chip: '#16324a', gold: '#E9BC4F', goldDeep: '#D9A62E', cream: '#F3EBD8', dim: 'rgba(243,235,216,0.65)' }
   const sectionLabel = (txt: string) => (
-    <p style={{ fontSize: '0.6875rem', color: '#be9a56', letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: 'var(--font-sans)', margin: '0 0 0.625rem', textAlign: 'center' }}>{txt}</p>
+    <p style={{ fontSize: '0.6875rem', color: 'var(--db-gold)', letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: 'var(--font-sans)', margin: '0 0 0.625rem', textAlign: 'center' }}>{txt}</p>
   )
   return (
     <div>

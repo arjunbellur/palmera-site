@@ -15,7 +15,7 @@ export default function Footer() {
             <input type="email" value={email} onChange={e => setEmail(e.target.value)}
               placeholder={t('emailPlaceholder')}
               onKeyDown={e => e.key === 'Enter' && email && setSubmitted(true)}
-              style={{ flex: 1, background: 'none', border: 'none', fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.5rem, 4vw, 2.5rem)', fontWeight: 400, color: 'var(--color-dark)', outline: 'none', letterSpacing: '-0.03125rem' }} />
+              style={{ flex: 1, background: 'none', border: 'none', fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.5rem, 4vw, 2.5rem)', fontWeight: 400, color: 'var(--color-dark)', letterSpacing: '-0.03125rem' }} />
             <button onClick={() => email && setSubmitted(true)}
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', display: 'flex', alignItems: 'center', color: 'var(--color-dark)', flexShrink: 0 }}>
               <svg width="28" height="28" viewBox="0 0 26 26" fill="none"><path d="M1.33594 12.9987H23.0026M13.0026 1.33203L24.6693 12.9987L13.0026 24.6654" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>

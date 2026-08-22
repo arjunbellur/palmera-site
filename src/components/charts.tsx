@@ -15,11 +15,11 @@ export function BarChart({ data, height = 96 }: { data: BarDatum[]; height?: num
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px' }}>
         {data.map((d, i) => (
           <div key={`${d.label}_${i}`} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '7px', minWidth: 0 }}>
-            {d.value > 0 && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '9.5px', color: 'var(--pf-gold)', whiteSpace: 'nowrap' }}>{d.display ?? d.value}</span>}
+            {d.value > 0 && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'var(--pf-gold)', whiteSpace: 'nowrap' }}>{d.display ?? d.value}</span>}
             <div style={{ height: `${height}px`, width: '100%', maxWidth: '46px', display: 'flex', alignItems: 'flex-end' }}>
               <div className="pf-bar" style={{ width: '100%', height: `${max > 0 ? Math.max((d.value / max) * 100, d.value > 0 ? 6 : 2) : 2}%`, borderRadius: '9px 9px 4px 4px', background: d.value > 0 ? 'linear-gradient(180deg, var(--pf-gold), var(--pf-gold-deep))' : 'var(--pf-border)', boxShadow: d.value > 0 ? '0 0 16px rgba(190,154,86,0.35)' : 'none' }} />
             </div>
-            <span style={{ fontFamily: 'var(--font-sans)', fontSize: '8.5px', letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--pf-faint)', whiteSpace: 'nowrap' }}>{d.label}</span>
+            <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--pf-faint)', whiteSpace: 'nowrap' }}>{d.label}</span>
           </div>
         ))}
       </div>

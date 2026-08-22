@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState, useMemo } from 'react'
+import { useEscape } from '@/lib/use-escape'
 import { usePartner } from '../PartnerContext'
 import { t } from '../i18n'
 import { setBookingStatus } from '@/lib/firestore'
@@ -36,6 +37,7 @@ export default function ReservationsScreen() {
   useEffect(() => { getPolicies().then(p => { if (p) setTierHours(Object.fromEntries(Object.entries(p.tiers).map(([k, v]) => [k, (v as { cancelDeadlineHours?: number })?.cancelDeadlineHours]))) }).catch(() => {}) }, [])
   const [help, setHelp] = useState<{ open: boolean; text: string; sent: boolean; busy: boolean }>({ open: false, text: '', sent: false, busy: false })
   const [detail, setDetailRaw] = useState<Booking | null>(null)
+  useEscape(() => setDetail(null), !!detail)
   // Opening a different booking (or closing) resets the help composer —
   // otherwise booking B would show booking A's "✓ sent".
   const setDetail = (b: Booking | null) => { setDetailRaw(b); setHelp({ open: false, text: '', sent: false, busy: false }) }
@@ -204,7 +206,7 @@ export default function ReservationsScreen() {
       {/* Search + date, above the status pills (Jordan: find a booking fast). */}
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder={L('search_ph')}
-          style={{ flex: '1 1 14rem', background: 'var(--pf-card)', border: '1px solid var(--pf-border)', borderRadius: '10px', padding: '9px 13px', color: 'var(--pf-text)', fontFamily: 'var(--font-sans)', fontSize: '12.5px', outline: 'none' }} />
+          style={{ flex: '1 1 14rem', background: 'var(--pf-card)', border: '1px solid var(--pf-border)', borderRadius: '10px', padding: '9px 13px', color: 'var(--pf-text)', fontFamily: 'var(--font-sans)', fontSize: '12.5px' }} />
         {view === 'list' && ([['today', 'dp_today'], ['tomorrow', 'dp_tomorrow'], ['week', 'dp_week']] as const).map(([k, label]) => (
           <button key={k} onClick={() => { setDatePreset(p => p === k ? '' : k); setDateFilter('') }}
             style={{ padding: '8px 13px', borderRadius: '10px', cursor: 'pointer', fontFamily: 'var(--font-sans)', fontSize: '11.5px', border: `1px solid ${datePreset === k ? 'var(--pf-border-strong)' : 'var(--pf-border)'}`, background: datePreset === k ? 'var(--pf-card)' : 'transparent', color: datePreset === k ? 'var(--pf-gold)' : 'var(--pf-faint)' }}>
@@ -212,7 +214,7 @@ export default function ReservationsScreen() {
           </button>
         ))}
         {view === 'list' && <input type="date" value={dateFilter} onChange={e => { setDateFilter(e.target.value); setDatePreset('') }}
-          style={{ background: 'var(--pf-card)', border: '1px solid var(--pf-border)', borderRadius: '10px', padding: '8px 12px', color: dateFilter ? 'var(--pf-text)' : 'var(--pf-faint)', fontFamily: 'var(--font-sans)', fontSize: '12.5px', outline: 'none', colorScheme: 'dark' }} />}
+          style={{ background: 'var(--pf-card)', border: '1px solid var(--pf-border)', borderRadius: '10px', padding: '8px 12px', color: dateFilter ? 'var(--pf-text)' : 'var(--pf-faint)', fontFamily: 'var(--font-sans)', fontSize: '12.5px', colorScheme: 'dark' }} />}
         {(search || dateFilter || datePreset) && (
           <button onClick={() => { setSearch(''); setDateFilter(''); setDatePreset('') }}
             style={{ background: 'transparent', border: '1px solid var(--pf-border)', borderRadius: '10px', padding: '8px 13px', color: 'var(--pf-faint)', fontFamily: 'var(--font-sans)', fontSize: '11.5px', cursor: 'pointer' }}>
@@ -281,7 +283,7 @@ export default function ReservationsScreen() {
                   <button onClick={() => shiftMonth(1)} aria-label="Next month" style={{ width: '30px', height: '30px', borderRadius: '8px', border: '1px solid var(--pf-border)', background: 'transparent', color: 'var(--pf-gold)', cursor: 'pointer' }}>›</button>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', marginBottom: '4px' }}>
-                  {weekdays.map((w, i) => <div key={i} style={{ ...eyebrow, textAlign: 'center', fontSize: '9px' }}>{w}</div>)}
+                  {weekdays.map((w, i) => <div key={i} style={{ ...eyebrow, textAlign: 'center', fontSize: '10px' }}>{w}</div>)}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
                   {cells.map(d => {
@@ -303,7 +305,7 @@ export default function ReservationsScreen() {
                           {dayBs.slice(0, 3).map((b, i) => (
                             <span key={i} style={{ width: '5px', height: '5px', borderRadius: '50%', background: DOT[b.status] || 'var(--pf-faint)' }} />
                           ))}
-                          {dayBs.length > 3 && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '8px', color: 'var(--pf-gold)', lineHeight: '5px' }}>+</span>}
+                          {dayBs.length > 3 && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'var(--pf-gold)', lineHeight: '5px' }}>+</span>}
                         </span>
                       </button>
                     )
@@ -407,7 +409,7 @@ export default function ReservationsScreen() {
               style={{ background: 'var(--pf-sheet)', border: '1px solid var(--pf-border)', borderRadius: '18px 18px 0 0', padding: '20px', width: '100%', maxWidth: '30rem', maxHeight: '85vh', overflowY: 'auto' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '10px' }}>
                 <div style={{ ...eyebrow, color: 'var(--pf-eyebrow)' }}>{L('dt_title')}</div>
-                <button onClick={() => setDetail(null)} style={{ background: 'transparent', border: 'none', color: 'var(--pf-faint)', fontSize: '18px', cursor: 'pointer', lineHeight: 1 }}>×</button>
+                <button onClick={() => setDetail(null)} aria-label="Close" style={{ background: 'transparent', border: 'none', color: 'var(--pf-faint)', fontSize: '18px', cursor: 'pointer', lineHeight: 1, width: '40px', height: '40px' }}>×</button>
               </div>
               <div style={{ fontFamily: 'var(--font-display)', color: 'var(--pf-head)', fontSize: '1.25rem', letterSpacing: '0.03em', marginBottom: '12px' }}>{b.title}</div>
               {row(L('status_lbl'), <Chip tone={b.status === 'confirmed' ? 'green' : b.status === 'pending' ? 'gold' : 'neutral'}>{L({ pending: 'f_pending', confirmed: 'f_confirmed', completed: 'f_done', declined: 'st_declined', cancelled: 'st_cancelled', no_show: 'st_noshow' }[b.status] || b.status)}</Chip>)}
@@ -463,15 +465,15 @@ export default function ReservationsScreen() {
                     <div style={{ ...eyebrow, marginBottom: '10px' }}>{L('g_panel')}</div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 7rem), 1fr))', gap: '12px' }}>
                       <div>
-                        <div style={{ fontFamily: 'var(--font-sans)', fontSize: '9.5px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pf-faint)' }}>{L('g_visits')}</div>
+                        <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pf-faint)' }}>{L('g_visits')}</div>
                         <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--pf-text)', marginTop: '3px' }}>{g.visits}</div>
                       </div>
                       <div>
-                        <div style={{ fontFamily: 'var(--font-sans)', fontSize: '9.5px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pf-faint)' }}>{L('g_spend')}</div>
+                        <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pf-faint)' }}>{L('g_spend')}</div>
                         <div style={{ marginTop: '3px' }}><Money amount={formatAmount(g.spend)} size={22} currency={b.currency || 'XOF'} /></div>
                       </div>
                       <div>
-                        <div style={{ fontFamily: 'var(--font-sans)', fontSize: '9.5px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pf-faint)' }}>{L('g_since')}</div>
+                        <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pf-faint)' }}>{L('g_since')}</div>
                         <div style={{ fontFamily: 'var(--font-sans)', fontSize: '12.5px', color: 'var(--pf-text)', marginTop: '6px' }}>
                           {g.visits <= 1 ? L('g_first_time') : (g.since ? formatDate(g.since) : '—')}
                         </div>

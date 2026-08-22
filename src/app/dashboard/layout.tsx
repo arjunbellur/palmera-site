@@ -95,8 +95,8 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
   const getStatus = (_href: string) => 'none'
 
   const dotColor = (status: string) => {
-    if (status === 'complete') return '#9e763b'
-    if (status === 'in_progress') return '#be9a56'
+    if (status === 'complete') return 'var(--db-gold-deep)'
+    if (status === 'in_progress') return 'var(--db-gold)'
     if (status === 'none') return 'transparent'
     return 'var(--db-text-faint)'
   }
@@ -107,7 +107,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
 
   if (loading) return (
     <div data-theme={theme} style={{ minHeight: '100vh', background: 'var(--db-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ width: '2rem', height: '2rem', border: '2px solid rgba(190,154,86,0.15)', borderTopColor: '#be9a56', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      <div style={{ width: '2rem', height: '2rem', border: '2px solid rgba(190,154,86,0.15)', borderTopColor: 'var(--db-gold)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
@@ -135,7 +135,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
               return (
                 <a key={item.href} href={item.href} style={{ flexShrink: 0, padding: '0.75rem 0.875rem', textDecoration: 'none', textAlign: 'center', borderBottom: active ? '2px solid #be9a56' : '2px solid transparent', background: active ? 'var(--db-bg-card-active)' : 'transparent', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
                   <div style={{ width: '0.375rem', height: '0.375rem', borderRadius: '50%', background: dotColor(status) }} />
-                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6875rem', color: active ? '#be9a56' : 'var(--db-text-muted)', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{item.short}</span>
+                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6875rem', color: active ? 'var(--db-gold)' : 'var(--db-text-muted)', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{item.short}</span>
                 </a>
               )
             })}
@@ -160,7 +160,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
                 onMouseEnter={e => { if (!active) (e.currentTarget as HTMLAnchorElement).style.background = 'var(--db-bg-card)' }}
                 onMouseLeave={e => { if (!active) (e.currentTarget as HTMLAnchorElement).style.background = 'transparent' }}>
                 <div style={{ width: '0.4375rem', height: '0.4375rem', borderRadius: '50%', background: dotColor(status), flexShrink: 0, border: status === 'incomplete' ? '1px solid var(--db-text-faint)' : 'none' }} />
-                <span style={{ fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', color: active ? '#be9a56' : 'var(--db-text-muted)', letterSpacing: '0.02em', fontWeight: active ? 500 : 400 }}>{item.label}</span>
+                <span style={{ fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', color: active ? 'var(--db-gold)' : 'var(--db-text-muted)', letterSpacing: '0.02em', fontWeight: active ? 500 : 400 }}>{item.label}</span>
               </a>
             )
           })}

@@ -19,7 +19,7 @@ export default function PriceInput({ value, onChange, placeholder, compact }: {
       <div style={{ position: 'relative', flex: 1, minWidth: compact ? '5.5rem' : '7rem' }}>
         <input inputMode="numeric" placeholder={placeholder ?? '0'} value={shown}
           onChange={(e) => { const digits = e.target.value.replace(/[^0-9]/g, ''); onChange(digits ? Math.min(99_999_999, parseInt(digits, 10)) : null) }}
-          style={{ width: '100%', textAlign: 'center', background: 'var(--db-bg-input)', border: '1px solid var(--db-border-subtle)', borderRadius: '0.375rem', padding: compact ? '0.375rem 2.25rem 0.375rem 0.5rem' : '0.4375rem 2.5rem 0.4375rem 0.5rem', color: 'var(--db-text)', fontFamily: 'var(--font-display)', fontSize: compact ? '1rem' : '1.125rem', outline: 'none' }} />
+          style={{ width: '100%', textAlign: 'center', background: 'var(--db-bg-input)', border: '1px solid var(--db-border-subtle)', borderRadius: '0.375rem', padding: compact ? '0.375rem 2.25rem 0.375rem 0.5rem' : '0.4375rem 2.5rem 0.4375rem 0.5rem', color: 'var(--db-text)', fontFamily: 'var(--font-display)', fontSize: compact ? '1rem' : '1.125rem' }} />
         <span style={{ position: 'absolute', right: '0.625rem', top: '50%', transform: 'translateY(-50%)', fontFamily: 'var(--font-sans)', fontSize: '0.625rem', letterSpacing: '0.08em', color: 'var(--db-text-faint)', pointerEvents: 'none' }}>XOF</span>
       </div>
       <button type="button" onClick={() => onChange(v + step(v))} style={btn}>+</button>

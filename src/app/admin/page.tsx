@@ -228,7 +228,7 @@ export default function AdminOverview() {
                   {a.avatar ? <img loading="lazy" decoding="async" src={a.avatar} alt="" style={{ width: '36px', height: '36px', objectFit: 'cover', display: 'block' }} /> : a.icon}
                 </span>
                 {/* Event badge on the avatar corner — the notification tell. */}
-                <span style={{ position: 'absolute', right: '-4px', bottom: '-4px', width: '16px', height: '16px', borderRadius: '6px', background: 'var(--pf-gold-deep)', color: '#0a0e18', display: 'grid', placeItems: 'center', fontSize: '8.5px', border: '2px solid var(--pf-card-solid)' }}>{a.icon}</span>
+                <span style={{ position: 'absolute', right: '-4px', bottom: '-4px', width: '16px', height: '16px', borderRadius: '6px', background: 'var(--pf-gold-deep)', color: '#0a0e18', display: 'grid', placeItems: 'center', fontSize: '10px', border: '2px solid var(--pf-card-solid)' }}>{a.icon}</span>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: 'var(--font-sans)', color: 'var(--pf-text)', fontSize: '12.5px', letterSpacing: '0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

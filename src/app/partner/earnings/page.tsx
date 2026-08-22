@@ -26,7 +26,7 @@ function CircleStat({ icon, label, value, tone = 'var(--pf-gold)' }: { icon: Rea
     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
       <span style={{ width: '34px', height: '34px', borderRadius: '50%', border: '1px solid var(--pf-border-strong)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: tone, fontSize: '13px', flexShrink: 0 }}>{icon}</span>
       <div>
-        <div style={{ fontFamily: 'var(--font-sans)', fontSize: '9px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--pf-faint)' }}>{label}</div>
+        <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--pf-faint)' }}>{label}</div>
         <div style={{ fontFamily: 'var(--font-display)', fontSize: '16px', color: 'var(--pf-text)', marginTop: '2px' }}>{value}</div>
       </div>
     </div>
@@ -235,7 +235,7 @@ export default function EarningsScreen() {
               {steps.map((st, i) => (
                 <div key={st.k} style={{ flex: '1 1 0', minWidth: '6.5rem', position: 'relative', padding: '0 6px', textAlign: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
-                    <span style={{ width: '26px', height: '26px', borderRadius: '50%', border: `1px solid ${st.n > 0 ? 'var(--pf-gold)' : 'var(--pf-border)'}`, background: st.n > 0 ? 'rgba(190,154,86,0.14)' : 'transparent', color: st.n > 0 ? 'var(--pf-gold)' : 'var(--pf-faint)', display: 'grid', placeItems: 'center', fontFamily: 'var(--font-sans)', fontSize: '11px', flexShrink: 0 }}>
+                    <span style={{ width: '26px', height: '26px', borderRadius: '50%', border: `1px solid ${st.n > 0 ? 'var(--pf-gold)' : 'var(--pf-border)'}`, background: st.n > 0 ? 'var(--pf-gold-soft)' : 'transparent', color: st.n > 0 ? 'var(--pf-gold)' : 'var(--pf-faint)', display: 'grid', placeItems: 'center', fontFamily: 'var(--font-sans)', fontSize: '11px', flexShrink: 0 }}>
                       {st.n > 0 ? st.n : <Check size={12} strokeWidth={2} style={{ opacity: 0.35 }} />}
                     </span>
                     {i < steps.length - 1 && <span style={{ position: 'absolute', left: '50%', right: '-50%', top: '13px', height: '1px', background: 'var(--pf-border)', zIndex: -1 }} />}
@@ -388,7 +388,7 @@ export default function EarningsScreen() {
               <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: LEDGER_DOT[e.type] || 'var(--pf-faint)', flexShrink: 0 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: 'var(--font-serif)', fontSize: '14px', color: 'var(--pf-text)' }}>{e.description}</div>
-                <div style={{ fontFamily: 'var(--font-sans)', fontSize: '9.5px', color: 'var(--pf-faint)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: '2px' }}>{formatDate(e.createdAt)}</div>
+                <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'var(--pf-faint)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: '2px' }}>{formatDate(e.createdAt)}</div>
               </div>
               <div style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', color: e.amount >= 0 ? 'var(--pf-success)' : 'var(--pf-alert)' }}>
                 {e.amount >= 0 ? '+' : '−'}{formatAmount(Math.abs(e.amount))}

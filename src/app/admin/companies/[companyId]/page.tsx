@@ -246,7 +246,7 @@ export default function AdminCompanyDetailPage({ params }: { params: Promise<{ c
       </div>
 
       {confirmDelete && (
-        <ConfirmDialog title="Delete this company?" note="Removes the company and its experiences. The provider account is not affected."
+        <ConfirmDialog locale="en" title="Delete this company?" note="Removes the company and its experiences. The provider account is not affected."
           error={deleteError} confirmLabel="Delete permanently" busyLabel="Deleting…" busy={deleting}
           onConfirm={handleDelete} onCancel={() => setConfirmDelete(false)}>
           You&apos;re about to permanently delete <strong style={{ color: 'var(--db-text)' }}>{company.name}</strong> and {experiences.length} experience(s). This cannot be undone.

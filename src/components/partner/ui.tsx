@@ -78,7 +78,7 @@ export function StatTile({ label, amount, sub, currency }: { label: string; amou
 }
 
 const TONES = {
-  gold: { color: 'var(--pf-gold)', bg: 'rgba(190,154,86,0.14)' },
+  gold: { color: 'var(--pf-gold)', bg: 'var(--pf-gold-soft)' },
   green: { color: 'var(--pf-success)', bg: 'var(--pf-green-soft)' },
   alert: { color: 'var(--pf-alert)', bg: 'rgba(196,124,124,0.14)' },
   neutral: { color: 'var(--pf-faint)', bg: 'var(--pf-card)' },
@@ -88,7 +88,7 @@ export type Tone = keyof typeof TONES
 export function Chip({ children, tone = 'neutral' }: { children: ReactNode; tone?: Tone }) {
   const t = TONES[tone]
   return (
-    <span style={{ fontFamily: 'var(--font-sans)', fontSize: '9.5px', letterSpacing: '0.08em', textTransform: 'uppercase', color: t.color, background: t.bg, padding: '3px 8px', borderRadius: '999px', whiteSpace: 'nowrap' }}>
+    <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: t.color, background: t.bg, padding: '3px 8px', borderRadius: '999px', whiteSpace: 'nowrap' }}>
       {children}
     </span>
   )
@@ -111,25 +111,58 @@ export function EmptyState({ icon, title, body, chip, action }: { icon: ReactNod
   )
 }
 
-export function PrimaryButton({ children, onClick, href }: { children: ReactNode; onClick?: () => void; href?: string }) {
+export function PrimaryButton({ children, onClick, href, disabled, fullWidth, type = 'button', ariaLabel }: {
+  children: ReactNode; onClick?: () => void; href?: string
+  /** The props partner pages used to clone this button for. */
+  disabled?: boolean; fullWidth?: boolean; type?: 'button' | 'submit'; ariaLabel?: string
+}) {
   const style: CSSProperties = {
-    display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px',
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px 20px', minHeight: '40px',
+    width: fullWidth ? '100%' : undefined, flex: fullWidth ? 1 : undefined,
     background: 'var(--pf-gold-deep)', border: 'none', borderRadius: '10px', color: '#ebe8db',
-    boxShadow: '0 0 18px rgba(190,154,86,0.28)',
-    fontFamily: 'var(--font-sans)', fontSize: '12.5px', letterSpacing: '0.05em', cursor: 'pointer', textDecoration: 'none',
+    boxShadow: disabled ? 'none' : '0 0 18px rgba(190,154,86,0.28)', opacity: disabled ? 0.6 : 1,
+    fontFamily: 'var(--font-sans)', fontSize: '12.5px', letterSpacing: '0.05em', cursor: disabled ? 'default' : 'pointer', textDecoration: 'none',
   }
-  return href ? <a href={href} style={style}>{children}</a> : <button onClick={onClick} style={style}>{children}</button>
+  return href
+    ? <a href={href} style={style} aria-label={ariaLabel}>{children}</a>
+    : <button type={type} onClick={onClick} disabled={disabled} style={style} aria-label={ariaLabel}>{children}</button>
 }
 
-export function GhostButton({ children, onClick, tone = 'neutral' }: { children: ReactNode; onClick?: () => void; tone?: Tone }) {
+export function GhostButton({ children, onClick, tone = 'neutral', ariaLabel, disabled }: { children: ReactNode; onClick?: () => void; tone?: Tone; ariaLabel?: string; disabled?: boolean }) {
   return (
-    <button onClick={onClick} style={{
-      padding: '9px 16px', background: 'transparent', borderRadius: '10px', cursor: 'pointer',
+    <button type="button" onClick={onClick} disabled={disabled} aria-label={ariaLabel} style={{
+      padding: '9px 16px', minHeight: '40px', background: 'transparent', borderRadius: '10px', cursor: disabled ? 'default' : 'pointer', opacity: disabled ? 0.5 : 1,
       border: `1px solid ${tone === 'alert' ? 'rgba(196,124,124,0.4)' : 'var(--pf-border-strong)'}`,
       color: tone === 'alert' ? 'var(--pf-alert)' : 'var(--pf-muted)',
       fontFamily: 'var(--font-sans)', fontSize: '12.5px', letterSpacing: '0.04em',
     }}>{children}</button>
   )
+}
+
+/** 40×40 icon-only button for shell headers (theme, sign out, close). */
+export function IconButton({ children, onClick, label, tone = 'neutral' }: { children: ReactNode; onClick?: () => void; label: string; tone?: 'neutral' | 'gold' }) {
+  return (
+    <button type="button" onClick={onClick} aria-label={label} title={label} style={{
+      width: '40px', height: '40px', borderRadius: '10px', border: '1px solid var(--pf-border)', background: 'transparent',
+      color: tone === 'gold' ? 'var(--pf-gold)' : 'var(--pf-faint)', cursor: 'pointer', display: 'grid', placeItems: 'center',
+    }}>{children}</button>
+  )
+}
+
+/** The spinner that was pasted into seven files. */
+export function Spinner() {
+  return <div style={{ width: '2rem', height: '2rem', border: '2px solid rgba(190,154,86,0.15)', borderTopColor: 'var(--pf-gold)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+}
+
+/** Shared field styles for pf-family forms (settings, supplier, marketplace, admin). */
+export const fieldStyle: CSSProperties = {
+  width: '100%', padding: '10px 12px', minHeight: '40px', borderRadius: '10px',
+  border: '1px solid var(--pf-border)', background: 'var(--pf-bg)',
+  color: 'var(--pf-text)', fontFamily: 'var(--font-sans)', fontSize: '13.5px',
+}
+export const fieldLabel: CSSProperties = {
+  display: 'block', fontFamily: 'var(--font-sans)', fontSize: '11px',
+  letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--pf-faint)', margin: '12px 0 6px',
 }
 
 /** Shimmer placeholder shaped like the content it's waiting for. */
