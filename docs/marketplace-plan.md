@@ -1,118 +1,114 @@
-# Palmera Marketplace — partner supply ordering (plan v2, 2026-08-19)
+# Palmera Marketplace — Dépôt-vente (plan v3, 2026-08-22)
 
-> **⚠ PIVOT PENDING (v3, decided on the 2026-08-19 Arjun/Jordan call):**
-> the model changes from pre-purchase e-commerce to **lend-first / pay-after**
-> (dépôt-vente): the supplier lends stock to the business; the business
-> reports what it actually used; the supplier collects leftovers, verifies
-> the count, and confirms — payment captures then, for consumption only.
-> Payment becomes **authorize-and-hold** (authorize the full reserved amount
-> at order time, capture the recalculated amount on supplier confirmation).
-> New requirements: per-product order quantities, delivery (paid fee) vs
-> pickup, usage reporting step, supplier verification step, supplier
-> thresholds for new customers (e.g. >10 bottles → manual review), all
-> supplier inventory on-platform with stock-out/low-stock warnings.
-> French nav label: "Dépôt-vente" (English stays "Market"). Alcohol only at
-> launch. Arjun to wireframe candidate workflows and pick the fastest to
-> implement — the phases below describe the v2 build that SHIPPED (store +
-> Stripe checkout) and will be restructured, not thrown away: catalog,
-> cart, receipts, webhook, and rules all carry over.
+Supersedes v2. Source: the 2026-08-19 Arjun/Jordan call, re-read in full.
+Vocabulary: **supplier** (never vendor) in code/UI; FR nav label "Dépôt-vente",
+EN "Market". Alcohol only at launch ("a bottle of Jack Daniels is a bottle of
+Jack Daniels" — quality disputes don't exist).
 
+## The model — lend first, pay after
+A supplier lends bottles to a business for an event. The business uses some,
+keeps some, returns the rest. The supplier collects the leftovers, verifies
+the count, and ONLY THEN is the business charged — for what it consumed.
+Jordan: "That's the beauty of it." Everything below serves that loop.
 
-## The idea (Jordan)
-West African hotels/restaurants routinely top up from a supplier when they
-sell more than expected, instead of dipping into their own stock. Palmera
-digitizes that: **suppliers** (family-vetted wholesale businesses, alcohol
-first) get their own lightweight system to manage and sell their inventory
-— likely their first digital tooling, which is itself the pitch to them —
-and **partners** get in-dashboard purchasing for real operational tasks
-(stocking up for a restaurant event). Strategic goal: the dashboard becomes
-the partner's daily operations tool, not just a booking inbox.
+## Order state machine
+```
+draft ──submit──▶ submitted ──(qty > threshold or first order > cap)──▶ pending_review ──accept──▶ accepted
+                      └──(within threshold)────────────────────────────────────────────────────▶ accepted
+accepted ──supplier marks handed over──▶ handed_over        (delivery or pickup)
+handed_over ──business reports leftovers──▶ reported
+reported ──supplier verifies count, confirms──▶ settled     (final amount fixed here)
+settled ──charge succeeds──▶ paid ──▶ closed
+settled ──charge fails / paid off-platform──▶ payment_due ──supplier records cash/Wave──▶ paid
+any pre-handover state ──▶ declined | cancelled
+```
+Actors: **business** builds cart + chooses fulfilment + reports leftovers;
+**supplier** reviews, hands over, verifies, confirms; **Palmera** charges,
+takes commission, pays the supplier net via the supplier ledger.
 
-Terminology: **supplier** everywhere (code, collections, UI) — never
-"vendor" — so it can't blur with partners/providers (experience businesses).
+## Order lines
+Each line: `productId, name, unitPrice, qty, mode: 'buy' | 'borrow'`.
+- **buy**: charged for `qty` no matter what.
+- **borrow**: charged for `qty − returnedQty` (as verified by the supplier).
+Checkout shows the full lend value ("20K × 10, 18K × 10, 15K × 10 — you
+see the full price of what you'd be paying"). Final amount is recomputed at
+settlement; the receipt keeps both numbers.
 
-## Money model — partners pay IN platform (Arjun, 2026-08-19)
-Palmera is merchant of record, same as experience bookings:
-- Partner pays the full order total at checkout (Stripe card; PayDunya
-  mobile money later — same dual-rail philosophy as the app).
-- Palmera takes its commission; the **supplier accrues the net** in a
-  ledger, settled via payouts — the SAME payout model the BPA already
-  establishes for partners (biweekly, recorded in the dashboard).
-- Every order freezes `commissionRate`, `commissionAmount`, `supplierNet`
-  at submission (receipt semantics, immune to later rate/price edits).
-- Refund path is defined from day one: an order declined or cancelled
-  after payment triggers a Stripe refund — we will NOT repeat the app's
-  declined-but-paid gap (SYNC item 16).
-- Idempotent checkout: ONE order doc + ONE Stripe session per cart
-  submission, session id stored on the order — we will not repeat the
-  app's duplicate-booking bug (SYNC item 17).
+## Fulfilment
+`fulfilment: 'delivery' | 'pickup'`. Delivery carries a fee the supplier
+sets on their profile (`deliveryFee`, XOF, flat per order). Pickup: the
+supplier marks "ready", business sees pickup window. Return collection is
+the supplier's ("usually the next morning") — `returnPickupAt` optional.
 
-New build this requires (dashboard repo, first Stripe integration here):
-`/api/marketplace/checkout` (creates Stripe Checkout session server-side)
-+ `/api/webhooks/stripe` (marks order paid; verified signature). Needs
-STRIPE_SECRET_KEY + webhook secret in Vercel (Sensitive), reusing the same
-Stripe account the app charges through.
+## Thresholds (supplier credibility of the BUSINESS — "the opposite way")
+Supplier profile: `maxPerOrder` (default 10 units) and `firstOrderMax`
+(default 10). Over either → `pending_review`; supplier accepts or declines.
+v1 = basic thresholds. Later: auto-raise after N completed orders.
 
-## Three surfaces, one repo
-Same Firebase project, same auth, same pf design system. The "separate
-website" for suppliers = a new route group `/supplier` (a domain can point
-at it later — zero extra infra).
-- **/supplier** — inventory CRUD, order inbox (accept → deliver), sales +
-  accrued-balance view.
-- **/partner/marketplace** — catalog, cart, pay, order history + status.
-- **/admin** — supplier directory (concierge creation), order monitor,
-  marketplace GMV + commission, supplier payout ledger.
+## Inventory
+All supplier stock lives on Palmera. `stock` decrements on **accepted**,
+increments by `returnedQty` on **settled**. Product shows "not enough
+stock" when a cart exceeds it. Supplier sets `lowStockAt`; inventory view
+flags products at/below it (email nudge later).
 
-**App impact: ZERO** — the iOS app never touches these collections. Rules
-additions are additive; deploy still follows the announce-first protocol.
-
-## Data model (new, dashboard-owned)
-- `suppliers/{uid}` — name, phone, email, city, status, commissionRate
-  (decimal, same mechanics as company rates).
-- `suppliers/{uid}/private/*` — payout details, admin notes.
-- `products/{id}` — supplierId, name, category ('alcohol' first), photo,
-  unit ('bottle'|'case'|'crate'…), unitSize, price XOF, stock, status.
-  Flat collection → one query serves the whole store.
-- `supply_orders/{id}` — companyId + partnerId (buyer), supplierId,
-  items[] denormalized, orderTotal, commissionRate/commissionAmount/
-  supplierNet, payment {provider:'stripe', sessionId, status}, status:
-  awaiting_payment → paid → accepted → delivered | declined(→refunded) |
-  cancelled(→refunded), per-transition timestamps, note.
-- `supplier_ledger/{id}` — credit entries (order net) + payout debits;
-  mirrors the partner ledger design from schema v3.3.
-- `config/marketplace` — categories, enabled cities.
-
-Rules sketch: suppliers own-read/write + admin; products supplier-write-own,
-partner read live; supply_orders buyer-create ('awaiting_payment' only,
-money fields validated) + read-own, supplier read/update status on own
-orders (anchors + money frozen via keep()), admin all; ledger read-own +
-admin (writes via Admin SDK only, like the partner ledger).
+## Money
+- Charge happens ONCE, at settlement: Σ buy lines + Σ borrow lines × used +
+  delivery fee. Commission = rate × goods subtotal (not the delivery fee —
+  the fee is the supplier's cost). Rate = supplier's `commissionRate`
+  (decimal; 10% default, same mechanics as partners).
+- **Rail decision (resolved by research):** Paystack does NOT operate in
+  Senegal (CI/GH/KE/NG/ZA only). Wave/Orange Money = **PayDunya**, which the
+  app already uses. So: Stripe for cards (card saved on file at first order
+  via Checkout *setup mode*; charged off-session at settlement) + PayDunya
+  for mobile money (phase later) + **off-platform fallback** (cash/Wave at
+  collection) recorded by the supplier, with Palmera's commission then owed
+  by the supplier and tracked in the admin "commission owed" view.
+- Why NOT authorize-and-hold: holds expire (7 days), can't capture MORE than
+  authorized (keep-extra-bottles breaks it), and it makes the supplier the
+  one "authorizing" — Arjun's own objection on the call. Pay-after with a
+  saved card gives the same guarantee with none of the edge cases.
+- Supplier is paid the net through `supplier_ledger` → payouts, mirroring
+  the partner BPA model.
 
 ## Phases
-**Phase 1 — Supplier portal + concierge (1–2 sessions).** /supplier shell,
-product/inventory CRUD; /admin supplier creation + product authoring on
-their behalf (same concierge pattern as experiences, storageUid lesson
-applied from day one).
-**Phase 2 — Partner store + payment (2 sessions).** Marketplace tab,
-catalog, cart, Stripe Checkout + webhook, order history. This is the
-critical phase — payment correctness (idempotency, refunds) gets built
-here, not retrofitted.
-**Phase 3 — Lifecycle + money ops (1 session).** Supplier order inbox,
-email notifications both directions (existing Resend poller, new kinds),
-supplier accrued balance, admin GMV/commission + payout recording.
-**Phase 4 — later.** PayDunya rail, statements/CSV, WhatsApp notifications,
-delivery tracking, self-serve supplier signup, more categories.
+**M1 — Schema + rules (½ session, ⚠ SYNC log).** Order lines gain `mode`,
+`returnedQty`, `usedQty`; order gains `fulfilment`, `deliveryFee`,
+`reportedAt/handedOverAt/settledAt`, `finalTotal`, `paymentMethod`
+('card'|'off_platform'), `paymentRecordedBy`; supplier gains `deliveryFee`,
+`maxPerOrder`, `firstOrderMax`, `lowStockAt`. Rules: business may update
+ONLY the leftover report on own handed_over order; supplier transitions
+with money frozen (final numbers written server-side).
+**M2 — Partner store v3 (1 session).** Per-line buy/borrow + qty, delivery
+vs pickup, full-lend-value checkout, card-on-file (Stripe setup session),
+"My orders" timeline, **usage report form** on handed-over orders
+("out of these 3 bottles I have 2 left").
+**M3 — Supplier portal v2 (1–2 sessions).** Order inbox: review queue,
+accept/decline, mark handed over / ready for pickup; **settlement screen**:
+enter returned counts per line → live final amount → confirm (this is the
+charge trigger); inventory thresholds + low-stock flags; delivery fee +
+thresholds in profile.
+**M4 — Settlement payments (1 session).** `/api/marketplace/settle` (Admin
+SDK: recompute, freeze, create off-session PaymentIntent) + webhook updates;
+failure → payment_due with supplier "record off-platform payment" action;
+supplier_ledger credit on paid; refund path on disputes = admin action.
+**M5 — Admin (½ session).** Orders monitor by state, commission collected
+vs owed (off-platform), supplier net owed, settle/mark-paid actions.
 
-## Decisions (Arjun, 2026-08-19)
-1. Supplier onboarding: **concierge-only** at launch (admin creates
-   suppliers + products; suppliers log in to manage stock).
-2. Buyers: **all active partners** — no category gating.
-3. **Commission from day one**, and **payment happens in-platform**:
-   Palmera collects, keeps its cut, supplier is paid the net via payouts.
-4. Licensing: OPEN — Jordan confirms suppliers hold required permits;
-   B2B sales to licensed establishments.
+## Decisions needed (Arjun/Jordan) — defaults I'll build unless told otherwise
+1. Who confirms handover: **supplier** (they physically hand the goods over;
+   Jordan said both at different points).
+2. Delivery fee: supplier-set flat fee, charged at settlement, **no
+   commission on it**.
+3. Marketplace commission: **10%** default per supplier (editable, decimals).
+4. Purchased ("buy") lines: charged **at settlement** with everything else —
+   one charge per order, one receipt.
+5. Dispute (supplier count ≠ business report): supplier's verified count
+   wins at settlement; business can "get help" → admin can adjust/refund.
+6. Usage report semantics: business reports **leftovers returned** per line;
+   used = handed − returned. Keeping extra = simply returning fewer.
 
-## v1 exclusions
-Delivery logistics (free-text fulfillment note), race-safe stock
-reservation (stock decrements on accept; oversell resolved humanly),
-PayDunya (Stripe first), statements.
+## Wireframes
+Arjun promised Jordan wireframes of the candidate workflows. The flow above
+is the recommended one; the wireframe set (business: cart → fulfilment →
+report; supplier: inbox → handover → settle) is the first M2/M3 deliverable
+so Jordan signs off on screens before code.
