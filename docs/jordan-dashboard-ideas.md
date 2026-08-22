@@ -43,7 +43,7 @@ Numbering follows the doc. Effort: 🟢 quick (hours) · 🟡 medium (a session)
 | 26 | ✅ Manual-approval response deadline + reminder emails | 🟡 | Reminder = second pass in the existing notify poller (pending >N hrs → nudge). Auto-expiry after deadline would be ⚠ joint. |
 
 ## Settings & support
-| 28 | Fuller company profile (WhatsApp, socials, hours, photos) | 🟡 | Additive fields; app already reads company docs (⚠ FYI only). |
+| 28 | ✅ Fuller company profile (WhatsApp, socials, hours, photos) | 🟡 | Additive fields; app already reads company docs (⚠ FYI only). |
 | 30 | Granular notification prefs (channel × event; WhatsApp!) | 🔴 | Email prefs 🟡; WhatsApp needs a Business API provider — separate project. |
 | 33 | ✅ "Get help with this booking" pre-filled support | 🟢 | `support_messages` collection + rules already exist — attach booking context. |
 
@@ -63,7 +63,7 @@ Numbering follows the doc. Effort: 🟢 quick (hours) · 🟡 medium (a session)
 | 20b | ✨ "Improve description" AI rewrite | Nice-to-have; guidance line shipped instead. Small API route + a button. | One session whenever wanted — no blockers. |
 | 3b | "Message customer" via in-app chat (vs WhatsApp) | In-app chat is Samson's surface (chat_threads/messages are membership-gated; a partner isn't a member). WhatsApp deep link shipped as the zero-impact version. | Samson adds partner↔guest threads; then the dashboard can embed them. |
 | 3c | Partners cancelling CONFIRMED reservations themselves | Deliberately not added — Jordan's doc says "think carefully". Consequences (refund, guest notification, reliability score) aren't defined. Decline (pending) and no-show (past) exist. | Decide policy: allowed? reason required? penalty? Then it's a small drawer action. |
-| 28 | Fuller company profile (WhatsApp, socials, hours, photos) | Partially exists (logo, photos, website/business page). Hours belong to the availability model; WhatsApp/socials are easy additive fields. | Fold into the availability session (hours) + a short fields pass. |
+| 28 | ✅ Fuller company profile (WhatsApp, socials, hours, photos) | Partially exists (logo, photos, website/business page). Hours belong to the availability model; WhatsApp/socials are easy additive fields. | Fold into the availability session (hours) + a short fields pass. |
 
 ## Suggested batches
 1. **Copy + display batch (all 🟢):** 1, 1b, 7, 8, 10, 11, 14, 15, 16, 20, 24, 33 — one to two sessions, zero shared-surface impact.

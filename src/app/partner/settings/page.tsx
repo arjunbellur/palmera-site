@@ -17,7 +17,7 @@ const inputStyle: React.CSSProperties = { width: '100%', background: 'var(--pf-c
 
 type PoMethod = CompanyPayoutProfile['method']
 
-const EMPTY_CO = { name: '', legalName: '', category: '', city: '', address: '', mapsLink: '', websiteOrSocial: '' }
+const EMPTY_CO = { name: '', legalName: '', category: '', city: '', address: '', mapsLink: '', websiteOrSocial: '', phone: '', whatsapp: '', email: '', instagram: '', tiktok: '', description: '' }
 
 export default function SettingsScreen() {
   const router = useRouter()
@@ -106,6 +106,8 @@ export default function SettingsScreen() {
       category: company.category || '', city: company.city || '',
       address: company.address || '', mapsLink: company.mapsLink || '',
       websiteOrSocial: company.websiteOrSocial || '',
+      phone: company.phone || '', whatsapp: company.whatsapp || '', email: company.email || '',
+      instagram: company.instagram || '', tiktok: company.tiktok || '', description: company.description || '',
     })
     setCoEditing(false)
   }, [company?.id]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -120,6 +122,9 @@ export default function SettingsScreen() {
       address: coForm.address.trim(),
       mapsLink: coForm.mapsLink.trim() || null,
       websiteOrSocial: coForm.websiteOrSocial.trim() || null,
+      phone: coForm.phone.trim(), whatsapp: coForm.whatsapp.trim(),
+      email: coForm.email.trim() || null, instagram: coForm.instagram.trim() || null, tiktok: coForm.tiktok.trim() || null,
+      description: coForm.description.trim() || null,
     })
     // Rename fanout: experiences carry a denormalized display name the app
     // shows; without Cloud Functions we update the company's own listings here.
@@ -364,6 +369,31 @@ export default function SettingsScreen() {
             <div>
               <div style={{ ...eyebrow, marginBottom: '5px' }}>{L('co_web')}</div>
               <input style={inputStyle} value={coForm.websiteOrSocial} onChange={e => setCoForm(f => ({ ...f, websiteOrSocial: e.target.value }))} />
+            </div>
+            {/* Jordan/ChatGPT #28: fuller public profile */}
+            <div>
+              <div style={{ ...eyebrow, marginBottom: '5px' }}>{L('co_phone')}</div>
+              <input style={inputStyle} type="tel" value={coForm.phone} onChange={e => setCoForm(f => ({ ...f, phone: e.target.value }))} />
+            </div>
+            <div>
+              <div style={{ ...eyebrow, marginBottom: '5px' }}>{L('co_whatsapp')}</div>
+              <input style={inputStyle} type="tel" value={coForm.whatsapp} onChange={e => setCoForm(f => ({ ...f, whatsapp: e.target.value }))} />
+            </div>
+            <div>
+              <div style={{ ...eyebrow, marginBottom: '5px' }}>{L('co_email')}</div>
+              <input style={inputStyle} type="email" value={coForm.email} onChange={e => setCoForm(f => ({ ...f, email: e.target.value }))} />
+            </div>
+            <div>
+              <div style={{ ...eyebrow, marginBottom: '5px' }}>Instagram</div>
+              <input style={inputStyle} placeholder="@…" value={coForm.instagram} onChange={e => setCoForm(f => ({ ...f, instagram: e.target.value }))} />
+            </div>
+            <div>
+              <div style={{ ...eyebrow, marginBottom: '5px' }}>TikTok</div>
+              <input style={inputStyle} placeholder="@…" value={coForm.tiktok} onChange={e => setCoForm(f => ({ ...f, tiktok: e.target.value }))} />
+            </div>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <div style={{ ...eyebrow, marginBottom: '5px' }}>{L('co_description')}</div>
+              <textarea style={{ ...inputStyle, height: '84px', resize: 'vertical' }} maxLength={400} placeholder={L('co_description_ph')} value={coForm.description} onChange={e => setCoForm(f => ({ ...f, description: e.target.value }))} />
             </div>
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>

@@ -95,6 +95,11 @@ export interface Company {
   websiteOrSocial: string | null
   phone: string
   whatsapp: string
+  /** Jordan/ChatGPT #28 (2026-08-22, additive): fuller public profile. */
+  email?: string | null           // business contact email (not the login)
+  instagram?: string | null       // handle or URL
+  tiktok?: string | null          // handle or URL
+  description?: string | null     // short public blurb, shown on the app's company card
   logo: string | null             // v3.2 (from old photos.providerLogo)
   heroPhoto: string | null        // company hero/banner (old photos.heroPhoto — had no v3.2 home)
   gallery: string[]               // company-level gallery (old photos.gallery — had no v3.2 home)

@@ -16,6 +16,9 @@ const STR = {
     maps: 'Lien Google Maps', web: 'Site web / page business', webPh: 'Site web ou page business (Instagram…)',
     phone: 'Téléphone de l’établissement', phonePh: 'Numéro de contact',
     whatsapp: 'WhatsApp de l’établissement', whatsappPh: 'WhatsApp pour les réservations',
+    email: 'E-mail de contact', emailPh: 'contact@votre-etablissement.com',
+    instagram: 'Instagram', instagramPh: '@votre_etablissement', tiktok: 'TikTok', tiktokPh: '@votre_etablissement',
+    description: 'Présentation', descriptionPh: 'Qui êtes-vous, ce qui vous rend unique — 2 ou 3 phrases vues par les clients.',
     saving: 'Enregistrement…',
   },
   en: {
@@ -29,6 +32,9 @@ const STR = {
     maps: 'Google Maps link', web: 'Website / business page', webPh: 'Website or business page (Instagram…)',
     phone: 'Business phone', phonePh: 'Business contact number',
     whatsapp: 'Business WhatsApp', whatsappPh: 'WhatsApp for bookings',
+    email: 'Contact email', emailPh: 'contact@your-business.com',
+    instagram: 'Instagram', instagramPh: '@your_business', tiktok: 'TikTok', tiktokPh: '@your_business',
+    description: 'About', descriptionPh: 'Who you are and what makes you special — 2–3 sentences guests will see.',
     saving: 'Saving…',
   },
 }
@@ -43,6 +49,7 @@ const hint: React.CSSProperties = { fontSize: '0.6875rem', color: 'var(--db-text
 const EMPTY = {
   name: '', legalName: '', businessType: '', category: '', city: '',
   address: '', mapsLink: '', websiteOrSocial: '', phone: '', whatsapp: '',
+  email: '', instagram: '', tiktok: '', description: '',
 }
 
 export type CompanyFormValues = typeof EMPTY
@@ -63,6 +70,7 @@ export default function CompanyForm({ initial, saving, submitLabel, onSubmit }: 
       category: initial.category ?? '', city: initial.city ?? '', address: initial.address ?? '',
       mapsLink: initial.mapsLink ?? '', websiteOrSocial: initial.websiteOrSocial ?? '',
       phone: initial.phone ?? '', whatsapp: initial.whatsapp ?? '',
+      email: initial.email ?? '', instagram: initial.instagram ?? '', tiktok: initial.tiktok ?? '', description: initial.description ?? '',
     } : {}),
   }))
   const [categories, setCategories] = useState<Opt[]>([])
@@ -119,6 +127,16 @@ export default function CompanyForm({ initial, saving, submitLabel, onSubmit }: 
       <div style={row}>
         <div><label style={lbl}>{s.phone}</label><input style={inp} placeholder={s.phonePh} value={form.phone} onChange={e => set('phone', e.target.value)} /></div>
         <div><label style={lbl}>{s.whatsapp}</label><input style={inp} placeholder={s.whatsappPh} value={form.whatsapp} onChange={e => set('whatsapp', e.target.value)} /></div>
+      </div>
+      <div style={row}>
+        <div><label style={lbl}>{s.email}</label><input style={inp} type="email" placeholder={s.emailPh} value={form.email} onChange={e => set('email', e.target.value)} /></div>
+        <div><label style={lbl}>{s.instagram}</label><input style={inp} placeholder={s.instagramPh} value={form.instagram} onChange={e => set('instagram', e.target.value)} /></div>
+        <div><label style={lbl}>{s.tiktok}</label><input style={inp} placeholder={s.tiktokPh} value={form.tiktok} onChange={e => set('tiktok', e.target.value)} /></div>
+      </div>
+      <div style={{ marginBottom: '1rem' }}>
+        <label style={lbl}>{s.description}</label>
+        <textarea style={{ ...inp, height: '88px', resize: 'vertical' }} maxLength={400} placeholder={s.descriptionPh} value={form.description} onChange={e => set('description', e.target.value)} />
+        <p style={hint}>{form.description.length}/400</p>
       </div>
 
       <button onClick={() => canSave && onSubmit(form)} disabled={!canSave}

@@ -84,6 +84,12 @@ it writes a booking (⚠ would need Samson).
 Every dashboard change that touches documents/rules/indexes the app consumes
 gets a line here, newest first. Pure-UI dashboard changes are never listed.
 
+- 2026-08-22 ⚠ FYI **Companies gain optional `email`, `instagram`, `tiktok`,
+  `description`** (Jordan/ChatGPT #28 — fuller public profile). Additive,
+  null/absent on existing docs. If the app renders a company card, it can
+  show `description` (≤400 chars) and link the socials; `email` is the
+  business contact, not the login.
+
 - 2026-08-22 ⚠ **Rules hardening (security audit):** (1) `isAdmin()` now also
   requires `email_verified == true` — Firestore AND Storage; (2) supplier
   claim/lookup requires a verified email; (3) experience CREATE by a
