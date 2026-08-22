@@ -376,13 +376,15 @@ const SUGGEST_DEFAULT: { kind: SetKind; fr: string; en: string }[] = [
 
 /** Airbnb-style choice cards: big tap targets that EXPLAIN each option in a
  * sentence, replacing skinny segmented pills that only named them. */
-function ChoiceCards<T extends string>({ value, onChange, options }: {
+function ChoiceCards<T extends string>({ value, onChange, options, columns }: {
   value: T | undefined
   onChange: (v: T) => void
   options: { v: T; icon: string; label: string; desc?: string }[]
+  /** Fixed column count (e.g. 2 → a 2×2 square for four options). Default: auto-fit. */
+  columns?: number
 }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 11rem), 1fr))', gap: '0.625rem' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: columns ? `repeat(${columns}, minmax(0, 1fr))` : 'repeat(auto-fit, minmax(min(100%, 11rem), 1fr))', gap: '0.625rem' }}>
       {options.map((o) => {
         const active = value === o.v
         return (
@@ -843,7 +845,7 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
       <div style={{ marginBottom: '1.25rem' }}>
         <label style={labelStyle}>{T.cancelPolicy} {needsReview.includes('cancellationTier') && <span style={{ color: 'var(--db-alert)' }}>{T.confirmTier}</span>}</label>
         <div style={{ marginBottom: '0.625rem' }}>
-          <ChoiceCards value={form.cancellationPolicy?.tier} onChange={(t) => setCancelTier(t)} options={CANCELLATION_TIERS.map((t) => ({
+          <ChoiceCards columns={2} value={form.cancellationPolicy?.tier} onChange={(t) => setCancelTier(t)} options={CANCELLATION_TIERS.map((t) => ({
             v: t, icon: t === 'flexible' ? '◌' : t === 'moderate' ? '◑' : '●',
             label: T.tierLabels[t], desc: T.cancelDesc(tierHours[t]),
           }))} />
