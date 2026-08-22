@@ -5,13 +5,15 @@ import { usePartner } from '../PartnerContext'
 import { t } from '../i18n'
 import { useTheme } from '@/lib/theme'
 import { formatDate } from '@/lib/money'
-import { changePassword } from '@/lib/auth'
+import { changePassword, resendVerification, refreshVerified } from '@/lib/auth'
+import { auth } from '@/lib/firebase'
+import { MailCheck, MailWarning } from 'lucide-react'
 import { updateProvider, updateCompany, getPayoutProfile, setPayoutProfile, getExperiencesByCompany, updateExperience, getCompanyAdmin } from '@/lib/firestore'
 import { getEnabledCategories, getEnabledCities } from '@/lib/config'
 import type { CompanyPayoutProfile } from '@/lib/schema'
 import PhotoUpload from '@/components/dashboard/PhotoUpload'
 import GalleryUpload from '@/components/dashboard/GalleryUpload'
-import { ScreenHeader, SectionTitle, card, cardShape, eyebrow, GhostButton, bodyText } from '@/components/partner/ui'
+import { ScreenHeader, SectionTitle, card, cardShape, eyebrow, GhostButton, bodyText, Chip } from '@/components/partner/ui'
 
 const inputStyle: React.CSSProperties = { width: '100%', background: 'var(--pf-card)', border: '1px solid var(--pf-border)', borderRadius: '10px', padding: '9px 13px', color: 'var(--pf-text)', fontFamily: 'var(--font-sans)', fontSize: '12.5px', boxSizing: 'border-box' }
 
@@ -29,6 +31,9 @@ export default function SettingsScreen() {
   // Airbnb "Menu" pattern: a grouped link list; each row opens ONE focused
   // section. null = the menu. Deep-linkable via ?s=payout etc.
   const [section, setSection] = useState<string | null>(null)
+  const [verified, setVerified] = useState<boolean | null>(null)
+  const [verifyMsg, setVerifyMsg] = useState('')
+  useEffect(() => { setVerified(auth.currentUser?.emailVerified ?? null) }, [])
   useEffect(() => {
     const sParam = new URLSearchParams(window.location.search).get('s')
     if (sParam) setSection(sParam)
@@ -255,7 +260,22 @@ export default function SettingsScreen() {
             <div style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '15px' }}>{provider?.fullName || (locale === 'fr' ? 'Votre nom' : 'Your name')}</div>
             <div style={{ ...eyebrow, marginTop: '4px', textTransform: 'none', letterSpacing: '0.03em' }}>{provider?.primaryPhone || '—'} · {email}</div>
           </div>
+          {verified != null && <Chip tone={verified ? 'green' : 'gold'}>{verified ? L('email_verified') : L('email_unverified')}</Chip>}
         </div>
+        {/* Email verification for accounts that pre-date the gate: they can
+            verify from here instead of being locked out (or never asked). */}
+        {verified === false && (
+          <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid var(--pf-border)', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <MailWarning size={16} strokeWidth={1.75} style={{ color: 'var(--pf-gold)', flexShrink: 0 }} />
+            <p style={{ ...bodyText, fontSize: '0.8125rem', margin: 0, flex: 1, minWidth: '12rem' }}>{L('verify_intro')}</p>
+            <GhostButton onClick={async () => { try { await resendVerification(); setVerifyMsg(L('verify_sent')) } catch { setVerifyMsg('…') } }}>{L('verify_send')}</GhostButton>
+            <GhostButton onClick={async () => { const ok = await refreshVerified(); setVerified(ok); setVerifyMsg(ok ? '' : L('verify_notyet')) }}>{L('verify_check')}</GhostButton>
+            {verifyMsg && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--pf-muted)', width: '100%' }}>{verifyMsg}</span>}
+          </div>
+        )}
+        {verified === true && (
+          <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--pf-success)' }}><MailCheck size={14} strokeWidth={1.75} /> {L('verify_done')}</div>
+        )}
         <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid var(--pf-border)' }}>
           <div style={{ ...eyebrow, marginBottom: '4px' }}>{L('your_logo')}</div>
           <p style={{ ...bodyText, fontSize: '0.75rem', margin: '0 0 10px' }}>{L('logo_hint')}</p>
