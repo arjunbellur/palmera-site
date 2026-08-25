@@ -23,6 +23,7 @@ const STR: Record<string, { fr: string; en: string }> = {
   inv_title: { fr: 'Inventaire', en: 'Inventory' },
   inv_intro: { fr: 'Les produits visibles apparaissent dans le marketplace Palmera — les établissements partenaires peuvent les commander directement.', en: 'Visible products appear in the Palmera marketplace — partner businesses can order them directly.' },
   add_product: { fr: '+ Ajouter un produit', en: '+ Add product' },
+  search_products: { fr: 'Rechercher un produit…', en: 'Search products…' },
   empty_title: { fr: 'Aucun produit', en: 'No products yet' },
   empty_body: { fr: 'Ajoutez vos produits pour les rendre commandables par les établissements Palmera.', en: 'Add your products so Palmera businesses can order them.' },
   edit: { fr: 'Modifier', en: 'Edit' },

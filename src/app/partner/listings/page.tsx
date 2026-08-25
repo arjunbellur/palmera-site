@@ -9,7 +9,7 @@ import {
 import ConfirmDialog from '@/components/dashboard/ConfirmDialog'
 import type { Experience, ExperienceStatus, Option, OptionGroup } from '@/lib/schema'
 import { formatAmount } from '@/lib/money'
-import { ScreenHeader, EmptyState, PrimaryButton, Skeleton, card, cardShape, eyebrow, Chip, type Tone } from '@/components/partner/ui'
+import { ScreenHeader, EmptyState, PrimaryButton, Skeleton, card, cardShape, eyebrow, Chip, SearchInput, type Tone } from '@/components/partner/ui'
 import dynamic from 'next/dynamic'
 const ExperienceModal = dynamic(() => import('@/components/dashboard/ExperienceModal'), { ssr: false })
 import { LayoutGrid, Eye, Copy, X } from 'lucide-react'
@@ -51,6 +51,7 @@ export default function ListingsScreen() {
   const [catFilter, setCatFilter] = useState<string>('all')
   const [preview, setPreview] = useState<Experience | null>(null)
   useEscape(() => setPreview(null), !!preview)
+  const [q, setQ] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft' | 'unpublished'>('all')
   const [toDelete, setToDelete] = useState<Experience | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -99,7 +100,9 @@ export default function ListingsScreen() {
   // Jordan: filter by experience type — "if they just want to look at all
   // their activity experiences". Only categories the partner actually uses.
   const cats = [...new Set(items.map(e => e.category).filter(Boolean))] as string[]
-  const byCat = catFilter === 'all' ? items : items.filter(e => e.category === catFilter)
+  const needle = q.trim().toLowerCase()
+  const searched = needle ? items.filter(e => [e.title, e.category, e.city, e.location].some(v => String(v || '').toLowerCase().includes(needle))) : items
+  const byCat = catFilter === 'all' ? searched : searched.filter(e => e.category === catFilter)
   // Jordan/ChatGPT #11: Live / Draft / Unpublished — matters as listings grow.
   const shown = statusFilter === 'all' ? byCat : byCat.filter(e => e.status === statusFilter)
   const statusCount = (st: string) => byCat.filter(e => e.status === st).length
@@ -132,7 +135,10 @@ export default function ListingsScreen() {
             </button>
           ))}
         </div>
-        <PrimaryButton onClick={openNew}>+ {L('new_listing')}</PrimaryButton>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <SearchInput value={q} onChange={setQ} placeholder={L('search_listings')} />
+          <PrimaryButton onClick={openNew}>+ {L('new_listing')}</PrimaryButton>
+        </div>
       </div>
 
       {!loaded ? (

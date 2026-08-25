@@ -122,6 +122,7 @@ const FR: Record<string, string> = {
   new_listing: 'Nouvelle expérience', from: 'à partir de',
   list_empty_t: 'Aucune expérience', list_empty_b: 'Ajoutez votre première expérience pour commencer à recevoir des réservations.',
   preview_guest: 'Aperçu côté client',
+  search_listings: 'Rechercher une annonce…', mk_search: 'Rechercher un produit ou un fournisseur…',
   st_published: 'En ligne', st_draft: 'Brouillon', st_pending: 'En révision', st_unpublished: 'Retirée', st_archived: 'Archivée',
 
   set_label: 'Réglages', set_title: 'Réglages',
@@ -290,6 +291,7 @@ const EN: Record<string, string> = {
   new_listing: 'New experience', from: 'from',
   list_empty_t: 'No experiences yet', list_empty_b: 'Add your first experience to start receiving bookings.',
   preview_guest: 'Preview as guest',
+  search_listings: 'Search listings…', mk_search: 'Search products or suppliers…',
   st_published: 'Live', st_draft: 'Draft', st_pending: 'In review', st_unpublished: 'Unpublished', st_archived: 'Archived',
 
   set_label: 'Settings', set_title: 'Settings',

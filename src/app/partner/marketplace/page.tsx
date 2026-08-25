@@ -12,7 +12,7 @@ import { getLiveProducts, getSupplyOrdersByPartner } from '@/lib/firestore'
 import { auth } from '@/lib/firebase'
 import { doc, updateDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import { ScreenHeader, PrimaryButton, GhostButton, Chip, EmptyState, Skeleton, cardShape, eyebrow } from '@/components/partner/ui'
+import { ScreenHeader, PrimaryButton, GhostButton, Chip, EmptyState, Skeleton, cardShape, eyebrow, SearchInput } from '@/components/partner/ui'
 import { ShoppingBasket, ClipboardList, Package } from 'lucide-react'
 import { formatAmount } from '@/lib/money'
 
@@ -33,6 +33,7 @@ export default function Marketplace() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [tab, setTab] = useState<'store' | 'orders'>('store')
+  const [q, setQ] = useState('')
   const [banner, setBanner] = useState<'success' | 'cancelled' | null>(null)
 
   const load = useCallback(async () => {
@@ -91,13 +92,15 @@ export default function Marketplace() {
   }
 
   const groupedBySupplier = useMemo(() => {
+    const needle = q.trim().toLowerCase()
+    const list = needle ? (products || []).filter(p => [p.name, p.supplierName, p.category].some(v => String(v || '').toLowerCase().includes(needle))) : (products || [])
     const m = new Map<string, SupplyProduct[]>()
-    for (const p of products || []) {
+    for (const p of list) {
       if (!m.has(p.supplierName)) m.set(p.supplierName, [])
       m.get(p.supplierName)!.push(p)
     }
     return [...m.entries()]
-  }, [products])
+  }, [products, q])
 
   return (
     <>
@@ -122,6 +125,9 @@ export default function Marketplace() {
         ))}
       </div>
 
+      {tab === 'store' && (products?.length ?? 0) > 0 && (
+        <div style={{ marginBottom: '14px' }}><SearchInput value={q} onChange={setQ} placeholder={L('mk_search')} /></div>
+      )}
       {tab === 'store' && (
         <div className="pf-cols" style={{ alignItems: 'flex-start' }}>
           <div style={{ minWidth: 0, flex: 1 }}>

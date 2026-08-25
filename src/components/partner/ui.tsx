@@ -169,6 +169,27 @@ export function Spinner() {
   return <div style={{ width: '2rem', height: '2rem', border: '2px solid rgba(190,154,86,0.15)', borderTopColor: 'var(--pf-gold)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
 }
 
+/** Search box used by every filterable list — icon, clear button, 40px. */
+export function SearchInput({ value, onChange, placeholder, ariaLabel }: {
+  value: string; onChange: (v: string) => void; placeholder?: string; ariaLabel?: string
+}) {
+  return (
+    <div style={{ position: 'relative', flex: '1 1 14rem', maxWidth: '22rem' }}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"
+        style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--pf-faint)', pointerEvents: 'none' }}>
+        <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
+      </svg>
+      <input type="search" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+        aria-label={ariaLabel || placeholder || 'Search'}
+        style={{ ...fieldStyle, paddingLeft: '34px', paddingRight: value ? '34px' : '12px' }} />
+      {value && (
+        <button onClick={() => onChange('')} aria-label="Clear search"
+          style={{ position: 'absolute', right: '4px', top: '50%', transform: 'translateY(-50%)', width: '32px', height: '32px', border: 'none', background: 'transparent', color: 'var(--pf-faint)', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>×</button>
+      )}
+    </div>
+  )
+}
+
 /** Shared field styles for pf-family forms (settings, supplier, marketplace, admin). */
 export const fieldStyle: CSSProperties = {
   width: '100%', padding: '10px 12px', minHeight: '40px', borderRadius: '10px',

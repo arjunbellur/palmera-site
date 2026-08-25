@@ -8,7 +8,7 @@ import { useAdmin } from '../AdminContext'
 import type { Supplier, SupplyProduct } from '@/lib/schema'
 import { getAllSuppliers, createSupplier, updateSupplier, getProductsBySupplier, updateSupplyProduct, deleteSupplyProduct } from '@/lib/firestore'
 import ProductModal from '@/components/supplier/ProductModal'
-import { ScreenHeader, PrimaryButton, GhostButton, Chip, EmptyState, Skeleton, cardShape, eyebrow } from '@/components/partner/ui'
+import { ScreenHeader, PrimaryButton, GhostButton, Chip, EmptyState, Skeleton, cardShape, eyebrow, SearchInput } from '@/components/partner/ui'
 import { Store, Package } from 'lucide-react'
 import { formatAmount } from '@/lib/money'
 
@@ -81,6 +81,7 @@ export default function AdminSuppliers() {
   const [open, setOpen] = useState<string | null>(null) // expanded supplier id
   const [products, setProducts] = useState<Record<string, SupplyProduct[]>>({})
   const [form, setForm] = useState<{ show: boolean; supplier: Supplier | null }>({ show: false, supplier: null })
+  const [q, setQ] = useState('')
   const [prodModal, setProdModal] = useState<{ supplier: Supplier; product: SupplyProduct | null } | null>(null)
 
   const load = useCallback(async () => { setSuppliers(await getAllSuppliers()) }, [])
@@ -101,7 +102,8 @@ export default function AdminSuppliers() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '14px', flexWrap: 'wrap' }}>
         <ScreenHeader label="Marketplace" title="Suppliers"
           intro="Wholesale businesses selling to partners. Create the record with their email — they claim it at their first /supplier sign-in. You can author their catalog for them." />
-        <div style={{ paddingBottom: '18px' }}>
+        <div style={{ paddingBottom: '18px', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <SearchInput value={q} onChange={setQ} placeholder="Search suppliers…" />
           <PrimaryButton onClick={() => setForm({ show: true, supplier: null })}>+ Add supplier</PrimaryButton>
         </div>
       </div>
@@ -115,7 +117,7 @@ export default function AdminSuppliers() {
           action={<PrimaryButton onClick={() => setForm({ show: true, supplier: null })}>+ Add supplier</PrimaryButton>} />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {[...suppliers].sort((a, b) => a.name.localeCompare(b.name)).map(s => (
+          {[...suppliers].filter(x => !q.trim() || [x.name, x.email, x.city, x.phone].some(v => String(v || '').toLowerCase().includes(q.trim().toLowerCase()))).sort((a, b) => a.name.localeCompare(b.name)).map(s => (
             <div key={s.id} className="pf-glass" style={cardShape}>
               <div onClick={() => expand(s)} style={{ display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer', flexWrap: 'wrap' }}>
                 <div style={{ minWidth: 0, flex: 1 }}>

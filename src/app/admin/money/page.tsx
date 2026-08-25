@@ -7,7 +7,7 @@ import { useEffect, useState, Suspense } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { getAllBookingsAdmin, getAllCompanies, getAppProfiles, getPayoutProfile } from '@/lib/firestore'
 import { docDate, isRealBooking, startOfMonth, sumField, bucketByPeriod } from '@/lib/analytics'
-import { ScreenHeader, Chip, Skeleton, Money, SectionTitle, EmptyState, card, eyebrow, type Tone } from '@/components/partner/ui'
+import { ScreenHeader, Chip, Skeleton, Money, SectionTitle, EmptyState, card, eyebrow, SearchInput, type Tone } from '@/components/partner/ui'
 import { BarChart, RankPills, Donut } from '@/components/charts'
 import { FilterChip, inputStyle, formatDate, glass } from '../ui'
 import type { Booking, BookingStatus, Company, AppProfile, CompanyPayoutProfile } from '@/lib/schema'
@@ -79,9 +79,12 @@ function AdminMoney() {
   const handleOf = (uid: string) => { const p = byId.get(uid); return p?.handle ? `@${p.handle.replace(/^@+/, '')}` : (p?.name || null) }
 
   // ── Explorer rows ──
+  const [q, setQ] = useState('')
   const fromD = from ? new Date(`${from}T00:00`) : null
   const toD = to ? new Date(`${to}T23:59:59`) : null
+  const needle = q.trim().toLowerCase()
   const rows = bookings.filter((b) => {
+    if (needle && ![b.title, b.customerName, b.id, handleOf(b.customerId) || ''].some(v => String(v || '').toLowerCase().includes(needle))) return false
     if (status !== 'all' && b.status !== status) return false
     if (co !== 'all' && b.companyId !== co) return false
     const d = docDate(b, 'scheduledFor')
@@ -217,7 +220,8 @@ function AdminMoney() {
           every pixel it can get. */}
       <SectionTitle>All bookings</SectionTitle>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '14px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+        <div style={{ marginBottom: '10px' }}><SearchInput value={q} onChange={setQ} placeholder="Search bookings — guest, title, id…" /></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
           <span style={{ ...eyebrow, marginRight: '2px' }}>Status</span>
           {STATUSES.map((st) => (
             <FilterChip key={st} active={status === st} onClick={() => setParam('status', status === st ? 'all' : st)}>{st.replace('_', ' ')}</FilterChip>

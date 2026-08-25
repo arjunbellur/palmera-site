@@ -7,7 +7,7 @@ import { t } from './i18n'
 import type { SupplyProduct } from '@/lib/schema'
 import { getProductsBySupplier, updateSupplyProduct, deleteSupplyProduct } from '@/lib/firestore'
 import ProductModal from '@/components/supplier/ProductModal'
-import { ScreenHeader, PrimaryButton, GhostButton, Chip, EmptyState, Skeleton, cardShape } from '@/components/partner/ui'
+import { ScreenHeader, PrimaryButton, GhostButton, Chip, EmptyState, Skeleton, cardShape, SearchInput } from '@/components/partner/ui'
 import { Package } from 'lucide-react'
 import { formatAmount } from '@/lib/money'
 
@@ -18,6 +18,7 @@ export default function SupplierInventory() {
   const L = useCallback((k: string) => t(locale, k), [locale])
   const [products, setProducts] = useState<SupplyProduct[] | null>(null)
   const [modal, setModal] = useState<{ open: boolean; product: SupplyProduct | null }>({ open: false, product: null })
+  const [q, setQ] = useState('')
 
   const load = useCallback(async () => {
     if (!supplier?.id) return
@@ -54,8 +55,10 @@ export default function SupplierInventory() {
         <EmptyState icon={<Package size={22} strokeWidth={1.75} />} title={L('empty_title')} body={L('empty_body')}
           action={<PrimaryButton onClick={() => setModal({ open: true, product: null })}>{L('add_product')}</PrimaryButton>} />
       ) : (
+        <>
+        {products.length > 4 && <div style={{ marginBottom: '14px' }}><SearchInput value={q} onChange={setQ} placeholder={L('search_products')} /></div>}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(15rem, 1fr))', gap: '14px' }}>
-          {[...products].sort((a, b) => a.name.localeCompare(b.name)).map(p => (
+          {[...products].filter(p => !q.trim() || p.name.toLowerCase().includes(q.trim().toLowerCase())).sort((a, b) => a.name.localeCompare(b.name)).map(p => (
             <div key={p.id} className="pf-glass" style={{ ...cardShape, display: 'flex', flexDirection: 'column', gap: '10px', opacity: p.status === 'hidden' ? 0.6 : 1 }}>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                 <span style={{ width: '52px', height: '52px', borderRadius: '12px', background: 'var(--pf-green-soft)', flexShrink: 0, overflow: 'hidden', display: 'grid', placeItems: 'center', color: 'var(--pf-gold)', fontSize: '18px' }}>
@@ -80,6 +83,7 @@ export default function SupplierInventory() {
             </div>
           ))}
         </div>
+        </>
       )}
 
       {modal.open && (
