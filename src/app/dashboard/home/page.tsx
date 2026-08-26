@@ -70,7 +70,7 @@ export default function DashboardHome() {
     <div>
       <div style={{ marginBottom: '2rem' }}>
         <p style={eyebrow}>{s.eyebrow}</p>
-        <h1 style={{ fontFamily: 'var(--font-display)', color: 'var(--db-text)', fontSize: 'clamp(1.5rem, 3vw, 1.875rem)', fontWeight: 400, letterSpacing: '0.06em', margin: '0 0 0.5rem' }}>
+        <h1 className="pf-title-sheen" style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.6rem, 3.4vw, 2.1rem)', fontWeight: 600, letterSpacing: '0.03em', margin: '0 0 0.5rem' }}>
           {s.welcome}, {displayName}
         </h1>
         <p style={{ fontFamily: 'var(--font-serif)', color: 'var(--db-text-muted)', fontSize: '0.9375rem', margin: 0 }}>

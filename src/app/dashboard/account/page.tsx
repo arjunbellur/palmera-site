@@ -141,7 +141,7 @@ export default function AccountPage() {
     <div>
       <div style={{ marginBottom: '1.75rem' }}>
         <p style={{ fontFamily: 'var(--font-sans)', color: 'rgba(190,154,86,0.8)', fontSize: '0.75rem', letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 0.5rem' }}>{s.eyebrow}</p>
-        <h1 style={{ fontFamily: 'var(--font-display)', color: 'var(--db-text)', fontSize: 'clamp(1.5rem, 3vw, 1.875rem)', fontWeight: 400, letterSpacing: '0.06em', margin: '0 0 0.5rem' }}>{s.title}</h1>
+        <h1 className="pf-title-sheen" style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.6rem, 3.4vw, 2.1rem)', fontWeight: 600, letterSpacing: '0.03em', margin: '0 0 0.5rem' }}>{s.title}</h1>
         <p style={{ fontFamily: 'var(--font-serif)', color: 'var(--db-text-muted)', fontSize: '0.9375rem', margin: 0 }}>
           {s.sub}
         </p>

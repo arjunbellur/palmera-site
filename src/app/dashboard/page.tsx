@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { signIn, signUp, onAuthChange, resetPassword } from '@/lib/auth'
 import { createProvider } from '@/lib/firestore'
 import LanguageToggle from '@/components/LanguageToggle'
+import { Spinner } from '@/components/partner/ui'
 
 // Read locale from cookie client-side
 function useLocale() {
@@ -104,21 +105,18 @@ export default function DashboardPage() {
     } finally { setLoading(false) }
   }
 
-  const inp: React.CSSProperties = { width: '100%', background: 'var(--db-bg-input)', border: '1px solid var(--db-border-gold)', borderRadius: '0.375rem', padding: '0.8125rem 1rem', color: 'var(--db-text)', fontSize: '0.9375rem', fontFamily: 'var(--font-sans)', boxSizing: 'border-box', marginBottom: '0.75rem' }
+  const inp: React.CSSProperties = { width: '100%', background: 'var(--pf-bg)', border: '1px solid var(--pf-border-strong)', borderRadius: '10px', padding: '0.8125rem 1rem', minHeight: '44px', color: 'var(--pf-text)', fontSize: '0.9375rem', fontFamily: 'var(--font-sans)', boxSizing: 'border-box', marginBottom: '0.75rem' }
 
   if (checking) return (
-    <div style={{ minHeight: '100vh', background: 'var(--db-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ width: '2rem', height: '2rem', border: '2px solid rgba(190,154,86,0.15)', borderTopColor: 'var(--db-gold)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-    </div>
+    <div data-theme="dark" style={{ minHeight: '100vh', background: 'var(--pf-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Spinner /></div>
   )
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--db-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
+    <div data-theme="dark" className="pf-ambient" style={{ minHeight: '100vh', background: 'var(--pf-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
       {/* Back to home — top left */}
-      <a href="/" style={{ position: 'fixed', top: '1.25rem', left: '1.5rem', zIndex: 10, display: 'flex', alignItems: 'center', gap: '0.375rem', textDecoration: 'none', color: 'var(--db-text-muted)', fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'color 0.2s' }}
-        onMouseEnter={e => (e.currentTarget.style.color = 'var(--db-gold)')}
-        onMouseLeave={e => (e.currentTarget.style.color = 'var(--db-text-muted)')}>
+      <a href="/" style={{ position: 'fixed', top: '1.25rem', left: '1.5rem', zIndex: 10, display: 'flex', alignItems: 'center', gap: '0.375rem', textDecoration: 'none', color: 'var(--pf-muted)', fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'color 0.2s' }}
+        onMouseEnter={e => (e.currentTarget.style.color = 'var(--pf-gold)')}
+        onMouseLeave={e => (e.currentTarget.style.color = 'var(--pf-muted)')}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.75 2.5L4.25 7L8.75 11.5" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round"/></svg>
         {t('backHome')}
       </a>
@@ -132,12 +130,12 @@ export default function DashboardPage() {
         {/* Logo — centered */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '2.5rem' }}>
           <img src="/images/PALMERA_cracked.png" alt="Palmera" width={52} height={52} style={{ objectFit: 'contain', marginBottom: '0.875rem', display: 'block' }} />
-          <h1 style={{ fontFamily: 'var(--font-display)', color: 'var(--db-text)', fontSize: '1.5rem', fontWeight: 400, letterSpacing: '0.14em', margin: '0 0 0.375rem', textAlign: 'center' }}>PALMERA</h1>
+          <h1 style={{ fontFamily: 'var(--font-display)', color: 'var(--pf-text)', fontSize: '1.5rem', fontWeight: 400, letterSpacing: '0.14em', margin: '0 0 0.375rem', textAlign: 'center' }}>PALMERA</h1>
           <p style={{ fontFamily: 'var(--font-serif)', color: 'rgba(190,154,86,0.8)', fontSize: '0.875rem', margin: 0, letterSpacing: '0.06em', textAlign: 'center' }}>{t('partnerPortal')}</p>
         </div>
 
-        <div style={{ background: 'var(--db-bg-card)', border: '1px solid var(--db-border)', borderRadius: '0.75rem', padding: '2.25rem 2rem' }}>
-          <h2 style={{ fontFamily: 'var(--font-serif)', color: 'var(--db-text)', fontSize: '1.25rem', fontWeight: 400, margin: '0 0 1.5rem', letterSpacing: '0.02em' }}>
+        <div className="pf-glass" style={{ borderRadius: '18px', padding: '2.25rem 2rem' }}>
+          <h2 style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '1.25rem', fontWeight: 400, margin: '0 0 1.5rem', letterSpacing: '0.02em' }}>
             {mode === 'login' ? t('welcome') : t('createAccount')}
           </h2>
           <input style={inp} type="email" placeholder={t('email')} value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSubmit()} />
@@ -146,31 +144,31 @@ export default function DashboardPage() {
           {mode === 'login' && (
             <div style={{ textAlign: 'right', margin: '-0.25rem 0 0.75rem' }}>
               <button onClick={handleForgot}
-                style={{ background: 'none', border: 'none', color: 'var(--db-text-faint)', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
+                style={{ background: 'none', border: 'none', color: 'var(--pf-faint)', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
                 {t('forgot')}
               </button>
             </div>
           )}
-          {error && <p style={{ fontSize: '0.8125rem', color: 'var(--db-alert)', fontFamily: 'var(--font-sans)', margin: '-0.25rem 0 0.75rem' }}>{error}</p>}
-          {info && <p style={{ fontSize: '0.8125rem', color: 'var(--db-gold-deep)', fontFamily: 'var(--font-sans)', margin: '-0.25rem 0 0.75rem', lineHeight: 1.5 }}>{info}</p>}
+          {error && <p style={{ fontSize: '0.8125rem', color: 'var(--pf-alert)', fontFamily: 'var(--font-sans)', margin: '-0.25rem 0 0.75rem' }}>{error}</p>}
+          {info && <p style={{ fontSize: '0.8125rem', color: 'var(--pf-gold-deep)', fontFamily: 'var(--font-sans)', margin: '-0.25rem 0 0.75rem', lineHeight: 1.5 }}>{info}</p>}
           <button onClick={handleSubmit} disabled={loading}
-            style={{ width: '100%', padding: '0.875rem', background: 'var(--db-gold-deep)', border: 'none', borderRadius: '0.375rem', color: '#ebe8db', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.08em', cursor: loading ? 'wait' : 'pointer', marginBottom: '1.25rem', opacity: loading ? 0.7 : 1, transition: 'background 0.2s' }}
-            onMouseEnter={e => { if (!loading) (e.target as HTMLButtonElement).style.background = 'var(--db-gold)' }}
-            onMouseLeave={e => { if (!loading) (e.target as HTMLButtonElement).style.background = 'var(--db-gold-deep)' }}>
+            style={{ width: '100%', padding: '0.875rem', background: 'var(--pf-gold-deep)', border: 'none', borderRadius: '0.375rem', color: '#ebe8db', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', letterSpacing: '0.08em', cursor: loading ? 'wait' : 'pointer', marginBottom: '1.25rem', opacity: loading ? 0.7 : 1, transition: 'background 0.2s' }}
+            onMouseEnter={e => { if (!loading) (e.target as HTMLButtonElement).style.background = 'var(--pf-gold)' }}
+            onMouseLeave={e => { if (!loading) (e.target as HTMLButtonElement).style.background = 'var(--pf-gold-deep)' }}>
             {loading ? t('pleaseWait') : mode === 'login' ? t('login') : t('signup')}
           </button>
           <div style={{ textAlign: 'center' }}>
-            <span style={{ fontSize: '0.8125rem', color: 'var(--db-text-muted)', fontFamily: 'var(--font-sans)' }}>
+            <span style={{ fontSize: '0.8125rem', color: 'var(--pf-muted)', fontFamily: 'var(--font-sans)' }}>
               {mode === 'login' ? t('noAccount') : t('hasAccount')}
             </span>
             <button onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError('') }}
-              style={{ background: 'none', border: 'none', color: 'var(--db-gold)', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', cursor: 'pointer', textDecoration: 'underline' }}>
+              style={{ background: 'none', border: 'none', color: 'var(--pf-gold)', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', cursor: 'pointer', textDecoration: 'underline' }}>
               {mode === 'login' ? t('signupLink') : t('loginLink')}
             </button>
           </div>
         </div>
-        <p style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.8125rem', color: 'var(--db-text-faint)', fontFamily: 'var(--font-sans)' }}>
-          {t('providerOnly')}<a href="/partners" style={{ color: 'var(--db-gold)', textDecoration: 'underline' }}>{t('applyHere')}</a>
+        <p style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.8125rem', color: 'var(--pf-faint)', fontFamily: 'var(--font-sans)' }}>
+          {t('providerOnly')}<a href="/partners" style={{ color: 'var(--pf-gold)', textDecoration: 'underline' }}>{t('applyHere')}</a>
         </p>
       </div>
     </div>

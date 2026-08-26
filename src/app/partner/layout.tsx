@@ -57,7 +57,7 @@ function Shell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const unsub = onAuthChange(async user => {
-      if (!user) { router.replace('/dashboard'); return }
+      if (!user) { localStorage.removeItem('palmera.role'); router.replace('/dashboard'); return }
       if (isAdminEmail(user.email)) { router.replace('/admin'); return }
       setUid(user.uid); setEmail(user.email || '')
       // Email verification gate — accounts created after the cutoff must
@@ -68,7 +68,10 @@ function Shell({ children }: { children: React.ReactNode }) {
       // GRADUATION GATE (mirror of the /dashboard guard): the dashboard is for
       // partners who have finished onboarding by publishing a listing. Anyone
       // else belongs back in the onboarding portal.
-      if (p?.onboardingStage !== 'complete' || all.length === 0) { router.replace('/dashboard/home'); return }
+      if (p?.onboardingStage !== 'complete' || all.length === 0) { localStorage.removeItem('palmera.role'); router.replace('/dashboard/home'); return }
+      // Remembered on-device: /dashboard uses this to skip its own render
+      // entirely for graduated partners (kills the onboarding flash).
+      localStorage.setItem('palmera.role', 'partner')
       setProvider(p); setCompanies(all)
       const stored = typeof window !== 'undefined' ? localStorage.getItem(STORE_KEY) : null
       setCompanyIdState(all.some(c => c.id === stored) ? stored! : all[0].id!)
@@ -109,6 +112,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
+    localStorage.removeItem('palmera.role')
     const { logOut } = await import('@/lib/auth')
     await logOut()
     router.push('/dashboard')

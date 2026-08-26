@@ -84,6 +84,13 @@ it writes a booking (⚠ would need Samson).
 Every dashboard change that touches documents/rules/indexes the app consumes
 gets a line here, newest first. Pure-UI dashboard changes are never listed.
 
+- 2026-08-26 ⚠ **Legacy `partners/{uid}` collection FROZEN (writes denied).**
+  The v1 onboarding pages that wrote to it are deleted; the collection
+  stays readable by its owner + admin as the migration archive. The app
+  never touched it (verified against the Swift source). Deploys with the
+  next `npm run rules:deploy`. The top-level `/listings` public-read
+  fallback the iOS catalog loader probes is UNTOUCHED.
+
 - 2026-08-25 ⚠ **Staff roles: partners invite door staff (scanner-only).**
   New dashboard-owned collections `staff` (invites: companyId, providerId,
   email, name, role 'door', status) and `staff_access/{companyId}_{uid}`

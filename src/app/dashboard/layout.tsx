@@ -3,9 +3,10 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { onAuthChange, needsEmailVerification } from '@/lib/auth'
 import VerifyEmailGate from '@/components/dashboard/VerifyEmailGate'
+import { Chip, IconButton, Spinner } from '@/components/partner/ui'
+import { House, UserRound, FileSignature, Moon, Sun, LogOut } from 'lucide-react'
 import { isAdminEmail } from '@/lib/admin'
 import { ThemeProvider, useTheme } from '@/lib/theme'
-import DashboardNav from '@/components/dashboard/DashboardNav'
 
 const NAV_LABELS: Record<string, Record<string, string>> = {
   fr: { overview: 'Aperçu', account: 'Compte', agreement: 'Convention' },
@@ -16,7 +17,7 @@ const NAV_LABELS: Record<string, Record<string, string>> = {
 function DashboardInner({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
-  const { theme } = useTheme()
+  const { theme, toggle: toggleTheme } = useTheme()
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(true)
   const [unverified, setUnverified] = useState(false)
@@ -51,6 +52,12 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
   }, [isMobile, email, locale, pathname])
 
   useEffect(() => {
+    // A graduated partner never sees this surface — the hint (set by the
+    // /partner shell) short-circuits before any onboarding chrome paints.
+    if (typeof window !== 'undefined' && localStorage.getItem('palmera.role') === 'partner') {
+      router.replace('/partner')
+      return
+    }
     if (isLoginPage) { setLoading(false); return }
     const unsub = onAuthChange(async (user) => {
       if (!user) { router.replace('/dashboard'); return }
@@ -85,88 +92,73 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
   const labels = NAV_LABELS[locale] || NAV_LABELS.fr
 
   const NAV_ITEMS = [
-    { href: '/dashboard/home', label: labels.overview, short: labels.overview },
-    { href: '/dashboard/account', label: labels.account, short: labels.account },
-    { href: '/dashboard/settings', label: labels.agreement, short: labels.agreement },
+    { href: '/dashboard/home', label: labels.overview, icon: House },
+    { href: '/dashboard/account', label: labels.account, icon: UserRound },
+    { href: '/dashboard/settings', label: labels.agreement, icon: FileSignature },
   ]
+  const signOut = async () => { const { logOut } = await import('@/lib/auth'); await logOut(); router.push('/dashboard') }
 
-  // Company-scoped completeness now lives inside each company page, so the
-  // provider-level sidebar carries no per-item status dots.
-  const getStatus = (_href: string) => 'none'
-
-  const dotColor = (status: string) => {
-    if (status === 'complete') return 'var(--db-gold-deep)'
-    if (status === 'in_progress') return 'var(--db-gold)'
-    if (status === 'none') return 'transparent'
-    return 'var(--db-text-faint)'
-  }
 
   if (isLoginPage) return <>{children}</>
 
   if (unverified) return <div data-theme={theme}><VerifyEmailGate email={email} onVerified={() => window.location.reload()} /></div>
 
   if (loading) return (
-    <div data-theme={theme} style={{ minHeight: '100vh', background: 'var(--db-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ width: '2rem', height: '2rem', border: '2px solid rgba(190,154,86,0.15)', borderTopColor: 'var(--db-gold)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    <div data-theme={theme} style={{ minHeight: '100vh', background: 'var(--pf-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Spinner /></div>
+  )
+
+  const navLink = (item: typeof NAV_ITEMS[number], mobile: boolean) => {
+    const active = pathname === item.href
+    if (mobile) return (
+      <a key={item.href} href={item.href} aria-label={item.label} style={{ flex: 1, minHeight: '56px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', textDecoration: 'none', color: active ? 'var(--pf-gold)' : 'var(--pf-faint)', borderTop: `2px solid ${active ? 'var(--pf-gold)' : 'transparent'}` }}>
+        <item.icon size={17} strokeWidth={1.75} />
+        <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', letterSpacing: '0.04em' }}>{item.label}</span>
+      </a>
+    )
+    return (
+      <a key={item.href} href={item.href} style={{ display: 'flex', alignItems: 'center', gap: '11px', padding: '10px 14px', borderRadius: '10px', textDecoration: 'none', background: active ? 'var(--pf-card)' : 'transparent', color: active ? 'var(--pf-gold)' : 'var(--pf-faint)' }}>
+        <span style={{ lineHeight: 0, width: '18px', display: 'grid', placeItems: 'center', flexShrink: 0 }}><item.icon size={15} strokeWidth={1.75} /></span>
+        <span style={{ fontFamily: 'var(--font-sans)', fontSize: '12.5px', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{item.label}</span>
+      </a>
+    )
+  }
+  const Brand = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+      <img loading="lazy" decoding="async" src="/images/PALMERA_cracked.png" alt="" width={24} height={24} style={{ objectFit: 'contain' }} />
+      <span style={{ fontFamily: 'var(--font-display)', color: 'var(--pf-head)', fontSize: '14px', letterSpacing: '0.12em' }}>PALMERA</span>
+      <Chip tone="gold">{locale === 'fr' ? 'Bienvenue' : 'Onboarding'}</Chip>
+    </div>
+  )
+  const Controls = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <IconButton onClick={toggleTheme} label="Toggle theme" tone="gold">{theme === 'dark' ? <Moon size={15} strokeWidth={1.75} /> : <Sun size={15} strokeWidth={1.75} />}</IconButton>
+      <IconButton onClick={signOut} label={locale === 'fr' ? 'Déconnexion' : 'Sign out'}><LogOut size={15} strokeWidth={1.75} /></IconButton>
     </div>
   )
 
-  if (isMobile) {
-    return (
-      <div data-theme={theme} style={{ minHeight: '100vh', background: 'var(--db-bg)' }}>
-        <div ref={mobileHeaderRef} style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: 'var(--db-bg-nav)', borderBottom: '1px solid var(--db-border)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.875rem 1.25rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-              <img src="/images/PALMERA_cracked.png" alt="Palmera" width={28} height={28} style={{ objectFit: 'contain' }} />
-              <span style={{ fontFamily: 'var(--font-display)', color: 'var(--db-text)', fontSize: '1rem', letterSpacing: '0.1em' }}>PALMERA</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <button onClick={async () => { const { logOut } = await import('@/lib/auth'); await logOut(); router.push('/dashboard') }}
-                style={{ background: 'transparent', border: '1px solid var(--db-border)', color: 'var(--db-text)', padding: '0.375rem 0.875rem', borderRadius: '0.25rem', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>
-                {locale === 'fr' ? 'Déconnexion' : 'Log out'}
-              </button>
-            </div>
-          </div>
-          <div style={{ display: 'flex', overflowX: 'auto', borderTop: '1px solid var(--db-border-subtle)', scrollbarWidth: 'none' }}>
-            {NAV_ITEMS.map(item => {
-              const active = pathname === item.href
-              const status = getStatus(item.href)
-              return (
-                <a key={item.href} href={item.href} style={{ flexShrink: 0, padding: '0.75rem 0.875rem', textDecoration: 'none', textAlign: 'center', borderBottom: active ? '2px solid #be9a56' : '2px solid transparent', background: active ? 'var(--db-bg-card-active)' : 'transparent', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
-                  <div style={{ width: '0.375rem', height: '0.375rem', borderRadius: '50%', background: dotColor(status) }} />
-                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6875rem', color: active ? 'var(--db-gold)' : 'var(--db-text-muted)', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{item.short}</span>
-                </a>
-              )
-            })}
-          </div>
-        </div>
-        <main style={{ padding: `calc(${mobileHeaderH}px + 1.25rem) 1.125rem 2.5rem` }}>{children}</main>
-      </div>
-    )
-  }
+  if (isMobile) return (
+    <div data-theme={theme} style={{ minHeight: '100vh', background: 'var(--pf-bg)', display: 'flex', flexDirection: 'column' }}>
+      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '12px 18px', borderBottom: '1px solid var(--pf-border)', background: 'var(--pf-nav)', position: 'sticky', top: 0, zIndex: 20 }}>
+        {Brand}{Controls}
+      </header>
+      <main className="pf-scroll pf-ambient" style={{ flex: 1, padding: '20px 18px 84px' }}>{children}</main>
+      <nav aria-label="Onboarding" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, display: 'flex', background: 'var(--pf-nav)', borderTop: '1px solid var(--pf-border)', zIndex: 30 }}>
+        {NAV_ITEMS.map(n => navLink(n, true))}
+      </nav>
+    </div>
+  )
 
   return (
-    <div data-theme={theme} style={{ minHeight: '100vh', background: 'var(--db-bg)' }}>
-      <DashboardNav email={email} locale={locale} />
-      <div style={{ display: 'flex', paddingTop: '4rem', minHeight: '100vh' }}>
-        <aside style={{ width: isTablet ? '11.5rem' : '13.75rem', flexShrink: 0, borderRight: '1px solid var(--db-border)', padding: '2rem 0', position: 'sticky', top: '4rem', height: 'calc(100vh - 4rem)', overflowY: 'auto', background: 'var(--db-bg)' }}>
-          {NAV_ITEMS.map(item => {
-            const active = pathname === item.href
-            const status = getStatus(item.href)
-            return (
-              <a key={item.href} href={item.href}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', padding: '0.75rem 1.5rem', textDecoration: 'none', background: active ? 'var(--db-bg-card-active)' : 'transparent', borderLeft: active ? '2px solid #be9a56' : '2px solid transparent', transition: 'background 0.15s' }}
-                onMouseEnter={e => { if (!active) (e.currentTarget as HTMLAnchorElement).style.background = 'var(--db-bg-card)' }}
-                onMouseLeave={e => { if (!active) (e.currentTarget as HTMLAnchorElement).style.background = 'transparent' }}>
-                <div style={{ width: '0.4375rem', height: '0.4375rem', borderRadius: '50%', background: dotColor(status), flexShrink: 0, border: status === 'incomplete' ? '1px solid var(--db-text-faint)' : 'none' }} />
-                <span style={{ fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', color: active ? 'var(--db-gold)' : 'var(--db-text-muted)', letterSpacing: '0.02em', fontWeight: active ? 500 : 400 }}>{item.label}</span>
-              </a>
-            )
-          })}
-        </aside>
-        <main style={{ flex: 1, minWidth: 0, padding: isTablet ? '1.75rem 1.5rem' : '2.5rem 3rem', maxWidth: '56.25rem' }}>{children}</main>
-      </div>
+    <div data-theme={theme} style={{ minHeight: '100vh', background: 'var(--pf-bg)', display: 'flex' }}>
+      <aside style={{ width: '236px', flexShrink: 0, background: 'var(--pf-nav)', borderRight: '1px solid var(--pf-border)', padding: '22px 16px', position: 'sticky', top: 0, height: '100vh', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ padding: '0 6px' }}>{Brand}</div>
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>{NAV_ITEMS.map(n => navLink(n, false))}</nav>
+        <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid var(--pf-border)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-faint)', wordBreak: 'break-all' }}>{email}</span>
+          {Controls}
+        </div>
+      </aside>
+      <main className="pf-scroll pf-ambient" style={{ flex: 1, minWidth: 0, padding: '34px 40px 52px', maxWidth: '62rem' }}>{children}</main>
     </div>
   )
 }

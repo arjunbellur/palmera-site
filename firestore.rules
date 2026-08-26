@@ -444,14 +444,16 @@ service cloud.firestore {
     }
 
     // ── Legacy partners/listings — kept live during the v3.2 migration.
+    // LEGACY v1 collection — migrated to providers/companies/experiences and
+    // frozen 2026-08-26: the dashboard pages that wrote here are deleted, so
+    // nothing may write again (a stale bookmark could silently eat data).
+    // Admin keeps read access as the migration archive of record.
     match /partners/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
-      allow write: if signedIn() && request.auth.uid == uid;
-      allow delete: if isAdmin();
+      allow write: if false;
       match /listings/{listingId} {
         allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
-        allow write: if signedIn() && request.auth.uid == uid;
-        allow delete: if isAdmin();
+        allow write: if false;
       }
     }
     // Legacy top-level listings fallback the iOS catalog loader still probes.
