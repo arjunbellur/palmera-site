@@ -711,8 +711,10 @@ export const getSupplyOrdersByPartner = async (partnerId: string): Promise<Suppl
 }
 
 // ── Company staff (invite → claim, mirrors the supplier pattern) ───────────
-export const getStaffByCompany = async (companyId: string): Promise<StaffMember[]> => {
-  const snap = await getDocs(query(collection(db, 'staff'), where('companyId', '==', companyId)))
+export const getStaffByCompany = async (providerId: string, companyId: string): Promise<StaffMember[]> => {
+  // providerId is in the query so the list is PROVABLE against the read rule
+  // (rules can't scan: a companyId-only query gets denied wholesale).
+  const snap = await getDocs(query(collection(db, 'staff'), where('providerId', '==', providerId), where('companyId', '==', companyId)))
   return snap.docs.map(d => ({ id: d.id, ...d.data() }) as StaffMember)
 }
 

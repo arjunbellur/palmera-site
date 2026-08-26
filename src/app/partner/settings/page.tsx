@@ -59,7 +59,7 @@ export default function SettingsScreen() {
   const [staff, setStaff] = useState<StaffMember[] | null>(null)
   const [inv, setInv] = useState({ name: '', email: '' })
   const [invBusy, setInvBusy] = useState(false)
-  const loadStaff = async () => { if (company?.id) setStaff(await getStaffByCompany(company.id)) }
+  const loadStaff = async () => { if (company?.id && uid) setStaff(await getStaffByCompany(uid, company.id).catch(e => { console.error('staff load failed:', e); return [] })) }
   useEffect(() => { if (section === 'team') loadStaff() /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [section, company?.id])
 
   // Contact & hours — light operational info Jordan asked for.
