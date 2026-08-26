@@ -6,7 +6,7 @@ import { t } from '../i18n'
 import { setBookingStatus, checkInBookingGuest } from '@/lib/firestore'
 import type { Booking } from '@/lib/schema'
 import { toDate } from '@/lib/money'
-import { ScreenHeader, EmptyState, Chip, Money, eyebrow, GhostButton, Skeleton } from '@/components/partner/ui'
+import { ScreenHeader, EmptyState, Chip, Money, eyebrow, GhostButton, Skeleton, PrimaryButton } from '@/components/partner/ui'
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { LifeBuoy, Phone, Mail, MessageCircle, Wallet, List, CalendarDays, ScanLine } from 'lucide-react'
@@ -52,6 +52,7 @@ export default function ReservationsScreen() {
   // preset; ?f=pending → the À traiter filter; ?f=next → upcoming.
   useEffect(() => {
     const f = new URLSearchParams(window.location.search).get('f')
+    if (new URLSearchParams(window.location.search).get('scan') === '1') setScanOpen(true)
     if (f === 'today') setDatePreset('today')
     else if (f === 'pending') setFilter('action')
     else if (f === 'next') setFilter('upcoming')
@@ -204,7 +205,8 @@ export default function ReservationsScreen() {
 
   return (
     <div className="pf-in">
-      <ScreenHeader label={L('res_label')} title={L('res_title')} intro={L('res_intro')} />
+      <ScreenHeader label={L('res_label')} title={L('res_title')} intro={L('res_intro')}
+        aside={<PrimaryButton onClick={() => setScanOpen(true)}><ScanLine size={15} strokeWidth={1.75} /> {L('scan_btn')}</PrimaryButton>} />
 
       {/* Search + date, above the status pills (Jordan: find a booking fast). */}
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
@@ -227,9 +229,6 @@ export default function ReservationsScreen() {
       </div>
 
       <div style={{ display: 'flex', gap: '7px', flexWrap: 'wrap', marginBottom: '16px', alignItems: 'center' }}>
-        <button onClick={() => setScanOpen(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '0 14px', minHeight: '40px', borderRadius: '10px', border: '1px solid var(--pf-border-strong)', background: 'transparent', color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '11.5px', letterSpacing: '0.04em', cursor: 'pointer', marginRight: '4px' }}>
-          <ScanLine size={14} strokeWidth={1.75} /> {L('scan_btn')}
-        </button>
         <div style={{ display: 'flex', border: '1px solid var(--pf-border)', borderRadius: '10px', overflow: 'hidden', marginRight: '4px' }}>
           {([['list', 'view_list', <List key="l" size={12} strokeWidth={1.75} />], ['calendar', 'view_cal', <CalendarDays key="c" size={12} strokeWidth={1.75} />]] as const).map(([v, key, icon]) => (
             // Jordan: switching to the calendar must show EVERYTHING — a status

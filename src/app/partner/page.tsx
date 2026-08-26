@@ -134,12 +134,13 @@ export default function PartnerHome() {
       {/* Quick actions — saves the hunt for common tasks. */}
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '14px' }}>
         {[
+          { href: '/partner/reservations?scan=1', label: `⌞⌝ ${L('scan_btn')}`, primary: true },
           { href: '/partner/listings', label: `+ ${L('qa_new')}` },
           { href: '/partner/reservations', label: L('qa_res') },
           { href: '/partner/settings?s=company', label: L('qa_company') },
           { href: 'mailto:palmeraexp@gmail.com', label: L('qa_support') },
-        ].map(a => (
-          <a key={a.label} href={a.href} style={{ padding: '8px 15px', borderRadius: '999px', border: '1px solid var(--pf-border-strong)', color: 'var(--pf-gold)', textDecoration: 'none', fontFamily: 'var(--font-sans)', fontSize: '11.5px', letterSpacing: '0.03em', background: 'transparent' }}>
+        ].map((a: { href: string; label: string; primary?: boolean }) => (
+          <a key={a.label} href={a.href} style={{ padding: '8px 15px', borderRadius: '999px', border: a.primary ? 'none' : '1px solid var(--pf-border-strong)', color: a.primary ? '#ebe8db' : 'var(--pf-gold)', textDecoration: 'none', fontFamily: 'var(--font-sans)', fontSize: '11.5px', letterSpacing: '0.03em', background: a.primary ? 'var(--pf-gold-deep)' : 'transparent', boxShadow: a.primary ? '0 0 14px rgba(190,154,86,0.3)' : 'none' }}>
             {a.label}
           </a>
         ))}
