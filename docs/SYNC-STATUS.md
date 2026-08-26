@@ -84,6 +84,21 @@ it writes a booking (⚠ would need Samson).
 Every dashboard change that touches documents/rules/indexes the app consumes
 gets a line here, newest first. Pure-UI dashboard changes are never listed.
 
+- 2026-08-25 ⚠ **Ticket QR scanner + check-in = the completion mechanism.**
+  The dashboard now scans the app's per-guest ticket QR
+  (`palmera://checkin?booking=…&exp=…&guest=…` — read from
+  BookingDetailsView.swift in the shared repo) from Reservations →
+  "Scanner un billet". First valid scan of a CONFIRMED booking sets
+  `status: 'completed'` + `checkedInAt`; every scan appends the guest id to
+  `checkedInGuests: string[]` (NEW, additive) so the rest of a party's
+  tickets stay valid ("2/4"). Rules: partners may set confirmed→completed
+  from 12h before `scheduledFor` (never earlier — no pulling payouts
+  forward), and may append ONLY the arrival fields afterwards. This starts
+  resolving SYNC item 11: scanned bookings complete for real; date-passed
+  auto-completion remains the fallback for unscanned ones. App side:
+  nothing required; nice-to-have = show "checked in" state on the guest's
+  ticket from `checkedInGuests`.
+
 - 2026-08-23 ⚠ **Listing time model: NO DURATION. Bookable hours / check-in–out / event window instead.** (Jordan's call.)
 
   **Why.** A listing-level "duration" contradicted opening hours and

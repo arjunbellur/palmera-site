@@ -395,6 +395,11 @@ export interface Booking {
   updatedAt: TS
   confirmedAt: TS | null
   cancelledAt: TS | null
+  /** Door check-in (ticket QR scanned by the partner) — set with status
+   *  'completed' (2026-08-25, additive). */
+  checkedInAt?: TS | null
+  /** Guest ids from scanned per-guest tickets (palmera://checkin?…&guest=). */
+  checkedInGuests?: string[]
 }
 
 export type LedgerEntryType =

@@ -15,6 +15,7 @@ import {
   getCountFromServer,
 } from 'firebase/firestore'
 import { db } from './firebase'
+import { arrayUnion } from 'firebase/firestore'
 import {
   COLLECTIONS, SUB,
   type Provider, type ProviderPrivateAdmin,
@@ -563,10 +564,22 @@ export const getPayoutsByProvider = async (uid: string): Promise<Payout[]> => {
  * and only on a booking they own — enforced again in firestore.rules, which
  * also freezes the money fields so a partner can't rewrite what they're owed.
  */
-export const setBookingStatus = async (id: string, status: 'confirmed' | 'declined' | 'no_show') => {
+/** Door check-in for one scanned ticket. First scan of a confirmed booking
+ *  marks it completed (the delivery event); every scan records the guest so
+ *  a party's remaining tickets stay valid. */
+export const checkInBookingGuest = async (id: string, guestId: string | null, firstScan: boolean) => {
+  await updateDoc(doc(db, COLLECTIONS.bookings, id), {
+    ...(firstScan ? { status: 'completed', checkedInAt: serverTimestamp() } : {}),
+    ...(guestId ? { checkedInGuests: arrayUnion(guestId) } : {}),
+    updatedAt: serverTimestamp(),
+  })
+}
+
+export const setBookingStatus = async (id: string, status: 'confirmed' | 'declined' | 'no_show' | 'completed') => {
   await updateDoc(doc(db, COLLECTIONS.bookings, id), {
     status,
     ...(status === 'confirmed' ? { confirmedAt: serverTimestamp() } : {}),
+    ...(status === 'completed' ? { checkedInAt: serverTimestamp() } : {}),
     updatedAt: serverTimestamp(),
   })
 }

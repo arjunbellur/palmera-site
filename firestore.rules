@@ -193,6 +193,26 @@ service cloud.firestore {
                     && keep('commissionAmount') && keep('payoutAmount')
                     && keep('currency') && keep('scheduledFor') && keep('guestCount')
                     && keep('payment');
+      // …and may CHECK IN a confirmed booking (ticket QR scan → completed).
+      // Window opens 12h before the booking so early arrivals scan fine, and
+      // never before: a partner can't mass-complete future bookings to pull
+      // payouts forward. Money frozen as everywhere.
+      allow update: if signedIn()
+                    && resource.data.providerId == request.auth.uid
+                    && resource.data.status == 'confirmed'
+                    && request.resource.data.status == 'completed'
+                    && request.time > resource.data.scheduledFor - duration.value(12, 'h')
+                    && keep('providerId') && keep('companyId') && keep('experienceId')
+                    && keep('bookingTotal') && keep('commissionRate')
+                    && keep('commissionAmount') && keep('payoutAmount')
+                    && keep('currency') && keep('scheduledFor') && keep('guestCount')
+                    && keep('payment');
+      // …and may record FURTHER party arrivals on an already-completed
+      // booking (per-guest tickets): only the arrival fields may change.
+      allow update: if signedIn()
+                    && resource.data.providerId == request.auth.uid
+                    && resource.data.status == 'completed'
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['checkedInGuests', 'checkedInAt', 'updatedAt']);
       // …and may mark a CONFIRMED booking no-show, only after its time passed.
       allow update: if signedIn()
                     && resource.data.providerId == request.auth.uid

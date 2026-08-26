@@ -3,13 +3,15 @@ import { useEffect, useState, useMemo } from 'react'
 import { useEscape } from '@/lib/use-escape'
 import { usePartner } from '../PartnerContext'
 import { t } from '../i18n'
-import { setBookingStatus } from '@/lib/firestore'
+import { setBookingStatus, checkInBookingGuest } from '@/lib/firestore'
 import type { Booking } from '@/lib/schema'
 import { toDate } from '@/lib/money'
 import { ScreenHeader, EmptyState, Chip, Money, eyebrow, GhostButton, Skeleton } from '@/components/partner/ui'
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import { LifeBuoy, Phone, Mail, MessageCircle, Wallet, List, CalendarDays } from 'lucide-react'
+import { LifeBuoy, Phone, Mail, MessageCircle, Wallet, List, CalendarDays, ScanLine } from 'lucide-react'
+import dynamic from 'next/dynamic'
+const TicketScanner = dynamic(() => import('@/components/partner/TicketScanner'), { ssr: false })
 import { getPolicies } from '@/lib/config'
 import ReservationCard from '@/components/partner/ReservationCard'
 import { formatAmount, formatDate } from '@/lib/money'
@@ -43,6 +45,7 @@ export default function ReservationsScreen() {
   const setDetail = (b: Booking | null) => { setDetailRaw(b); setHelp({ open: false, text: '', sent: false, busy: false }) }
   const [busyId, setBusyId] = useState('')
   const [error, setError] = useState('')
+  const [scanOpen, setScanOpen] = useState(false)
 
 
   // Deep links (Home tiles, notification emails): ?f=today → today's date
@@ -224,6 +227,9 @@ export default function ReservationsScreen() {
       </div>
 
       <div style={{ display: 'flex', gap: '7px', flexWrap: 'wrap', marginBottom: '16px', alignItems: 'center' }}>
+        <button onClick={() => setScanOpen(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '0 14px', minHeight: '40px', borderRadius: '10px', border: '1px solid var(--pf-border-strong)', background: 'transparent', color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '11.5px', letterSpacing: '0.04em', cursor: 'pointer', marginRight: '4px' }}>
+          <ScanLine size={14} strokeWidth={1.75} /> {L('scan_btn')}
+        </button>
         <div style={{ display: 'flex', border: '1px solid var(--pf-border)', borderRadius: '10px', overflow: 'hidden', marginRight: '4px' }}>
           {([['list', 'view_list', <List key="l" size={12} strokeWidth={1.75} />], ['calendar', 'view_cal', <CalendarDays key="c" size={12} strokeWidth={1.75} />]] as const).map(([v, key, icon]) => (
             // Jordan: switching to the calendar must show EVERYTHING — a status
@@ -386,6 +392,11 @@ export default function ReservationsScreen() {
             </>
           )
         })()
+      )}
+
+      {scanOpen && (
+        <TicketScanner bookings={bookings} locale={locale} onClose={() => setScanOpen(false)}
+          onCheckIn={async (b, guestId) => { await checkInBookingGuest(b.id!, guestId, b.status === 'confirmed') }} />
       )}
 
       {/* Detail drawer — everything we know about one booking, in one place. */}
