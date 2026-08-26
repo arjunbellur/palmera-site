@@ -23,7 +23,7 @@ import {
   type Experience, type Option, type OptionGroup,
   type Booking, type LedgerEntry, type Payout, type CompanyPayoutProfile,
   type AppProfile, type AppDoc,
-  type Supplier, type SupplyProduct, type SupplyOrder,
+  type Supplier, type SupplyProduct, type SupplyOrder, type StaffMember,
 } from './schema'
 
 // ── Listing types ─────────────────────────────────────────────────
@@ -709,3 +709,55 @@ export const getSupplyOrdersByPartner = async (partnerId: string): Promise<Suppl
   const snap = await getDocs(query(collection(db, 'supply_orders'), where('partnerId', '==', partnerId)))
   return snap.docs.map(d => ({ id: d.id, ...d.data() }) as SupplyOrder)
 }
+
+// ── Company staff (invite → claim, mirrors the supplier pattern) ───────────
+export const getStaffByCompany = async (companyId: string): Promise<StaffMember[]> => {
+  const snap = await getDocs(query(collection(db, 'staff'), where('companyId', '==', companyId)))
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }) as StaffMember)
+}
+
+export const inviteStaff = async (data: Pick<StaffMember, 'companyId' | 'providerId' | 'email' | 'name' | 'role'>) => {
+  await addDoc(collection(db, 'staff'), {
+    ...data, email: data.email.trim().toLowerCase(), uid: null, status: 'active',
+    createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+  })
+}
+
+export const setStaffStatus = async (id: string, status: StaffMember['status']) => {
+  await updateDoc(doc(db, 'staff', id), { status, updatedAt: serverTimestamp() })
+}
+
+export const deleteStaff = async (id: string) => { await deleteDoc(doc(db, 'staff', id)) }
+
+export const getStaffByUid = async (uid: string): Promise<StaffMember | null> => {
+  const snap = await getDocs(query(collection(db, 'staff'), where('uid', '==', uid)))
+  const active = snap.docs.find(d => d.data().status === 'active')
+  return active ? ({ id: active.id, ...active.data() } as StaffMember) : null
+}
+
+export const claimStaffByEmail = async (email: string, uid: string): Promise<StaffMember | null> => {
+  const snap = await getDocs(query(collection(db, 'staff'), where('email', '==', email.toLowerCase())))
+  const doc0 = snap.docs.find(d => !d.data().uid && d.data().status === 'active')
+  if (!doc0) return null
+  const data = doc0.data()
+  // The access doc is what booking rules key on — created by the invitee,
+  // validated by rules against the invite itself.
+  await setDoc(doc(db, 'staff_access', `${data.companyId}_${uid}`), {
+    companyId: data.companyId, uid, role: data.role, staffDocId: doc0.id, createdAt: serverTimestamp(),
+  })
+  await updateDoc(doc(db, 'staff', doc0.id), { uid, updatedAt: serverTimestamp() })
+  return { id: doc0.id, ...data, uid } as StaffMember
+}
+
+/** Revoke = kill the access doc (the actual power) + mark the invite. */
+export const revokeStaff = async (m: StaffMember) => {
+  if (m.uid) await deleteDoc(doc(db, 'staff_access', `${m.companyId}_${m.uid}`)).catch(() => {})
+  await updateDoc(doc(db, 'staff', m.id!), { status: 'revoked', updatedAt: serverTimestamp() })
+}
+
+/** Bookings for a company, for STAFF (no providerId available client-side). */
+export const subscribeBookingsForStaff = (companyId: string, cb: (bs: Booking[]) => void): (() => void) =>
+  onSnapshot(query(collection(db, COLLECTIONS.bookings), where('companyId', '==', companyId)),
+    (snap) => cb(snap.docs.map((d) => ({ id: d.id, ...(d.data() as object) })) as Booking[]),
+    (e) => { console.error('subscribeBookingsForStaff failed:', e); cb([]) },
+  )

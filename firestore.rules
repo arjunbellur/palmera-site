@@ -193,6 +193,21 @@ service cloud.firestore {
                     && keep('commissionAmount') && keep('payoutAmount')
                     && keep('currency') && keep('scheduledFor') && keep('guestCount')
                     && keep('payment');
+      // Door staff: read the company's bookings and record check-ins — the
+      // scanner surface (/door) and nothing else. Same money freeze.
+      allow read: if isDoorStaff(resource.data.companyId);
+      allow update: if isDoorStaff(resource.data.companyId)
+                    && resource.data.status == 'confirmed'
+                    && request.resource.data.status == 'completed'
+                    && request.time > resource.data.scheduledFor - duration.value(12, 'h')
+                    && keep('providerId') && keep('companyId') && keep('experienceId')
+                    && keep('bookingTotal') && keep('commissionRate')
+                    && keep('commissionAmount') && keep('payoutAmount')
+                    && keep('currency') && keep('scheduledFor') && keep('guestCount')
+                    && keep('payment');
+      allow update: if isDoorStaff(resource.data.companyId)
+                    && resource.data.status == 'completed'
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['checkedInGuests', 'checkedInAt', 'updatedAt']);
       // …and may CHECK IN a confirmed booking (ticket QR scan → completed).
       // Window opens 12h before the booking so early arrivals scan fine, and
       // never before: a partner can't mass-complete future bookings to pull
@@ -448,6 +463,56 @@ service cloud.firestore {
     match /legal/{doc} {
       allow read: if true;
       allow write: if isAdmin();
+    }
+
+    // ══ Company staff (dashboard-owned; the app never touches this) ═════════
+    // A partner invites staff by email + role ('door' = check-in scanner
+    // only, via /door). Claim mirrors the supplier pattern: verified email,
+    // uid null → own uid, nothing else. Owner manages; staff read their own.
+    match /staff/{id} {
+      allow read: if signedIn() && (resource.data.uid == request.auth.uid
+                    || (resource.data.email == request.auth.token.email && request.auth.token.email_verified == true)
+                    || resource.data.providerId == request.auth.uid
+                    || isAdmin());
+      allow create: if signedIn()
+                    && request.resource.data.providerId == request.auth.uid
+                    && ownsCompany(request.resource.data.companyId)
+                    && request.resource.data.uid == null
+                    && request.resource.data.role in ['door']
+                    && request.resource.data.status == 'active';
+      // Owner (or admin) manages status; the invitee's claim sets ONLY uid.
+      allow update: if signedIn() && (resource.data.providerId == request.auth.uid || isAdmin());
+      allow update: if signedIn()
+                    && request.auth.token.email_verified == true
+                    && resource.data.uid == null
+                    && resource.data.status == 'active'
+                    && resource.data.email == request.auth.token.email
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['uid', 'updatedAt']);
+      allow delete: if signedIn() && (resource.data.providerId == request.auth.uid || isAdmin());
+    }
+    // staff_access/{companyId}_{uid} — the O(1) membership lookup booking
+    // rules key on. Created by the invitee AT CLAIM TIME (validated against
+    // their invite); deleted on revocation. Existence == door access.
+    match /staff_access/{id} {
+      allow read: if signedIn() && (resource.data.uid == request.auth.uid
+                    || ownsCompany(resource.data.companyId) || isAdmin());
+      allow create: if signedIn()
+                    && request.auth.token.email_verified == true
+                    && id == request.resource.data.companyId + '_' + request.auth.uid
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.role in ['door']
+                    && get(/databases/$(database)/documents/staff/$(request.resource.data.staffDocId)).data.email == request.auth.token.email
+                    && get(/databases/$(database)/documents/staff/$(request.resource.data.staffDocId)).data.companyId == request.resource.data.companyId
+                    && get(/databases/$(database)/documents/staff/$(request.resource.data.staffDocId)).data.status == 'active';
+      allow delete: if signedIn() && (resource.data.uid == request.auth.uid
+                    || ownsCompany(resource.data.companyId) || isAdmin());
+      allow update: if false;
+    }
+    // Active door staff of the booking's company?
+    function isDoorStaff(companyId) {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/staff_access/$(companyId + '_' + request.auth.uid));
     }
 
     // ══ Marketplace (dashboard-owned; the iOS app never touches these) ══════

@@ -8,12 +8,12 @@ import { formatDate } from '@/lib/money'
 import { changePassword, resendVerification, refreshVerified } from '@/lib/auth'
 import { auth } from '@/lib/firebase'
 import { MailCheck, MailWarning } from 'lucide-react'
-import { updateProvider, updateCompany, getPayoutProfile, setPayoutProfile, getExperiencesByCompany, updateExperience, getCompanyAdmin } from '@/lib/firestore'
+import { updateProvider, updateCompany, getPayoutProfile, setPayoutProfile, getExperiencesByCompany, updateExperience, getCompanyAdmin, getStaffByCompany, inviteStaff, revokeStaff } from '@/lib/firestore'
 import { getEnabledCategories, getEnabledCities } from '@/lib/config'
-import type { CompanyPayoutProfile } from '@/lib/schema'
+import type { CompanyPayoutProfile, StaffMember } from '@/lib/schema'
 import PhotoUpload from '@/components/dashboard/PhotoUpload'
 import GalleryUpload from '@/components/dashboard/GalleryUpload'
-import { ScreenHeader, SectionTitle, card, cardShape, eyebrow, GhostButton, bodyText, Chip } from '@/components/partner/ui'
+import { ScreenHeader, SectionTitle, card, cardShape, eyebrow, GhostButton, PrimaryButton, bodyText, Chip } from '@/components/partner/ui'
 
 const inputStyle: React.CSSProperties = { width: '100%', background: 'var(--pf-card)', border: '1px solid var(--pf-border)', borderRadius: '10px', padding: '9px 13px', color: 'var(--pf-text)', fontFamily: 'var(--font-sans)', fontSize: '12.5px', boxSizing: 'border-box' }
 
@@ -56,6 +56,11 @@ export default function SettingsScreen() {
   })
   const [poLoaded, setPoLoaded] = useState<CompanyPayoutProfile | null>(null)
   const [rate, setRate] = useState<number | null>(null)
+  const [staff, setStaff] = useState<StaffMember[] | null>(null)
+  const [inv, setInv] = useState({ name: '', email: '' })
+  const [invBusy, setInvBusy] = useState(false)
+  const loadStaff = async () => { if (company?.id) setStaff(await getStaffByCompany(company.id)) }
+  useEffect(() => { if (section === 'team') loadStaff() /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [section, company?.id])
 
   // Contact & hours — light operational info Jordan asked for.
   const [contact, setContact] = useState({ phone: '', whatsapp: '', hours: '', opsName: '', opsWa: '' })
@@ -218,6 +223,7 @@ export default function SettingsScreen() {
             { k: 'company', label: L('sec_company'), hint: company?.name || '' },
             { k: 'photos', label: L('co_photos'), hint: `${(company?.gallery?.length || 0) + (company?.heroPhoto ? 1 : 0) + (company?.logo ? 1 : 0)} photo(s)` },
             { k: 'contact', label: L('sec_contact'), hint: company?.phone || L('incomplete') },
+            { k: 'team', label: L('sec_team'), hint: L('sec_team_hint') },
           ]},
           { group: L('g_pay'), items: [
             { k: 'payout', label: L('sec_payout'), hint: poLoaded ? `${poLoaded.method === 'wave' ? 'Wave' : poLoaded.method === 'orange_money' ? 'Orange Money' : L('po_bank')}` : L('incomplete') },
@@ -324,6 +330,40 @@ export default function SettingsScreen() {
             </div>
           </>
         )}
+      </div>
+      </>)}
+
+      {section === 'team' && (<>
+      <div className="pf-glass" style={cardShape}>
+        <div style={{ ...eyebrow, marginBottom: '6px' }}>{L('team_title')}</div>
+        <p style={{ ...bodyText, fontSize: '0.8125rem', margin: '0 0 14px' }}>{L('team_intro')}</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 12rem), 1fr))', gap: '10px', marginBottom: '10px' }}>
+          <input style={inputStyle} placeholder={L('team_name_ph')} value={inv.name} onChange={e => setInv(v => ({ ...v, name: e.target.value }))} />
+          <input style={inputStyle} type="email" placeholder={L('team_email_ph')} value={inv.email} onChange={e => setInv(v => ({ ...v, email: e.target.value }))} />
+        </div>
+        <PrimaryButton disabled={invBusy || !inv.email.trim() || !inv.name.trim()} onClick={async () => {
+          if (!company?.id || !uid) return
+          setInvBusy(true)
+          try { await inviteStaff({ companyId: company.id, providerId: uid, email: inv.email, name: inv.name.trim(), role: 'door' }); setInv({ name: '', email: '' }); await loadStaff() } catch (e) { console.error('invite failed:', e) }
+          setInvBusy(false)
+        }}>{invBusy ? '…' : L('team_invite')}</PrimaryButton>
+        <p style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-faint)', margin: '10px 0 0', lineHeight: 1.5 }}>{L('team_role_door_note').replace('{url}', 'palmeraexp.com/door')}</p>
+
+        <div style={{ marginTop: '16px', borderTop: '1px solid var(--pf-border)', paddingTop: '4px' }}>
+          {staff === null ? <p style={{ ...bodyText, fontSize: '12px' }}>…</p> :
+           staff.length === 0 ? <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--pf-faint)', margin: '10px 0 0' }}>{L('team_empty')}</p> :
+           staff.map(m => (
+            <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '11px 0', borderBottom: '1px solid var(--pf-border)', flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '14px' }}>{m.name}</span>
+                <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-faint)', marginLeft: '8px' }}>{m.email}</span>
+              </div>
+              <Chip tone="gold">{L('team_role_door')}</Chip>
+              <Chip tone={m.status === 'revoked' ? 'alert' : m.uid ? 'green' : 'neutral'}>{m.status === 'revoked' ? L('team_revoked') : m.uid ? L('team_active') : L('team_invited')}</Chip>
+              {m.status === 'active' && <GhostButton tone="alert" onClick={async () => { await revokeStaff(m); loadStaff() }}>{L('team_revoke')}</GhostButton>}
+            </div>
+          ))}
+        </div>
       </div>
       </>)}
 

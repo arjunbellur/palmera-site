@@ -564,3 +564,23 @@ export interface SupplyOrder {
   acceptedAt?: TS | null
   deliveredAt?: TS | null
 }
+
+// ── Company staff (dashboard-owned; the iOS app never touches this) ────────
+// A partner invites staff by email with a ROLE. 'door' = the check-in
+// scanner only (bouncer at the venue), via the dedicated /door surface.
+// Doc id = `${companyId}_${uid-or-invite}`; uid stays null until the staff
+// member first signs in with the invited (verified) email and claims it.
+export type StaffRole = 'door'
+
+export interface StaffMember {
+  id?: string
+  companyId: string
+  providerId: string          // the owning partner — invite issuer
+  uid: string | null          // auth uid once claimed
+  email: string               // claim key
+  name: string                // display, set by the partner
+  role: StaffRole
+  status: 'active' | 'revoked'
+  createdAt?: TS
+  updatedAt?: TS
+}

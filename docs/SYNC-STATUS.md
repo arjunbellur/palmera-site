@@ -84,6 +84,19 @@ it writes a booking (⚠ would need Samson).
 Every dashboard change that touches documents/rules/indexes the app consumes
 gets a line here, newest first. Pure-UI dashboard changes are never listed.
 
+- 2026-08-25 ⚠ **Staff roles: partners invite door staff (scanner-only).**
+  New dashboard-owned collections `staff` (invites: companyId, providerId,
+  email, name, role 'door', status) and `staff_access/{companyId}_{uid}`
+  (the O(1) membership doc booking rules key on — created at claim,
+  deleted on revoke). Bookings gain two clauses: active door staff of a
+  company may READ its bookings and record CHECK-INS (same
+  confirmed→completed transition + arrivals-only follow-ups, same money
+  freeze, same 12h window as partners). New surface `/door`: staff sign in
+  with the invited email (verified), land straight in the ticket scanner.
+  App impact: none — the app never reads these collections; the bookings
+  clauses are additive read/transition grants for dashboard accounts.
+  Deploys with the next `npm run rules:deploy`.
+
 - 2026-08-25 ⚠ **Ticket QR scanner + check-in = the completion mechanism.**
   The dashboard now scans the app's per-guest ticket QR
   (`palmera://checkin?booking=…&exp=…&guest=…` — read from
