@@ -75,7 +75,7 @@ export default function ProductModal({ supplier, product, storageUid, labels, on
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'var(--pf-scrim)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '18px' }}>
-      <div role="dialog" aria-modal="true" aria-label={labels.title} onClick={e => e.stopPropagation()} className="pf-glass" style={{ width: 'min(480px, 100%)', maxHeight: '90vh', overflowY: 'auto', borderRadius: '18px', padding: '24px' }}>
+      <div role="dialog" aria-modal="true" aria-label={labels.title} onClick={e => e.stopPropagation()} className="pf-glass" style={{ width: 'min(480px, 100%)', maxHeight: '88dvh', overflowY: 'auto', borderRadius: '18px', padding: '24px' }}>
         <h3 style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-head)', fontSize: '18px', fontWeight: 500, margin: 0 }}>{labels.title}</h3>
 
         <label style={lbl}>{labels.name}</label>

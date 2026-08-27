@@ -113,7 +113,7 @@ export default function TicketScanner({ bookings, locale, onCheckIn, onClose }: 
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 90, background: 'var(--pf-scrim)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-      <div role="dialog" aria-modal="true" aria-label={L('scan_title')} onClick={e => e.stopPropagation()} className="pf-glass" style={{ width: 'min(26rem, 100%)', borderRadius: '18px', padding: '18px', maxHeight: '92vh', overflowY: 'auto' }}>
+      <div role="dialog" aria-modal="true" aria-label={L('scan_title')} onClick={e => e.stopPropagation()} className="pf-glass" style={{ width: 'min(26rem, 100%)', borderRadius: '18px', padding: '18px', maxHeight: '90dvh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
           <span style={{ ...eyebrow, display: 'inline-flex', alignItems: 'center', gap: '8px' }}><ScanLine size={13} strokeWidth={1.75} /> {L('scan_title')}</span>
           <button onClick={onClose} aria-label="Close" style={{ background: 'transparent', border: 'none', color: 'var(--pf-faint)', cursor: 'pointer', width: '40px', height: '40px', display: 'grid', placeItems: 'center' }}><X size={16} strokeWidth={1.75} /></button>

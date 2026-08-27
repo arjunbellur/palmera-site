@@ -1089,30 +1089,35 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
   const canNext = stepValid(step)
 
   return (
-    <div data-lenis-prevent style={{ position: 'fixed', inset: 0, background: 'var(--db-overlay)', zIndex: 200, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-      <div role="dialog" aria-modal="true" aria-label={experience ? T.editTitle : T.newTitle} style={{ background: 'var(--db-bg-modal)', border: '1px solid var(--db-border-subtle)', borderRadius: '0.75rem', width: '100%', maxWidth: '46rem', maxHeight: 'calc(100vh - 40px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <div data-lenis-prevent style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 'clamp(1.25rem, 4vw, 2rem)', paddingBottom: '1rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+    <div data-lenis-prevent style={{ position: 'fixed', inset: 0, background: 'var(--db-overlay)', zIndex: 200, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 'clamp(8px, 2vw, 20px)' }}>
+      <div role="dialog" aria-modal="true" aria-label={experience ? T.editTitle : T.newTitle} style={{ background: 'var(--db-bg-modal)', border: '1px solid var(--db-border-subtle)', borderRadius: '0.75rem', width: '100%', maxWidth: '46rem', maxHeight: 'calc(100dvh - 16px)', height: 'auto', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* Fixed header — title, close and progress NEVER scroll away (on a
+          phone the editor is full-screen; a scrolled-away × means trapped). */}
+      <div style={{ flexShrink: 0, padding: 'clamp(1rem, 3vw, 1.5rem) clamp(1.25rem, 4vw, 2rem) 0' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
           <div>
-            <h2 style={{ fontFamily: 'var(--font-display)', color: 'var(--db-text)', fontSize: '1.25rem', fontWeight: 400, margin: '0 0 0.25rem', letterSpacing: '0.06em' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', color: 'var(--db-text)', fontSize: '1.25rem', fontWeight: 500, margin: '0 0 0.25rem', letterSpacing: '0.06em' }}>
               {experience ? T.editTitle : T.newTitle}
             </h2>
             <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: 'var(--db-text-faint)', margin: 0 }}>
               {view === 'summary' ? T.summaryTitle : <>{T.stepOf(step + 1, T.steps.length)} · {T.steps[step].title} — {T.steps[step].sub}</>}
             </p>
           </div>
-          <button onClick={onClose} aria-label="Close" style={{ background: 'transparent', border: 'none', color: 'var(--db-text-faint)', fontSize: '1.375rem', cursor: 'pointer', lineHeight: 1, width: '40px', height: '40px' }}>×</button>
+          <button onClick={onClose} aria-label="Close" style={{ background: 'transparent', border: '1px solid var(--db-border-subtle)', borderRadius: '10px', color: 'var(--db-text-faint)', fontSize: '1.25rem', cursor: 'pointer', lineHeight: 1, width: '40px', height: '40px', flexShrink: 0 }}>×</button>
         </div>
-
-        {/* Step indicator — labeled and tappable once the basics are valid. */}
         {view === 'steps' && (
-          <div style={{ display: 'flex', gap: '6px', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', gap: '6px', paddingBottom: '0.875rem' }}>
             {T.steps.map((st, i) => (
-              <button key={st.title} onClick={() => (i === 0 || canSave) && setStep(i)} title={st.title}
-                style={{ flex: 1, height: '3px', borderRadius: '2px', border: 'none', padding: 0, cursor: 'pointer', background: i === step ? 'var(--db-gold)' : i < step ? 'rgba(190,154,86,0.45)' : 'var(--db-border-subtle)' }} />
+              <button key={st.title} onClick={() => (i === 0 || canSave) && setStep(i)} title={st.title} aria-label={st.title}
+                style={{ flex: 1, height: '14px', border: 'none', padding: '5px 0', cursor: 'pointer', background: 'transparent' }}>
+                <span style={{ display: 'block', height: '3px', borderRadius: '2px', background: i === step ? 'var(--db-gold)' : i < step ? 'rgba(190,154,86,0.45)' : 'var(--db-border-subtle)' }} />
+              </button>
             ))}
           </div>
         )}
+      </div>
+
+      <div data-lenis-prevent style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '0.25rem clamp(1.25rem, 4vw, 2rem) 1rem', WebkitOverflowScrolling: 'touch' }}>
 
         {needsReview.length > 0 && step === 0 && (
           <div style={{ background: 'rgba(224,112,112,0.08)', border: '1px solid rgba(224,112,112,0.3)', borderRadius: '0.375rem', padding: '0.75rem 1rem', marginBottom: '1.25rem' }}>

@@ -203,7 +203,7 @@ export default function ListingsScreen() {
 
       {preview && (
         <div onClick={() => setPreview(null)} style={{ position: 'fixed', inset: 0, zIndex: 90, background: 'var(--pf-scrim)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '18px' }}>
-          <div role="dialog" aria-modal="true" aria-label={L('preview_guest')} onClick={ev => ev.stopPropagation()} className="pf-glass" style={{ width: 'min(30rem, 100%)', maxHeight: '92vh', overflowY: 'auto', borderRadius: '18px', padding: '20px' }}>
+          <div role="dialog" aria-modal="true" aria-label={L('preview_guest')} onClick={ev => ev.stopPropagation()} className="pf-glass" style={{ width: 'min(30rem, 100%)', maxHeight: '90dvh', overflowY: 'auto', borderRadius: '18px', padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
               <span style={eyebrow}>{L('preview_guest')}</span>
               <button onClick={() => setPreview(null)} aria-label="Close" style={{ background: 'transparent', border: 'none', color: 'var(--pf-faint)', cursor: 'pointer', width: '40px', height: '40px', display: 'grid', placeItems: 'center' }}><X size={16} strokeWidth={1.75} /></button>
