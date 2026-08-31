@@ -84,6 +84,18 @@ it writes a booking (⚠ would need Samson).
 Every dashboard change that touches documents/rules/indexes the app consumes
 gets a line here, newest first. Pure-UI dashboard changes are never listed.
 
+- 2026-08-30 ⚠ **Member booking updates locked to the cancel patch.** The
+  customer-update clause on `/bookings` previously froze anchors + money but
+  left `status` and `payment` writable — a member could flip their own booking
+  to `completed` with a fabricated `payment.status: "completed"`, minting
+  points and fake delivered revenue. Verified against the app source: the only
+  client-side booking update is `AppState.cancelBooking` (REST patch of
+  `status`/`cancelledAt`/`updatedAt`), and `payment` is written solely by the
+  Cloud Functions via the Admin SDK (rules-exempt). The clause now allows only
+  `pending|confirmed → cancelled` touching exactly those three fields.
+  **App impact: none** — cancel keeps working, functions keep working. If a
+  future app feature needs members to patch anything else on a booking, the
+  clause must be widened first.
 - 2026-08-26 ⚠ **Legacy `partners/{uid}` collection FROZEN (writes denied).**
   The v1 onboarding pages that wrote to it are deleted; the collection
   stays readable by its owner + admin as the migration archive. The app

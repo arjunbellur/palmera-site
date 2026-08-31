@@ -175,13 +175,21 @@ service cloud.firestore {
                     && request.resource.data.status in ['pending', 'confirmed']
                     && request.resource.data.providerId ==
                        get(/databases/$(database)/documents/experiences/$(request.resource.data.experienceId)).data.providerId;
-      // …and may UPDATE their own booking (payment state, cancelling).
-      // Anchors and money stay frozen.
+      // …and may UPDATE their own booking — which, in the app, means exactly
+      // one thing: cancelling (AppState.cancelBooking patches status/
+      // cancelledAt/updatedAt and nothing else). `payment` is server-owned on
+      // update too — Cloud Functions write it via the Admin SDK, which
+      // bypasses these rules. The previous shape of this clause froze the
+      // anchors and money but left status and `payment` open, so a member
+      // could flip their own booking to completed with a fabricated
+      // payment.status — minting points and fake delivered revenue. Locked to
+      // the cancel patch.
       allow update: if signedIn()
                     && resource.data.customerId == request.auth.uid
-                    && keep('customerId') && keep('providerId') && keep('companyId') && keep('experienceId')
-                    && keep('bookingTotal') && keep('commissionRate')
-                    && keep('commissionAmount') && keep('payoutAmount');
+                    && resource.data.status in ['pending', 'confirmed']
+                    && request.resource.data.status == 'cancelled'
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['status', 'cancelledAt', 'updatedAt']);
       // Partner answers a request for THEIR OWN booking — one-way out of
       // 'pending'; every money field frozen.
       allow update: if signedIn()
