@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation'
 import {
   getCompany, getProvider, getCompanyAdmin, getExperiencesByCompanyIdAdmin,
   activateCompany, updateCompanyAdminFields, updateCompany, setExperienceStatus, setExperienceTag,
-  deleteCompanyCascade, deleteProviderAccountCascade, getCountersignature, setCountersignature, getCountersignatory, setCountersignatory,
+  deleteCompanyCascade, deleteProviderAccountCascade, duplicateCompanyDeep, getCountersignature, setCountersignature, getCountersignatory, setCountersignatory,
   getProviderAdmin, setProviderStatus, getPayoutProfile,
   getOptions, saveExperienceWithOptions,
   type Countersignature, type Countersignatory,
@@ -58,6 +58,7 @@ export default function AdminCompanyDetailPage({ params }: { params: Promise<{ c
 
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [duplicating, setDuplicating] = useState(false)
   const [deleteError, setDeleteError] = useState('')
   const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false)
   const [deletingAccount, setDeletingAccount] = useState(false)
@@ -177,6 +178,11 @@ export default function AdminCompanyDetailPage({ params }: { params: Promise<{ c
     await setExperienceTag(id, tag || null)
     setExperiences((prev) => prev.map((e) => (e.id === id ? { ...e, tag: tag || null } : e)))
   }
+  const handleDuplicate = async () => {
+    setDuplicating(true); setDeleteError('')
+    try { const newId = await duplicateCompanyDeep(companyId); router.push(`/admin/companies/${newId}`) }
+    catch { setDeleteError('Could not duplicate this company. Please try again.'); setDuplicating(false) }
+  }
   const handleDelete = async () => {
     setDeleting(true); setDeleteError('')
     try { await deleteCompanyCascade(companyId); router.replace('/admin') }
@@ -236,7 +242,10 @@ export default function AdminCompanyDetailPage({ params }: { params: Promise<{ c
 
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '14px', flexWrap: 'wrap', marginBottom: '8px' }}>
         <ScreenHeader label="Company profile" title={company.name || 'Untitled company'} />
-        <DangerButton onClick={() => { setDeleteError(''); setConfirmDelete(true) }}>Delete company</DangerButton>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <GhostButton onClick={handleDuplicate} disabled={duplicating}>{duplicating ? 'Duplicating…' : 'Duplicate company'}</GhostButton>
+          <DangerButton onClick={() => { setDeleteError(''); setConfirmDelete(true) }}>Delete company</DangerButton>
+        </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '24px' }}>
         <span style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--pf-faint)' }}>{provider?.email}</span>
@@ -318,7 +327,7 @@ export default function AdminCompanyDetailPage({ params }: { params: Promise<{ c
                 <Field label="Category" value={e.category} />
                 <Field label="City" value={e.city} />
                 <Field label="Price" value={e.price != null ? `${e.price.toLocaleString()} ${e.currency || ''} (${e.priceUnit})` : 'Reservation'} />
-                <Field label="Duration" value={e.duration} />
+                <Field label="Guests" value={e.minGuests != null || e.maxGuests != null ? `${e.minGuests ?? 1}–${e.maxGuests ?? '∞'}` : undefined} />
               </Grid>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '12px', flexWrap: 'wrap' }}>
                 <GhostButton onClick={() => openEditExp(e)}>Edit</GhostButton>

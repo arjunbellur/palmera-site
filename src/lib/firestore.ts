@@ -346,6 +346,34 @@ export const setExperienceTag = async (id: string, tag: string | null) => {
 /** Admin-only: delete a company and everything under it (experiences, options,
  * and the ENTIRE private subcollection — admin + payout + any future docs).
  * Provider doc is untouched — a provider may own other companies. */
+/** Admin-only: clone a company plus its experiences (and their options).
+ *  The clone lands deactivated with every experience as an unpublished draft —
+ *  nothing goes live, no bookings/agreement/activation state carries over.
+ *  (Jordan 2026-09-02: "Admin should be able to duplicate businesses".) */
+export const duplicateCompanyDeep = async (companyId: string): Promise<string> => {
+  const src = await getDoc(doc(db, COLLECTIONS.companies, companyId))
+  if (!src.exists()) throw new Error('Company not found')
+  const c = src.data() as Company
+  const name = `${c.name || 'Untitled'} (copy)`
+  const copy = await addDoc(collection(db, COLLECTIONS.companies), {
+    ...c, name,
+    activatedAt: null, active: false,
+    createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+  })
+  const exps = await getDocs(query(collection(db, COLLECTIONS.experiences), where('companyId', '==', companyId)))
+  for (const e of exps.docs) {
+    const d = e.data()
+    const newExp = await addDoc(collection(db, COLLECTIONS.experiences), {
+      ...d, companyId: copy.id, provider: name,
+      status: 'draft', active: false, tag: null, rating: 0, reviews: 0,
+      createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+    })
+    const opts = await getDocs(collection(db, COLLECTIONS.experiences, e.id, SUB.options))
+    await Promise.all(opts.docs.map((o) => addDoc(collection(db, COLLECTIONS.experiences, newExp.id, SUB.options), o.data())))
+  }
+  return copy.id
+}
+
 export const deleteCompanyCascade = async (companyId: string) => {
   const exps = await getExperiencesByCompanyIdAdmin(companyId)
   await Promise.all(exps.map(async (e) => {

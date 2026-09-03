@@ -14,7 +14,7 @@
 import { AGREEMENT_CONTENT } from './partner-agreement-content'
 
 /** Bump whenever the agreement text changes. Recorded on every acceptance. */
-export const AGREEMENT_VERSION = 'v1.0-2026-07'
+export const AGREEMENT_VERSION = 'v2.0-2026-09'
 
 export type AgreementLocale = 'fr' | 'en'
 

@@ -1,9 +1,10 @@
 // AUTO-GENERATED — do not hand-edit.
 // Transcribed from:
-//   Palmera Provider Partnership Agreement V1 (English).docx
-//   Palmera Provider Partnership Agreement V1 (French).docx
-// Regenerate rather than editing, so the legal text is never altered by hand.
-// When the agreement changes, re-run the generator and bump AGREEMENT_VERSION.
+//   Provider Partnership Agreement (English).docx
+//   Provider Partnership Agreement (French).docx
+// Regenerate with scripts/generate-agreement-content.mjs, so the legal text is
+// never altered by hand. When the agreement changes, re-run the generator and
+// bump AGREEMENT_VERSION.
 import type { AgreementContent, AgreementLocale } from './partner-agreement'
 
 export const AGREEMENT_CONTENT: Record<AgreementLocale, AgreementContent> = {
@@ -225,7 +226,7 @@ export const AGREEMENT_CONTENT: Record<AgreementLocale, AgreementContent> = {
           },
           {
             "kind": "p",
-            "text": "For the first twelve (12) months following the Provider’s activation on the Platform, the Provider agrees to pay Palmera a commission equal to ten percent (10%) of the applicable transaction value for eligible transactions processed through the Platform, unless otherwise agreed in writing."
+            "text": "For the first twelve (12) months following the Provider’s activation on the Platform, the Provider agrees to pay Palmera a commission equal to ten percent (10%) + the commission’s VAT (~ +18% des 10%) of the applicable transaction value for eligible transactions processed through the Platform, unless otherwise agreed in writing."
           },
           {
             "kind": "p",
@@ -539,7 +540,52 @@ export const AGREEMENT_CONTENT: Record<AgreementLocale, AgreementContent> = {
         ]
       },
       {
-        "heading": "15. GENERAL TERMS",
+        "heading": "15. INTELLECTUAL PROPERTY",
+        "blocks": [
+          {
+            "kind": "h",
+            "text": "15.1 Ownership of Provider Content"
+          },
+          {
+            "kind": "p",
+            "text": "Provider represents and warrants that it owns, controls, or has obtained all necessary rights, licenses, permissions, and authorizations to use and provide to Palmera all content submitted or made available through the Platform, including but not limited to photographs, videos, logos, trademarks, menus, descriptions, promotional materials, pricing, branding, and other intellectual property."
+          },
+          {
+            "kind": "h",
+            "text": "15.2 License to Palmera"
+          },
+          {
+            "kind": "p",
+            "text": "Provider grants Palmera Services LLC a non-exclusive, worldwide, royalty-free, revocable license (terminating upon removal from the Platform, except as necessary to complete pending transactions or comply with legal obligations) to use, reproduce, display, distribute, publish, and modify such content solely for formatting, resizing, translation, marketing, and operation of the Platform."
+          },
+          {
+            "kind": "h",
+            "text": "15.3 Non-Infringement"
+          },
+          {
+            "kind": "p",
+            "text": "Provider represents and warrants that its content does not infringe upon any copyright, trademark, trade secret, patent, right of publicity, right of privacy, or other intellectual property or proprietary right of any third party."
+          },
+          {
+            "kind": "h",
+            "text": "15.4 Indemnification"
+          },
+          {
+            "kind": "p",
+            "text": "Provider agrees to indemnify, defend, and hold harmless Palmera Services LLC, its affiliates, officers, directors, employees, contractors, and representatives from and against any claims, damages, liabilities, losses, costs, or expenses (including reasonable attorneys’ fees) arising out of or relating to any allegation that content submitted by the Provider infringes or misappropriates the intellectual property rights of any third party."
+          },
+          {
+            "kind": "h",
+            "text": "15.5 Removal of Content"
+          },
+          {
+            "kind": "p",
+            "text": "Palmera reserves the right, in its sole discretion and without prior notice, to remove, disable, or refuse to publish any content that it reasonably believes violates applicable law, this Agreement, or the intellectual property rights of any third party."
+          }
+        ]
+      },
+      {
+        "heading": "16. GENERAL TERMS",
         "blocks": [
           {
             "kind": "p",
@@ -568,7 +614,7 @@ export const AGREEMENT_CONTENT: Record<AgreementLocale, AgreementContent> = {
         ]
       },
       {
-        "heading": "16. PARTNERSHIP COMMITMENT",
+        "heading": "17. PARTNERSHIP COMMITMENT",
         "blocks": [
           {
             "kind": "p",
@@ -589,7 +635,7 @@ export const AGREEMENT_CONTENT: Record<AgreementLocale, AgreementContent> = {
         ]
       },
       {
-        "heading": "17. ACCEPTANCE",
+        "heading": "18. ACCEPTANCE",
         "blocks": [
           {
             "kind": "p",
@@ -833,7 +879,7 @@ export const AGREEMENT_CONTENT: Record<AgreementLocale, AgreementContent> = {
           },
           {
             "kind": "p",
-            "text": "Pendant les douze (12) premiers mois suivant l’activation du Partenaire sur la Plateforme, le Partenaire accepte de verser à Palmera une commission correspondant à dix pour cent (10 %) de la valeur de chaque transaction éligible effectuée par l’intermédiaire de la Plateforme, sauf accord écrit contraire entre les Parties."
+            "text": "Pendant les douze (12) premiers mois suivant l’activation du Partenaire sur la Plateforme, le Partenaire accepte de verser à Palmera une commission correspondant à dix pour cent (10 %) + la VAT dû commission (~ +18% des 10%) de la valeur de chaque transaction éligible effectuée par l’intermédiaire de la Plateforme, sauf accord écrit contraire entre les Parties."
           },
           {
             "kind": "p",
@@ -1190,7 +1236,52 @@ export const AGREEMENT_CONTENT: Record<AgreementLocale, AgreementContent> = {
         ]
       },
       {
-        "heading": "15. DISPOSITIONS GÉNÉRALES",
+        "heading": "15. PROPRIÉTÉ INTELLECTUELLE",
+        "blocks": [
+          {
+            "kind": "h",
+            "text": "15.1 Propriété du Contenu du Prestataire"
+          },
+          {
+            "kind": "p",
+            "text": "Le Prestataire déclare et garantit qu’il est propriétaire de, ou qu’il détient tous les droits, licences, autorisations et permissions nécessaires pour utiliser et fournir à Palmera l’ensemble du contenu soumis ou mis à disposition sur la Plateforme, y compris, sans s’y limiter, les photographies, vidéos, logos, marques, menus, descriptions, supports promotionnels, tarifs, éléments de marque et tout autre contenu ou propriété intellectuelle."
+          },
+          {
+            "kind": "h",
+            "text": "15.2 Licence Accordée à Palmera"
+          },
+          {
+            "kind": "p",
+            "text": "Le Prestataire accorde à Palmera Services LLC une licence non exclusive, mondiale, gratuite de redevances et révocable (prenant fin lors du retrait du Prestataire de la Plateforme, sauf dans la mesure nécessaire pour finaliser des transactions en cours ou respecter des obligations légales) lui permettant d’utiliser, reproduire, afficher, distribuer, publier et modifier ce contenu uniquement aux fins de sa mise en forme, de son redimensionnement, de sa traduction, de la promotion du Prestataire et de l’exploitation de la Plateforme."
+          },
+          {
+            "kind": "h",
+            "text": "15.3 Absence de Contrefaçon"
+          },
+          {
+            "kind": "p",
+            "text": "Le Prestataire déclare et garantit que le contenu qu’il fournit n’enfreint aucun droit d’auteur, marque, secret commercial, brevet, droit à l’image, droit à la vie privée ou tout autre droit de propriété intellectuelle ou droit de propriété appartenant à un tiers."
+          },
+          {
+            "kind": "h",
+            "text": "15.4 Garantie et Indemnisation"
+          },
+          {
+            "kind": "p",
+            "text": "Le Prestataire accepte d’indemniser, de défendre et de dégager de toute responsabilité Palmera Services LLC, ainsi que ses sociétés affiliées, dirigeants, administrateurs, employés, prestataires et représentants, contre toute réclamation, tout dommage, toute responsabilité, toute perte, tout coût ou toute dépense (y compris les honoraires raisonnables d’avocat) résultant de ou lié à toute allégation selon laquelle le contenu fourni par le Prestataire porterait atteinte ou détournerait les droits de propriété intellectuelle d’un tiers."
+          },
+          {
+            "kind": "h",
+            "text": "15.5 Suppression du Contenu"
+          },
+          {
+            "kind": "p",
+            "text": "Palmera se réserve le droit, à sa seule discrétion et sans préavis, de supprimer, désactiver ou refuser de publier tout contenu qu’elle estime raisonnablement contraire à la loi applicable, au présent Contrat ou aux droits de propriété intellectuelle d’un tiers."
+          }
+        ]
+      },
+      {
+        "heading": "16. DISPOSITIONS GÉNÉRALES",
         "blocks": [
           {
             "kind": "p",
@@ -1219,7 +1310,7 @@ export const AGREEMENT_CONTENT: Record<AgreementLocale, AgreementContent> = {
         ]
       },
       {
-        "heading": "16. ENGAGEMENT DE PARTENARIAT",
+        "heading": "17. ENGAGEMENT DE PARTENARIAT",
         "blocks": [
           {
             "kind": "p",
@@ -1244,7 +1335,7 @@ export const AGREEMENT_CONTENT: Record<AgreementLocale, AgreementContent> = {
         ]
       },
       {
-        "heading": "17. ACCEPTATION",
+        "heading": "18. ACCEPTATION",
         "blocks": [
           {
             "kind": "p",

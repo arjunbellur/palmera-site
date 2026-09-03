@@ -1169,11 +1169,10 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
         )}
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
-            {view === 'steps' && experience && (
-              <button onClick={() => setView('summary')} style={{ padding: '10px 20px', background: 'transparent', border: '1px solid var(--db-border-subtle)', borderRadius: '0.25rem', color: 'var(--db-text-muted)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>{T.back}</button>
-            )}
-            {view === 'steps' && !experience && step > 0 && (
-              <button onClick={() => setStep(step - 1)} style={{ padding: '10px 20px', background: 'transparent', border: '1px solid var(--db-border-subtle)', borderRadius: '0.25rem', color: 'var(--db-text-muted)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>{T.back}</button>
+            {/* Jordan: Back must step backward, not dump you at the summary —
+                only the first step's Back leaves the wizard. */}
+            {view === 'steps' && (experience || step > 0) && (
+              <button onClick={() => (step > 0 ? setStep(step - 1) : setView('summary'))} style={{ padding: '10px 20px', background: 'transparent', border: '1px solid var(--db-border-subtle)', borderRadius: '0.25rem', color: 'var(--db-text-muted)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>{T.back}</button>
             )}
             {/* Airbnb-style reassurance: nothing here is a commitment. */}
             <span style={{ fontSize: '0.6875rem', color: 'var(--db-text-ghost)', fontFamily: 'var(--font-sans)' }}>{T.changeLater}</span>
@@ -1188,12 +1187,16 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
             <button onClick={() => handleSave('draft')} disabled={!canSave || saving} style={{ padding: '10px 20px', background: 'transparent', border: '1px solid var(--db-border-gold)', borderRadius: '0.25rem', color: canSave ? 'var(--db-text)' : 'var(--db-text-ghost)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', cursor: canSave ? 'pointer' : 'not-allowed' }}>
               {saving ? T.saving : T.saveDraft}
             </button>
-            {/* Wizard walks Next→…→Publish; edit/summary saves directly. */}
-            {!experience && view === 'steps' && !isLast ? (
+            {/* Wizard walks Next→…→Publish. Edit mode gets Next too (Jordan:
+                "should be able to hit next instead of always hitting back") —
+                the save button stays alongside so a one-field edit can save
+                from any step. */}
+            {view === 'steps' && !isLast && (
               <button onClick={() => canNext && setStep(step + 1)} disabled={!canNext} style={{ padding: '10px 24px', background: canNext ? 'var(--db-gold-deep)' : 'var(--db-bg-card)', border: 'none', borderRadius: '0.25rem', color: canNext ? '#ebe8db' : 'var(--db-text-ghost)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', cursor: canNext ? 'pointer' : 'not-allowed' }}>
                 {T.next}
               </button>
-            ) : (
+            )}
+            {(experience || view !== 'steps' || isLast) && (
               <button onClick={() => handleSave('publish')} disabled={!canPublish || saving} title={canPublish ? '' : publishBlockers.join(', ')} style={{ padding: '10px 24px', background: canPublish ? 'var(--db-gold-deep)' : 'var(--db-bg-card)', border: 'none', borderRadius: '0.25rem', color: canPublish ? '#ebe8db' : 'var(--db-text-ghost)', fontSize: '0.875rem', fontFamily: 'var(--font-sans)', cursor: canPublish ? 'pointer' : 'not-allowed' }}>
                 {saving ? T.saving : experience?.status === 'published' ? T.keepLive : T.publish}
               </button>
