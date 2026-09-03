@@ -84,6 +84,21 @@ it writes a booking (⚠ would need Samson).
 Every dashboard change that touches documents/rules/indexes the app consumes
 gets a line here, newest first. Pure-UI dashboard changes are never listed.
 
+- 2026-09-03 ⚠ **NEW `config/featured` — admin-curated "Featured tonight" hero
+  (needs a small app change to take effect).** Jordan wants to control the
+  Discover hero per city; today the app shows `filtered.first`. The dashboard
+  now writes:
+  ```
+  config/featured  { byCity: { <marketId>: { experienceId } }, updatedAt, updatedByEmail }
+  ```
+  Keys are `config/markets` city ids (lowercase — `dakar`, `saly`, …).
+  **App change requested (Samson):** when picking the Discover hero, first
+  look up `config/featured.byCity[currentCity]` (match your city to the
+  market id case-insensitively) and use that experience if it exists and is
+  published; otherwise keep the current `filtered.first` fallback exactly as
+  is. No rules/index changes needed — `config/*` is already world-readable
+  and admin-writable. An absent doc, absent city key, or stale experienceId
+  must all fall through to today's behavior.
 - 2026-08-30 ⚠ **Member booking updates locked to the cancel patch.** The
   customer-update clause on `/bookings` previously froze anchors + money but
   left `status` and `payment` writable — a member could flip their own booking

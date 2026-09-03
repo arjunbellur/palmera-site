@@ -41,6 +41,7 @@ export const CONFIG_DOCS = {
   markets: 'markets',
   categories: 'categories',
   policies: 'policies',
+  featured: 'featured',
 } as const
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -279,6 +280,16 @@ export interface MarketsConfig {
 }
 export interface CategoriesConfig {
   categories: { id: string; name: string; enabled: boolean }[]
+}
+/** config/featured — admin-chosen "Featured tonight" hero per market.
+ *  Keys are market ids (config/markets cities[].id, lowercase). The app
+ *  resolves its current city against these ids case-insensitively and falls
+ *  back to its own derived pick when a city has no entry (or the chosen
+ *  listing is no longer published). ⚠ shared contract — see SYNC-STATUS. */
+export interface FeaturedConfig {
+  byCity: Record<string, { experienceId: string }>
+  updatedAt?: TS
+  updatedByEmail?: string
 }
 export interface PolicyTier {
   cancelDeadlineHours: number

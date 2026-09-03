@@ -17,7 +17,7 @@ import {
 import { db } from './firebase'
 import { arrayUnion } from 'firebase/firestore'
 import {
-  COLLECTIONS, SUB,
+  COLLECTIONS, SUB, CONFIG_DOCS, type FeaturedConfig,
   type Provider, type ProviderPrivateAdmin,
   type Company, type CompanyPrivateAdmin,
   type Experience, type Option, type OptionGroup,
@@ -310,6 +310,23 @@ export const getAllCompanies = async (): Promise<Company[]> => {
 export const getAllExperiencesAdmin = async (): Promise<Experience[]> => {
   const snap = await getDocs(collection(db, COLLECTIONS.experiences))
   return snap.docs.map((d) => ({ id: d.id, ...(d.data() as Experience) }))
+}
+
+// ── config/featured — the "Featured tonight" hero per market ──────────────
+// ⚠ Shared contract with the app (SYNC-STATUS 2026-09-03): the app reads this
+// doc to pick its Discover hero and falls back to its own derived pick.
+// Uncached on purpose — the admin panel must always show the live value.
+export const getFeaturedConfig = async (): Promise<FeaturedConfig | null> => {
+  const snap = await getDoc(doc(db, COLLECTIONS.config, CONFIG_DOCS.featured))
+  return snap.exists() ? (snap.data() as FeaturedConfig) : null
+}
+export const setFeaturedCity = async (cityId: string, experienceId: string | null, adminEmail: string) => {
+  const snap = await getDoc(doc(db, COLLECTIONS.config, CONFIG_DOCS.featured))
+  const byCity = { ...((snap.data() as FeaturedConfig | undefined)?.byCity || {}) }
+  if (experienceId) byCity[cityId] = { experienceId }
+  else delete byCity[cityId]
+  await setDoc(doc(db, COLLECTIONS.config, CONFIG_DOCS.featured),
+    { byCity, updatedAt: serverTimestamp(), updatedByEmail: adminEmail })
 }
 
 /** All experiences under one company — admin use (bypasses the providerId-anchored query). */
