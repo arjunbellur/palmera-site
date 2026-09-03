@@ -313,6 +313,8 @@ service cloud.firestore {
     // Read is now own-scope too: the app only ever queries its own favorites,
     // and a world-readable list lets anyone enumerate what a member has saved.
     match /favorites/{fid} {
+      // Admin reads the collection for the favorites→booking funnel on /admin/app.
+      allow read: if isAdmin();
       allow read: if signedIn() && resource.data.user_id == request.auth.uid;
       allow create, update: if signedIn() && request.resource.data.user_id == request.auth.uid;
       allow delete: if signedIn() && resource.data.user_id == request.auth.uid;
@@ -441,6 +443,10 @@ service cloud.firestore {
       allow update, delete: if signedIn() && resource.data.user_id == request.auth.uid;
     }
     match /chat_messages/{mid} {
+      // Admin reads the collection for the weekly engagement chart on
+      // /admin/app (message volume). Founders-only account; content is not
+      // surfaced anywhere, only counted.
+      allow read: if isAdmin();
       // Resolved through the parent thread rather than copied onto every
       // message. A thread's message query hits the same thread path for every
       // document, so Firestore caches that get() for the whole request.

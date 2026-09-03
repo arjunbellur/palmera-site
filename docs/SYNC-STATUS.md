@@ -84,6 +84,10 @@ it writes a booking (⚠ would need Samson).
 Every dashboard change that touches documents/rules/indexes the app consumes
 gets a line here, newest first. Pure-UI dashboard changes are never listed.
 
+- 2026-09-03 **Additive: `isAdmin()` read on /favorites and /chat_messages.**
+  Our earlier privacy tightening (owner-only favorites, thread-member chats)
+  had cut off the admin Growth analytics that count them. App behavior
+  unchanged — member-facing rules are exactly as before.
 - 2026-09-03 ⚠ **NEW `config/featured` — admin-curated "Featured tonight" hero
   (needs a small app change to take effect).** Jordan wants to control the
   Discover hero per city; today the app shows `filtered.first`. The dashboard
