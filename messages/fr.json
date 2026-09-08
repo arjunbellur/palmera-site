@@ -29,36 +29,22 @@
     "explore": "Explorer les Destinations Premium"
   },
   "services": {
-    "label": "Services",
-    "heading": "Expériences Intentionnelles",
-    "villas": "Villas de Luxe",
-    "villasDesc": "Domaines privés avec équipements soignés",
-    "yachts": "Yachts & Bateaux",
-    "yachtsDesc": "Charters privés et loisirs côtiers",
-    "nightlife": "Vie Nocturne VIP",
-    "nightlifeDesc": "Accès aux établissements et tables exclusifs",
-    "safari": "Aventures Safari",
-    "safariDesc": "Voyages nature immersifs et de luxe",
-    "concierge": "Services de Conciergerie",
-    "conciergeDesc": "Assistance personnelle et planification sur mesure",
-    "transport": "Transport",
-    "transportDesc": "Voyages avec chauffeur et locations premium"
-  },
-  "stats": {
-    "heading": "Presque prêt à être partagé.",
-    "body": "Nous avons suivi les détails assez longtemps pour voir ce qui comptait. Le résultat est quelque chose de réfléchi, social par nature, et presque prêt à être vécu.",
-    "waysLabel": "Façons de Se Réunir",
-    "waysSub": "Des couchers de soleil aux nuits tardives, et tout ce qui se passe entre.",
-    "flowLabel": "Flux Partagé",
-    "flowSub": "De la planification à l'arrivée, tout se passe au même endroit.",
-    "frictionLabel": "Friction de Groupe",
-    "frictionSub": "Partagez les réservations sans effort, sans relances.",
-    "curatedLabel": "Expériences Sélectionnées",
-    "curatedSub": "Chaque lieu et événement est intentionnellement choisi."
-  },
-  "app": {
-    "stepInside": "Disponible sur l’App Store",
-    "heading": "Là où vivent les loisirs."
+    "label": "Ce que vous pouvez réserver",
+    "heading": "De la table au yacht.",
+    "lifestyle": "Lifestyle & beach clubs",
+    "lifestyleSub": "Dakar · Saly",
+    "wellness": "Bien-être",
+    "wellnessSub": "Spa · Pilates",
+    "stays": "Séjours & villas",
+    "staysSub": "Hôtels · Villas",
+    "islands": "Îles & activités",
+    "islandsSub": "Ngor · Gorée · Lac Rose",
+    "nightlife": "Restaurants & soirées",
+    "nightlifeSub": "Tables · Événements",
+    "yachts": "Yachts & bateaux",
+    "yachtsSub": "À la journée · Marina Bay",
+    "rentals": "Locations",
+    "rentalsSub": "Avec chauffeur · Sans chauffeur"
   },
   "footer": {
     "earlyAccess": "Les loisirs, dans votre poche",
@@ -282,5 +268,19 @@
       "addAnother": "+ Ajouter une autre annonce",
       "addListing": "+ Ajouter une annonce"
     }
+  },
+  "how": {
+    "label": "Comment ça marche",
+    "heading": "De « on fait quoi ce soir ? » à un billet dans votre poche.",
+    "b1t": "Découvrir",
+    "b1d": "Ce soir à Dakar, sélectionné — pas tout, seulement le meilleur.",
+    "b2t": "Explorer",
+    "b2d": "Tous les détails avant de réserver : ce qui est inclus, qui l’organise, le prix.",
+    "b3t": "Organiser ensemble",
+    "b3d": "Fixez le groupe, invitez votre cercle, partagez la note dans l’app. Plus personne à relancer.",
+    "b4t": "Payer comme vous voulez",
+    "b4d": "Wave, Orange Money ou carte. Confirmé en quelques secondes — et chaque sortie rapporte des points.",
+    "b5t": "Présenter son billet",
+    "b5d": "Un QR par invité. Un scan à l’entrée, et c’est parti."
   }
 }

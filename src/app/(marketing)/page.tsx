@@ -5,8 +5,7 @@ import Hero from '@/components/Hero'
 import BaseSection from '@/components/BaseSection'
 import Destinations from '@/components/Destinations'
 import Services from '@/components/Services'
-import Stats from '@/components/Stats'
-import AppSection from '@/components/AppSection'
+import PhoneScene from '@/components/PhoneScene'
 import Footer from '@/components/Footer'
 
 export default async function Home() {
@@ -31,8 +30,7 @@ export default async function Home() {
       <BaseSection />
       <Destinations locale={locale} />
       <Services />
-      <Stats />
-      <AppSection />
+      <PhoneScene />
       <Footer />
     </main>
   )

@@ -15,7 +15,7 @@ export default function Navbar({ messages }: { messages: Record<string, string> 
     { label: messages.location,   href: '#makes',     section: 'makes' },
     { label: messages.experience, href: '#skills',    section: 'skills' },
     { label: messages.app,        href: '#story',     section: 'story' },
-    { label: messages.signup,     href: '#signal',    section: 'signal' },
+    { label: messages.signup,     href: '#story',     section: 'story' },
     { label: messages.partners,   href: '/dashboard', section: '' },
   ]
 
@@ -26,7 +26,7 @@ export default function Navbar({ messages }: { messages: Record<string, string> 
 
     // Cache refs once — avoids repeated DOM walks on every scroll tick
     const lightIds = ['base', 'skills']
-    const sectionIds = ['base', 'makes', 'skills', 'story', 'signal']
+    const sectionIds = ['base', 'makes', 'skills', 'story']
     let els: Record<string, Element | null> = {}
     const cacheEls = () => {
       sectionIds.forEach(id => { els[id] = document.getElementById(id) })

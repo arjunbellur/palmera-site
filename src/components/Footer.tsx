@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
-import { AppStoreBadge } from './AppSection'
+import { AppStoreBadge } from './AppStoreBadge'
 export default function Footer() {
   const t = useTranslations('footer')
   return (

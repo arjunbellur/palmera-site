@@ -29,36 +29,22 @@
     "explore": "Explore Premium Destinations"
   },
   "services": {
-    "label": "Services",
-    "heading": "Intentional Experiences",
-    "villas": "Luxury Villas",
-    "villasDesc": "Private estates with curated amenities",
-    "yachts": "Yacht & Boats",
-    "yachtsDesc": "Private charters and coastal leisure",
-    "nightlife": "VIP Nightlife",
-    "nightlifeDesc": "Access to exclusive venues and tables",
-    "safari": "Safari Adventures",
-    "safariDesc": "Immersive, luxury-led wildlife journeys",
-    "concierge": "Concierge Services",
-    "conciergeDesc": "Personal assistance and bespoke planning",
-    "transport": "Transportation",
-    "transportDesc": "Chauffeured travel and premium rentals"
-  },
-  "stats": {
-    "heading": "It's almost ready to be shared.",
-    "body": "We followed the details long enough to see what mattered. The result is something considered, social by nature, and almost ready to be experienced.",
-    "waysLabel": "Ways to Gather",
-    "waysSub": "From sunsets to late nights, and everything in between.",
-    "flowLabel": "Shared Flow",
-    "flowSub": "From planning to arrival, everything happens in one place.",
-    "frictionLabel": "Group Friction",
-    "frictionSub": "Split reservations seamlessly, without follow-ups.",
-    "curatedLabel": "Curated Experiences",
-    "curatedSub": "Every venue and event is intentionally selected."
-  },
-  "app": {
-    "stepInside": "Now on the App Store",
-    "heading": "Where leisure lives."
+    "label": "What you can book",
+    "heading": "Everything from a table to a yacht.",
+    "lifestyle": "Lifestyle & beach clubs",
+    "lifestyleSub": "Dakar · Saly",
+    "wellness": "Wellness",
+    "wellnessSub": "Spa · Pilates",
+    "stays": "Stays & villas",
+    "staysSub": "Hotels · Villas",
+    "islands": "Islands & activities",
+    "islandsSub": "Ngor · Gorée · Lac Rose",
+    "nightlife": "Dining & nightlife",
+    "nightlifeSub": "Tables · Events",
+    "yachts": "Yachts & boats",
+    "yachtsSub": "Day charters · Marina Bay",
+    "rentals": "Rentals",
+    "rentalsSub": "Chauffeured · Self-drive"
   },
   "footer": {
     "earlyAccess": "Leisure, in your pocket",
@@ -282,5 +268,19 @@
       "addAnother": "+ Add another listing",
       "addListing": "+ Add Listing"
     }
+  },
+  "how": {
+    "label": "How it works",
+    "heading": "From “what are we doing tonight?” to a ticket in your pocket.",
+    "b1t": "Discover",
+    "b1d": "Tonight in Dakar, curated — not everything, the right things.",
+    "b2t": "Explore",
+    "b2d": "Every detail before you commit: what’s included, who runs it, what it costs.",
+    "b3t": "Plan together",
+    "b3d": "Set your party, invite your circle, split the total in the app. No chasing anyone.",
+    "b4t": "Pay your way",
+    "b4d": "Wave, Orange Money or card. Confirmed in seconds — and every plan earns points.",
+    "b5t": "Show your ticket",
+    "b5d": "One QR per guest. Scan at the door, you’re in."
   }
 }

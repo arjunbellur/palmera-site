@@ -15,7 +15,6 @@ const ZONES: { id: string; color: string }[] = [
   { id: 'makes',  color: DARK },
   { id: 'skills', color: LIGHT },
   { id: 'story',  color: DARK },
-  { id: 'signal', color: LIGHT },
 ]
 
 export default function BackgroundController() {
