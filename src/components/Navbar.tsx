@@ -143,7 +143,7 @@ export default function Navbar({ messages }: { messages: Record<string, string> 
                 </Link>
               )
             })}
-            <a href="https://form.typeform.com/to/xo1Bskym" target="_blank" rel="noopener noreferrer"
+            <a href="https://apps.apple.com/app/palmera/id6784757513" target="_blank" rel="noopener noreferrer"
               onClick={() => setMenuOpen(false)}
               style={{ ...pill, background: ctaBg, textDecoration: 'none' }}>
               <span style={{ ...mono, color: ctaText }}>{messages.earlyAccess}</span>
@@ -178,7 +178,7 @@ export default function Navbar({ messages }: { messages: Record<string, string> 
             </Link>
           )
         })}
-        <a href="https://form.typeform.com/to/xo1Bskym" target="_blank" rel="noopener noreferrer"
+        <a href="https://apps.apple.com/app/palmera/id6784757513" target="_blank" rel="noopener noreferrer"
           style={{ ...pill, background: ctaBg, flexShrink: 0, textDecoration: 'none', minWidth: '120px' }}>
           <span style={{ ...mono, color: ctaText }}>{messages.earlyAccess}</span>
         </a>

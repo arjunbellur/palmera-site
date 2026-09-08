@@ -4,9 +4,9 @@
     "location": "Destination",
     "experience": "Expériences",
     "app": "Application",
-    "signup": "S'inscrire",
+    "signup": "L’application",
     "partners": "Partenaires",
-    "earlyAccess": "Accès Anticipé"
+    "earlyAccess": "Télécharger l’app"
   },
   "hero": {
     "tagline": "OÙ LE LOISIR VIT.",
@@ -57,12 +57,11 @@
     "curatedSub": "Chaque lieu et événement est intentionnellement choisi."
   },
   "app": {
-    "stepInside": "Entrez tôt",
-    "heading": "Nous vous inviterons quand ce sera prêt",
-    "cta": "Être Inclus"
+    "stepInside": "Disponible sur l’App Store",
+    "heading": "Là où vivent les loisirs."
   },
   "footer": {
-    "earlyAccess": "Accès anticipé aux loisirs",
+    "earlyAccess": "Les loisirs, dans votre poche",
     "emailPlaceholder": "Adresse e-mail",
     "thanks": "Merci ! Votre soumission a été reçue !",
     "copyright": "© 2026 Palmera. Où le loisir vit.",

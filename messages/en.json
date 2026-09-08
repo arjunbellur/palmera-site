@@ -4,9 +4,9 @@
     "location": "Location",
     "experience": "Experience",
     "app": "App",
-    "signup": "Sign Up",
+    "signup": "Get the app",
     "partners": "Partners",
-    "earlyAccess": "Early Access"
+    "earlyAccess": "Download the app"
   },
   "hero": {
     "tagline": "WHERE LEISURE LIVES.",
@@ -57,12 +57,11 @@
     "curatedSub": "Every venue and event is intentionally selected."
   },
   "app": {
-    "stepInside": "Step inside early",
-    "heading": "We'll invite you when it's ready",
-    "cta": "Be Included"
+    "stepInside": "Now on the App Store",
+    "heading": "Where leisure lives."
   },
   "footer": {
-    "earlyAccess": "Get early access to leisure",
+    "earlyAccess": "Leisure, in your pocket",
     "emailPlaceholder": "Email address",
     "thanks": "Thank you! Your submission has been received!",
     "copyright": "© 2026 Palmera. Where Leisure Lives.",
