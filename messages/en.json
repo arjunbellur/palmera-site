@@ -26,7 +26,25 @@
     "commitText": "Plans without friction"
   },
   "destinations": {
-    "explore": "Explore Premium Destinations"
+    "label": "Senegal · where we are",
+    "heading": "Start in Dakar. Follow the coast.",
+    "places": "{n} places",
+    "soon": "More of Senegal soon",
+    "dakar": {
+      "line": "dining, nightlife, stays, yachts, rentals"
+    },
+    "saly": {
+      "line": "beach clubs, a villa, a safari"
+    },
+    "ngor": {
+      "line": "The island, ten minutes by pirogue"
+    },
+    "goree": {
+      "line": "A day on the island"
+    },
+    "lac-rose": {
+      "line": "Quad bikes on the pink lake"
+    }
   },
   "services": {
     "label": "What you can book",

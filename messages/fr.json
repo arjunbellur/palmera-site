@@ -26,7 +26,25 @@
     "commitText": "Des plans sans friction"
   },
   "destinations": {
-    "explore": "Explorer les Destinations Premium"
+    "label": "Sénégal · où nous sommes",
+    "heading": "Commencez à Dakar. Suivez la côte.",
+    "places": "{n} adresses",
+    "soon": "Bientôt plus de Sénégal",
+    "dakar": {
+      "line": "restaurants, soirées, séjours, yachts, locations"
+    },
+    "saly": {
+      "line": "beach clubs, une villa, un safari"
+    },
+    "ngor": {
+      "line": "L’île, à dix minutes en pirogue"
+    },
+    "goree": {
+      "line": "Une journée sur l’île"
+    },
+    "lac-rose": {
+      "line": "En quad sur le lac rose"
+    }
   },
   "services": {
     "label": "Ce que vous pouvez réserver",

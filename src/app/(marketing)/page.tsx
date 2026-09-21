@@ -1,4 +1,5 @@
-import { getTranslations, getLocale } from 'next-intl/server'
+import { getTranslations } from 'next-intl/server'
+import { getPlaceCounts } from '@/lib/place-counts'
 import NavbarWrapper from '@/components/NavbarWrapper'
 import BackgroundController from '@/components/BackgroundController'
 import Hero from '@/components/Hero'
@@ -10,7 +11,7 @@ import Footer from '@/components/Footer'
 
 export default async function Home() {
   const t = await getTranslations()
-  const locale = await getLocale()
+  const placeCounts = await getPlaceCounts()
 
   const navMessages = {
     learn: t('nav.learn'),
@@ -28,7 +29,7 @@ export default async function Home() {
       <NavbarWrapper messages={navMessages} />
       <Hero />
       <BaseSection />
-      <Destinations locale={locale} />
+      <Destinations counts={placeCounts} />
       <Services />
       <PhoneScene />
       <Footer />
