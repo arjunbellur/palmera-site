@@ -2,9 +2,8 @@
 // The phone scene — the site's centrepiece. One pinned device, five real
 // screens captured from the live app, crossfading through the booking story
 // as you scroll: discover → the listing → plan together → pay → your ticket.
-// The device drifts in perspective between beats (3D, never flat tilt), the
-// screens crossfade, the captions swap — all on one GSAP timeline scrubbed
-// by ScrollTrigger, which reads Lenis. One clock for everything.
+// The device enters once and then holds still; only the screen and the
+// caption change. One GSAP timeline scrubbed by ScrollTrigger (reading Lenis).
 import { useLayoutEffect, useRef } from 'react'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
@@ -12,15 +11,12 @@ import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { AppStoreBadge } from './AppStoreBadge'
 
-// Per beat: the device's resting pose in perspective — yaw (rotateY), pitch
-// (rotateX), lateral drift, and scale. Poses alternate sides so the scene
-// breathes; the last beat squares up to present the ticket.
 const BEATS = [
-  { src: '/images/app/real/01-discover.webp', t: 'b1t', d: 'b1d', yaw: -7, pitch: 3,  x: 4,  z: -60, s: 1 },
-  { src: '/images/app/real/02-listing.webp',  t: 'b2t', d: 'b2d', yaw: 5,  pitch: -2, x: -3, z: 30,  s: 1 },
-  { src: '/images/app/real/03-group.webp',    t: 'b3t', d: 'b3d', yaw: -6, pitch: 2,  x: 3,  z: -20, s: 1 },
-  { src: '/images/app/real/04-checkout.webp', t: 'b4t', d: 'b4d', yaw: 6,  pitch: -3, x: -4, z: 40,  s: 1 },
-  { src: '/images/app/real/05-ticket.webp',   t: 'b5t', d: 'b5d', yaw: 0,  pitch: 0,  x: 0,  z: 70,  s: 1 },
+  { src: '/images/app/real/01-discover.webp', t: 'b1t', d: 'b1d' },
+  { src: '/images/app/real/02-listing.webp',  t: 'b2t', d: 'b2d' },
+  { src: '/images/app/real/03-group.webp',    t: 'b3t', d: 'b3d' },
+  { src: '/images/app/real/04-checkout.webp', t: 'b4t', d: 'b4d' },
+  { src: '/images/app/real/05-ticket.webp',   t: 'b5t', d: 'b5d' },
 ] as const
 const TAN = 'hsla(36.84,47.11%,76.27%,1)'
 
@@ -28,8 +24,6 @@ export default function PhoneScene() {
   const t = useTranslations('how')
   const sectionRef = useRef<HTMLElement>(null)
   const phoneRef = useRef<HTMLDivElement>(null)
-  const glowRef = useRef<HTMLDivElement>(null)
-  const shadowRef = useRef<HTMLDivElement>(null)
   const screenRefs = useRef<(HTMLDivElement | null)[]>([])
   const capRefs = useRef<(HTMLLIElement | null)[]>([])
   const dotRefs = useRef<(HTMLSpanElement | null)[]>([])
@@ -45,48 +39,40 @@ export default function PhoneScene() {
       const screens = screenRefs.current.filter(Boolean) as HTMLDivElement[]
       const caps = capRefs.current.filter(Boolean) as HTMLLIElement[]
       const dots = dotRefs.current.filter(Boolean) as HTMLSpanElement[]
-      const pose = (b: (typeof BEATS)[number]) => ({ rotateY: b.yaw, rotateX: b.pitch, xPercent: b.x, z: b.z, scale: b.s })
 
-      gsap.set(screens.slice(1), { opacity: 0 })
-      gsap.set(caps.slice(1), { opacity: 0, y: 18 })
+      gsap.set(screens.slice(1), { opacity: 0, scale: 1.03 })
+      gsap.set(caps.slice(1), { opacity: 0, y: 14 })
       gsap.set(dots, { scaleX: 0.35, opacity: 0.35 })
       gsap.set(dots[0], { scaleX: 1, opacity: 1 })
-      gsap.set(phone, pose(BEATS[0]))
 
-      // Entrance: the device rises and settles into its first pose.
-      gsap.from(phone, { y: 100, opacity: 0, rotateY: -22, z: -220, duration: 1.5, ease: 'power3.out',
+      // The device enters once — a rise and settle — then never moves again.
+      if (!reduced) gsap.from(phone, { y: 70, opacity: 0, duration: 1.3, ease: 'power3.out',
         scrollTrigger: { trigger: section, start: 'top 75%', once: true } })
 
-      // The scrubbed story: one unit per beat, each a viewport of scroll.
+      // The scrubbed story: one unit per beat, each a viewport of scroll. The
+      // outgoing screen fades; the incoming one settles from a hair larger.
       const tl = gsap.timeline({
-        scrollTrigger: { trigger: section, start: 'top top', end: `+=${BEATS.length * 100}%`, pin: true, scrub: reduced ? false : 0.9, anticipatePin: 1 },
+        scrollTrigger: { trigger: section, start: 'top top', end: `+=${BEATS.length * 100}%`, pin: true, scrub: reduced ? false : 0.8, anticipatePin: 1 },
       })
       for (let i = 1; i < BEATS.length; i++) {
-        tl.to(phone, { ...pose(BEATS[i]), duration: 1, ease: 'power2.inOut' }, i - 0.5)
-          .to(screens[i - 1], { opacity: 0, duration: 0.5, ease: 'none' }, i - 0.1)
-          .to(screens[i], { opacity: 1, duration: 0.5, ease: 'none' }, i - 0.1)
-          .to(caps[i - 1], { opacity: 0, y: -14, duration: 0.35, ease: 'power2.in' }, i - 0.2)
-          .to(caps[i], { opacity: 1, y: 0, duration: 0.45, ease: 'power2.out' }, i + 0.15)
+        tl.to(screens[i - 1], { opacity: 0, duration: 0.35, ease: 'power1.in' }, i - 0.18)
+          .to(screens[i], { opacity: 1, scale: 1, duration: 0.5, ease: 'power2.out' }, i - 0.1)
+          .to(caps[i - 1], { opacity: 0, y: -10, duration: 0.3, ease: 'power2.in' }, i - 0.25)
+          .to(caps[i], { opacity: 1, y: 0, duration: 0.45, ease: 'power2.out' }, i + 0.05)
           .to(dots[i - 1], { scaleX: 0.35, opacity: 0.35, duration: 0.3 }, i)
           .to(dots[i], { scaleX: 1, opacity: 1, duration: 0.3 }, i)
-        if (glowRef.current) tl.to(glowRef.current, { xPercent: -BEATS[i].x * 3, scale: 1 + BEATS[i].z / 400, duration: 1, ease: 'power2.inOut' }, i - 0.5)
-        if (shadowRef.current) tl.to(shadowRef.current, { xPercent: BEATS[i].yaw * 1.4, scaleX: 1 - Math.abs(BEATS[i].yaw) / 60, opacity: 0.55 - BEATS[i].z / 600, duration: 1, ease: 'power2.inOut' }, i - 0.5)
       }
       tl.to({}, { duration: 0.7 }) // hold the ticket before the pin releases
-
-      // Idle life: a slow float on top of the scrubbed pose, so the device is
-      // never perfectly still even when the reader stops scrolling.
-      if (!reduced && window.innerWidth >= 760) gsap.to(phone, { y: '+=8', duration: 3.4, ease: 'sine.inOut', yoyo: true, repeat: -1 })
     }, section)
     return () => ctx.revert()
   }, [])
 
   return (
-    <section id="story" ref={sectionRef} style={{ position: 'relative', height: '100svh', minHeight: '40rem', background: 'transparent', overflow: 'hidden' }}>
+    <section id="story" ref={sectionRef} style={{ position: 'relative', height: '100svh', minHeight: '40rem', background: '#2a2119', overflow: 'hidden' }}>
       <div className="ps-grid" style={{ height: '100%', maxWidth: '84rem', margin: '0 auto', padding: 'clamp(4.5rem,7vh,6rem) clamp(1.25rem,4.5vw,2.5rem) clamp(1.25rem,3vh,2.5rem)', boxSizing: 'border-box' }}>
         {/* Copy column */}
         <div className="ps-copy" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 'clamp(1.25rem,3vh,2.5rem)', minWidth: 0 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <div className="ps-head" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: TAN, margin: 0 }}>{t('label')}</p>
             <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.625rem,3vw,2.875rem)', fontWeight: 400, letterSpacing: '-0.03em', lineHeight: 1.04, color: '#ebe8db', margin: 0, textWrap: 'balance' }}>{t('heading')}</h2>
           </div>
@@ -106,21 +92,30 @@ export default function PhoneScene() {
             <div className="ps-cta"><AppStoreBadge variant="light" /></div>
           </div>
         </div>
-        {/* Stage — perspective lives here so the device rotates in real 3D */}
-        <div className="ps-stage" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 0, perspective: '1000px', transformStyle: 'preserve-3d' }}>
-          <div ref={glowRef} aria-hidden style={{ position: 'absolute', width: '70%', aspectRatio: '1', borderRadius: '50%', background: 'radial-gradient(closest-side, rgba(223,201,166,0.22), rgba(223,201,166,0) 70%)', filter: 'blur(10px)', pointerEvents: 'none' }} />
-          <div ref={shadowRef} aria-hidden style={{ position: 'absolute', bottom: '4%', width: '46%', height: '6%', borderRadius: '50%', background: 'rgba(0,0,0,0.6)', filter: 'blur(18px)', opacity: 0.55, pointerEvents: 'none' }} />
-          <div ref={phoneRef} className="ps-phone" style={{ position: 'relative', height: 'min(85svh, 56rem)', aspectRatio: '650 / 1444', borderRadius: 'clamp(2rem,4.6vw,3.5rem)', padding: 'clamp(0.4rem,0.6vw,0.6rem)', background: 'linear-gradient(160deg, #1a2430, #0b1119 55%, #141c26)', boxShadow: '0 0 0 1px rgba(235,232,219,0.2), 0 3.5rem 7rem rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.06)', transformStyle: 'preserve-3d', willChange: 'transform' }}>
-            {/* Back plate — the device's thickness; only visible as it turns */}
-            <div aria-hidden style={{ position: 'absolute', inset: '-1px', borderRadius: 'inherit', background: 'linear-gradient(160deg, #0e141c, #05080c)', transform: 'translateZ(-14px)', boxShadow: '0 0 0 1px rgba(0,0,0,0.6)' }} />
-            <div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: 'clamp(1.6rem,4vw,2.95rem)', overflow: 'hidden', background: '#0D2136', transform: 'translateZ(1px)' }}>
-              {BEATS.map((b, i) => (
-                <div key={b.src} ref={(el) => { screenRefs.current[i] = el }} style={{ position: 'absolute', inset: 0, willChange: 'opacity' }}>
-                  <Image src={b.src} alt="" fill sizes="(max-width: 760px) 70vw, 30rem" priority={i < 2} style={{ objectFit: 'cover' }} />
-                </div>
-              ))}
-              {/* Glass sheen that slides as the device turns */}
-              <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(115deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 32%, rgba(255,255,255,0) 68%, rgba(255,255,255,0.05) 100%)', pointerEvents: 'none' }} />
+
+        {/* Device — drawn like the real thing: titanium band, thin even bezel,
+            matched corner radii, side buttons. Sized from height; every part
+            is a percentage of the device so it holds at any scale. */}
+        <div className="ps-stage" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 0 }}>
+          <div aria-hidden style={{ position: 'absolute', width: '72%', aspectRatio: '1', borderRadius: '50%', background: 'radial-gradient(closest-side, rgba(223,201,166,0.16), rgba(223,201,166,0) 70%)', filter: 'blur(12px)', pointerEvents: 'none' }} />
+          <div ref={phoneRef} className="ps-phone" style={{ position: 'relative', height: 'min(84svh, 56rem)', aspectRatio: '650 / 1444', willChange: 'transform' }}>
+            {/* side buttons */}
+            <div aria-hidden style={{ position: 'absolute', left: '-1.1%', top: '17%', width: '1.1%', height: '3.2%', borderRadius: '2px 0 0 2px', background: 'linear-gradient(90deg, #3a3b3f, #1c1d20)' }} />
+            <div aria-hidden style={{ position: 'absolute', left: '-1.1%', top: '23.5%', width: '1.1%', height: '6.2%', borderRadius: '2px 0 0 2px', background: 'linear-gradient(90deg, #3a3b3f, #1c1d20)' }} />
+            <div aria-hidden style={{ position: 'absolute', left: '-1.1%', top: '31%', width: '1.1%', height: '6.2%', borderRadius: '2px 0 0 2px', background: 'linear-gradient(90deg, #3a3b3f, #1c1d20)' }} />
+            <div aria-hidden style={{ position: 'absolute', right: '-1.1%', top: '26%', width: '1.1%', height: '9.5%', borderRadius: '0 2px 2px 0', background: 'linear-gradient(270deg, #3a3b3f, #1c1d20)' }} />
+            {/* band */}
+            <div style={{ position: 'absolute', inset: 0, borderRadius: '15.4% / 6.95%', background: 'linear-gradient(160deg, #2b2d31 0%, #141518 40%, #0b0c0e 100%)', boxShadow: '0 0 0 1px rgba(255,255,255,0.10), inset 0 0 0 1px rgba(0,0,0,0.7), 0 3rem 6rem rgba(0,0,0,0.55), 0 0.75rem 1.5rem rgba(0,0,0,0.35)' }} />
+            {/* bezel + screen */}
+            <div style={{ position: 'absolute', inset: '1.55% 2.9%', borderRadius: '13.4% / 6.15%', background: '#000', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)' }}>
+              <div style={{ position: 'absolute', inset: '1.9% 2.6%', borderRadius: '11.6% / 5.35%', overflow: 'hidden', background: '#0D2136' }}>
+                {BEATS.map((b, i) => (
+                  <div key={b.src} ref={(el) => { screenRefs.current[i] = el }} style={{ position: 'absolute', inset: 0, willChange: 'opacity, transform' }}>
+                    <Image src={b.src} alt="" fill sizes="(max-width: 760px) 70vw, 30rem" priority={i < 2} style={{ objectFit: 'cover' }} />
+                  </div>
+                ))}
+                <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(118deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0) 28%)', pointerEvents: 'none' }} />
+              </div>
             </div>
           </div>
         </div>
@@ -128,13 +123,13 @@ export default function PhoneScene() {
       <style>{`
         .ps-grid { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: clamp(2rem, 4vw, 5rem); align-items: center; }
         @media (max-width: 760px) {
-          .ps-grid { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); gap: 1.25rem; align-items: start; }
-          .ps-stage { order: -1; align-items: center; height: 52svh; perspective: 800px; }
-          .ps-phone { height: 46svh !important; }
-          .ps-copy { justify-content: flex-start; }
-          .ps-copy { gap: 0.875rem; }
-          .ps-copy h2 { display: none; }
-          .ps-caps { min-height: 6rem; }
+          /* Phone in the top row, copy pinned to the bottom of the viewport */
+          .ps-grid { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; gap: 1rem; align-items: stretch; padding-bottom: calc(1.25rem + env(safe-area-inset-bottom)) !important; }
+          .ps-stage { order: -1; align-items: center; }
+          .ps-phone { height: min(100%, 50svh) !important; }
+          .ps-copy { justify-content: flex-end; gap: 0.875rem; }
+          .ps-head { display: none; }
+          .ps-caps { min-height: 5.5rem; }
           .ps-cta { display: none; }
         }
       `}</style>
