@@ -211,7 +211,7 @@ export async function POST(req: NextRequest) {
           const { getAuth } = await import('firebase-admin/auth')
           email = await getAuth().getUser(uid).then(u => u.emailVerified ? (u.email ?? null) : null)
         } catch (e) {
-          authLoadError = (e instanceof Error ? `${e.name}: ${e.message}` : String(e)).slice(0, 200)
+          authLoadError = `node ${process.version} · ` + (e instanceof Error ? `${e.name}: ${e.message}` : String(e)).slice(0, 180)
           console.error('firebase-admin/auth unavailable:', authLoadError)
         }
         authEmailCache.set(uid, email)
