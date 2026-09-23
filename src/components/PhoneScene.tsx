@@ -9,7 +9,7 @@ import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { AppStoreBadge } from './AppStoreBadge'
+import { StoreBadges } from './AppStoreBadge'
 
 const BEATS = [
   { src: '/images/app/real/01-discover.webp', t: 'b1t', d: 'b1d' },
@@ -89,7 +89,7 @@ export default function PhoneScene() {
             <div style={{ display: 'flex', gap: '0.375rem' }}>
               {BEATS.map((b, i) => <span key={b.t} ref={(el) => { dotRefs.current[i] = el }} style={{ display: 'block', width: '1.5rem', height: '2px', background: TAN, transformOrigin: 'left center' }} />)}
             </div>
-            <div className="ps-cta"><AppStoreBadge variant="light" /></div>
+            <div className="ps-cta"><StoreBadges variant="light" /></div>
           </div>
         </div>
 

@@ -1,14 +1,14 @@
 'use client'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
-import { AppStoreBadge } from './AppStoreBadge'
+import { StoreBadges } from './AppStoreBadge'
 export default function Footer() {
   const t = useTranslations('footer')
   return (
     <footer style={{ background: 'var(--bg-1)', paddingTop: 'clamp(3.5rem,5.5vw,5rem)', overflow: 'hidden' }}>
       <div style={{ maxWidth: '75rem', margin: '0 auto', padding: '0 clamp(1.5rem,4.5vw,2.5rem) clamp(3rem,5vw,5rem)' }}>
         <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(42,33,25,0.6)', marginBottom: '1.25rem' }}>{t('earlyAccess')}</p>
-        <AppStoreBadge />
+        <StoreBadges variant="dark" />
       </div>
       <div style={{ overflow: 'hidden', borderTop: '1px solid rgba(42,33,25,0.1)', paddingTop: '2.5rem' }}>
         <div className="marquee-track-footer" style={{ display: 'flex', width: 'max-content' }}>
