@@ -24,6 +24,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { timingSafeEqual } from 'node:crypto'
 import { adminDb } from '@/lib/firebase-admin'
+import { getAuth } from 'firebase-admin/auth'
 import { sendEmail } from '@/lib/email'
 
 export const dynamic = 'force-dynamic'
@@ -201,7 +202,6 @@ export async function POST(req: NextRequest) {
     const authEmailCache = new Map<string, string | null>()
     const authEmailOf = async (uid: string) => {
       if (!authEmailCache.has(uid)) {
-        const { getAuth } = await import('firebase-admin/auth')
         authEmailCache.set(uid, await getAuth().getUser(uid).then(u => u.emailVerified ? (u.email ?? null) : null).catch(() => null))
       }
       return authEmailCache.get(uid) ?? null
@@ -217,22 +217,32 @@ export async function POST(req: NextRequest) {
       const allowed = await guestMailAllowed(b, b.payment?.status === 'completed' ? null : await authEmailOf(String(b.customerId || '')))
       if (!allowed) { guestMails.push({ booking: id, skipped: 'unpaid and email does not match the verified account' }); continue }
       if (guestCount >= MAX_GUEST_MAILS_PER_RUN) { guestMails.push({ booking: id, skipped: 'per-run cap' }); continue }
-      if (!dry) {
-        await sendEmail({
-          to,
-          subject: `✓ Réservation confirmée — ${subj(b.title)}`,
-          html: shell('Palmera', 'Votre réservation est confirmée',
-            `<table style="border-collapse:collapse">
-              ${row('Expérience', esc(b.title || '—'))}
-              ${row('Chez', esc(companyName(b)))}
-              ${row('Date', esc(whenFr(b)))}
-              ${row('Personnes', esc(b.guestCount || 1))}
-              ${b.bookingTotal > 0 ? row('Montant', `${fmtXof(b.bookingTotal)} XOF`) : ''}
-              ${row('Référence', esc(id))}
-            </table>
-            <p style="color:#2a2119;font-size:14px">Tout est prêt. Retrouvez les détails dans l’app Palmera.</p>
-            <p style="color:#8a8577;font-size:11px">Your booking is confirmed — details are in the Palmera app.</p>`),
-        })
+      // One bad send must never 500 the whole run (that would re-fail every
+      // 5 minutes and starve the partner passes). Record the failure on the
+      // booking's log slot so it is visible and retried on the next run.
+      try {
+        if (!dry) {
+          await sendEmail({
+            to,
+            subject: `✓ Réservation confirmée — ${subj(b.title)}`,
+            html: shell('Palmera', 'Votre réservation est confirmée',
+              `<table style="border-collapse:collapse">
+                ${row('Expérience', esc(b.title || '—'))}
+                ${row('Chez', esc(companyName(b)))}
+                ${row('Date', esc(whenFr(b)))}
+                ${row('Personnes', esc(b.guestCount || 1))}
+                ${b.bookingTotal > 0 ? row('Montant', `${fmtXof(b.bookingTotal)} XOF`) : ''}
+                ${row('Référence', esc(id))}
+              </table>
+              <p style="color:#2a2119;font-size:14px">Tout est prêt. Retrouvez les détails dans l’app Palmera.</p>
+              <p style="color:#8a8577;font-size:11px">Your booking is confirmed — details are in the Palmera app.</p>`),
+          })
+        }
+      } catch (e) {
+        const reason = (e instanceof Error ? e.message : String(e)).slice(0, 200)
+        console.error('guest mail failed', id, reason)
+        guestMails.push({ booking: id, skipped: `send failed: ${reason}` })
+        continue
       }
       log(`${id}_guest`, { kind: 'guest_confirmation', to, sentAt: new Date(), title: b.title ?? null, party })
       guestPartyDone.add(party)
@@ -244,7 +254,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, dry, checked: bookings.length, sent, reminders, guestMails })
   } catch (e) {
     console.error('notify/bookings failed:', e)
-    return NextResponse.json({ ok: false, error: 'notify failed' }, { status: 500 })
+    // The reason (no payload, no addresses) so the Actions log says WHY.
+    const reason = (e instanceof Error ? `${e.name}: ${e.message}` : String(e)).slice(0, 200)
+    return NextResponse.json({ ok: false, error: 'notify failed', reason }, { status: 500 })
   }
 }
 

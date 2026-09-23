@@ -12,7 +12,11 @@ export const resend = key ? new Resend(key) : null
  *  authenticated SPF/DKIM, lands in inboxes rather than spam. */
 export const EMAIL_FROM = 'Palmera <reservations@palmeraexp.com>'
 
+/** Resend's SDK reports API rejections as `{ error }` rather than throwing —
+ *  surface them as errors so callers never log a refused send as sent. */
 export async function sendEmail(opts: { to: string; subject: string; html: string }) {
   if (!resend) throw new Error('RESEND_API_KEY is not set (.env.local)')
-  return resend.emails.send({ from: EMAIL_FROM, ...opts })
+  const res = await resend.emails.send({ from: EMAIL_FROM, ...opts })
+  if (res.error) throw new Error(`resend: ${res.error.name}: ${res.error.message}`)
+  return res
 }

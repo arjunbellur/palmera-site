@@ -34,5 +34,5 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
           echo "HTTP $code"
           # Public repo ⇒ public logs: print counts only, never the payload (partner emails).
-          python3 -c "import json;d=json.load(open('/tmp/out'));print('ok',d.get('ok'),'checked',d.get('checked'),'sent',len(d.get('sent',[])),'reminders',len(d.get('reminders',[])),'guest',len(d.get('guestMails',[])))" || true
+          python3 -c "import json;d=json.load(open('/tmp/out'));print('ok',d.get('ok'),'checked',d.get('checked'),'sent',len(d.get('sent',[])),'reminders',len(d.get('reminders',[])),'guest',len(d.get('guestMails',[])));print('reason',d.get('reason'));[print('skipped',g.get('booking'),g.get('skipped')) for g in d.get('guestMails',[]) if g.get('skipped')]" || true
           test "$code" = "200"
