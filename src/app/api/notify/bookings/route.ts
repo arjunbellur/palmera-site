@@ -24,7 +24,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { timingSafeEqual } from 'node:crypto'
 import { adminDb } from '@/lib/firebase-admin'
-import { getAuth } from 'firebase-admin/auth'
 import { sendEmail } from '@/lib/email'
 
 export const dynamic = 'force-dynamic'
@@ -199,10 +198,23 @@ export async function POST(req: NextRequest) {
 
     // ── pass 3: confirmed → guest confirmation (gated, capped, one per party) ─
     const guestMails: { booking: string; to?: string; skipped?: string }[] = []
+    // `firebase-admin/auth` is loaded lazily and defensively: on Vercel the
+    // subpath has failed to load (a module-level import of it takes the whole
+    // route down — see admin/members). A load failure means "can't verify",
+    // so the mail is skipped with the reason reported, never a 500.
     const authEmailCache = new Map<string, string | null>()
+    let authLoadError: string | null = null
     const authEmailOf = async (uid: string) => {
       if (!authEmailCache.has(uid)) {
-        authEmailCache.set(uid, await getAuth().getUser(uid).then(u => u.emailVerified ? (u.email ?? null) : null).catch(() => null))
+        let email: string | null = null
+        try {
+          const { getAuth } = await import('firebase-admin/auth')
+          email = await getAuth().getUser(uid).then(u => u.emailVerified ? (u.email ?? null) : null)
+        } catch (e) {
+          authLoadError = (e instanceof Error ? `${e.name}: ${e.message}` : String(e)).slice(0, 200)
+          console.error('firebase-admin/auth unavailable:', authLoadError)
+        }
+        authEmailCache.set(uid, email)
       }
       return authEmailCache.get(uid) ?? null
     }
@@ -215,7 +227,7 @@ export async function POST(req: NextRequest) {
       const party = partyKey(b)
       if (guestPartyDone.has(party)) { log(`${id}_guest`, { kind: 'duplicate_suppressed', party, sentAt: new Date() }); continue }
       const allowed = await guestMailAllowed(b, b.payment?.status === 'completed' ? null : await authEmailOf(String(b.customerId || '')))
-      if (!allowed) { guestMails.push({ booking: id, skipped: 'unpaid and email does not match the verified account' }); continue }
+      if (!allowed) { guestMails.push({ booking: id, skipped: authLoadError ? `auth lookup failed: ${authLoadError}` : 'unpaid and email does not match the verified account' }); continue }
       if (guestCount >= MAX_GUEST_MAILS_PER_RUN) { guestMails.push({ booking: id, skipped: 'per-run cap' }); continue }
       // One bad send must never 500 the whole run (that would re-fail every
       // 5 minutes and starve the partner passes). Record the failure on the
