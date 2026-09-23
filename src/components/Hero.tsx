@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useViewport } from '@/lib/use-viewport'
+import { StoreBadges } from './AppStoreBadge'
 
 // Cloudinary delivery. f_auto lets Cloudinary serve the lightest codec each
 // browser supports and q_auto compresses aggressively; w_1280 caps the size so
@@ -56,10 +57,11 @@ export default function Hero() {
           </h1>
         </div>
         {isMobile ? (
-          <div style={{ textAlign: 'center' }}>
+          <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '1.25rem', alignItems: 'center', opacity: loaded ? 1 : 0, transition: 'opacity 1s ease 0.5s' }}>
             <p style={{ fontFamily: 'var(--font-mono)', fontSize: 'clamp(0.7rem,2vw,0.875rem)', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#ebe8db', margin: 0, lineHeight: 1.7, fontWeight: 500 }}>
               {t('tagline')}<br />{t('subtitle')}
             </p>
+            <StoreBadges variant="glass" align="center" />
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', alignItems: 'flex-end', gap: 'clamp(1rem,2vw,1.5rem)' }}>
@@ -67,7 +69,7 @@ export default function Hero() {
             <p style={{ fontFamily: 'var(--font-mono)', fontSize: 'clamp(0.75rem,1.5vw,0.875rem)', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#ebe8db', margin: 0, textAlign: 'center', lineHeight: 1.6, fontWeight: 500 }}>
               {t('tagline')}<br />{t('subtitle')}
             </p>
-            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 'clamp(0.75rem,1.5vw,0.875rem)', letterSpacing: '0.15em', color: 'rgba(235,232,219,0.88)', margin: 0, textAlign: 'right', fontWeight: 500 }}>{t('year')}</p>
+            <div style={{ opacity: loaded ? 1 : 0, transition: 'opacity 1s ease 0.5s' }}><StoreBadges variant="glass" align="end" /></div>
           </div>
         )}
       </div>
