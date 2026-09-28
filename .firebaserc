@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "palmera-platform"
+    "default": "palmera-platform",
+    "prod": "palmera-platform",
+    "staging": "palmera-staging"
   }
 }

@@ -84,6 +84,20 @@ it writes a booking (⚠ would need Samson).
 Every dashboard change that touches documents/rules/indexes the app consumes
 gets a line here, newest first. Pure-UI dashboard changes are never listed.
 
+- 2026-09-27 **Staging environment `palmera-staging` is live (WhatBytes' Android
+  work).** Separate Firebase project, outside the org, same billing account,
+  Firestore `europe-west1` + Storage `us-east1` to match production. Rules,
+  indexes and Storage rules are deployed to it FROM THIS REPO (single source
+  of truth unchanged): `npm run staging:deploy-rules` (uses the operator's
+  gcloud login, no service-account key). Public catalogue copied once via
+  `npm run catalogue:copy:staging`: 36 published experiences + 54 options, the
+  4 companies that own them with phone/whatsapp/email blanked, and
+  config/{categories,markets,policies,featured}. Nothing private crossed
+  (no providers, bookings, profiles, chats, payouts, email_log,
+  countersignatory). Listing images still point at the PRODUCTION bucket
+  (public-read paths) — fine for staging, but a staging upload flow writes
+  to the staging bucket. App impact: none in production; staging is where
+  WhatBytes test before anything reaches `palmera-platform`.
 - 2026-09-03 **Additive: `isAdmin()` read on /favorites and /chat_messages.**
   Our earlier privacy tightening (owner-only favorites, thread-member chats)
   had cut off the admin Growth analytics that count them. App behavior

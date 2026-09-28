@@ -13,10 +13,14 @@
 import { readFileSync } from 'node:fs'
 import { initializeApp, applicationDefault } from 'firebase-admin/app'
 
-const PROJECT = 'palmera-platform'
+// FIREBASE_PROJECT=palmera-staging to target staging; production is the default.
+const PROJECT = process.env.FIREBASE_PROJECT || 'palmera-platform'
 const BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)`
 
 async function token(): Promise<string> {
+  // Staging / any project: FIREBASE_ACCESS_TOKEN=$(gcloud auth print-access-token).
+  // Production default: the Admin SDK key in GOOGLE_APPLICATION_CREDENTIALS.
+  if (process.env.FIREBASE_ACCESS_TOKEN) return process.env.FIREBASE_ACCESS_TOKEN
   const app = initializeApp({ credential: applicationDefault() })
   const t = await (app.options.credential as { getAccessToken: () => Promise<{ access_token: string }> }).getAccessToken()
   return t.access_token

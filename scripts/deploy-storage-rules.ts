@@ -10,25 +10,27 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { initializeApp, applicationDefault } from 'firebase-admin/app'
-import { getFirestore } from 'firebase-admin/firestore'
 
-const PROJECT = 'palmera-platform'
+// FIREBASE_PROJECT=palmera-staging to target staging; production is the default.
+const PROJECT = process.env.FIREBASE_PROJECT || 'palmera-platform'
 const RULES_PATH = resolve(process.cwd(), 'storage.rules')
-const BUCKET = 'palmera-platform.firebasestorage.app'
+const BUCKET = `${PROJECT}.firebasestorage.app`
 const API = 'https://firebaserules.googleapis.com/v1'
 
 async function token(): Promise<string> {
-  // Reuse the Admin SDK's credential to obtain an OAuth2 access token.
+  // Staging / any project: FIREBASE_ACCESS_TOKEN=$(gcloud auth print-access-token).
+  // Production default: the Admin SDK key in GOOGLE_APPLICATION_CREDENTIALS.
+  if (process.env.FIREBASE_ACCESS_TOKEN) return process.env.FIREBASE_ACCESS_TOKEN
   const app = initializeApp({ credential: applicationDefault() })
-  const t = await (app.options.credential as any).getAccessToken()
-  await getFirestore(app).terminate().catch(() => {})
+  const t = await (app.options.credential as { getAccessToken: () => Promise<{ access_token: string }> }).getAccessToken()
   return t.access_token
 }
 
 async function call(path: string, method: string, body: unknown, tok: string) {
   const res = await fetch(`${API}/${path}`, {
     method,
-    headers: { Authorization: `Bearer ${tok}`, 'Content-Type': 'application/json' },
+    // x-goog-user-project: a user token (staging path) must name a quota project.
+    headers: { Authorization: `Bearer ${tok}`, 'Content-Type': 'application/json', 'x-goog-user-project': PROJECT },
     body: body ? JSON.stringify(body) : undefined,
   })
   const json = await res.json().catch(() => ({}))
@@ -52,7 +54,7 @@ async function main() {
   try {
     await call(`projects/${PROJECT}/releases/firebase.storage/${BUCKET}`, 'PATCH', payload, tok)
   } catch {
-    await call(`projects/${PROJECT}/releases`, 'POST', payload, tok)
+    await call(`projects/${PROJECT}/releases`, 'POST', payload.release, tok)
   }
   console.log('✓ Deployed storage.rules → firebase.storage release is live')
 }
