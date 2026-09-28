@@ -20,7 +20,8 @@
     "indexes:deploy": "tsx scripts/deploy-indexes.ts",
     "storage:deploy": "tsx scripts/deploy-storage-rules.ts",
     "catalogue:copy:staging": "tsx scripts/copy-catalogue-to-staging.ts",
-    "staging:deploy-rules": "FIREBASE_PROJECT=palmera-staging FIREBASE_ACCESS_TOKEN=$(gcloud auth print-access-token) tsx scripts/deploy-rules.ts && FIREBASE_PROJECT=palmera-staging FIREBASE_ACCESS_TOKEN=$(gcloud auth print-access-token) tsx scripts/deploy-indexes.ts && FIREBASE_PROJECT=palmera-staging FIREBASE_ACCESS_TOKEN=$(gcloud auth print-access-token) tsx scripts/deploy-storage-rules.ts"
+    "staging:deploy-rules": "FIREBASE_PROJECT=palmera-staging FIREBASE_ACCESS_TOKEN=$(gcloud auth print-access-token) tsx scripts/deploy-rules.ts && FIREBASE_PROJECT=palmera-staging FIREBASE_ACCESS_TOKEN=$(gcloud auth print-access-token) tsx scripts/deploy-indexes.ts && FIREBASE_PROJECT=palmera-staging FIREBASE_ACCESS_TOKEN=$(gcloud auth print-access-token) tsx scripts/deploy-storage-rules.ts",
+    "backfill:availability": "tsx scripts/backfill-availability.ts"
   },
   "dependencies": {
     "firebase": "^12.14.0",

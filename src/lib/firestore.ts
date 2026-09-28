@@ -15,7 +15,7 @@ import {
   getCountFromServer,
 } from 'firebase/firestore'
 import { db } from './firebase'
-import { arrayUnion } from 'firebase/firestore'
+import { arrayUnion, increment } from 'firebase/firestore'
 import {
   COLLECTIONS, SUB, CONFIG_DOCS, type FeaturedConfig,
   type Provider, type ProviderPrivateAdmin,
@@ -523,9 +523,13 @@ export const getPayoutsByProvider = async (uid: string): Promise<Payout[]> => {
  *  marks it completed (the delivery event); every scan records the guest so
  *  a party's remaining tickets stay valid. */
 export const checkInBookingGuest = async (id: string, guestId: string | null, firstScan: boolean) => {
+  // Two shapes on purpose: `checkedInGuests` is what the dashboard reads;
+  // `checkedInUids` / `checkedIn.<key>` / `checkedInCount` is what the app
+  // and Samson's checkInBooking function read to flip a guest from
+  // "confirmed" to "here" (Jordan P18 S6-1). Same keys as the QR carries.
   await updateDoc(doc(db, COLLECTIONS.bookings, id), {
     ...(firstScan ? { status: 'completed', checkedInAt: serverTimestamp() } : {}),
-    ...(guestId ? { checkedInGuests: arrayUnion(guestId) } : {}),
+    ...(guestId ? { checkedInGuests: arrayUnion(guestId), checkedInUids: arrayUnion(guestId), [`checkedIn.${guestId}`]: new Date().toISOString(), checkedInCount: increment(1) } : {}),
     updatedAt: serverTimestamp(),
   })
 }

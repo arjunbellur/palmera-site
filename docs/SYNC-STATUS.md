@@ -84,6 +84,52 @@ it writes a booking (⚠ would need Samson).
 Every dashboard change that touches documents/rules/indexes the app consumes
 gets a line here, newest first. Pure-UI dashboard changes are never listed.
 
+- 2026-09-27 ⚠ **RULES DRIFT FOUND AND RECONCILED.** Production had been
+  running Samson's 2026-09-08 ruleset deployed from `palmera-expo`, not this
+  repo's. Effects until the merged file below is deployed: every dashboard
+  feature added since Aug 25 was permission-denied in prod (staff invites +
+  `staff_access`, the `/door` scanner clauses, marketplace `suppliers` /
+  `products` / `supply_orders` / `supplier_ledger`), the Aug-30 member
+  booking-update lock was reverted (members could again write any status or
+  a fake `payment` map), the Sep-3 admin reads on favorites/chat_messages
+  were missing, and `options` were world-readable again. This repo's
+  `firestore.rules` now carries BOTH sides: all of ours + his nine new
+  collections (`blocks`, `content_reports`, `referrals`, `checkout_intents`,
+  `contact_hashes`, `contact_join_notified`, `mail`, `reward_vouchers`,
+  `usernames`) and his in-block changes (moments/reviews `hidden` is
+  server-owned, one review per booking at `rv_<bookingId>_<uid>`,
+  chat_threads update whitelist, chat_messages reactions-only update).
+  **Samson: please stop deploying `firestore.rules` from `palmera-expo`** —
+  ground rule #1 still stands; send rule changes here and we deploy.
+- 2026-09-27 ⚠ **Check-in field contract.** The app + `checkInBooking`
+  function read `checkedInUids` (array of QR keys), `checkedIn.<key>` (ISO
+  time) and `checkedInCount`; the dashboard scanner wrote only
+  `checkedInGuests`/`checkedInAt`. The scanner now writes BOTH shapes and the
+  rules admit them. Open: a door-staff scan does not award reservation
+  points the way `checkInBooking` does — decide whether the dashboard should
+  call that function (it currently authorizes providerId/admin only) or the
+  function should accept `staff_access`.
+- 2026-09-27 **Guest confirmation email — ours retired.** Samson's
+  `onBookingWritten` emails the guest instantly on confirmation via the
+  Trigger Email extension (`mail`). The dashboard's daily-cron guest pass sent
+  a second, French one (Jordan got both). Partner notifications + pending
+  reminders stay on our side; guest confirmations are the app's.
+- 2026-09-27 ⚠ **Hours contract.** The app reads listing hours from
+  `availability` (or `hours`/`schedule`) as a `{ mon..sun: { open, close } |
+  { closed: true } }` map and `closedDays: [..]`. The dashboard writes
+  `schedule.hours.{same,byDay}` + `schedule.days`, which his decoder does not
+  understand, so app-side hours were blank for dashboard-made listings. The
+  editor now ALSO writes `availability` + `closedDays` in his shape on save
+  (schedule stays the dashboard's source); existing listings backfilled via
+  `npm run backfill:availability`. FR fields he added (`titleFr`, `tagFr`,
+  `locationFr`, `cancelNotesFr`, option `nameFr`) are optional — not written
+  by the dashboard yet.
+- 2026-09-27 **Hosting / deep links (item 12):** Samson's `firebase.json`
+  now serves `/e/**`, `/b/**`, `/invite/**`, `/u/**` … from Hosting site
+  `palmera` (palmera.web.app) with an AASA. The custom domain `palmera.app`
+  shows `DOMAIN_VERIFICATION_LOST` and does not resolve to Firebase — links
+  minted as palmera.app/… are dead until DNS is fixed or the app mints
+  palmera.web.app links.
 - 2026-09-27 **Staging environment `palmera-staging` is live (WhatBytes' Android
   work).** Separate Firebase project, outside the org, same billing account,
   Firestore `europe-west1` + Storage `us-east1` to match production. Rules,

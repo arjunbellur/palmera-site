@@ -196,7 +196,13 @@ export async function POST(req: NextRequest) {
       reminders.push({ booking: id, to })
     }
 
-    // ── pass 3: confirmed → guest confirmation (gated, capped, one per party) ─
+    // ── pass 3: confirmed → guest confirmation — RETIRED 2026-09-27 ─────────
+    // Samson's onBookingWritten now emails the guest the instant a booking is
+    // confirmed (Trigger Email extension, `mail` collection; live since his
+    // 2026-09-10 build). Ours ran on the daily cron and sent a second mail
+    // (Jordan received both for bk-6324710C). Partner mail + reminders stay
+    // here; the guest pass is skipped. Flip GUEST_MAIL to re-enable.
+    const GUEST_MAIL = false
     const guestMails: { booking: string; to?: string; skipped?: string }[] = []
     // `firebase-admin/auth` is loaded lazily and defensively: on Vercel the
     // subpath has failed to load (a module-level import of it takes the whole
@@ -219,7 +225,7 @@ export async function POST(req: NextRequest) {
       return authEmailCache.get(uid) ?? null
     }
     let guestCount = 0
-    for (const { id, b } of bookings) {
+    for (const { id, b } of GUEST_MAIL ? bookings : []) {
       if (b.status !== 'confirmed') continue
       const to = b.customerEmail || b.checkout?.customerEmail
       if (!to) continue

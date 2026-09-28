@@ -216,6 +216,10 @@ export interface Experience {
   checkOutTime?: string | null    // "11:00"
   minNights?: number | null
   schedule: Schedule | null
+  /** App-shaped mirror of `schedule` (derived on save by the dashboard —
+   *  see src/lib/availability.ts). The app reads THESE; we never read them. */
+  availability?: Record<string, { open: string; close: string } | { closed: true }>
+  closedDays?: string[]
   optionGroups: OptionGroup[]     // [] = simple experience
   title: string
   location: string

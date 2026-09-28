@@ -15,6 +15,7 @@ import PhotoUpload from './PhotoUpload'
 import MenuUpload from './MenuUpload'
 import GalleryUpload from './GalleryUpload'
 import ListingPreview from './ListingPreview'
+import { availabilityFromSchedule } from '@/lib/availability'
 import { useEscape } from '@/lib/use-escape'
 import PriceInput from './PriceInput'
 import { getEnabledCategories, getEnabledCities, getPolicies } from '@/lib/config'
@@ -578,8 +579,13 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
       mode === 'publish' ? 'published'
       : mode === 'unpublish' ? 'unpublished'
       : (experience?.status === 'published' ? 'published' : 'draft')
+    // The app reads weekly hours as `availability` + `closedDays` (Samson,
+    // 2026-09-10) — derived from our `schedule` on every save so both sides
+    // agree without either changing its model. Null → don't write the keys.
+    const appHours = availabilityFromSchedule(scheduleType, schedule)
     await onSave(
       { ...form, scheduleType, minGuests, maxGuests, eventDate, eventEnd, schedule, optionGroups, providerId, companyId, status, active: status === 'published',
+        ...(appHours ?? {}),
         duration: '', durationValue: null, durationUnit: null, // no such concept (Jordan, 2026-08-23)
         // Samson reads this one number (Dashboard Time call): hours before the
         // experience during which a guest may still cancel for a refund.
