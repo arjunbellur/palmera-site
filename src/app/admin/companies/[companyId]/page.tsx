@@ -22,6 +22,7 @@ import { getAgreement, formatAgreementDate, PALMERA_SIGNATORY, AGREEMENT_VERSION
 import { ScreenHeader, Chip, EmptyState, Skeleton, PrimaryButton, GhostButton, card, bodyText } from '@/components/partner/ui'
 import { Field, Grid, SectionHeading, DangerButton, inputStyle, formatDate } from '../../ui'
 import { useAdmin } from '../../AdminContext'
+import { DEFAULT_COMMISSION_RATE } from '@/lib/money'
 import { notifyDashboard } from '@/lib/notify-client'
 import type { Company, Provider, CompanyPrivateAdmin, CompanyPayoutProfile, Experience, Option, OptionGroup } from '@/lib/schema'
 
@@ -65,7 +66,7 @@ export default function AdminCompanyDetailPage({ params }: { params: Promise<{ c
   const [deletingAccount, setDeletingAccount] = useState(false)
   const [payoutProfile, setPayoutProfile] = useState<CompanyPayoutProfile | null>(null)
 
-  const [rateInput, setRateInput] = useState('10')
+  const [rateInput, setRateInput] = useState(pctText(DEFAULT_COMMISSION_RATE))
   const [savingRate, setSavingRate] = useState(false)
 
   const [savingProfile, setSavingProfile] = useState(false)
@@ -99,7 +100,9 @@ export default function AdminCompanyDetailPage({ params }: { params: Promise<{ c
     setPayoutProfile(pp)
     setCountersign(cs); setSignatory(sig)
     setAccountStatus(pa?.status || 'active')
-    if (ca?.commissionRate != null) setRateInput(pctText(ca.commissionRate))
+    // Pre-activation docs may carry an old 10% placeholder; the form shows the
+    // real rate only once the company is activated, else today's default.
+    if (ca?.commissionRate != null && c.activatedAt) setRateInput(pctText(ca.commissionRate))
     if (sig) { setRepName(sig.name); setRepTitle(sig.title) }
     setLoading(false)
   }
@@ -254,7 +257,7 @@ export default function AdminCompanyDetailPage({ params }: { params: Promise<{ c
         <span style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--pf-faint)' }}>{provider?.email}</span>
         <Chip tone={accountStatus === 'suspended' ? 'alert' : 'green'}>{accountStatus === 'suspended' ? 'Account suspended' : 'Account active'}</Chip>
         <Chip tone={provider?.onboardingStage === 'complete' ? 'gold' : 'neutral'}>{provider?.onboardingStage === 'complete' ? 'Graduated' : 'In onboarding'}</Chip>
-        {companyAdmin?.commissionRate != null && <Chip tone="neutral">{pctText(companyAdmin.commissionRate)}% commission</Chip>}
+        {companyAdmin?.commissionRate != null && company.activatedAt && <Chip tone="neutral">{pctText(companyAdmin.commissionRate)}% commission</Chip>}
       </div>
 
       {confirmDelete && (

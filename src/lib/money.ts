@@ -1,3 +1,7 @@
+/** Palmera's standard partner commission: 10% + 18% VAT on the commission
+ *  = 11.8% effective (agreement v2.0-2026-09 §6). The activation form
+ *  pre-fills this; Jordan can still type a different rate per company. */
+export const DEFAULT_COMMISSION_RATE = 0.118
 // XOF (West African CFA franc) has no minor unit — amounts are whole-franc ints.
 export function formatXOF(amount: number | null | undefined, currency = 'XOF'): string {
   const n = Math.round(amount || 0)
