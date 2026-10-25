@@ -58,13 +58,15 @@ indexes, collections). Last updated: 2026-08-01 (indexes live, sync verified; NO
 | 17 | 🔴 **Every checkout attempt creates a NEW booking + a NEW live Stripe session.** Confirmed 2026-08-16 — not split-pay (all duplicate sets have ONE distinct customerId). Evidence: Sunday Brunch ×3 in 34s, sessions cs_live_a1KwyFlmCW / a1Ix6KR49M / a10XDt6HcT; Palmera Paddle ×2 in 30s (first abandoned `paid:0`, retry `paid:2` — BOTH ended up `confirmed`, so the partner holds a phantom booking); Palmera Hotel ×2 at 00:30, **both with `paidCount: 1` and separate live sessions → the same stay was charged twice**, and both were then declined (see item 16). Fix: idempotency on the create path — reuse the existing pending booking + its Stripe session for the same (uid, experienceId, scheduledFor) instead of creating another. Dashboard mitigations shipped: one email per party, "Doublon possible" chip on later copies. | **Samson** | 🔴 URGENT — real double charges |
 | 9 | ⚠⚠ App source exists ONLY on Samson's laptop — no version control | **Samson** | URGENT: create private palmera-app repo from Xcode (Source Control → New Git Repository → push). TestFlight stores builds, not source; a dead laptop = lost app. |
 
-## Partner notification emails (ours)
-Resend, from `reservations@palmeraexp.com`. Pending → "action required";
-instant-confirmed → FYI; awaiting-payment → silent. Driven by a GitHub
-Actions poll every 5 min (`.github/workflows/notify-bookings.yml`), with
-Vercel's daily cron as backstop. For true instant delivery later: a
-Firestore onCreate Cloud Function, or the app POSTing our endpoint after
-it writes a booking (⚠ would need Samson).
+## Notification emails (ours)
+Resend, from `reservations@palmeraexp.com`; templates in
+`src/lib/email-templates.ts`, every send/skip/failure in `email_log`
+(`/admin/emails`). Primary path since 2026-10-25: the app's
+`onBookingWritten` posts `{ bookingId, event }` to `POST /api/notify/event`
+(`docs/app-notify-event-contract.md`, shared `NOTIFY_SECRET`). The GitHub
+poll (`.github/workflows/notify-bookings.yml`, throttled to a few runs a
+day) is the backstop keyed on missing `notified.*` stamps, and sends the
+time-based mails (12h partner reminder, member day-before reminder).
 
 ## Rules sync log
 - 2026-08-21: **Samson's 2026-08-12 Storage ruleset adopted verbatim** into
@@ -107,6 +109,41 @@ gets a line here, newest first. Pure-UI dashboard changes are never listed.
   - `companies.categories?: MainCategoryId[]` (new, additive, dashboard-only):
     the business's app mains, from the partner profile. The app does not
     read it — it derives business chips from listings; ignore it.
+- 2026-10-25 ⚠ **Email notifications, phases 3–4 of
+  `docs/app-parity-plan-2026-10.md` §D — needs one app-side change.**
+  - **New `POST /api/notify/event`** (`Authorization: Bearer NOTIFY_SECRET`,
+    body `{ bookingId, event }`, events `created | confirmed | declined |
+    cancelled | refunded | payment_received`). Samson's `onBookingWritten`
+    should call it on real transitions — contract, when-to-fire table and a
+    paste-ready functions snippet in **`docs/app-notify-event-contract.md`**.
+    Idempotent per (booking, event, recipient); a failed send is a 200 with
+    the failure listed, never a 500.
+  - **Booking docs gain `notified.{event}_{recipient}` timestamps**
+    (dashboard-written via Admin SDK, additive; the app may ignore them).
+    Rules unchanged — `notified` sits outside the frozen money/anchor fields.
+  - Member mails (confirmed, declined, cancelled + refund line, day-before
+    reminder, payment received) are sent only when `payment.status ===
+    'completed'` or `mode === 'reservation'` — the address is
+    client-writable. **Once `confirmed` flows through the route, retire the
+    Trigger Email extension's member confirmation** or members get two.
+  - Partner set: new pending / new confirmed (unchanged wording), 12h
+    reminder, cancelled by member, refund issued. Recipient
+    `providers.email` → fallback `companies.email`; `notificationPrefs`
+    honoured. Dashboard-originated: staff invite, agreement countersigned,
+    payout sent (`POST /api/notify/dashboard`, caller's ID token).
+  - **Stub rule aligned with the functions' `isUnpaidCheckoutStub`**
+    (`bookingTotal > 0 && paidCount == 0 && payment.status != 'completed'`,
+    any `confirmationType`) — abandoned checkouts on provider-confirmed
+    listings no longer trigger "action required".
+  - `/api/notify/bookings` is now the **backstop**: whole 7-day lookback
+    keyed on missing stamps/logs (an outage never drops a booking), plus the
+    member 24h reminder (second single-field query on `scheduledFor`, no
+    composite index). Guest pass removed.
+  - `/admin/emails` over `email_log` (sent / skipped: reason / failed:
+    reason), read through `GET /api/admin/emails` — no rules change.
+  - Env (`.env.example`): `RESEND_API_KEY`, `CRON_SECRET`, **`NOTIFY_SECRET`
+    (new, set in Vercel + as a functions secret; staging gets its own)**,
+    `FIREBASE_SERVICE_ACCOUNT_B64`.
 - 2026-10-25 **Dashboard aligned with app release 1.55 / 3.3 (phase 1 of
   `docs/app-parity-plan-2026-10.md`).** Additive only; nothing the app
   reads changes meaning.

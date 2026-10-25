@@ -22,6 +22,7 @@ import { getAgreement, formatAgreementDate, PALMERA_SIGNATORY, AGREEMENT_VERSION
 import { ScreenHeader, Chip, EmptyState, Skeleton, PrimaryButton, GhostButton, card, bodyText } from '@/components/partner/ui'
 import { Field, Grid, SectionHeading, DangerButton, inputStyle, formatDate } from '../../ui'
 import { useAdmin } from '../../AdminContext'
+import { notifyDashboard } from '@/lib/notify-client'
 import type { Company, Provider, CompanyPrivateAdmin, CompanyPayoutProfile, Experience, Option, OptionGroup } from '@/lib/schema'
 
 type Tab = 'overview' | 'experiences' | 'signoff' | 'admin'
@@ -214,6 +215,8 @@ export default function AdminCompanyDetailPage({ params }: { params: Promise<{ c
       }
       await setCountersignature(provider.uid, record)
       setCountersign(record); setConfirmCountersign(false); setCountersigning(false)
+      // Tell the partner their agreement is executed — best-effort.
+      void notifyDashboard({ kind: 'agreement_countersigned', providerId: provider.uid })
     } catch { setCountersignError('Could not countersign.'); setCountersigning(false) }
   }
 

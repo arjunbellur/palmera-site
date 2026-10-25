@@ -16,6 +16,7 @@ import {
 } from 'firebase/firestore'
 import { db } from './firebase'
 import { arrayUnion, increment } from 'firebase/firestore'
+import { notifyDashboard } from './notify-client'
 import {
   COLLECTIONS, SUB, CONFIG_DOCS, type FeaturedConfig,
   type Provider, type ProviderPrivateAdmin,
@@ -526,6 +527,16 @@ export const getPayoutsByProvider = async (uid: string): Promise<Payout[]> => {
   }
 }
 
+/** Admin marks a payout batch as sent (rules: admin write only). The
+ *  partner's "versement envoyé" mail goes out best-effort afterwards; the
+ *  server re-reads the payout, so only a batch that is really `paid` mails. */
+export const markPayoutPaid = async (id: string, reference: string | null) => {
+  await updateDoc(doc(db, COLLECTIONS.payouts, id), {
+    status: 'paid', paidAt: serverTimestamp(), reference, updatedAt: serverTimestamp(),
+  })
+  void notifyDashboard({ kind: 'payout_sent', payoutId: id })
+}
+
 /**
  * Partner-side response to a booking request. Only 'confirmed' | 'declined',
  * and only on a booking they own — enforced again in firestore.rules, which
@@ -690,10 +701,13 @@ export const getStaffByCompany = async (providerId: string, companyId: string): 
 }
 
 export const inviteStaff = async (data: Pick<StaffMember, 'companyId' | 'providerId' | 'email' | 'name' | 'role'>) => {
+  const email = data.email.trim().toLowerCase()
   await addDoc(collection(db, 'staff'), {
-    ...data, email: data.email.trim().toLowerCase(), uid: null, status: 'active',
+    ...data, email, uid: null, status: 'active',
     createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
   })
+  // Tell the invitee — best-effort, the invite stands even if the mail fails.
+  void notifyDashboard({ kind: 'staff_invite', companyId: data.companyId, email, name: data.name })
 }
 
 export const setStaffStatus = async (id: string, status: StaffMember['status']) => {
