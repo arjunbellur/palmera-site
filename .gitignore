@@ -38,3 +38,4 @@ serviceAccount*.json
 # every env file, with or without .local
 .env*
 !.env.example
+scripts/*.local.mjs
