@@ -28,7 +28,7 @@ const lbl: React.CSSProperties = {
 
 const MODAL_LABELS = {
   name: 'Product name', category: 'Category', unit: 'Unit', unitSize: 'Unit size',
-  price: 'Price (XOF)', stock: 'Stock', photo: 'Photo', visible: 'Visible in marketplace',
+  price: 'Price (XOF)', stock: 'Stock', lowStockAt: 'Low-stock alert (optional)', photo: 'Photo', visible: 'Visible in marketplace',
   save: 'Save', cancel: 'Cancel', saving: 'Saving…',
 }
 
@@ -104,6 +104,7 @@ export default function AdminSuppliers() {
           intro="Wholesale businesses selling to partners. Create the record with their email — they claim it at their first /supplier sign-in. You can author their catalog for them." />
         <div style={{ paddingBottom: '18px', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
           <SearchInput value={q} onChange={setQ} placeholder="Search suppliers…" />
+          <a href="/admin/suppliers/orders" style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--pf-gold)', textDecoration: 'none', padding: '9px 14px', borderRadius: '10px', border: '1px solid var(--pf-border-strong)' }}>Orders & money →</a>
           <PrimaryButton onClick={() => setForm({ show: true, supplier: null })}>+ Add supplier</PrimaryButton>
         </div>
       </div>

@@ -605,29 +605,16 @@ service cloud.firestore {
       allow create: if isAdmin() || ownsSupplier(request.resource.data.supplierId);
       allow update, delete: if isAdmin() || ownsSupplier(resource.data.supplierId);
     }
-    // supply_orders — RECEIPTS: money split frozen at submission. Buyer creates
-    // 'awaiting_payment' anchored on themselves and reads their own; supplier
-    // updates status on their own orders with anchors + money frozen; the
-    // Stripe webhook marks paid via the Admin SDK (bypasses rules).
+    // supply_orders — dépôt-vente receipts (v4, 2026-10-25). Buyer, the
+    // owning supplier and admins READ; every write goes through
+    // /api/marketplace/orders (Admin SDK) so counts, totals, the commission
+    // split and the charge are computed server-side and never client-trusted.
+    // Admin keeps a client write for manual fixes.
     match /supply_orders/{id} {
       allow read: if signedIn() && (resource.data.partnerId == request.auth.uid || isAdmin());
       allow read: if ownsSupplier(resource.data.supplierId);
-      allow create: if signedIn()
-                    && request.resource.data.partnerId == request.auth.uid
-                    && request.resource.data.status == 'awaiting_payment';
+      allow create, delete: if isAdmin();
       allow update: if isAdmin();
-      allow update: if ownsSupplier(resource.data.supplierId)
-                    && keep('partnerId') && keep('companyId') && keep('supplierId')
-                    && keep('items') && keep('orderTotal') && keep('commissionRate')
-                    && keep('commissionAmount') && keep('supplierNet') && keep('payment');
-      // Buyer may close out their own UNPAID checkout — cancelled only.
-      allow update: if signedIn()
-                    && resource.data.partnerId == request.auth.uid
-                    && resource.data.status == 'awaiting_payment'
-                    && request.resource.data.status == 'cancelled'
-                    && keep('partnerId') && keep('companyId') && keep('supplierId')
-                    && keep('items') && keep('orderTotal') && keep('commissionRate')
-                    && keep('commissionAmount') && keep('supplierNet') && keep('payment');
     }
     // supplier_ledger — server-written only (Admin SDK); supplier reads own.
     match /supplier_ledger/{id} {

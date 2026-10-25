@@ -109,6 +109,17 @@ gets a line here, newest first. Pure-UI dashboard changes are never listed.
   - `companies.categories?: MainCategoryId[]` (new, additive, dashboard-only):
     the business's app mains, from the partner profile. The app does not
     read it — it derives business chips from listings; ignore it.
+- 2026-10-25 ⚠ **Marketplace dépôt-vente v4 — rules change, dashboard-only
+  collections, zero app impact but it IS a rules deploy.** `supply_orders`
+  client writes removed (buyer create / supplier update / buyer cancel):
+  every transition now goes through `/api/marketplace/orders` with the
+  Admin SDK; reads unchanged; admin keeps create/update/delete for manual
+  fixes. No change to any collection the app reads. New server-written doc
+  `companies/{id}/private/billing` (Stripe customer + card label) under the
+  existing `private/{doc}` rule (owner read, admin write). Plan v4 in
+  `docs/marketplace-plan.md`, API in `docs/marketplace-api.md`. Deploy with
+  `npm run rules:deploy` after Samson is told to pull main before his next
+  deploy (his repo cannot deploy rules, but the habit stands).
 - 2026-10-25 ⚠ **Email notifications, phases 3–4 of
   `docs/app-parity-plan-2026-10.md` §D — needs one app-side change.**
   - **New `POST /api/notify/event`** (`Authorization: Bearer NOTIFY_SECRET`,

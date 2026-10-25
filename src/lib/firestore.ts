@@ -25,6 +25,7 @@ import {
   type Booking, type LedgerEntry, type Payout, type CompanyPayoutProfile,
   type AppProfile, type AppDoc,
   type Supplier, type SupplyProduct, type SupplyOrder, type StaffMember,
+  type CompanyBilling, type SupplierLedgerEntry,
 } from './schema'
 
 // ── Countersignature ─────────────────────────────────────────────
@@ -690,6 +691,30 @@ export const deleteSupplyProduct = async (id: string) => {
 export const getSupplyOrdersByPartner = async (partnerId: string): Promise<SupplyOrder[]> => {
   const snap = await getDocs(query(collection(db, 'supply_orders'), where('partnerId', '==', partnerId)))
   return snap.docs.map(d => ({ id: d.id, ...d.data() }) as SupplyOrder)
+}
+
+// Dépôt-vente v4 reads (docs/marketplace-api.md). Writes to supply_orders go
+// through /api/marketplace/orders — never from the client.
+export const getSupplyOrdersBySupplier = async (supplierId: string): Promise<SupplyOrder[]> => {
+  const snap = await getDocs(query(collection(db, 'supply_orders'), where('supplierId', '==', supplierId)))
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }) as SupplyOrder)
+}
+
+export const getAllSupplyOrders = async (): Promise<SupplyOrder[]> => {
+  const snap = await getDocs(collection(db, 'supply_orders'))
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }) as SupplyOrder)
+}
+
+/** The business's card on file (server-written; owner + admin read). */
+export const getCompanyBilling = async (companyId: string): Promise<CompanyBilling | null> => {
+  const snap = await getDoc(doc(db, COLLECTIONS.companies, companyId, 'private', 'billing'))
+  return snap.exists() ? (snap.data() as CompanyBilling) : null
+}
+
+export const getSupplierLedger = async (supplierId?: string): Promise<SupplierLedgerEntry[]> => {
+  const base = collection(db, 'supplier_ledger')
+  const snap = await getDocs(supplierId ? query(base, where('supplierId', '==', supplierId)) : base)
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }) as SupplierLedgerEntry)
 }
 
 // ── Company staff (invite → claim, mirrors the supplier pattern) ───────────

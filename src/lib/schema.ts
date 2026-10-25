@@ -565,6 +565,15 @@ export interface Supplier {
   status: SupplierStatus
   commissionRate: number      // decimal, e.g. 0.118 — same mechanics as companies
   notes?: string              // admin-only context (who vetted them, terms)
+  /** Dépôt-vente v4 (2026-10-25). Flat delivery fee in XOF per order,
+   *  charged at settlement, NO commission on it (it is the supplier's cost). */
+  deliveryFee?: number
+  /** Credibility thresholds on the BUSINESS ("the opposite way" — Jordan):
+   *  an order with more units than `maxPerOrder`, or a first order from a
+   *  business with more than `firstOrderMax`, lands in `pending_review`
+   *  instead of being accepted straight away. Units = Σ qty across lines. */
+  maxPerOrder?: number        // default 10
+  firstOrderMax?: number      // default 10
   createdAt?: TS
   updatedAt?: TS
 }
@@ -582,17 +591,34 @@ export interface SupplyProduct {
   unit: string                // 'bottle' | 'case' | 'crate' | 'unit'…
   unitSize: string            // "75cl", "×24"…
   price: number               // XOF per unit
-  stock: number               // decremented on order accept (phase 3)
+  stock: number               // on-platform inventory: −qty on accept, +returned on settle
+  lowStockAt?: number | null  // supplier flag threshold (inventory view warns at/below)
   status: SupplyProductStatus
   createdAt?: TS
   updatedAt?: TS
 }
 
-// supply_orders — a RECEIPT: items + the commission split are frozen at
-// submission and never recomputed from later price/rate edits.
+// ── supply_orders — dépôt-vente (lend first, pay after). v4, 2026-10-25. ──
+// A supplier lends stock to a business; the business uses some and returns
+// the rest; the supplier verifies the returned count and ONLY THEN is the
+// business charged, for what it consumed. Every transition goes through
+// /api/marketplace/orders/{id} (Admin SDK): clients only READ these docs.
+//
+//   submitted ──accept──▶ accepted ──hand_over──▶ handed_over ──report──▶ reported
+//   pending_review ─┘ (over a threshold; supplier reviews)        └──────────┐
+//   reported | handed_over ──settle (supplier verifies counts)──▶ settled ───┼─▶ paid
+//   settled ──charge fails / no card──▶ payment_due ──pay_now | record_payment┘
+//   submitted | pending_review | accepted ──▶ declined (supplier) | cancelled (business)
+//   paid ──refund (admin, Stripe)──▶ refunded
+// Legacy v2 values ('awaiting_payment', 'delivered') remain only on old docs.
 export type SupplyOrderStatus =
-  | 'awaiting_payment' | 'paid' | 'accepted' | 'delivered'
+  | 'submitted' | 'pending_review' | 'accepted' | 'handed_over' | 'reported'
+  | 'settled' | 'payment_due' | 'paid'
   | 'declined' | 'cancelled' | 'refunded'
+  | 'awaiting_payment' | 'delivered'
+
+export type SupplyLineMode = 'buy' | 'borrow'
+export type SupplyFulfilment = 'delivery' | 'pickup'
 
 export interface SupplyOrderItem {
   productId: string
@@ -600,8 +626,27 @@ export interface SupplyOrderItem {
   unit: string
   unitSize: string
   unitPrice: number
-  qty: number
-  lineTotal: number
+  qty: number                 // handed over (the lend)
+  mode: SupplyLineMode        // buy = charged for qty regardless; borrow = charged for qty − returned
+  lineTotal: number           // full lend value: unitPrice × qty (what checkout shows)
+  reportedReturnedQty: number | null   // business's leftover report (borrow lines)
+  returnedQty: number | null           // supplier-VERIFIED returned count — the one that bills
+  usedQty: number | null               // qty − returnedQty (buy lines: qty)
+  finalLineTotal: number | null        // unitPrice × usedQty, fixed at settlement
+}
+
+export interface SupplyOrderPayment {
+  provider: 'stripe'
+  /** Stripe Customer of the buying company (also kept in companies/{id}/private/billing). */
+  customerId: string | null
+  /** Card on file at submission time; null = the business still has to save one. */
+  paymentMethodId: string | null
+  cardLabel: string | null             // "visa •••• 4242" for both portals
+  setupSessionId: string | null        // Checkout (mode=setup) used to save the card
+  paymentIntentId: string | null       // off-session charge at settlement
+  checkoutSessionId: string | null     // "Pay now" fallback (mode=payment)
+  status: 'none' | 'card_saved' | 'pending' | 'completed' | 'failed' | 'refunded'
+  failureReason: string | null
 }
 
 export interface SupplyOrder {
@@ -612,18 +657,62 @@ export interface SupplyOrder {
   supplierId: string
   supplierName: string
   items: SupplyOrderItem[]
+  fulfilment: SupplyFulfilment
+  deliveryFee: number         // frozen from the supplier at submission; 0 for pickup
+  /** Full lend value Σ lineTotal (+ deliveryFee shown separately). Kept as
+   *  `orderTotal` so v2 readers keep working. */
   orderTotal: number
+  totalUnits: number          // Σ qty — what the thresholds compare against
+  reviewReason: string | null // why it landed in pending_review, for the supplier
   commissionRate: number      // frozen from the supplier at submission
+  /** Projection on the lend value (v2 name kept); the billed split is below. */
   commissionAmount: number
   supplierNet: number
+  /** Settlement — written once by `settle`, never recomputed. */
+  finalGoods: number | null           // Σ finalLineTotal
+  finalTotal: number | null           // finalGoods + deliveryFee — what is charged
+  finalCommissionAmount: number | null // rate × finalGoods (never on the fee)
+  finalSupplierNet: number | null      // finalTotal − finalCommissionAmount
+  paymentMethod: 'card' | 'off_platform' | null
+  offPlatform: { method: 'cash' | 'wave' | 'orange_money' | 'other'; note: string; recordedBy: string } | null
   status: SupplyOrderStatus
-  note: string
-  payment: { provider: 'stripe'; sessionId: string | null; status: 'pending' | 'completed' | 'refunded' } | null
+  note: string                // business → supplier at order time
+  declineReason: string | null
+  payment: SupplyOrderPayment | null
   createdAt?: TS
   updatedAt?: TS
-  paidAt?: TS | null
+  submittedAt?: TS | null
   acceptedAt?: TS | null
+  handedOverAt?: TS | null
+  reportedAt?: TS | null
+  settledAt?: TS | null
+  paidAt?: TS | null
+  // v2 leftovers on old docs
   deliveredAt?: TS | null
+}
+
+/** companies/{companyId}/private/billing — the business's card on file for
+ *  dépôt-vente. Server-written (Admin SDK) from Stripe; owner + admin read. */
+export interface CompanyBilling {
+  stripeCustomerId: string
+  paymentMethodId: string | null
+  cardLabel: string | null    // "visa •••• 4242"
+  updatedAt: TS
+}
+
+/** supplier_ledger — server-written. One credit per paid order (card: the
+ *  net Palmera owes the supplier; off-platform: a negative line = the
+ *  commission the supplier owes Palmera). Settled through payouts later. */
+export interface SupplierLedgerEntry {
+  id?: string
+  supplierId: string
+  supplierUid: string | null
+  orderId: string
+  companyName: string
+  kind: 'order_net' | 'commission_owed'
+  amount: number              // XOF; negative = owed to Palmera
+  currency: 'XOF'
+  createdAt: TS
 }
 
 // ── Company staff (dashboard-owned; the iOS app never touches this) ────────

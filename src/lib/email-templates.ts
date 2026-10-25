@@ -247,3 +247,64 @@ export const payoutSent = (args: { companyName: string; amount: number; currency
     ${button(`${SITE}/partner/earnings`, 'Voir le détail')}
     ${en('Your payout has been sent — the bookings it settles are listed under Earnings in your dashboard.')}`),
 })
+
+// ── Marketplace (dépôt-vente) — docs/marketplace-api.md ────────────────────
+// Suppliers and businesses are both French-first; one English line at the end.
+
+export type MarketplaceMailKind = 'supplier_new_order' | 'supplier_reported' | 'business_paid' | 'business_payment_due' | 'business_declined'
+
+type MarketOrder = FirebaseFirestore.DocumentData & { id: string }
+const linesHtml = (o: MarketOrder) => `<ul style="padding-left:18px;color:#2a2119;font-size:14px">${(o.items as { qty: number; name: string; mode: string; usedQty?: number | null }[])
+  .map((i) => `<li>${i.qty}× ${esc(i.name)} · ${i.mode === 'buy' ? 'achat' : 'emprunt'}${typeof i.usedQty === 'number' && i.mode === 'borrow' ? ` — ${i.usedQty} utilisée(s)` : ''}</li>`).join('')}</ul>`
+
+export function marketplaceMail(kind: MarketplaceMailKind, o: MarketOrder): Rendered {
+  const fee = o.deliveryFee ? row('Frais de livraison', `${fmtXof(o.deliveryFee)} XOF`) : ''
+  switch (kind) {
+    case 'supplier_new_order':
+      return {
+        subject: `${o.status === 'pending_review' ? '⏳ Commande à valider' : 'Nouvelle commande'} — ${subj(o.companyName)}`,
+        html: shell('Palmera · dépôt-vente', `${o.companyName} vous passe commande`,
+          `${linesHtml(o)}
+          <table style="border-collapse:collapse">${row('Valeur prêtée', `${fmtXof(o.orderTotal)} XOF`)}${row('Remise', o.fulfilment === 'delivery' ? 'Livraison' : 'Retrait sur place')}${row('Carte enregistrée', o.payment?.cardLabel ? esc(o.payment.cardLabel) : 'pas encore')}</table>
+          ${o.reviewReason ? p(`<strong>À valider :</strong> ${esc(o.reviewReason)}`) : ''}
+          ${o.note ? p(`Note : ${esc(o.note)}`) : ''}
+          ${button(`${SITE}/supplier/orders`, 'Voir la commande')}
+          ${en(`${o.companyName} placed an order. Review it in your supplier portal.`)}`),
+      }
+    case 'supplier_reported':
+      return {
+        subject: `Retours déclarés — ${subj(o.companyName)}`,
+        html: shell('Palmera · dépôt-vente', `${o.companyName} a déclaré ses retours`,
+          `${p('Vérifiez le décompte lors de la reprise, puis validez-le pour encaisser.')}${linesHtml(o)}
+          ${button(`${SITE}/supplier/orders`, 'Vérifier et clôturer')}
+          ${en('The business reported its leftovers. Verify the count and settle to get paid.')}`),
+      }
+    case 'business_paid':
+      return {
+        subject: `Reçu — ${fmtXof(o.finalTotal || 0)} XOF · ${subj(o.supplierName)}`,
+        html: shell(`Palmera · ${o.supplierName}`, 'Décompte validé et réglé',
+          `${linesHtml(o)}
+          <table style="border-collapse:collapse">${row('Produits utilisés', `${fmtXof(o.finalGoods || 0)} XOF`)}${fee}${row('Total réglé', `${fmtXof(o.finalTotal || 0)} XOF`)}${row('Moyen', o.paymentMethod === 'card' ? esc(o.payment?.cardLabel || 'carte') : 'réglé au fournisseur')}</table>
+          ${button(`${SITE}/partner/marketplace`, 'Voir mes commandes')}
+          ${en('Your supplier verified the returned count; this is your receipt for what you used.')}`),
+      }
+    case 'business_payment_due':
+      return {
+        subject: `Paiement dû — ${fmtXof(o.finalTotal || 0)} XOF · ${subj(o.supplierName)}`,
+        html: shell(`Palmera · ${o.supplierName}`, 'Décompte validé — paiement à régler',
+          `${p(`Le fournisseur a validé le décompte. ${o.payment?.failureReason ? `Le prélèvement n’a pas abouti (${esc(o.payment.failureReason)}).` : 'Aucune carte n’est enregistrée.'}`)}
+          <table style="border-collapse:collapse">${row('Montant dû', `${fmtXof(o.finalTotal || 0)} XOF`)}</table>
+          ${p('Réglez en ligne depuis vos commandes, ou directement au fournisseur qui enregistrera le paiement. Les nouvelles commandes sont bloquées tant que ce montant est dû.')}
+          ${button(`${SITE}/partner/marketplace`, 'Payer maintenant')}
+          ${en('Your supplier settled the order; the charge did not go through. Pay online or settle with the supplier directly.')}`),
+      }
+    case 'business_declined':
+      return {
+        subject: `Commande refusée — ${subj(o.supplierName)}`,
+        html: shell(`Palmera · ${o.supplierName}`, 'Le fournisseur a refusé la commande',
+          `${o.declineReason ? p(`Motif : ${esc(o.declineReason)}`) : ''}${linesHtml(o)}
+          ${button(`${SITE}/partner/marketplace`, 'Voir mes commandes')}
+          ${en('The supplier declined this order.')}`),
+      }
+  }
+}
