@@ -9,13 +9,14 @@ import { ThemeProvider, useTheme } from '@/lib/theme'
 import { isAdminEmail } from '@/lib/admin'
 import { Chip, IconButton, Spinner } from '@/components/partner/ui'
 import { AdminContext } from './AdminContext'
-import { LayoutDashboard, Smartphone, CircleDollarSign, Building2, Truck, Moon, Sun, LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { LayoutDashboard, Smartphone, CircleDollarSign, Building2, Truck, Tags, Moon, Sun, LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 
 const NAV = [
   { href: '/admin', icon: LayoutDashboard, label: 'Overview' },
   { href: '/admin/app', icon: Smartphone, label: 'App' },
   { href: '/admin/money', icon: CircleDollarSign, label: 'Money' },
   { href: '/admin/directory', icon: Building2, label: 'Directory' },
+  { href: '/admin/categories', icon: Tags, label: 'Categories' },
   { href: '/admin/suppliers', icon: Truck, label: 'Suppliers' },
 ] as const
 

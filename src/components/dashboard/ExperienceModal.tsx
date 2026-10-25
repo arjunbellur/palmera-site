@@ -303,6 +303,10 @@ interface ExperienceModalProps {
   /** Company's commission rate (0.118 = 11.8%) — powers the "you earn" line in pricing. */
   commissionRate?: number | null
   defaultCategory?: string
+  /** The app main categories the business ticked on its profile — those
+   *  tiles are outlined, and a one-category business starts a new listing
+   *  there. Never restricts the choice. */
+  companyCategories?: MainCategoryId[]
   defaultCity?: string
   experience?: Experience
   existingOptions?: Option[]
@@ -446,7 +450,7 @@ function Stepper({ value, min = 1, onChange, noLimit, noLimitLabel, unlimitedLab
 }
 
 
-export default function ExperienceModal({ providerId, storageUid, companyId, companyName, commissionRate, defaultCategory, defaultCity, experience, existingOptions, onSave, onClose }: ExperienceModalProps) {
+export default function ExperienceModal({ providerId, storageUid, companyId, companyName, commissionRate, defaultCategory, companyCategories, defaultCity, experience, existingOptions, onSave, onClose }: ExperienceModalProps) {
   const uploadUid = storageUid || providerId
   const locale = useLocale()
   useEscape(onClose)
@@ -477,6 +481,7 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
     ...(() => {
       const main = experience?.mainCategory, sub = experience?.subcategory
       if (isMainCategoryId(main) && (sub == null || isSubcategoryId(sub))) return { mainCategory: main, subcategory: sub ?? null }
+      if (!experience && companyCategories?.length === 1) return { mainCategory: companyCategories[0], subcategory: null }
       if (!experience && !defaultCategory) return { mainCategory: null, subcategory: null }
       const c = classifyListing({ category: experience?.category || defaultCategory, mainCategory: main, subcategory: sub, title: experience?.title, tag: experience?.tag })
       return { mainCategory: c.main, subcategory: c.sub }
@@ -658,9 +663,10 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.5rem' }}>
           {MAIN_CATEGORIES.map((m) => {
             const on = form.mainCategory === m.id
+            const yours = !on && !!companyCategories?.includes(m.id)
             return (
-              <button key={m.id} type="button" onClick={() => setMainCategory(m.id)}
-                style={{ padding: '0.6rem 0.5rem', borderRadius: '0.375rem', border: `1px solid ${on ? 'var(--db-gold-deep)' : 'var(--db-border)'}`,
+              <button key={m.id} type="button" onClick={() => setMainCategory(m.id)} title={yours ? (locale === 'fr' ? 'Sur votre profil' : 'On your business profile') : undefined}
+                style={{ padding: '0.6rem 0.5rem', borderRadius: '0.375rem', border: `1px solid ${on ? 'var(--db-gold-deep)' : yours ? 'var(--db-gold)' : 'var(--db-border)'}`,
                   background: on ? 'var(--db-gold-deep)' : 'var(--db-bg-card)', color: on ? '#ebe8db' : 'var(--db-text)',
                   fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', cursor: 'pointer', textAlign: 'center' }}>
                 {m[locale === 'fr' ? 'fr' : 'en']}

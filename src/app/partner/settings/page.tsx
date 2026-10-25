@@ -11,6 +11,7 @@ import { MailCheck, MailWarning } from 'lucide-react'
 import { updateProvider, updateCompany, getPayoutProfile, setPayoutProfile, getExperiencesByCompany, updateExperience, getCompanyAdmin, getStaffByCompany, inviteStaff, revokeStaff } from '@/lib/firestore'
 import { getEnabledCategories, getEnabledCities } from '@/lib/config'
 import type { CompanyPayoutProfile, StaffMember } from '@/lib/schema'
+import { MAIN_CATEGORIES, type MainCategoryId } from '@/lib/categories'
 import PhotoUpload from '@/components/dashboard/PhotoUpload'
 import GalleryUpload from '@/components/dashboard/GalleryUpload'
 import { ScreenHeader, SectionTitle, card, cardShape, eyebrow, GhostButton, PrimaryButton, bodyText, Chip } from '@/components/partner/ui'
@@ -19,7 +20,7 @@ const inputStyle: React.CSSProperties = { width: '100%', background: 'var(--pf-c
 
 type PoMethod = CompanyPayoutProfile['method']
 
-const EMPTY_CO = { name: '', legalName: '', category: '', city: '', address: '', mapsLink: '', websiteOrSocial: '', phone: '', whatsapp: '', email: '', instagram: '', tiktok: '', description: '' }
+const EMPTY_CO = { name: '', legalName: '', category: '', categories: [] as MainCategoryId[], city: '', address: '', mapsLink: '', websiteOrSocial: '', phone: '', whatsapp: '', email: '', instagram: '', tiktok: '', description: '' }
 
 export default function SettingsScreen() {
   const router = useRouter()
@@ -113,7 +114,7 @@ export default function SettingsScreen() {
     })
     setCoForm({
       name: company.name || '', legalName: company.legalName || '',
-      category: company.category || '', city: company.city || '',
+      category: company.category || '', categories: Array.isArray(company.categories) ? company.categories : [], city: company.city || '',
       address: company.address || '', mapsLink: company.mapsLink || '',
       websiteOrSocial: company.websiteOrSocial || '',
       phone: company.phone || '', whatsapp: company.whatsapp || '', email: company.email || '',
@@ -128,7 +129,7 @@ export default function SettingsScreen() {
     const renamed = coForm.name.trim() !== (company.name || '')
     await updateCompany(company.id, {
       name: coForm.name.trim(), legalName: coForm.legalName.trim(),
-      category: coForm.category, city: coForm.city,
+      category: coForm.category, categories: coForm.categories, city: coForm.city,
       address: coForm.address.trim(),
       mapsLink: coForm.mapsLink.trim() || null,
       websiteOrSocial: coForm.websiteOrSocial.trim() || null,
@@ -386,6 +387,7 @@ export default function SettingsScreen() {
           <div style={{ marginTop: '10px' }}>
             {row(L('co_city'), cities.find(c => c.id === company?.city)?.name || company?.city || '')}
             {row(L('co_category'), cats.find(c => c.id === company?.category)?.name || company?.category || '')}
+            {row(L('co_app_cats'), (company?.categories || []).map(id => MAIN_CATEGORIES.find(m => m.id === id)?.[locale === 'fr' ? 'fr' : 'en'] || id).join(' · ') || '—')}
             {row(L('co_address'), company?.address || '')}
             {row(L('activated'), company?.activatedAt ? formatDate(company.activatedAt) : '—')}
             {row(L('comm_title'), rate != null ? `${+(rate * 100).toFixed(2)}% ${L('comm_per_booking')}` : '—')}
@@ -410,6 +412,25 @@ export default function SettingsScreen() {
                 <option value="">{L('select')}</option>
                 {cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
+            </div>
+            {/* App taxonomy (1.55): everything the business offers, across
+                the app's six mains. Dashboard-only — the app files each
+                LISTING by its own pair; the editor outlines these first. */}
+            <div style={{ gridColumn: '1 / -1' }}>
+              <div style={{ ...eyebrow, marginBottom: '5px' }}>{L('co_app_cats')}</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {MAIN_CATEGORIES.map(m => {
+                  const on = coForm.categories.includes(m.id)
+                  return (
+                    <button key={m.id} type="button" aria-pressed={on}
+                      onClick={() => setCoForm(f => ({ ...f, categories: on ? f.categories.filter(c => c !== m.id) : [...f.categories, m.id] }))}
+                      style={{ padding: '6px 12px', borderRadius: '999px', border: `1px solid ${on ? 'var(--pf-gold)' : 'var(--pf-border-strong)'}`, background: on ? 'var(--pf-gold-soft)' : 'var(--pf-sheet)', color: on ? 'var(--pf-gold)' : 'var(--pf-muted)', fontFamily: 'var(--font-sans)', fontSize: '12px', cursor: 'pointer' }}>
+                      {on ? '✓ ' : ''}{m[locale === 'fr' ? 'fr' : 'en']}
+                    </button>
+                  )
+                })}
+              </div>
+              <p style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-faint)', margin: '5px 0 0', lineHeight: 1.45 }}>{L('co_app_cats_hint')}</p>
             </div>
             <div>
               <div style={{ ...eyebrow, marginBottom: '5px' }}>{L('co_city')}</div>

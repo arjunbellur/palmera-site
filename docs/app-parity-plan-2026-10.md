@@ -253,7 +253,7 @@ Environment needed (Vercel): `RESEND_API_KEY`, `CRON_SECRET`, `NOTIFY_SECRET`,
 | Phase | Scope | Depends on |
 | --- | --- | --- |
 | 1 | A1-A4 (schema, classifier, editor), B1-B3, C, E1-E3 | nothing |
-| 2 | A6 backfill (dry run, then staging, then production) and A7 re-filing view | phase 1, app-side notice in SYNC-STATUS |
+| 2 | A6 backfill (dry run, then staging, then production) and A7 re-filing view — **built 2026-10-25**: `scripts/backfill-categories.ts` (staging dry run clean), `/admin/categories`; A5 pulled forward (`Company.categories` tiles on both company forms, duplicate opens the editor on the copy, editor outlines the business's mains). Production write still to run. | phase 1, app-side notice in SYNC-STATUS |
 | 3 | D2 items 1-4, 8 (route, stamps, backstop, stub fix) | the `onBookingWritten` POST on the app side; `NOTIFY_SECRET` in Vercel |
 | 4 | D2 items 5-7, 9-10 (full event set, staging, observability); A5 | phase 3 |
 

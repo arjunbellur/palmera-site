@@ -84,6 +84,29 @@ it writes a booking (⚠ would need Samson).
 Every dashboard change that touches documents/rules/indexes the app consumes
 gets a line here, newest first. Pure-UI dashboard changes are never listed.
 
+- 2026-10-25 ⚠ **Category backfill ready — NOT yet run on production
+  (phase 2 of `docs/app-parity-plan-2026-10.md`).** Heads-up for the app
+  side before it runs:
+  - `npm run backfill:categories -- --dry` (staging:
+    `FIREBASE_PROJECT=palmera-staging FIREBASE_ACCESS_TOKEN=$(gcloud auth
+    print-access-token)`; production: `GOOGLE_APPLICATION_CREDENTIALS`).
+    For every `experiences` doc without a valid `mainCategory` it writes
+    `mainCategory` + `subcategory` = exactly what the app's classifier
+    already derives for that doc (`src/lib/categories.ts` is a verbatim
+    port; `scripts/check-categories.ts` guards it). `category` and every
+    other field untouched. Also writes `companies.nameLower`. Idempotent.
+    Members see no change; the pair simply becomes explicit and editable.
+  - Staging dry run 2026-10-25: 36 listings would be filed, 4 companies
+    would get `nameLower`, 0 conflicts.
+  - Production: pending (run the dry run, eyeball, then write; or use the
+    new admin page `/admin/categories` → "File N unfiled as suggested",
+    which does the same writes through the admin's own client session).
+  - `/admin/categories` lets an admin move a listing to another main/sub;
+    moving the MAIN also rewrites legacy `category` via the sub→legacy map
+    (Android 3.3 still places by it). Sub-only moves leave `category`.
+  - `companies.categories?: MainCategoryId[]` (new, additive, dashboard-only):
+    the business's app mains, from the partner profile. The app does not
+    read it — it derives business chips from listings; ignore it.
 - 2026-10-25 **Dashboard aligned with app release 1.55 / 3.3 (phase 1 of
   `docs/app-parity-plan-2026-10.md`).** Additive only; nothing the app
   reads changes meaning.

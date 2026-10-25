@@ -417,6 +417,7 @@ export default function AdminCompanyDetailPage({ params }: { params: Promise<{ c
           companyId={companyId}
           companyName={company.name}
           defaultCategory={company.category}
+          companyCategories={company.categories}
           defaultCity={company.city}
           experience={editingExp}
           existingOptions={editingOptions}

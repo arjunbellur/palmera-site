@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { usePartner } from '../PartnerContext'
 import { t } from '../i18n'
 import {
-  getExperiencesByCompany, addExperience, deleteExperience, getOptions, addOption, saveExperienceWithOptions,
+  getExperiencesByCompany, getExperience, addExperience, deleteExperience, getOptions, addOption, saveExperienceWithOptions,
   getCompanyAdmin,
 } from '@/lib/firestore'
 import ConfirmDialog from '@/components/dashboard/ConfirmDialog'
@@ -64,7 +64,10 @@ export default function ListingsScreen() {
   }
 
   // Duplicate: a full copy (options included) saved as a DRAFT — never
-  // straight to published, so a copy can't silently go live.
+  // straight to published, so a copy can't silently go live. The copy then
+  // opens in the editor with the category picker on top, so "duplicate as
+  // another category" (a hotel re-listing its restaurant under Dining) is
+  // one click + one tile; a plain copy just closes the editor.
   const [dupBusyId, setDupBusyId] = useState('')
   const duplicate = async (e: Experience) => {
     if (!e.id || dupBusyId) return
@@ -82,6 +85,9 @@ export default function ListingsScreen() {
     }
     setDupBusyId('')
     await load()
+    const copy = await getExperience(ref.id)
+    if (copy) { setEditing(copy); setEditingOptions(opts.map(({ id: _oid, ...o }) => o as Option)); setShowModal(true) }
+    setToast(L('t_dup')); setTimeout(() => setToast(''), 4000)
   }
 
   const [toast, setToast] = useState('')
@@ -240,6 +246,7 @@ export default function ListingsScreen() {
           companyId={company.id!}
           companyName={company.name}
           defaultCategory={company.category}
+          companyCategories={company.categories}
           defaultCity={company.city}
           experience={editing}
           existingOptions={editingOptions}

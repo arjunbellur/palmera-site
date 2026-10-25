@@ -94,6 +94,11 @@ export interface Company {
   legalName: string
   businessType: string            // v3.2 (from old partner doc)
   category: string                // config/categories id; default for its experiences
+  /** App main categories this business operates in (2026-10-25, additive,
+   *  dashboard-only — the app files by each LISTING's pair, never by this).
+   *  A hotel with a restaurant and a spa is `['stay','dining','sports_wellness']`;
+   *  the editor suggests these first when the partner files a new listing. */
+  categories?: MainCategoryId[]
   city: string                    // config/markets id; must be enabled
   address: string
   mapsLink: string | null

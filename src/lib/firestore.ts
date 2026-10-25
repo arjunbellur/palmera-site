@@ -166,6 +166,11 @@ export const getCompanyAdmin = async (companyId: string): Promise<CompanyPrivate
 // Queries anchor on providerId so they satisfy the read rule (which authorizes
 // by providerId); companyId is an additional filter (needs a providerId+companyId
 // composite index). Fetch-all-then-filter is fine at partner scale.
+export const getExperience = async (id: string): Promise<Experience | null> => {
+  const snap = await getDoc(doc(db, COLLECTIONS.experiences, id))
+  return snap.exists() ? ({ id: snap.id, ...(snap.data() as Experience) }) : null
+}
+
 export const getExperiencesByProvider = async (providerId: string): Promise<Experience[]> => {
   const q = query(collection(db, COLLECTIONS.experiences), where('providerId', '==', providerId))
   const snap = await getDocs(q)
