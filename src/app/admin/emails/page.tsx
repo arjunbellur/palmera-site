@@ -88,7 +88,11 @@ export default function AdminEmailsPage() {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '14px' }}>
-        <SearchInput value={q} onChange={setQ} placeholder="Search — address, title, booking id, kind, reason…" />
+        {/* SearchInput flexes along its parent's main axis — in this column
+            it would stretch tall, so give it a row to size against. */}
+        <div style={{ display: 'flex' }}>
+          <SearchInput value={q} onChange={setQ} placeholder="Search — address, title, booking id, kind, reason…" />
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
           <span style={{ ...eyebrow, marginRight: '2px' }}>Status</span>
           {(['sent', 'skipped', 'failed'] as Status[]).map((s) => (
