@@ -139,13 +139,20 @@ export const createCompany = async (providerId: string, data: Partial<Company>) 
     logo: null, heroPhoto: null, gallery: [], operations: null, completeness: {},
     activatedAt: null, active: false,
     ...data,
+    // The app matches businesses on `nameLower` (publicCompanies + its own
+    // queries, 1.55) — derive it from whatever name is being written.
+    ...(typeof data.name === 'string' ? { nameLower: data.name.trim().toLowerCase() } : {}),
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   })
 }
 
 export const updateCompany = async (companyId: string, data: Partial<Company>) => {
-  await updateDoc(doc(db, COLLECTIONS.companies, companyId), { ...data, updatedAt: serverTimestamp() })
+  await updateDoc(doc(db, COLLECTIONS.companies, companyId), {
+    ...data,
+    ...(typeof data.name === 'string' ? { nameLower: data.name.trim().toLowerCase() } : {}),
+    updatedAt: serverTimestamp(),
+  })
 }
 
 

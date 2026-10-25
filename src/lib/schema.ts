@@ -11,6 +11,7 @@
 // Full spec: the ratified plan + memory `schema-v3.1` (now v3.2).
 // ─────────────────────────────────────────────────────────────────────────
 import type { Timestamp } from 'firebase/firestore'
+import type { MainCategoryId, SubcategoryId } from './categories'
 
 /** Firestore Timestamp on read; may be a server sentinel on write. */
 type TS = Timestamp
@@ -87,6 +88,9 @@ export interface Company {
   id?: string
   providerId: string              // FK → providers/{uid}; immutable
   name: string                    // trading/display name → experiences.provider
+  /** Lower-cased `name`, derived on every save (2026-10-25). The app's
+   *  `publicCompanies` lookup and its own queries match on this field. */
+  nameLower?: string
   legalName: string
   businessType: string            // v3.2 (from old partner doc)
   category: string                // config/categories id; default for its experiences
@@ -224,6 +228,14 @@ export interface Experience {
   title: string
   location: string
   category: string                // config id; defaults from company; overridable; enabled
+  /** App taxonomy (iOS 1.55 / Android 3.3, 2026-10-25, additive). The app
+   *  files a listing by `mainCategory` + `subcategory` when present and
+   *  otherwise derives them from `category` + title keywords (see
+   *  src/lib/categories.ts, a port of its classifier). The dashboard writes
+   *  all three: the pair the partner chose and the legacy `category` the
+   *  pair maps to, because Android 3.3 still places by `category` alone. */
+  mainCategory?: MainCategoryId | null
+  subcategory?: SubcategoryId | null
   city: string                    // config id; enabled only
   mapsLink: string | null         // Google Maps link — what the PARTNER enters; required at publish
   // Menu attachment for restaurant-style listings (dining/nightlife) —
@@ -340,6 +352,34 @@ export interface BookingSelection {
   quantity: number
 }
 
+/** Processor receipt on a booking (`payment`, `copayPayments[uid]`), written
+ *  by the app's Cloud Functions only. Four rails as of app release 1.55
+ *  (2026-10-25): Stripe Checkout (card), Stripe PaymentIntent (Apple Pay /
+ *  Google Pay one-tap), pawaPay mobile money (Wave / Orange Money, XOF),
+ *  and legacy PayDunya. Booking money fields (`bookingTotal` etc.) stay in
+ *  XOF regardless of the charge currency; the receipt records the charge.
+ *  Refunds: Stripe refunds settle synchronously; pawaPay refunds are async
+ *  (`refundState` 'processing' → 'refunded', or 'manual_review' when pawaPay
+ *  rejected the refund and someone must refund by hand). */
+export type PaymentReceiptStatus = 'pending' | 'completed' | 'failed' | 'cancelled' | 'refunded'
+export type RefundState = 'none' | 'processing' | 'refunded' | 'manual_review'
+export type PaymentReceipt = (
+  | { provider: 'stripe'; sessionId: string; method?: undefined; currency: string; amountMinor: number }
+  | { provider: 'stripe'; method: 'apple_pay' | 'google_pay'; paymentIntentId: string; currency: string; amountMinor: number }
+  | { provider: 'pawapay'; checkoutId: string; currency: 'XOF'; amountXof: number
+      mmProvider: 'WAVE_SEN' | 'ORANGE_SEN' | 'FREE_SEN'; depositId?: string; providerTransactionId?: string; failureCode?: string }
+  | { provider: 'paydunya'; amountXof: number; token?: string | null }
+) & {
+  status: PaymentReceiptStatus
+  payers?: number
+  updatedAt?: TS
+  refundedAt?: TS
+  refundState?: RefundState
+  pawapayRefundId?: string
+  refundFailureCode?: string
+  refundSettledAt?: TS
+}
+
 export type BookingStatus =
   | 'pending'          // provider_confirmed listing, awaiting partner action
   | 'confirmed'        // accepted (or instant-confirm)
@@ -381,11 +421,12 @@ export interface Booking {
   }
   nights?: number
   pointsAwarded?: number
-  payment?: {
-    provider: string; status: string; updatedAt?: TS
-    amountXof?: number; token?: string | null            // PayDunya
-    currency?: string; amountMinor?: number; sessionId?: string  // Stripe
-  } | null
+  /** Processor receipt for the host's share (see PaymentReceipt). Written
+   *  only by the app's Cloud Functions. Absent for mode='reservation'. */
+  payment?: PaymentReceipt | null
+  /** Split payment: one receipt per co-payer uid, same shapes as `payment`
+   *  (app functions, 1.55). The host's own share may appear here too. */
+  copayPayments?: Record<string, PaymentReceipt>
   guestCount: number
   // ── When ──
   scheduledFor: TS            // the reserved date/time of the experience

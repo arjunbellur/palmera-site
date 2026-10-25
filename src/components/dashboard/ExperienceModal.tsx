@@ -16,6 +16,7 @@ import MenuUpload from './MenuUpload'
 import GalleryUpload from './GalleryUpload'
 import ListingPreview from './ListingPreview'
 import { availabilityFromSchedule } from '@/lib/availability'
+import { MAIN_CATEGORIES, subcategoriesFor, classifyListing, legacyCategoryFor, isMainCategoryId, isSubcategoryId, categoryLabel, type MainCategoryId } from '@/lib/categories'
 import { useEscape } from '@/lib/use-escape'
 import PriceInput from './PriceInput'
 import { getEnabledCategories, getEnabledCities, getPolicies } from '@/lib/config'
@@ -63,6 +64,8 @@ const M = {
     nr_cancel: 'politique d’annulation', nr_photos: 'photos', nr_coords: 'lien Google Maps',
     name: 'Nom de l’expérience *', namePh: 'ex. « Tour en jetski au coucher du soleil »',
     category: 'Catégorie *', city: 'Ville *', select: 'Sélectionner',
+    subcategory: 'Sous-catégorie *', subHint: 'Classez chaque offre comme les clients la cherchent dans l’app : la table d’un beach club sous Restauration, son day pass sous Expériences, ses soirées sous Divertissement.',
+    appFiles: 'Dans l’app, cette annonce apparaît sous', appSuggests: 'Suggestion d’après le titre',
     howPay: 'Comment les clients paient-ils ?', payApp: 'Paiement dans l’app', payFree: 'Réservation gratuite',
     payAppDesc: 'Le groupe paie à la réservation et partage le total dans l’app.',
     payFreeDesc: 'Réserver une table ou une entrée, sans paiement. Les extras restent possibles.',
@@ -169,6 +172,8 @@ const M = {
     nr_cancel: 'cancellation policy', nr_photos: 'photos', nr_coords: 'Google Maps link',
     name: 'Name of the experience *', namePh: 'e.g. "Sunset Jetski Tour"',
     category: 'Category *', city: 'City *', select: 'Select',
+    subcategory: 'Subcategory *', subHint: 'File each offering the way guests look for it in the app: a beach club’s table under Dining, its day pass under Experiences, its parties under Entertainment.',
+    appFiles: 'In the app this listing appears under', appSuggests: 'Suggested from the title',
     howPay: 'How do guests pay?', payApp: 'Pay in the app', payFree: 'Free to reserve',
     payAppDesc: 'The group pays at booking and splits the total in the app.',
     payFreeDesc: 'Reserve a table or a spot, no payment. Extras still possible.',
@@ -466,6 +471,16 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
     img: '', gallery: [], description: '', includes: [], highlights: [],
     languages: [], excludes: [], dressCode: null,
     ...experience,
+    // App taxonomy: an existing listing without the pair opens pre-filled with
+    // exactly what the app computes for it today, so saving changes nothing a
+    // member sees unless the partner picks something else.
+    ...(() => {
+      const main = experience?.mainCategory, sub = experience?.subcategory
+      if (isMainCategoryId(main) && (sub == null || isSubcategoryId(sub))) return { mainCategory: main, subcategory: sub ?? null }
+      if (!experience && !defaultCategory) return { mainCategory: null, subcategory: null }
+      const c = classifyListing({ category: experience?.category || defaultCategory, mainCategory: main, subcategory: sub, title: experience?.title, tag: experience?.tag })
+      return { mainCategory: c.main, subcategory: c.sub }
+    })(),
   }))
   const [groups, setGroups] = useState<(OptionGroup & { options: (Option & { _isNew?: boolean })[] })[]>(() => {
     if (!experience?.optionGroups?.length) return []
@@ -487,6 +502,16 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
   }, [])
 
   const set = <K extends keyof Experience>(field: K, value: Experience[K]) => setForm((p) => ({ ...p, [field]: value }))
+  // Category pair → also rewrite the legacy `category` the pair maps to, so
+  // Android (which still places by `category`) and the app's fallback agree
+  // with what the partner chose. Changing the main clears a sub that doesn't
+  // belong to it and pre-selects the app's own suggestion from the title.
+  const setMainCategory = (main: MainCategoryId) => setForm((p) => {
+    const keep = p.subcategory && subcategoriesFor(main).some((s) => s.id === p.subcategory) ? p.subcategory : null
+    const sub = keep ?? classifyListing({ mainCategory: main, title: p.title, tag: p.tag }).sub
+    return { ...p, mainCategory: main, subcategory: sub, category: legacyCategoryFor(main, sub) }
+  })
+  const setSubcategory = (sub: string) => setForm((p) => ({ ...p, subcategory: sub || null, category: legacyCategoryFor(p.mainCategory, sub || null) }))
   const setCancelTier = (tier: CancellationTier) => setForm((p) => ({ ...p, cancellationPolicy: { tier, customNotes: p.cancellationPolicy?.customNotes ?? null, policyVersion: p.cancellationPolicy?.policyVersion || 'v1' } }))
   const setSchedule = (patch: Partial<NonNullable<Experience['schedule']>>) => setForm((p) => ({ ...p, schedule: { ...(p.schedule || {}), ...patch } }))
   const toggleLanguage = (lang: string) => setForm((p) => {
@@ -514,7 +539,7 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
 
   const isPaid = form.mode === 'paid'
   const isOneTime = form.scheduleType === 'one_time'
-  const canSave = !!form.title && !!form.category && !!form.city && (!isPaid || !!form.price)
+  const canSave = !!form.title && !!form.category && !!form.mainCategory && !!form.city && (!isPaid || !!form.price)
 
   // Order matters — it's the order guests see in the app. Drag a set by its
   // handle instead of deleting and rebuilding it.
@@ -625,13 +650,46 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
         <input style={inputStyle} placeholder={T.namePh} value={form.title} onChange={(e) => set('title', e.target.value)} />
       </div>
 
+      {/* Category = the app's six mains, in product order, then the subcategory
+          the member actually browses. The legacy config id is derived (see
+          setMainCategory) — the old <select> over config/categories is gone. */}
+      <div style={{ marginBottom: '1rem' }}>
+        <label style={labelStyle}>{T.category}</label>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.5rem' }}>
+          {MAIN_CATEGORIES.map((m) => {
+            const on = form.mainCategory === m.id
+            return (
+              <button key={m.id} type="button" onClick={() => setMainCategory(m.id)}
+                style={{ padding: '0.6rem 0.5rem', borderRadius: '0.375rem', border: `1px solid ${on ? 'var(--db-gold-deep)' : 'var(--db-border)'}`,
+                  background: on ? 'var(--db-gold-deep)' : 'var(--db-bg-card)', color: on ? '#ebe8db' : 'var(--db-text)',
+                  fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', cursor: 'pointer', textAlign: 'center' }}>
+                {m[locale === 'fr' ? 'fr' : 'en']}
+              </button>
+            )
+          })}
+        </div>
+        <p style={{ ...hintStyle, margin: '0.5rem 0 0' }}>{T.subHint}</p>
+      </div>
+
       <div style={rowStyle}>
         <div>
-          <label style={labelStyle}>{T.category}</label>
-          <select style={{ ...inputStyle, appearance: 'none' }} value={form.category} onChange={(e) => set('category', e.target.value)}>
+          <label style={labelStyle}>{T.subcategory}</label>
+          <select style={{ ...inputStyle, appearance: 'none' }} value={form.subcategory ?? ''} disabled={!form.mainCategory}
+            onChange={(e) => setSubcategory(e.target.value)}>
             <option value="">{T.select}</option>
-            {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            {form.mainCategory && subcategoriesFor(form.mainCategory).map((s) => (
+              <option key={s.id} value={s.id}>{s[locale === 'fr' ? 'fr' : 'en']}</option>
+            ))}
           </select>
+          {form.mainCategory && (
+            <p style={{ ...hintStyle, margin: '0.375rem 0 0' }}>
+              {T.appFiles} <strong>{categoryLabel(form.mainCategory, form.subcategory, locale === 'fr' ? 'fr' : 'en')}</strong>
+              {!form.subcategory && (() => {
+                const s = classifyListing({ mainCategory: form.mainCategory, title: form.title, tag: form.tag }).sub
+                return s ? <> · {T.appSuggests}: {categoryLabel(form.mainCategory, s, locale === 'fr' ? 'fr' : 'en')}</> : null
+              })()}
+            </p>
+          )}
         </div>
         <div>
           <label style={labelStyle}>{T.city}</label>
@@ -714,7 +772,7 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
   )
 
   const miniLabel: React.CSSProperties = { ...labelStyle, fontSize: '0.625rem', marginBottom: '0.25rem' }
-  const isStay = form.category === 'hotels' || form.category === 'villas'
+  const isStay = form.mainCategory ? form.mainCategory === 'stay' : (form.category === 'hotels' || form.category === 'villas')
   const hours = form.schedule?.hours || { same: { open: '09:00', close: '18:00' } }
   const setHours = (patch: Partial<NonNullable<Experience['schedule']>['hours']> & object) =>
     setSchedule({ hours: { ...hours, ...(patch as object) } as NonNullable<Experience['schedule']>['hours'] })
@@ -851,7 +909,7 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
 
       <div style={{ marginBottom: '1rem' }}>
         {/* Menu — restaurant-style categories only. Optional; PDF or image. */}
-        {['dining', 'nightlife'].includes(form.category || '') && (
+        {(form.mainCategory ? ['dining', 'entertainment'].includes(form.mainCategory) : ['dining', 'nightlife'].includes(form.category || '')) && (
           <div style={{ marginBottom: '1.25rem' }}>
             <label style={labelStyle}>{T.menuLabel}</label>
             <p style={{ ...hintStyle, margin: '0 0 0.625rem' }}>{T.menuHint}</p>
@@ -1137,7 +1195,7 @@ export default function ExperienceModal({ providerId, storageUid, companyId, com
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {T.steps.map((st, i) => {
               const summary =
-                i === 0 ? [form.title, form.category, form.city].filter(Boolean).join(' · ')
+                i === 0 ? [form.title, form.mainCategory ? categoryLabel(form.mainCategory, form.subcategory, locale === 'fr' ? 'fr' : 'en') : form.category, form.city].filter(Boolean).join(' · ')
                 : i === 1 ? (isPaid ? `${fmt(form.price || 0)} XOF` : T.payFree)
                 : i === 2 ? `${form.minGuests}–${form.maxGuests}`
                 : i === 3 ? [form.location, isOneTime ? T.oneOff : isStay ? `${form.checkInTime || '15:00'} → ${form.checkOutTime || '11:00'}` : `${(form.schedule?.hours?.same.open) || '09:00'} → ${(form.schedule?.hours?.same.close) || '18:00'}`].filter(Boolean).join(' · ')

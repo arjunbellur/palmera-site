@@ -681,5 +681,13 @@ service cloud.firestore {
     match /mail/{id} { allow read, write: if false; }
     match /contact_hashes/{uid} { allow read, write: if false; }
     match /contact_join_notified/{id} { allow read, write: if false; }
+    // ── Server-only (app release 1.55, 2026-10-25): pawaPay mobile-money
+    // checkouts and refunds (the functions' own ledger, keyed by pawaPay
+    // ids) and the concierge's per-member daily usage counters. Unmatched
+    // paths are denied anyway; these clauses make the intent explicit and
+    // match the app repo's copy.
+    match /pawapay_payments/{id} { allow read, write: if false; }
+    match /pawapay_refunds/{id} { allow read, write: if false; }
+    match /concierge_usage/{id} { allow read, write: if false; }
   }
 }

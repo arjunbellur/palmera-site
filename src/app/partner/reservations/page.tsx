@@ -6,6 +6,7 @@ import { t } from '../i18n'
 import { setBookingStatus, checkInBookingGuest } from '@/lib/firestore'
 import type { Booking } from '@/lib/schema'
 import { toDate } from '@/lib/money'
+import { bookingPaymentLabel } from '@/lib/payments'
 import { ScreenHeader, EmptyState, Chip, Money, eyebrow, GhostButton, Skeleton, PrimaryButton } from '@/components/partner/ui'
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
@@ -402,11 +403,10 @@ export default function ReservationsScreen() {
       {detail && (() => {
         const b = detail
         const when = toDate(b.scheduledFor)
-        const payMap = b.payment as { provider?: string; status?: string } | undefined
-        const payLabel = b.paymentStatus === 'paid' ? L('dt_paid')
-          : b.paymentStatus === 'refunded' ? L('dt_refunded')
-          : b.paymentStatus === 'unpaid' ? L('dt_unpaid')
-          : payMap?.status ? `${payMap.provider ?? '—'} · ${payMap.status}` : L('dt_none')
+        // Method + state from the processor receipt (card / Apple Pay / Google
+        // Pay / Wave / Orange Money), refund state included. `paymentStatus`
+        // is never written by the app, so it is no longer consulted.
+        const payLabel = bookingPaymentLabel(b, locale === 'fr' ? 'fr' : 'en')
         const row = (label: string, value: React.ReactNode) => (
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: '14px', padding: '9px 0', borderTop: '1px solid var(--pf-border)' }}>
             <span style={eyebrow}>{label}</span>

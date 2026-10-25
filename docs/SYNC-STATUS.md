@@ -84,6 +84,44 @@ it writes a booking (⚠ would need Samson).
 Every dashboard change that touches documents/rules/indexes the app consumes
 gets a line here, newest first. Pure-UI dashboard changes are never listed.
 
+- 2026-10-25 **Dashboard aligned with app release 1.55 / 3.3 (phase 1 of
+  `docs/app-parity-plan-2026-10.md`).** Additive only; nothing the app
+  reads changes meaning.
+  - `experiences`: the dashboard now writes `mainCategory` + `subcategory`
+    (the app's six-main / 37-sub taxonomy) alongside the legacy `category`,
+    which is derived from the pair so Android 3.3 (places by `category`
+    alone) and the app's fallback agree. Existing listings are untouched
+    until the phase-2 backfill, which writes exactly what the app's
+    classifier already computes (port in `src/lib/categories.ts`).
+  - `companies.nameLower` written on every create/update (the app's
+    `publicCompanies` and its own queries match on it).
+  - `schema.ts`: `Booking.payment` is now the `PaymentReceipt` union (Stripe
+    Checkout, Stripe PaymentIntent for Apple/Google Pay, pawaPay, PayDunya)
+    with refund fields and `refundState`; `copayPayments` typed. Partner
+    reservation detail derives the label from the receipt (`paymentStatus`
+    is never written). Contract doc §"Payment state" rewritten.
+  - `firestore.rules`: explicit deny-all for `pawapay_payments`,
+    `pawapay_refunds`, `concierge_usage` (server-only; were already
+    unmatched). No permission widened.
+  - Verified before this change: production and staging Firestore/Storage
+    rules are byte-identical to this repo; production indexes unchanged
+    since August; the app repo cannot deploy rules (no `firestore` block in
+    its `firebase.json`).
+- 2026-10-16 ⚠ **Three composite indexes added for the Android app**
+  (`firestore.indexes.json`): `chat_messages(thread_id ↑, created_at ↓)`,
+  `notifications(user_id ↑, created_at ↓)`, `points_ledger(user_id ↑,
+  created_at ↓)`. Found during QA of Palmera STG build 32: the Android app
+  orders these three queries server-side (`fetchChatMessages`,
+  `fetchNotifications`, `fetchPoints` in `net/Firebase.kt`), which needs a
+  composite index; iOS filters then sorts client-side and needs none. No
+  such index existed on staging OR production, so on Android every chat
+  thread, the notification bell and the points history have always loaded
+  empty (the errors are swallowed) — root cause of WhatBytes UAT bugs 6 and
+  7. **Deployed to palmera-staging only** (all three READY 2026-10-16
+  16:20Z; chat and notifications verified on device). **Production deploy
+  pending** (`npm run indexes:deploy`) — additive, no rules change, no data
+  change. Longer-term either keep the indexes or align Android with the iOS
+  query shape; both are fine, do not do neither.
 - 2026-09-27 ⚠ **RULES DRIFT FOUND AND RECONCILED.** Production had been
   running Samson's 2026-09-08 ruleset deployed from `palmera-expo`, not this
   repo's. Effects until the merged file below is deployed: every dashboard
