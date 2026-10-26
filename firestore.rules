@@ -605,29 +605,16 @@ service cloud.firestore {
       allow create: if isAdmin() || ownsSupplier(request.resource.data.supplierId);
       allow update, delete: if isAdmin() || ownsSupplier(resource.data.supplierId);
     }
-    // supply_orders — RECEIPTS: money split frozen at submission. Buyer creates
-    // 'awaiting_payment' anchored on themselves and reads their own; supplier
-    // updates status on their own orders with anchors + money frozen; the
-    // Stripe webhook marks paid via the Admin SDK (bypasses rules).
+    // supply_orders — dépôt-vente receipts (v4, 2026-10-25). Buyer, the
+    // owning supplier and admins READ; every write goes through
+    // /api/marketplace/orders (Admin SDK) so counts, totals, the commission
+    // split and the charge are computed server-side and never client-trusted.
+    // Admin keeps a client write for manual fixes.
     match /supply_orders/{id} {
       allow read: if signedIn() && (resource.data.partnerId == request.auth.uid || isAdmin());
       allow read: if ownsSupplier(resource.data.supplierId);
-      allow create: if signedIn()
-                    && request.resource.data.partnerId == request.auth.uid
-                    && request.resource.data.status == 'awaiting_payment';
+      allow create, delete: if isAdmin();
       allow update: if isAdmin();
-      allow update: if ownsSupplier(resource.data.supplierId)
-                    && keep('partnerId') && keep('companyId') && keep('supplierId')
-                    && keep('items') && keep('orderTotal') && keep('commissionRate')
-                    && keep('commissionAmount') && keep('supplierNet') && keep('payment');
-      // Buyer may close out their own UNPAID checkout — cancelled only.
-      allow update: if signedIn()
-                    && resource.data.partnerId == request.auth.uid
-                    && resource.data.status == 'awaiting_payment'
-                    && request.resource.data.status == 'cancelled'
-                    && keep('partnerId') && keep('companyId') && keep('supplierId')
-                    && keep('items') && keep('orderTotal') && keep('commissionRate')
-                    && keep('commissionAmount') && keep('supplierNet') && keep('payment');
     }
     // supplier_ledger — server-written only (Admin SDK); supplier reads own.
     match /supplier_ledger/{id} {
@@ -681,5 +668,13 @@ service cloud.firestore {
     match /mail/{id} { allow read, write: if false; }
     match /contact_hashes/{uid} { allow read, write: if false; }
     match /contact_join_notified/{id} { allow read, write: if false; }
+    // ── Server-only (app release 1.55, 2026-10-25): pawaPay mobile-money
+    // checkouts and refunds (the functions' own ledger, keyed by pawaPay
+    // ids) and the concierge's per-member daily usage counters. Unmatched
+    // paths are denied anyway; these clauses make the intent explicit and
+    // match the app repo's copy.
+    match /pawapay_payments/{id} { allow read, write: if false; }
+    match /pawapay_refunds/{id} { allow read, write: if false; }
+    match /concierge_usage/{id} { allow read, write: if false; }
   }
 }

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { getEnabledCategories, getEnabledCities } from '@/lib/config'
 import { useLocale } from '@/lib/use-locale'
 import type { Company } from '@/lib/schema'
+import { MAIN_CATEGORIES, type MainCategoryId } from '@/lib/categories'
 
 const STR = {
   fr: {
@@ -12,6 +13,7 @@ const STR = {
     legalHint: 'Le nom officiel enregistré de votre entreprise — utilisé sur le contrat, jamais montré aux clients.',
     type: 'Forme juridique', typePh: 'ex. SARL, entreprise individuelle',
     category: 'Catégorie *', city: 'Ville *', select: 'Sélectionner',
+    appCats: 'Catégories dans l’app', appCatsHint: 'Cochez tout ce que votre établissement propose — un hôtel avec restaurant et spa en coche trois. Chaque expérience se classe ensuite individuellement dans son éditeur.',
     address: 'Adresse', addressPh: 'Rue, quartier',
     maps: 'Lien Google Maps', web: 'Site web / page business', webPh: 'Site web ou page business (Instagram…)',
     phone: 'Téléphone de l’établissement', phonePh: 'Numéro de contact',
@@ -28,6 +30,7 @@ const STR = {
     legalHint: 'Your officially registered company name — used on the contract, never shown to guests.',
     type: 'Business type', typePh: 'e.g. SARL, sole proprietor',
     category: 'Category *', city: 'City *', select: 'Select',
+    appCats: 'Categories in the app', appCatsHint: 'Tick everything your business offers — a hotel with a restaurant and a spa ticks three. Each listing is then filed individually in its editor.',
     address: 'Address', addressPh: 'Street, neighbourhood',
     maps: 'Google Maps link', web: 'Website / business page', webPh: 'Website or business page (Instagram…)',
     phone: 'Business phone', phonePh: 'Business contact number',
@@ -48,6 +51,7 @@ const hint: React.CSSProperties = { fontSize: '0.6875rem', color: 'var(--db-text
 
 const EMPTY = {
   name: '', legalName: '', businessType: '', category: '', city: '',
+  categories: [] as MainCategoryId[],
   address: '', mapsLink: '', websiteOrSocial: '', phone: '', whatsapp: '',
   email: '', instagram: '', tiktok: '', description: '',
 }
@@ -68,6 +72,7 @@ export default function CompanyForm({ initial, saving, submitLabel, onSubmit }: 
     ...(initial ? {
       name: initial.name ?? '', legalName: initial.legalName ?? '', businessType: initial.businessType ?? '',
       category: initial.category ?? '', city: initial.city ?? '', address: initial.address ?? '',
+      categories: Array.isArray(initial.categories) ? initial.categories : [],
       mapsLink: initial.mapsLink ?? '', websiteOrSocial: initial.websiteOrSocial ?? '',
       phone: initial.phone ?? '', whatsapp: initial.whatsapp ?? '',
       email: initial.email ?? '', instagram: initial.instagram ?? '', tiktok: initial.tiktok ?? '', description: initial.description ?? '',
@@ -75,7 +80,9 @@ export default function CompanyForm({ initial, saving, submitLabel, onSubmit }: 
   }))
   const [categories, setCategories] = useState<Opt[]>([])
   const [cities, setCities] = useState<Opt[]>([])
-  const set = (f: keyof CompanyFormValues, v: string) => setForm(p => ({ ...p, [f]: v }))
+  const set = (f: Exclude<keyof CompanyFormValues, 'categories'>, v: string) => setForm(p => ({ ...p, [f]: v }))
+  const toggleCat = (id: MainCategoryId) => setForm(p => ({ ...p, categories: p.categories.includes(id) ? p.categories.filter(c => c !== id) : [...p.categories, id] }))
+  const lang = useLocale()
 
   useEffect(() => {
     getEnabledCategories().then(setCategories)
@@ -109,6 +116,24 @@ export default function CompanyForm({ initial, saving, submitLabel, onSubmit }: 
             {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </div>
+      </div>
+      {/* App taxonomy: a business can live in several of the app's six
+          main categories (Jordan, 2026-10). Dashboard-only — the app files
+          each LISTING by its own pair; this is the editor's first suggestion. */}
+      <div style={{ marginBottom: '1rem' }}>
+        <label style={lbl}>{s.appCats}</label>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+          {MAIN_CATEGORIES.map(c => {
+            const on = form.categories.includes(c.id)
+            return (
+              <button key={c.id} type="button" onClick={() => toggleCat(c.id)} aria-pressed={on}
+                style={{ padding: '0.5rem 0.875rem', borderRadius: '999px', border: `1px solid ${on ? 'var(--db-gold)' : 'var(--db-border-gold)'}`, background: on ? 'var(--db-gold-deep)' : 'var(--db-bg-input)', color: on ? '#ebe8db' : 'var(--db-text)', fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', cursor: 'pointer' }}>
+                {on ? '✓ ' : ''}{lang === 'fr' ? c.fr : c.en}
+              </button>
+            )
+          })}
+        </div>
+        <p style={hint}>{s.appCatsHint}</p>
       </div>
       <div style={row}>
         <div>

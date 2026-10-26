@@ -2,13 +2,14 @@
 // Supplier home = inventory. Products marked "live" appear in the partner
 // marketplace (phase 2); stock and price edits are the supplier's daily loop.
 import { useEffect, useState, useCallback } from 'react'
+import Link from 'next/link'
 import { useSupplier } from './SupplierContext'
 import { t } from './i18n'
 import type { SupplyProduct } from '@/lib/schema'
-import { getProductsBySupplier, updateSupplyProduct, deleteSupplyProduct } from '@/lib/firestore'
+import { getProductsBySupplier, updateSupplyProduct, deleteSupplyProduct, getSupplyOrdersBySupplier } from '@/lib/firestore'
 import ProductModal from '@/components/supplier/ProductModal'
 import { ScreenHeader, PrimaryButton, GhostButton, Chip, EmptyState, Skeleton, cardShape, SearchInput } from '@/components/partner/ui'
-import { Package } from 'lucide-react'
+import { Package, Inbox } from 'lucide-react'
 import { formatAmount } from '@/lib/money'
 
 const fmtXof = formatAmount
@@ -19,12 +20,25 @@ export default function SupplierInventory() {
   const [products, setProducts] = useState<SupplyProduct[] | null>(null)
   const [modal, setModal] = useState<{ open: boolean; product: SupplyProduct | null }>({ open: false, product: null })
   const [q, setQ] = useState('')
+  // Orders waiting on the supplier (submitted / pending_review) — one read on
+  // mount, surfaced as a banner that links to the inbox.
+  const [pendingOrders, setPendingOrders] = useState(0)
 
   const load = useCallback(async () => {
     if (!supplier?.id) return
     setProducts(await getProductsBySupplier(supplier.id))
   }, [supplier?.id])
   useEffect(() => { load() }, [load])
+  useEffect(() => {
+    if (!supplier?.id) return
+    let alive = true
+    getSupplyOrdersBySupplier(supplier.id)
+      .then(orders => { if (alive) setPendingOrders(orders.filter(o => o.status === 'submitted' || o.status === 'pending_review').length) })
+      .catch(e => console.error('orders count failed:', e))
+    return () => { alive = false }
+  }, [supplier?.id])
+
+  const isLowStock = (p: SupplyProduct) => p.lowStockAt != null && p.stock <= p.lowStockAt
 
   const toggle = async (p: SupplyProduct) => {
     await updateSupplyProduct(p.id!, { status: p.status === 'live' ? 'hidden' : 'live' })
@@ -40,6 +54,12 @@ export default function SupplierInventory() {
 
   return (
     <>
+      {pendingOrders > 0 && (
+        <Link href="/supplier/orders" className="pf-in" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px', padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--pf-border-strong)', background: 'var(--pf-gold-soft)', color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '13px', textDecoration: 'none' }}>
+          <Inbox size={15} strokeWidth={1.75} />
+          <span>{pendingOrders === 1 ? L('orders_banner_one') : L('orders_banner_many').replace('{n}', String(pendingOrders))}</span>
+        </Link>
+      )}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '14px', flexWrap: 'wrap' }}>
         <ScreenHeader label={L('inv_label')} title={L('inv_title')} intro={L('inv_intro')} />
         <div style={{ paddingBottom: '18px' }}>
@@ -75,6 +95,7 @@ export default function SupplierInventory() {
               </div>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: 'auto', flexWrap: 'wrap' }}>
                 <Chip tone={p.status === 'live' ? 'green' : 'neutral'}>{p.status === 'live' ? L('live') : L('hidden')}</Chip>
+                {isLowStock(p) && <Chip tone="alert">{L('low_stock')}</Chip>}
                 <span style={{ flex: 1 }} />
                 <GhostButton onClick={() => setModal({ open: true, product: p })}>{L('edit')}</GhostButton>
                 <GhostButton onClick={() => toggle(p)}>{p.status === 'live' ? L('hide') : L('show')}</GhostButton>
@@ -92,7 +113,7 @@ export default function SupplierInventory() {
             title: L(modal.product ? 'm_title_edit' : 'm_title_new'),
             name: L('m_name'), category: L('m_category'), unit: L('m_unit'),
             unitSize: L('m_unit_size'), price: L('m_price'), stock: L('m_stock'),
-            photo: L('m_photo'), visible: L('m_visible'), save: L('m_save'),
+            lowStockAt: L('m_low_stock_at'), photo: L('m_photo'), visible: L('m_visible'), save: L('m_save'),
             cancel: L('m_cancel'), saving: L('m_saving'),
           }}
           onClose={() => setModal({ open: false, product: null })}

@@ -4,7 +4,8 @@
 // UP on first visit — with that email, and the record is claimed to their
 // auth uid. No record for the email → friendly "contact Palmera" screen.
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { usePathname, useRouter } from 'next/navigation'
 import { onAuthChange, signIn, signUp, resetPassword, logOut, needsEmailVerification } from '@/lib/auth'
 import VerifyEmailGate from '@/components/dashboard/VerifyEmailGate'
 import { ThemeProvider, useTheme } from '@/lib/theme'
@@ -17,6 +18,7 @@ import { Moon, Sun, LogOut, Store, PauseCircle } from 'lucide-react'
 
 function Shell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
+  const pathname = usePathname()
   const { theme, toggle: toggleTheme } = useTheme()
   const [uid, setUid] = useState('')
   const [email, setEmail] = useState('')
@@ -105,6 +107,29 @@ function Shell({ children }: { children: React.ReactNode }) {
     </button>
   )
 
+  // Portal nav — three text links in the LangToggle idiom; the active one
+  // turns gold and underlined. Scrolls horizontally rather than wrapping.
+  const NAV: { href: string; key: string; exact?: boolean }[] = [
+    { href: '/supplier', key: 'nav_inventory', exact: true },
+    { href: '/supplier/orders', key: 'nav_orders' },
+    { href: '/supplier/settings', key: 'nav_settings' },
+  ]
+  const Nav = (
+    <nav aria-label="Supplier" style={{ display: 'flex', gap: '8px', padding: '10px 22px', borderBottom: '1px solid var(--pf-border)', background: 'var(--pf-nav)', overflowX: 'auto' }}>
+      {NAV.map(n => {
+        const active = n.exact ? pathname === n.href : pathname.startsWith(n.href)
+        return (
+          <Link key={n.href} href={n.href} aria-current={active ? 'page' : undefined} style={{
+            border: `1px solid ${active ? 'var(--pf-gold)' : 'var(--pf-border)'}`, background: 'transparent',
+            color: active ? 'var(--pf-gold)' : 'var(--pf-faint)', borderRadius: '8px', padding: '5px 10px',
+            fontFamily: 'var(--font-sans)', fontSize: '11px', letterSpacing: '0.06em', whiteSpace: 'nowrap',
+            textDecoration: active ? 'underline' : 'none', textUnderlineOffset: '4px',
+          }}>{L(n.key)}</Link>
+        )
+      })}
+    </nav>
+  )
+
   if (authed === 'out') return (
     <div data-theme={theme} style={{ minHeight: '100vh', background: 'var(--pf-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
       <div className="pf-glass" style={{ width: 'min(400px, 100%)', borderRadius: '18px', padding: '30px' }}>
@@ -156,6 +181,7 @@ function Shell({ children }: { children: React.ReactNode }) {
             <IconButton onClick={signOutAll} label={L('sign_out')}><LogOut size={16} strokeWidth={1.75} /></IconButton>
           </div>
         </header>
+        {Nav}
         <main className="pf-scroll pf-ambient" style={{ flex: 1, padding: '28px 22px 48px', maxWidth: '1100px', width: '100%', margin: '0 auto' }}>
           {children}
         </main>

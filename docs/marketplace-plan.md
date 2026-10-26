@@ -1,4 +1,4 @@
-# Palmera Marketplace — Dépôt-vente (plan v3, 2026-08-22)
+# Palmera Marketplace — Dépôt-vente (plan v4, 2026-10-25)
 
 Supersedes v2. Source: the 2026-08-19 Arjun/Jordan call, re-read in full.
 Vocabulary: **supplier** (never vendor) in code/UI; FR nav label "Dépôt-vente",
@@ -112,3 +112,44 @@ Arjun promised Jordan wireframes of the candidate workflows. The flow above
 is the recommended one; the wireframe set (business: cart → fulfilment →
 report; supplier: inbox → handover → settle) is the first M2/M3 deliverable
 so Jordan signs off on screens before code.
+
+---
+
+## v4 — built 2026-10-25 (supersedes the phases above)
+
+What shipped, against the v3 design, after re-reading the Aug 19 call:
+
+- **Order loop as designed**: submitted / pending_review → accepted →
+  handed_over → reported → settled → paid | payment_due, plus declined /
+  cancelled / refunded. Per-line `buy` | `borrow`, delivery (flat fee, no
+  commission) or pickup, supplier thresholds (`maxPerOrder`, `firstOrderMax`),
+  on-platform stock (−qty on accept, +returned on settle), `lowStockAt` flag.
+- **Payment = card on file + charge at verification** (Jordan: "the business
+  has their card on there … when he collects the bottles he confirms the
+  payment and that's when it goes through"). The card is saved at order time
+  through a Stripe Checkout *setup* session (no charge); `settle` charges it
+  off-session for the verified amount. If there is no card or the charge
+  fails the order parks in `payment_due`: the business can "Pay now" (a
+  normal Checkout for the final amount) or hand cash/Wave to the supplier,
+  who records it — the commission then becomes a negative supplier-ledger
+  line (owed to Palmera). An unpaid order blocks new orders for that
+  business. Authorize-and-hold was rejected for the reasons in v3.
+- **All writes server-side**: `POST /api/marketplace/orders` (create),
+  `POST /api/marketplace/orders/{id}` (every transition),
+  `POST /api/marketplace/billing/sync`, Stripe webhook. Clients only read.
+  Contract: `docs/marketplace-api.md`. Rules: `supply_orders` client writes
+  removed (admin keeps one for manual fixes); `companies/{id}/private/billing`
+  holds the Stripe customer + card label (server-written, owner-readable).
+- **Screens**: partner store v3 (`/partner/marketplace`: buy/borrow lines,
+  fulfilment, card save, orders timeline, leftover report, pay now);
+  supplier portal (`/supplier/orders` inbox + settlement screen,
+  `/supplier/settings` fee + thresholds, inventory low-stock flag);
+  admin `/admin/suppliers/orders` (orders by state, collected vs owed, per
+  supplier net, mark paid / cancel).
+- **Emails** (Resend, French first): supplier new order / leftovers
+  reported; business declined / receipt / payment due.
+
+Not in v4: PayDunya or pawaPay mobile-money collection at settlement (the
+dashboard has no credentials yet; the off-platform record covers Wave/Orange
+handed to the supplier), supplier payouts UI (ledger accrues; admin view
+shows the net), auto-raising thresholds after N orders.

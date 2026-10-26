@@ -29,7 +29,7 @@ export default function ProductModal({ supplier, product, storageUid, labels, on
   supplier: Supplier
   product: SupplyProduct | null
   storageUid: string           // whose Storage folder receives the photo
-  labels: { title: string; name: string; category: string; unit: string; unitSize: string; price: string; stock: string; photo: string; visible: string; save: string; cancel: string; saving: string }
+  labels: { title: string; name: string; category: string; unit: string; unitSize: string; price: string; stock: string; lowStockAt: string; photo: string; visible: string; save: string; cancel: string; saving: string }
   onClose: () => void
   onSaved: () => void
 }) {
@@ -40,6 +40,7 @@ export default function ProductModal({ supplier, product, storageUid, labels, on
     unitSize: product?.unitSize || '',
     price: product?.price != null ? String(product.price) : '',
     stock: product?.stock != null ? String(product.stock) : '0',
+    lowStockAt: product?.lowStockAt != null ? String(product.lowStockAt) : '',
     photo: product?.photo || '',
     live: (product?.status ?? 'live') === 'live',
   })
@@ -61,6 +62,8 @@ export default function ProductModal({ supplier, product, storageUid, labels, on
         unitSize: form.unitSize.trim(),
         price: Math.max(0, Math.round(parseFloat(form.price) || 0)),
         stock: Math.max(0, Math.round(parseFloat(form.stock) || 0)),
+        // Blank = no low-stock flag (null, never undefined — Firestore rejects undefined).
+        lowStockAt: form.lowStockAt.trim() === '' ? null : Math.max(0, Math.round(parseFloat(form.lowStockAt) || 0)),
         photo: form.photo || null,
         status: (form.live ? 'live' : 'hidden') as SupplyProduct['status'],
       }
@@ -106,7 +109,11 @@ export default function ProductModal({ supplier, product, storageUid, labels, on
             <label style={lbl}>{labels.stock}</label>
             <input style={field} type="number" min="0" inputMode="numeric" value={form.stock} onChange={e => set('stock', e.target.value)} />
           </div>
-          <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: '4px' }}>
+          <div>
+            <label style={lbl}>{labels.lowStockAt}</label>
+            <input style={field} type="number" min="0" inputMode="numeric" value={form.lowStockAt} onChange={e => set('lowStockAt', e.target.value)} placeholder="—" />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: '4px', gridColumn: '1 / -1' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-sans)', fontSize: '13px', color: 'var(--pf-text)', cursor: 'pointer' }}>
               <input type="checkbox" checked={form.live} onChange={e => set('live', e.target.checked)} />
               {labels.visible}

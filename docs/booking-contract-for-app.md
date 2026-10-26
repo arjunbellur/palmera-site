@@ -108,19 +108,40 @@ A biweekly payout batch for one company.
 
 ## Payment state — ON the booking doc, never separate
 
-Two payment rails are supported BY DESIGN (confirmed Arjun 2026-08-04):
-PayDunya for regional mobile money, Stripe for international cards. Either
-way, write processor state to `bookings/{id}.payment` (a map on the SAME doc
-the booking lives in — create the booking FIRST with the full shape above,
-then update that doc), never to a new/self-generated document id:
+Processor state lives in `bookings/{id}.payment` (a map on the SAME doc the
+booking lives in — create the booking FIRST with the full shape above, then
+update that doc), never in a separate self-generated document. Four rails
+as of app release 1.55 (2026-10-25); all written by the app's Cloud
+Functions, never by a client or the partner. Typed as `PaymentReceipt` in
+`src/lib/schema.ts`.
 
 ```
-// PayDunya (XOF)
-payment: { provider: 'paydunya', amountXof: 12000, status: 'pending'|'completed'|'failed', token: '…' }
+// Stripe Checkout (card; minor units in the charged currency)
+payment: { provider: 'stripe', sessionId: 'cs_…', currency: 'usd', amountMinor: 8900, status, payers? }
 
-// Stripe (card; minor units in the charged currency)
-payment: { provider: 'stripe', currency: 'usd', amountMinor: 8900, sessionId: 'cs_…', status: 'pending'|'completed'|'failed' }
+// Stripe PaymentIntent (Apple Pay / Google Pay one-tap, 1.55) — no sessionId
+payment: { provider: 'stripe', method: 'apple_pay'|'google_pay', paymentIntentId: 'pi_…', currency: 'usd', amountMinor: 8900, status, payers? }
+
+// pawaPay mobile money (1.55; XOF, zero-decimal)
+payment: { provider: 'pawapay', checkoutId, currency: 'XOF', amountXof: 12000,
+           mmProvider: 'WAVE_SEN'|'ORANGE_SEN'|'FREE_SEN', depositId?, providerTransactionId?, failureCode?, status, payers? }
+
+// PayDunya (legacy)
+payment: { provider: 'paydunya', amountXof: 12000, token: '…', status }
+
+status: 'pending' | 'completed' | 'failed' | 'cancelled' | 'refunded'
+refund fields (any rail): refundedAt?, refundState?: 'none'|'processing'|'refunded'|'manual_review',
+                          pawapayRefundId?, refundFailureCode?, refundSettledAt?
 ```
+
+Split payments: `copayPayments: { [uid]: <same receipt shapes> }`, with
+`payersCount` / `paidCount` / `copayUids` alongside. Stripe refunds settle
+synchronously; pawaPay refunds are asynchronous — `refundState` goes
+`processing` → `refunded`, or `manual_review` when pawaPay rejected the
+refund and it has to be done by hand (the dashboard flags these).
+
+`paymentStatus` is NOT written by anyone — readers derive the label from
+`payment.status` and `refundState` (see `src/lib/payments.ts`).
 
 Booking money fields (`bookingTotal`, `commissionAmount`, `payoutAmount`)
 stay XOF regardless of the charge currency — `payment` records the charge,

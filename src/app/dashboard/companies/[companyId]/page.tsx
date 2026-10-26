@@ -388,6 +388,7 @@ export default function CompanyPage({ params }: { params: Promise<{ companyId: s
           companyId={companyId}
           companyName={company.name}
           defaultCategory={company.category}
+          companyCategories={company.categories}
           defaultCity={company.city}
           experience={editingExp}
           existingOptions={editingOptions}

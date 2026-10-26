@@ -16,6 +16,7 @@ import {
 } from 'firebase/firestore'
 import { db } from './firebase'
 import { arrayUnion, increment } from 'firebase/firestore'
+import { notifyDashboard } from './notify-client'
 import {
   COLLECTIONS, SUB, CONFIG_DOCS, type FeaturedConfig,
   type Provider, type ProviderPrivateAdmin,
@@ -24,6 +25,7 @@ import {
   type Booking, type LedgerEntry, type Payout, type CompanyPayoutProfile,
   type AppProfile, type AppDoc,
   type Supplier, type SupplyProduct, type SupplyOrder, type StaffMember,
+  type CompanyBilling, type SupplierLedgerEntry,
 } from './schema'
 
 // ── Countersignature ─────────────────────────────────────────────
@@ -139,13 +141,20 @@ export const createCompany = async (providerId: string, data: Partial<Company>) 
     logo: null, heroPhoto: null, gallery: [], operations: null, completeness: {},
     activatedAt: null, active: false,
     ...data,
+    // The app matches businesses on `nameLower` (publicCompanies + its own
+    // queries, 1.55) — derive it from whatever name is being written.
+    ...(typeof data.name === 'string' ? { nameLower: data.name.trim().toLowerCase() } : {}),
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   })
 }
 
 export const updateCompany = async (companyId: string, data: Partial<Company>) => {
-  await updateDoc(doc(db, COLLECTIONS.companies, companyId), { ...data, updatedAt: serverTimestamp() })
+  await updateDoc(doc(db, COLLECTIONS.companies, companyId), {
+    ...data,
+    ...(typeof data.name === 'string' ? { nameLower: data.name.trim().toLowerCase() } : {}),
+    updatedAt: serverTimestamp(),
+  })
 }
 
 
@@ -159,6 +168,11 @@ export const getCompanyAdmin = async (companyId: string): Promise<CompanyPrivate
 // Queries anchor on providerId so they satisfy the read rule (which authorizes
 // by providerId); companyId is an additional filter (needs a providerId+companyId
 // composite index). Fetch-all-then-filter is fine at partner scale.
+export const getExperience = async (id: string): Promise<Experience | null> => {
+  const snap = await getDoc(doc(db, COLLECTIONS.experiences, id))
+  return snap.exists() ? ({ id: snap.id, ...(snap.data() as Experience) }) : null
+}
+
 export const getExperiencesByProvider = async (providerId: string): Promise<Experience[]> => {
   const q = query(collection(db, COLLECTIONS.experiences), where('providerId', '==', providerId))
   const snap = await getDocs(q)
@@ -514,6 +528,16 @@ export const getPayoutsByProvider = async (uid: string): Promise<Payout[]> => {
   }
 }
 
+/** Admin marks a payout batch as sent (rules: admin write only). The
+ *  partner's "versement envoyé" mail goes out best-effort afterwards; the
+ *  server re-reads the payout, so only a batch that is really `paid` mails. */
+export const markPayoutPaid = async (id: string, reference: string | null) => {
+  await updateDoc(doc(db, COLLECTIONS.payouts, id), {
+    status: 'paid', paidAt: serverTimestamp(), reference, updatedAt: serverTimestamp(),
+  })
+  void notifyDashboard({ kind: 'payout_sent', payoutId: id })
+}
+
 /**
  * Partner-side response to a booking request. Only 'confirmed' | 'declined',
  * and only on a booking they own — enforced again in firestore.rules, which
@@ -669,6 +693,30 @@ export const getSupplyOrdersByPartner = async (partnerId: string): Promise<Suppl
   return snap.docs.map(d => ({ id: d.id, ...d.data() }) as SupplyOrder)
 }
 
+// Dépôt-vente v4 reads (docs/marketplace-api.md). Writes to supply_orders go
+// through /api/marketplace/orders — never from the client.
+export const getSupplyOrdersBySupplier = async (supplierId: string): Promise<SupplyOrder[]> => {
+  const snap = await getDocs(query(collection(db, 'supply_orders'), where('supplierId', '==', supplierId)))
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }) as SupplyOrder)
+}
+
+export const getAllSupplyOrders = async (): Promise<SupplyOrder[]> => {
+  const snap = await getDocs(collection(db, 'supply_orders'))
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }) as SupplyOrder)
+}
+
+/** The business's card on file (server-written; owner + admin read). */
+export const getCompanyBilling = async (companyId: string): Promise<CompanyBilling | null> => {
+  const snap = await getDoc(doc(db, COLLECTIONS.companies, companyId, 'private', 'billing'))
+  return snap.exists() ? (snap.data() as CompanyBilling) : null
+}
+
+export const getSupplierLedger = async (supplierId?: string): Promise<SupplierLedgerEntry[]> => {
+  const base = collection(db, 'supplier_ledger')
+  const snap = await getDocs(supplierId ? query(base, where('supplierId', '==', supplierId)) : base)
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }) as SupplierLedgerEntry)
+}
+
 // ── Company staff (invite → claim, mirrors the supplier pattern) ───────────
 export const getStaffByCompany = async (providerId: string, companyId: string): Promise<StaffMember[]> => {
   // providerId is in the query so the list is PROVABLE against the read rule
@@ -678,10 +726,13 @@ export const getStaffByCompany = async (providerId: string, companyId: string): 
 }
 
 export const inviteStaff = async (data: Pick<StaffMember, 'companyId' | 'providerId' | 'email' | 'name' | 'role'>) => {
+  const email = data.email.trim().toLowerCase()
   await addDoc(collection(db, 'staff'), {
-    ...data, email: data.email.trim().toLowerCase(), uid: null, status: 'active',
+    ...data, email, uid: null, status: 'active',
     createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
   })
+  // Tell the invitee — best-effort, the invite stands even if the mail fails.
+  void notifyDashboard({ kind: 'staff_invite', companyId: data.companyId, email, name: data.name })
 }
 
 export const setStaffStatus = async (id: string, status: StaffMember['status']) => {

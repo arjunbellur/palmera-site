@@ -1,19 +1,27 @@
-# Near-real-time partner booking notifications.
+# Scheduled BACKSTOP for booking notification emails.
 #
-# Vercel's Hobby plan allows only ONE cron run per day (that's the 07:00 UTC
-# job in vercel.json — 3am Eastern, far too late to be useful). GitHub Actions
-# gives us a free 5-minute poll instead; the Vercel daily run stays as a
-# backstop in case Actions is throttled or disabled.
+# Since 2026-10-25 the primary path is event-driven: the app's
+# `onBookingWritten` function posts each real booking transition to
+# /api/notify/event, which sends immediately and stamps the booking. This
+# poll calls /api/notify/bookings, which only sends what that path missed
+# (keyed on missing stamps/logs over a 7-day lookback, so an outage never
+# drops a booking) plus the two time-based mails: the 12h partner reminder
+# and the member day-before reminder.
+#
+# Cadence reality: the schedule says every 5 minutes, but GitHub throttles
+# scheduled workflows on free repos to a handful of runs a day in practice
+# (4–9 observed). That is fine for a backstop; it is why it is no longer the
+# primary path. Vercel's daily cron (vercel.json) remains the backstop's
+# backstop.
 #
 # Requires repo secret CRON_SECRET (Settings → Secrets and variables →
 # Actions), matching the CRON_SECRET set in Vercel. Nothing secret lives in
 # this file — safe in a public repo.
-name: Notify partners of new bookings
+name: Booking notification backstop
 
 on:
   schedule:
-    # Every 5 minutes (GitHub's minimum). Actual firing can drift a few
-    # minutes under load — fine for "within ~10 min of booking".
+    # GitHub's minimum; actual firing is throttled (see above).
     - cron: '*/5 * * * *'
   workflow_dispatch: {}
 
@@ -27,12 +35,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Poll the notifier endpoint
+      - name: Poll the backstop endpoint
         run: |
           code=$(curl -sS -o /tmp/out -w '%{http_code}' -X POST \
             'https://www.palmeraexp.com/api/notify/bookings' \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
           echo "HTTP $code"
-          # Public repo ⇒ public logs: print counts only, never the payload (partner emails).
-          python3 -c "import json;d=json.load(open('/tmp/out'));print('ok',d.get('ok'),'checked',d.get('checked'),'sent',len(d.get('sent',[])),'reminders',len(d.get('reminders',[])),'guest',len(d.get('guestMails',[])));print('reason',d.get('reason'));[print('skipped',g.get('booking'),g.get('skipped')) for g in d.get('guestMails',[]) if g.get('skipped')]" || true
+          # Public repo ⇒ public logs: print counts only, never the payload (addresses).
+          python3 - <<'PY' || true
+          import json
+          d = json.load(open('/tmp/out'))
+          print('ok', d.get('ok'), 'checked', d.get('checked'), 'tomorrow', d.get('checkedTomorrow'),
+                'sent', len(d.get('sent', [])), 'reminders', len(d.get('reminders', [])),
+                'memberReminders', len(d.get('memberReminders', [])))
+          print('reason', d.get('reason'))
+          for key in ('sent', 'reminders', 'memberReminders'):
+              for g in d.get(key, []):
+                  if g.get('skipped'):
+                      print('skipped', key, g.get('booking'), g.get('skipped'))
+          PY
           test "$code" = "200"
