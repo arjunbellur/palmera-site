@@ -69,6 +69,7 @@ day) is the backstop keyed on missing `notified.*` stamps, and sends the
 time-based mails (12h partner reminder, member day-before reminder).
 
 ## Rules sync log
+- 2026-10-25: **Production rules deployed from main (ruleset a5d8c669…)** — supply_orders client writes removed (server-side marketplace), explicit deny-all on pawapay_payments / pawapay_refunds / concierge_usage. No change to anything the app reads or writes. Samson: pull main before your next deploy.
 - 2026-08-21: **Samson's 2026-08-12 Storage ruleset adopted verbatim** into
   `storage.rules` + partner block appended (see changelog). Storage rules
   are repo-managed from now on — `npm run storage:deploy`.
