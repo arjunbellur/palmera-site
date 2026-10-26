@@ -189,9 +189,10 @@ gets a line here, newest first. Pure-UI dashboard changes are never listed.
   such index existed on staging OR production, so on Android every chat
   thread, the notification bell and the points history have always loaded
   empty (the errors are swallowed) — root cause of WhatBytes UAT bugs 6 and
-  7. **Deployed to palmera-staging only** (all three READY 2026-10-16
-  16:20Z; chat and notifications verified on device). **Production deploy
-  pending** (`npm run indexes:deploy`) — additive, no rules change, no data
+  7. Deployed to palmera-staging 2026-10-16 (chat and notifications verified
+  on device). **Deployed to production 2026-10-25** (`npm run indexes:deploy`,
+  together with `bookings(providerId, companyId, scheduledFor)` which was in
+  the file but missing in prod) — additive, no rules change, no data
   change. Longer-term either keep the indexes or align Android with the iOS
   query shape; both are fine, do not do neither.
 - 2026-09-27 ⚠ **RULES DRIFT FOUND AND RECONCILED.** Production had been

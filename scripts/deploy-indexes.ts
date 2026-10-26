@@ -31,7 +31,7 @@ async function main() {
   const H = { Authorization: `Bearer ${tok}`, 'Content-Type': 'application/json' }
   const spec = JSON.parse(readFileSync('firestore.indexes.json', 'utf8'))
 
-  for (const idx of spec.indexes) {
+  for (const idx of process.argv.includes('--status') ? [] : spec.indexes) {
     const body = { queryScope: idx.queryScope, fields: idx.fields }
     const label = `${idx.collectionGroup}(${idx.fields.map((f: { fieldPath: string; order: string }) => `${f.fieldPath} ${f.order === 'DESCENDING' ? '↓' : '↑'}`).join(', ')})`
     const res = await fetch(`${BASE}/collectionGroups/${idx.collectionGroup}/indexes`, {
@@ -43,16 +43,17 @@ async function main() {
     else console.log(`✗ FAILED   ${label}: ${json.error?.message}`)
   }
 
-  // Report current index states (CREATING → READY once built).
-  const cgs = [...new Set(spec.indexes.map((i: { collectionGroup: string }) => i.collectionGroup))]
+  // Report current index states (CREATING → READY once built). One call with
+  // the `-` wildcard group: the per-group endpoint returns the whole project's
+  // indexes regardless of the group in the path, which used to print every
+  // index once per collection.
   console.log('\nIndex states:')
-  for (const cg of cgs) {
-    const res = await fetch(`${BASE}/collectionGroups/${cg}/indexes`, { headers: H })
-    const json = await res.json()
-    for (const ix of json.indexes || []) {
-      const fields = (ix.fields || []).filter((f: { fieldPath: string }) => f.fieldPath !== '__name__')
-      console.log(`  ${cg}(${fields.map((f: { fieldPath: string }) => f.fieldPath).join(', ')}): ${ix.state}`)
-    }
+  const res = await fetch(`${BASE}/collectionGroups/-/indexes`, { headers: H })
+  const json = await res.json()
+  for (const ix of json.indexes || []) {
+    const cg = String(ix.name || '').split('/collectionGroups/')[1]?.split('/')[0] || '?'
+    const fields = (ix.fields || []).filter((f: { fieldPath: string }) => f.fieldPath !== '__name__')
+    console.log(`  ${cg}(${fields.map((f: { fieldPath: string }) => f.fieldPath).join(', ')}): ${ix.state}`)
   }
 }
 
