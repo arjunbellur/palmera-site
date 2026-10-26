@@ -101,9 +101,9 @@ gets a line here, newest first. Pure-UI dashboard changes are never listed.
     Members see no change; the pair simply becomes explicit and editable.
   - Staging dry run 2026-10-25: 36 listings would be filed, 4 companies
     would get `nameLower`, 0 conflicts.
-  - Production: pending (run the dry run, eyeball, then write; or use the
-    new admin page `/admin/categories` → "File N unfiled as suggested",
-    which does the same writes through the admin's own client session).
+  - **Production written 2026-10-25**: 38 listings filed, 4 companies got
+    `nameLower`, 0 conflicts; Samson warned in the group beforehand. Values
+    identical to what the app derived, so nothing moved for members.
   - `/admin/categories` lets an admin move a listing to another main/sub;
     moving the MAIN also rewrites legacy `category` via the sub→legacy map
     (Android 3.3 still places by it). Sub-only moves leave `category`.
