@@ -219,6 +219,7 @@ export default function SettingsScreen() {
           { group: L('g_account'), items: [
             { k: 'account', label: L('sec_account'), hint: provider?.fullName || email },
             { k: 'password', label: L('pw_title'), hint: '••••••' },
+            { k: 'agreement', label: L('sec_agreement'), hint: provider?.signoff?.signedAt ? `${L('ag_signed')} ${formatDate(provider.signoff.signedAt)}` : L('ag_not_signed') },
           ]},
           { group: L('g_company'), items: [
             { k: 'company', label: L('sec_company'), hint: company?.name || '' },
@@ -242,7 +243,7 @@ export default function SettingsScreen() {
             <div style={{ ...eyebrow, color: 'var(--pf-eyebrow)', margin: '0 0 8px' }}>{g.group}</div>
             <div style={{ borderRadius: '16px', background: 'var(--pf-card)', border: '1px solid var(--pf-border)', overflow: 'hidden' }}>
               {g.items.map((it, i) => (
-                <button key={it.k} onClick={() => setSection(it.k)}
+                <button key={it.k} onClick={() => it.k === 'agreement' ? router.push('/partner/agreement') : setSection(it.k)}
                   style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', width: '100%', textAlign: 'left', padding: '14px 16px', background: 'transparent', border: 'none', borderTop: i === 0 ? 'none' : '1px solid var(--pf-border)', cursor: 'pointer' }}>
                   <span style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '14px' }}>{it.label}</span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>

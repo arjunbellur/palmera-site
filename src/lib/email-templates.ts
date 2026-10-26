@@ -229,9 +229,9 @@ export const agreementCountersigned = (args: { providerName: string; signatoryNa
   subject: 'Votre accord partenaire Palmera est signé',
   html: shell('Palmera · accord partenaire', 'Accord contresigné — vous êtes partenaire Palmera',
     `${p(`${esc(args.providerName)}, Palmera a contresigné votre accord partenaire${args.agreementVersion ? ` (version ${esc(args.agreementVersion)})` : ''}. Il est désormais pleinement exécuté.`)}
-    ${p(`Signé pour Palmera par ${esc(args.signatoryName)}${args.signatoryTitle ? `, ${esc(args.signatoryTitle)}` : ''}. Vous pouvez télécharger l’accord signé depuis vos paramètres.`)}
-    ${button(`${SITE}/dashboard/settings`, 'Voir l’accord')}
-    ${en('Palmera countersigned your partner agreement; it is now fully executed. Download it from your dashboard settings.')}`),
+    ${p(`Signé pour Palmera par ${esc(args.signatoryName)}${args.signatoryTitle ? `, ${esc(args.signatoryTitle)}` : ''}. Retrouvez l’accord signé dans Réglages → Convention de partenariat.`)}
+    ${button(`${SITE}/partner/agreement`, 'Voir l’accord')}
+    ${en('Palmera countersigned your partner agreement; it is now fully executed. Open it from Settings → Partnership agreement in your dashboard.')}`),
 })
 
 export const payoutSent = (args: { companyName: string; amount: number; currency: string; periodStart: unknown; periodEnd: unknown; reference?: string | null; method?: string | null }): Rendered => ({
