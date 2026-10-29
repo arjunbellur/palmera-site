@@ -260,7 +260,9 @@ gets a line here, newest first. Pure-UI dashboard changes are never listed.
   had cut off the admin Growth analytics that count them. App behavior
   unchanged — member-facing rules are exactly as before.
 - 2026-09-03 ⚠ **NEW `config/featured` — admin-curated "Featured tonight" hero
-  (needs a small app change to take effect).** Jordan wants to control the
+  (needs a small app change to take effect).** *2026-10-28: still unread by
+  iOS 1.55 / Android 3.3 (Jordan's picks saved and ignored); readers opened as
+  samsonjiya002/palmera-expo#28 and samsonjiya002/palmera-android#26.* Jordan wants to control the
   Discover hero per city; today the app shows `filtered.first`. The dashboard
   now writes:
   ```
