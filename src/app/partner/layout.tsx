@@ -157,7 +157,7 @@ function Shell({ children }: { children: React.ReactNode }) {
     const active = pathname === item.href
     const iconOnly = !mobile && collapsed
     return (
-      <a key={item.href} href={item.href} title={iconOnly ? L(item.key) : undefined} style={{
+      <a key={item.href} href={item.href} title={iconOnly ? L(item.key) : undefined} aria-label={mobile || iconOnly ? L(item.key) : undefined} style={{
         display: 'flex', alignItems: 'center', gap: mobile || iconOnly ? 0 : '11px',
         flexDirection: mobile ? 'column' : 'row',
         justifyContent: mobile || iconOnly ? 'center' : 'flex-start',
@@ -174,7 +174,7 @@ function Shell({ children }: { children: React.ReactNode }) {
             <span style={{ position: 'absolute', top: '-4px', right: '-8px', minWidth: '14px', height: '14px', borderRadius: '999px', background: 'var(--pf-gold)', color: '#0a0e18', fontSize: '10px', fontFamily: 'var(--font-sans)', display: 'grid', placeItems: 'center', padding: '0 3px', lineHeight: 1 }}>{pendingCount}</span>
           )}
         </span>
-        {!iconOnly && <span style={{ fontFamily: 'var(--font-sans)', fontSize: mobile ? '9.5px' : '12.5px', letterSpacing: '0.04em', marginTop: mobile ? '5px' : 0 }}>{L(item.key)}</span>}
+        {!iconOnly && <span className={mobile ? 'pf-tablabel' : undefined} style={{ fontFamily: 'var(--font-sans)', fontSize: mobile ? '9.5px' : '12.5px', letterSpacing: '0.04em', marginTop: mobile ? '4px' : 0 }}>{L(item.key)}</span>}
         {item.key === 'nav_res' && pendingCount > 0 && !mobile && !collapsed && (
           <span style={{ marginLeft: 'auto', minWidth: '18px', height: '18px', borderRadius: '999px', background: 'var(--pf-gold)', color: '#0a0e18', fontSize: '10px', fontFamily: 'var(--font-sans)', display: 'grid', placeItems: 'center', padding: '0 5px' }}>{pendingCount}</span>
         )}

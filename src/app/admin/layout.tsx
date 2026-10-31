@@ -83,9 +83,9 @@ function Shell({ children }: { children: React.ReactNode }) {
       : pathname.startsWith(item.href) || (item.href === '/admin/directory' && pathname.startsWith('/admin/companies'))
     if (mobile) return (
       // Bottom tab bar (same pattern as the partner shell) — ≥44px targets.
-      <a key={item.href} href={item.href} aria-label={item.label} style={{ flex: 1, minHeight: '48px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', textDecoration: 'none', borderRadius: '999px', color: active ? 'var(--pf-gold)' : 'var(--pf-faint)' }}>
-        <item.icon size={17} strokeWidth={1.75} />
-        <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', letterSpacing: '0.04em' }}>{item.label}</span>
+      <a key={item.href} href={item.href} aria-label={item.label} data-active={active ? 'true' : 'false'} style={{ flex: 1, minHeight: '48px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', textDecoration: 'none', borderRadius: '999px', color: active ? 'var(--pf-gold)' : 'var(--pf-faint)' }}>
+        <item.icon size={18} strokeWidth={1.75} />
+        <span className="pf-tablabel" style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', letterSpacing: '0.04em' }}>{item.label}</span>
       </a>
     )
     return (
