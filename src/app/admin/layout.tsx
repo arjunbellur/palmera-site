@@ -83,7 +83,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       : pathname.startsWith(item.href) || (item.href === '/admin/directory' && pathname.startsWith('/admin/companies'))
     if (mobile) return (
       // Bottom tab bar (same pattern as the partner shell) — ≥44px targets.
-      <a key={item.href} href={item.href} aria-label={item.label} style={{ flex: 1, minHeight: '56px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', textDecoration: 'none', color: active ? 'var(--pf-gold)' : 'var(--pf-faint)', borderTop: `2px solid ${active ? 'var(--pf-gold)' : 'transparent'}` }}>
+      <a key={item.href} href={item.href} aria-label={item.label} style={{ flex: 1, minHeight: '48px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', textDecoration: 'none', borderRadius: '999px', color: active ? 'var(--pf-gold)' : 'var(--pf-faint)' }}>
         <item.icon size={17} strokeWidth={1.75} />
         <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', letterSpacing: '0.04em' }}>{item.label}</span>
       </a>
@@ -92,10 +92,9 @@ function Shell({ children }: { children: React.ReactNode }) {
       <a key={item.href} href={item.href} title={collapsed ? item.label : undefined} style={{
         display: 'flex', alignItems: 'center', gap: collapsed ? 0 : '11px',
         justifyContent: collapsed ? 'center' : 'flex-start',
-        padding: collapsed ? '11px 0' : '10px 14px', borderRadius: '10px', textDecoration: 'none',
-        background: active ? 'var(--pf-card)' : 'transparent',
+        padding: collapsed ? '11px 0' : '10px 14px', borderRadius: '999px', textDecoration: 'none',
         color: active ? 'var(--pf-gold)' : 'var(--pf-faint)',
-      }}>
+      }} className="pf-navpill" data-active={active ? 'true' : 'false'}>
         <span style={{ lineHeight: 0, width: '18px', display: 'grid', placeItems: 'center', flexShrink: 0 }}><item.icon size={15} strokeWidth={1.75} /></span>
         {!collapsed && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '12.5px', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{item.label}</span>}
       </a>
@@ -106,7 +105,7 @@ function Shell({ children }: { children: React.ReactNode }) {
     <AdminContext.Provider value={{ email, uid }}>
       <div data-theme={theme} style={{ minHeight: '100vh', background: 'var(--pf-bg)', display: 'flex' }}>
         {!isMobile && (
-          <aside style={{ width: collapsed ? '68px' : '236px', flexShrink: 0, background: 'var(--pf-nav)', borderRight: '1px solid var(--pf-border)', padding: collapsed ? '22px 10px' : '22px 16px', position: 'sticky', top: 0, height: '100vh', display: 'flex', flexDirection: 'column', gap: '20px', transition: 'width 0.25s cubic-bezier(0.22,1,0.36,1), padding 0.25s ease', overflow: 'hidden' }}>
+          <aside className="pf-glass-bar" style={{ width: collapsed ? '68px' : '236px', flexShrink: 0, borderRight: '1px solid var(--pf-border)', padding: collapsed ? '22px 10px' : '22px 16px', position: 'sticky', top: 0, height: '100vh', display: 'flex', flexDirection: 'column', gap: '20px', transition: 'width 0.25s cubic-bezier(0.22,1,0.36,1), padding 0.25s ease', overflow: 'hidden', zIndex: 20 }}>
             <div style={{ padding: collapsed ? 0 : '0 6px', display: 'flex', justifyContent: collapsed ? 'center' : 'flex-start' }}>{Logo}</div>
             <nav style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>{NAV.map(n => navLink(n, false))}</nav>
             <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid var(--pf-border)', display: 'flex', flexDirection: 'column', gap: '12px', alignItems: collapsed ? 'center' : 'stretch' }}>
@@ -128,7 +127,7 @@ function Shell({ children }: { children: React.ReactNode }) {
 
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
           {isMobile && (
-            <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '14px 18px', borderBottom: '1px solid var(--pf-border)', background: 'var(--pf-nav)', position: 'sticky', top: 0, zIndex: 20 }}>
+            <header className="pf-glass-bar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '14px 18px', borderBottom: '1px solid var(--pf-border)', position: 'sticky', top: 0, zIndex: 20 }}>
               {Logo}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 {ThemeButton}
@@ -137,11 +136,11 @@ function Shell({ children }: { children: React.ReactNode }) {
             </header>
           )}
 
-          <main className="pf-scroll pf-ambient" style={{ flex: 1, padding: isMobile ? '20px 18px 84px' : '30px 38px 52px', maxWidth: '1440px', width: '100%', margin: '0 auto' }}>
+          <main className="pf-scroll pf-ambient" style={{ flex: 1, padding: isMobile ? '20px 18px 104px' : '30px 38px 52px', maxWidth: '1440px', width: '100%', margin: '0 auto' }}>
             {children}
           </main>
           {isMobile && (
-            <nav aria-label="Admin" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, display: 'flex', background: 'var(--pf-nav)', borderTop: '1px solid var(--pf-border)', zIndex: 30 }}>
+            <nav aria-label="Admin" className="pf-tabbar" style={{ ['--n' as string]: NAV.length, ['--i' as string]: Math.max(0, NAV.findIndex(item => item.href === '/admin' ? pathname === '/admin' : pathname.startsWith(item.href) || (item.href === '/admin/directory' && pathname.startsWith('/admin/companies')))) }}>
               {NAV.map(n => navLink(n, true))}
             </nav>
           )}

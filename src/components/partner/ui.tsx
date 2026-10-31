@@ -97,7 +97,7 @@ export type Tone = keyof typeof TONES
 export function Chip({ children, tone = 'neutral' }: { children: ReactNode; tone?: Tone }) {
   const t = TONES[tone]
   return (
-    <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: t.color, background: t.bg, padding: '3px 8px', borderRadius: '999px', whiteSpace: 'nowrap' }}>
+    <span className="pf-cap" style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: t.color, background: t.bg, padding: '3px 9px', borderRadius: '999px', whiteSpace: 'nowrap', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.18)' }}>
       {children}
     </span>
   )
@@ -128,19 +128,20 @@ export function PrimaryButton({ children, onClick, href, disabled, fullWidth, ty
   const style: CSSProperties = {
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px 20px', minHeight: '40px',
     width: fullWidth ? '100%' : undefined, flex: fullWidth ? 1 : undefined,
-    background: 'var(--pf-gold-deep)', border: 'none', borderRadius: '10px', color: '#ebe8db',
+    background: 'var(--pf-gold-deep)', border: 'none', borderRadius: '999px', color: '#f4ecdb',
     boxShadow: disabled ? 'none' : '0 0 18px rgba(190,154,86,0.28)', opacity: disabled ? 0.6 : 1,
     fontFamily: 'var(--font-sans)', fontSize: '12.5px', letterSpacing: '0.05em', cursor: disabled ? 'default' : 'pointer', textDecoration: 'none',
   }
+  const cls = disabled ? 'pf-cap' : 'pf-cap pf-cap-primary'
   return href
-    ? <a href={href} style={style} aria-label={ariaLabel}>{children}</a>
-    : <button type={type} onClick={onClick} disabled={disabled} style={style} aria-label={ariaLabel}>{children}</button>
+    ? <a href={href} className={cls} style={style} aria-label={ariaLabel}>{children}</a>
+    : <button type={type} onClick={onClick} disabled={disabled} className={cls} style={style} aria-label={ariaLabel}>{children}</button>
 }
 
 export function GhostButton({ children, onClick, tone = 'neutral', ariaLabel, disabled }: { children: ReactNode; onClick?: () => void; tone?: Tone; ariaLabel?: string; disabled?: boolean }) {
   return (
-    <button type="button" onClick={onClick} disabled={disabled} aria-label={ariaLabel} style={{
-      padding: '9px 16px', minHeight: '40px', background: 'transparent', borderRadius: '10px', cursor: disabled ? 'default' : 'pointer', opacity: disabled ? 0.5 : 1,
+    <button type="button" onClick={onClick} disabled={disabled} aria-label={ariaLabel} className="pf-cap pf-cap-ghost" style={{
+      padding: '9px 16px', minHeight: '40px', background: 'transparent', borderRadius: '999px', cursor: disabled ? 'default' : 'pointer', opacity: disabled ? 0.5 : 1,
       border: `1px solid ${tone === 'alert' ? 'rgba(196,124,124,0.4)' : 'var(--pf-border-strong)'}`,
       color: tone === 'alert' ? 'var(--pf-alert)' : 'var(--pf-muted)',
       fontFamily: 'var(--font-sans)', fontSize: '12.5px', letterSpacing: '0.04em',
@@ -154,9 +155,9 @@ export function IconButton({ children, onClick, label, tone = 'neutral' }: { chi
     // Safari doesn't reliably lay out grid/flex children of a <button>, so the
     // button is a fixed box with zero padding and an inner span does the
     // centering. flexShrink:0 stops rails/headers from squeezing it.
-    <button type="button" onClick={onClick} aria-label={label} title={label} style={{
+    <button type="button" onClick={onClick} aria-label={label} title={label} className="pf-cap pf-cap-ghost" style={{
       width: '40px', height: '40px', minWidth: '40px', minHeight: '40px', flexShrink: 0, padding: 0, margin: 0, boxSizing: 'border-box',
-      borderRadius: '10px', border: '1px solid var(--pf-border)', background: 'transparent',
+      borderRadius: '999px', border: '1px solid var(--pf-border)', background: 'transparent',
       color: tone === 'gold' ? 'var(--pf-gold)' : 'var(--pf-faint)', cursor: 'pointer', lineHeight: 0, overflow: 'hidden',
     }}>
       <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', lineHeight: 0 }}>{children}</span>
@@ -180,8 +181,8 @@ export function SearchInput({ value, onChange, placeholder, ariaLabel }: {
         <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
       </svg>
       <input type="search" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
-        aria-label={ariaLabel || placeholder || 'Search'}
-        style={{ ...fieldStyle, paddingLeft: '34px', paddingRight: value ? '34px' : '12px' }} />
+        aria-label={ariaLabel || placeholder || 'Search'} className="pf-cap-field"
+        style={{ ...fieldStyle, borderRadius: '999px', paddingLeft: '34px', paddingRight: value ? '34px' : '12px' }} />
       {value && (
         <button onClick={() => onChange('')} aria-label="Clear search"
           style={{ position: 'absolute', right: '4px', top: '50%', transform: 'translateY(-50%)', width: '32px', height: '32px', border: 'none', background: 'transparent', color: 'var(--pf-faint)', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>×</button>

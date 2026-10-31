@@ -161,12 +161,10 @@ function Shell({ children }: { children: React.ReactNode }) {
         display: 'flex', alignItems: 'center', gap: mobile || iconOnly ? 0 : '11px',
         flexDirection: mobile ? 'column' : 'row',
         justifyContent: mobile || iconOnly ? 'center' : 'flex-start',
-        padding: mobile ? '9px 4px 7px' : iconOnly ? '11px 0' : '10px 14px', borderRadius: mobile ? 0 : '10px',
-        textDecoration: 'none', flex: mobile ? 1 : undefined,
-        background: !mobile && active ? 'var(--pf-card)' : 'transparent',
+        padding: mobile ? '8px 4px 7px' : iconOnly ? '11px 0' : '10px 14px', borderRadius: mobile ? '999px' : '999px',
+        textDecoration: 'none', flex: mobile ? 1 : undefined, minHeight: mobile ? '48px' : undefined,
         color: active ? 'var(--pf-gold)' : 'var(--pf-faint)',
-        borderTop: mobile ? `2px solid ${active ? 'var(--pf-gold)' : 'transparent'}` : undefined,
-      }}>
+      }} className={mobile ? undefined : 'pf-navpill'} data-active={active ? 'true' : 'false'}>
         {/* Fixed-width icon slot — the glyphs have different natural widths,
             so without this the labels would still start at ragged x positions. */}
         <span style={{ lineHeight: 0, position: 'relative', width: mobile ? undefined : '18px', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
@@ -188,7 +186,7 @@ function Shell({ children }: { children: React.ReactNode }) {
     <PartnerContext.Provider value={{ uid, email, provider, companies, company, bookings, bookingsLoaded, setCompanyId, locale, setLocale, refresh }}>
       <div data-theme={theme} style={{ minHeight: '100vh', background: 'var(--pf-bg)', display: 'flex' }}>
         {!isMobile && (
-          <aside style={{ width: collapsed ? '68px' : '236px', flexShrink: 0, background: 'var(--pf-nav)', borderRight: '1px solid var(--pf-border)', padding: collapsed ? '22px 10px' : '22px 16px', position: 'sticky', top: 0, height: '100vh', display: 'flex', flexDirection: 'column', gap: '20px', transition: 'width 0.25s cubic-bezier(0.22,1,0.36,1), padding 0.25s ease', overflow: 'hidden' }}>
+          <aside className="pf-glass-bar" style={{ width: collapsed ? '68px' : '236px', flexShrink: 0, borderRight: '1px solid var(--pf-border)', padding: collapsed ? '22px 10px' : '22px 16px', position: 'sticky', top: 0, height: '100vh', display: 'flex', flexDirection: 'column', gap: '20px', transition: 'width 0.25s cubic-bezier(0.22,1,0.36,1), padding 0.25s ease', overflow: 'hidden', zIndex: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: collapsed ? 0 : '0 6px', justifyContent: collapsed ? 'center' : 'flex-start' }}>
               <img loading="lazy" decoding="async" src="/images/PALMERA_cracked.png" alt="" width={24} height={24} style={{ objectFit: 'contain' }} />
               {!collapsed && <span style={{ fontFamily: 'var(--font-display)', color: 'var(--pf-head)', fontSize: '14px', letterSpacing: '0.12em' }}>PALMERA</span>}
@@ -216,7 +214,7 @@ function Shell({ children }: { children: React.ReactNode }) {
               sign-out, and the content gets the full height. Mobile keeps a
               compact header (company pill + controls). */}
           {isMobile && (
-            <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '12px 18px', borderBottom: '1px solid var(--pf-border)', background: 'var(--pf-nav)', position: 'sticky', top: 0, zIndex: 20 }}>
+            <header className="pf-glass-bar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '12px 18px', borderBottom: '1px solid var(--pf-border)', position: 'sticky', top: 0, zIndex: 20 }}>
               {CompanyPill}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 {LocaleToggle}
@@ -226,12 +224,12 @@ function Shell({ children }: { children: React.ReactNode }) {
             </header>
           )}
 
-          <main className="pf-scroll pf-ambient" style={{ flex: 1, padding: isMobile ? '20px 18px 84px' : '34px 40px 52px', maxWidth: '1320px', width: '100%', margin: '0 auto' }}>
+          <main className="pf-scroll pf-ambient" style={{ flex: 1, padding: isMobile ? '20px 18px 104px' : '34px 40px 52px', maxWidth: '1320px', width: '100%', margin: '0 auto' }}>
             {children}
           </main>
 
           {isMobile && (
-            <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, display: 'flex', background: 'var(--pf-nav)', borderTop: '1px solid var(--pf-border)', zIndex: 30 }}>
+            <nav className="pf-tabbar" style={{ ['--n' as string]: NAV.length, ['--i' as string]: Math.max(0, NAV.findIndex(n => n.href === pathname)) }}>
               {NAV.map(n => navLink(n, true))}
             </nav>
           )}

@@ -172,7 +172,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <SupplierContext.Provider value={{ supplier, uid, locale, refresh }}>
       <div data-theme={theme} style={{ minHeight: '100vh', background: 'var(--pf-bg)', display: 'flex', flexDirection: 'column' }}>
-        <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '14px 22px', borderBottom: '1px solid var(--pf-border)', background: 'var(--pf-nav)', position: 'sticky', top: 0, zIndex: 20 }}>
+        <header className="pf-glass-bar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '14px 22px', borderBottom: '1px solid var(--pf-border)', position: 'sticky', top: 0, zIndex: 20 }}>
           {Brand}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--pf-faint)' }}>{supplier?.name}</span>
