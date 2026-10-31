@@ -59,6 +59,8 @@ export default function ReservationsScreen() {
     if (f === 'today') setDatePreset('today')
     else if (f === 'pending') setFilter('action')
     else if (f === 'next') setFilter('upcoming')
+    else if (f === 'done') setFilter('done')
+    else if (f === 'cancelled') setFilter('cancelled')
   }, [])
 
   // Jordan/ChatGPT #33: "Get help with this booking" — pre-filled context so

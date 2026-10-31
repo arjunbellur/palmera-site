@@ -13,6 +13,7 @@ import { ScreenHeader, Money, EmptyState, SectionTitle, Skeleton, card, cardShap
 import { BarChart, RankPills } from '@/components/charts'
 import { CalendarClock, TrendingUp, Wallet, Clock, Check } from 'lucide-react'
 import EarningsHero from '@/components/partner/EarningsHero'
+import PerformanceGrid from '@/components/partner/PerformanceGrid'
 
 const PAYOUT_COLOR: Record<PayoutStatus, string> = {
   scheduled: 'var(--pf-gold)', processing: 'var(--pf-gold)', paid: 'var(--pf-success)', failed: 'var(--pf-alert)',
@@ -323,6 +324,11 @@ export default function EarningsScreen() {
           <RankPills items={topClients} />
         </div>
       )}
+
+      {/* Performance — moved here from Home (consolidation step 5): money
+          and "how am I doing" read together. */}
+      <SectionTitle>{L('perf_title')}</SectionTitle>
+      <PerformanceGrid bookings={bookings} locale={locale} />
 
       <SectionTitle>{L('payout_hist')}</SectionTitle>
       {payouts.length === 0 ? (

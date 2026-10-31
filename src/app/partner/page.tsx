@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { usePartner } from './PartnerContext'
 import { t } from './i18n'
 import { getLedgerByProvider, getPayoutsByProvider, getExperiencesByCompany, getPayoutProfile } from '@/lib/firestore'
-import type { Booking, Experience, LedgerEntry, Payout } from '@/lib/schema'
+import type { Experience, LedgerEntry, Payout } from '@/lib/schema'
 import { formatAmount, formatDate, toDate, isDelivered, isUpcoming, nextPayoutDate } from '@/lib/money'
 import { ScreenHeader, StatTile, Money, EmptyState, SectionTitle, Skeleton, card, cardShape, eyebrow } from '@/components/partner/ui'
 import ReservationCard from '@/components/partner/ReservationCard'
@@ -23,15 +23,6 @@ function CircleStatHome({ label, value }: { label: string; value: string }) {
   )
 }
 
-function Tile({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <div className="pf-glass" style={{ ...cardShape, padding: '14px 16px' }}>
-      <div style={{ ...eyebrow, fontSize: '10px' }}>{label}</div>
-      <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--pf-text)', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{value}</div>
-      {sub && <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'var(--pf-faint)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub}</div>}
-    </div>
-  )
-}
 
 export default function PartnerHome() {
   const { uid, company, provider, locale, bookings } = usePartner()
@@ -188,41 +179,6 @@ export default function PartnerHome() {
         </div>
       </div>
 
-      {/* Performance this month (Jordan/ChatGPT #1): "How is my business doing
-          on Palmera?" answered in one row. All derived from bookings. */}
-      {loaded && (() => {
-        const now = new Date()
-        const thisMonth = (b: Booking) => { const d = toDate(b.scheduledFor); return !!d && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() }
-        const monthAll = bookings.filter(thisMonth)
-        const monthLive = monthAll.filter(b => ['confirmed', 'completed'].includes(b.status) || (b.status === 'pending' && b.confirmationType !== 'instant'))
-        const monthRevenue = monthLive.reduce((s, b) => s + (b.payoutAmount || 0), 0)
-        const completedAll = bookings.filter(b => b.status === 'completed').length
-        const decided = bookings.filter(b => ['confirmed', 'completed', 'cancelled', 'declined', 'no_show'].includes(b.status)).length
-        const cancelled = bookings.filter(b => ['cancelled', 'declined'].includes(b.status)).length
-        const cancelRate = decided > 0 ? Math.round((cancelled / decided) * 100) : 0
-        const valued = bookings.filter(b => (b.bookingTotal || 0) > 0 && ['confirmed', 'completed'].includes(b.status))
-        const avgValue = valued.length ? Math.round(valued.reduce((s, b) => s + (b.bookingTotal || 0), 0) / valued.length) : 0
-        const counts = new Map<string, number>()
-        for (const b of bookings) if (['confirmed', 'completed'].includes(b.status)) counts.set(b.title, (counts.get(b.title) || 0) + 1)
-        const top = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]
-        if (bookings.length === 0) return null
-        return (
-          <div style={{ marginTop: '12px' }}>
-            <div style={{ ...eyebrow, margin: '0 0 8px 2px' }}>{L('perf_title')}</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr))', gap: '10px' }}>
-              <Tile label={L('perf_month_res')} value={String(monthLive.length)} />
-              <Tile label={L('perf_month_rev')} value={formatAmount(monthRevenue)} sub="XOF" />
-              <Tile label={L('perf_completed')} value={String(completedAll)} />
-              <Tile label={L('perf_cancel')} value={`${cancelRate}%`} sub={decided > 0 ? `${cancelled}/${decided}` : undefined} />
-              <Tile label={L('perf_avg')} value={formatAmount(avgValue)} sub="XOF" />
-              <Tile label={L('perf_top')} value={top ? top[0] : '—'} sub={top ? `${top[1]} ${L('bookings_n')}` : undefined} />
-              <Tile label={L('perf_upcoming')} value={String(upcomingAll.filter(b => b.status === 'confirmed').length)} />
-              <Tile label={L('perf_pending')} value={String(pending.filter(b => !(b.confirmationType === 'instant')).length)} />
-              <Tile label={L('lifetime')} value={formatAmount(lifetime)} sub="XOF" />
-            </div>
-          </div>
-        )
-      })()}
 
       <SectionTitle action={upcoming.length > 0 ? <Link href="/partner/reservations" style={{ fontFamily: 'var(--font-sans)', fontSize: '11.5px', color: 'var(--pf-gold)' }}>{L('see_all')}</Link> : undefined}>
         {L('upcoming')}
