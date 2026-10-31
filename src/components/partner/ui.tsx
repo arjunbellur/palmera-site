@@ -1,4 +1,5 @@
 'use client'
+import { useEffect, useState } from 'react'
 // Shared visual vocabulary for the /partner surface, ported from the Claude
 // Design mockup. Everything reads --pf-* tokens so light/dark come free.
 //
@@ -213,5 +214,38 @@ export function SectionTitle({ children, action }: { children: ReactNode; action
       <h2 style={{ fontFamily: 'var(--font-display)', color: 'var(--pf-head)', fontSize: '1.0625rem', fontWeight: 400, letterSpacing: '0.03em', margin: 0 }}>{children}</h2>
       {action}
     </div>
+  )
+}
+
+/** Overview-first sections (Arjun, 2026-10-31): a page is a list of collapsed
+ *  sections, each with a one-line digest, that expand in place — so a dense
+ *  block never buries the one below it. Open/closed state is remembered per
+ *  section id in localStorage. `summary` stays visible when open, muted. */
+export function Disclosure({ id, title, summary, defaultOpen = false, action, children }: {
+  id: string; title: ReactNode; summary?: ReactNode; defaultOpen?: boolean; action?: ReactNode; children: ReactNode
+}) {
+  const key = `palmera.section.${id}`
+  const [open, setOpen] = useState<boolean>(defaultOpen)
+  useEffect(() => {
+    try { const v = localStorage.getItem(key); if (v === '1') setOpen(true); else if (v === '0') setOpen(false) } catch { /* private mode */ }
+  }, [key])
+  const toggle = () => { setOpen((o) => { try { localStorage.setItem(key, o ? '0' : '1') } catch { /* ignore */ } return !o }) }
+  return (
+    <section style={{ margin: '14px 0' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <button type="button" onClick={toggle} aria-expanded={open}
+          style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderRadius: open ? '16px 16px 0 0' : '16px', border: '1px solid var(--pf-border)', background: open ? 'var(--pf-card)' : 'transparent', cursor: 'pointer', textAlign: 'left' }}>
+          <span style={{ width: '18px', height: '18px', borderRadius: '50%', border: '1px solid var(--pf-border-strong)', color: 'var(--pf-gold)', display: 'grid', placeItems: 'center', fontSize: '11px', flexShrink: 0, transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s ease' }}>›</span>
+          <span style={{ fontFamily: 'var(--font-display)', color: 'var(--pf-head)', fontSize: '1.0625rem', fontWeight: 400, letterSpacing: '0.03em', whiteSpace: 'nowrap' }}>{title}</span>
+          {summary && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11.5px', color: open ? 'var(--pf-faint)' : 'var(--pf-muted)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginLeft: 'auto' }}>{summary}</span>}
+        </button>
+        {action}
+      </div>
+      {open && (
+        <div className="pf-in" style={{ border: '1px solid var(--pf-border)', borderTop: 'none', borderRadius: '0 0 16px 16px', padding: '16px' }}>
+          {children}
+        </div>
+      )}
+    </section>
   )
 }

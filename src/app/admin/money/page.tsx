@@ -12,7 +12,7 @@ import { MAIN_CATEGORIES, classifyListing, isMainCategoryId } from '@/lib/catego
 import { refundSummary, refundKindLabel, refundTone, isCancelledPaid, type RefundKind } from '@/lib/refunds'
 import { useAdmin } from '../AdminContext'
 import { docDate, isRealBooking, startOfMonth, sumField, bucketByPeriod } from '@/lib/analytics'
-import { ScreenHeader, Chip, Skeleton, Money, SectionTitle, EmptyState, card, eyebrow, SearchInput, type Tone } from '@/components/partner/ui'
+import { ScreenHeader, Chip, Skeleton, Money, EmptyState, Disclosure, card, eyebrow, SearchInput, type Tone } from '@/components/partner/ui'
 import { BarChart, RankPills, Donut } from '@/components/charts'
 import { FilterChip, inputStyle, formatDate, glass } from '../ui'
 import type { Booking, BookingStatus, Company, AppProfile, CompanyPayoutProfile } from '@/lib/schema'
@@ -181,10 +181,6 @@ function AdminMoney() {
     <div className="pf-in">
       <ScreenHeader label="Palmera HQ" title="Money" intro="Every booking on the platform, the revenue behind it, and what Palmera owes each partner." />
 
-      {/* Composition: the working column (revenue + explorer) with the payout
-          rail pinned right on wide screens. */}
-      <div className="pf-cols">
-      <div style={{ minWidth: 0 }}>
       {/* The money position — how it actually flows: guests pay the full
           amount into Palmera's Stripe; Palmera keeps its commission; the net
           is owed to partners once the experience is delivered. */}
@@ -211,29 +207,30 @@ function AdminMoney() {
         </div>
       </div>
 
-      {commBuckets.some((b) => b.sum > 0) && (
-        <div style={{ marginTop: '16px' }}>
-          <div style={{ ...eyebrow, marginBottom: '10px' }}>Commission by month</div>
-          <BarChart data={commBuckets.map((b) => ({ label: b.label, value: b.sum, display: fmt(b.sum) }))} />
-        </div>
-      )}
-      {(byCompany.length > 0 || byCategory.length > 0) && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 16rem), 1fr))', gap: '20px', marginTop: '16px' }}>
-          {byCompany.length > 0 && <div><div style={{ ...eyebrow, marginBottom: '10px' }}>Revenue by company</div><RankPills items={byCompany} /></div>}
-          {byCategory.length > 0 && <div><div style={{ ...eyebrow, marginBottom: '10px' }}>Revenue by category</div><RankPills items={byCategory} /></div>}
-          {byCity.length > 0 && <div><div style={{ ...eyebrow, marginBottom: '10px' }}>Revenue by city</div><RankPills items={byCity} /></div>}
-        </div>
-      )}
+      <div style={{ height: '6px' }} />
 
-      </div>
+      <Disclosure id="money.commission" title="Commission by month" defaultOpen
+        summary={`${fmt(commMonth)} XOF this month · ${fmt(commAll)} all time`}>
+        {commBuckets.some((b) => b.sum > 0)
+          ? <BarChart data={commBuckets.map((b) => ({ label: b.label, value: b.sum, display: fmt(b.sum) }))} />
+          : <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--pf-faint)', margin: 0 }}>No commission earned yet.</p>}
+      </Disclosure>
 
-      <div className="pf-rail" style={{ minWidth: 0 }}>
-      <div className="pf-glass" style={{ ...glass, display: 'flex', alignItems: 'center' }}>
-        <Donut percent={completionRate} label="Completion rate" sub={`${completed.length} completed of ${resolved.length} resolved booking(s)`} />
-      </div>
-      {/* Payout readiness */}
-      <SectionTitle>Payout readiness</SectionTitle>
-      <p style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-faint)', margin: '-6px 0 12px' }}>
+      <Disclosure id="money.breakdown" title="Where revenue comes from"
+        summary={[byCompany[0] && `top: ${byCompany[0].label}`, byCategory[0] && byCategory[0].label, byCity[0] && byCity[0].label, `${Math.round(completionRate)}% completion`].filter(Boolean).join(' · ')}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 15rem), 1fr))', gap: '20px' }}>
+          {byCompany.length > 0 && <div><div style={{ ...eyebrow, marginBottom: '10px' }}>By company</div><RankPills items={byCompany} /></div>}
+          {byCategory.length > 0 && <div><div style={{ ...eyebrow, marginBottom: '10px' }}>By category</div><RankPills items={byCategory} /></div>}
+          {byCity.length > 0 && <div><div style={{ ...eyebrow, marginBottom: '10px' }}>By city</div><RankPills items={byCity} /></div>}
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <Donut percent={completionRate} label="Completion rate" sub={`${completed.length} completed of ${resolved.length} resolved booking(s)`} />
+          </div>
+        </div>
+      </Disclosure>
+
+      <Disclosure id="money.payouts" title="Payout readiness" defaultOpen={owed.length > 0}
+        summary={owed.length ? `${owed.length} partner(s) · ${fmt(owed.reduce((t, o) => t + o.amount, 0))} XOF owed · ${owed.filter((o) => !o.hasPayout).length} without payout details` : 'nothing owed yet'}>
+      <p style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-faint)', margin: '0 0 12px' }}>
         Net owed per partner on DELIVERED bookings (completed, or confirmed with the date passed). Guests paid Palmera in full; commission is already deducted here.
       </p>
       {owed.length === 0 ? (
@@ -254,14 +251,14 @@ function AdminMoney() {
           ))}
         </div>
       )}
-
-      </div>
-      </div>
+      </Disclosure>
 
       {/* Marketplace money — same numbers the Suppliers › Orders page shows;
           this is their home, that page links here. */}
-      <SectionTitle action={<Link href="/admin/suppliers/orders" style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-gold)', textDecoration: 'none' }}>Orders →</Link>}>Marketplace</SectionTitle>
-      <p style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-faint)', margin: '-6px 0 12px' }}>
+      <Disclosure id="money.marketplace" title="Marketplace"
+        summary={`${fmt(market.collected)} XOF collected · ${fmt(market.due)} due · ${market.open} open order(s)`}
+        action={<Link href="/admin/suppliers/orders" style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-gold)', textDecoration: 'none', whiteSpace: 'nowrap' }}>Orders →</Link>}>
+      <p style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-faint)', margin: '0 0 12px' }}>
         Dépôt-vente between suppliers and partners. Card settlements are collected by Palmera and the supplier's net accrues; cash or Wave handed to the supplier accrues the commission they owe Palmera instead.
       </p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '12px', marginBottom: '8px' }}>
@@ -271,6 +268,7 @@ function AdminMoney() {
         <div className="pf-glass" style={glass}><div style={eyebrow}>Net owed to suppliers</div><div style={{ marginTop: '8px' }}><Money amount={fmt(market.netOwedToSuppliers)} size={24} /></div></div>
         <div className={market.due ? 'pf-glass pf-glass-gold' : 'pf-glass'} style={glass}><div style={eyebrow}>Payments due</div><div style={{ marginTop: '8px' }}><Money amount={fmt(market.due)} size={24} /></div><div style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-muted)', marginTop: '8px' }}>{market.open} open order(s)</div></div>
       </div>
+      </Disclosure>
 
       {/* Cancellations & refunds — what happened to the money on every paid
           booking that was cancelled or declined. The app refunds Stripe at
@@ -297,8 +295,9 @@ function AdminMoney() {
         }
         return (
           <>
-            <SectionTitle>Cancellations &amp; refunds</SectionTitle>
-            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-faint)', margin: '-6px 0 12px' }}>
+            <Disclosure id="money.refunds" title="Cancellations & refunds" defaultOpen={count('manual') > 0}
+              summary={`${fmt(sum('refunded'))} XOF refunded · ${count('manual') ? `${count('manual')} need Palmera` : 'nothing pending'} · ${fmt(sum('kept'))} XOF kept`}>
+            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-faint)', margin: '0 0 12px' }}>
               Paid bookings that were cancelled or declined. Inside the free window the app refunds the guest (card at once, mobile money within minutes); after the cut-off the partner keeps the money. A mobile-money refund the processor rejected needs Palmera to send it by hand, then close it out here.
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 170px), 1fr))', gap: '12px', marginBottom: '14px' }}>
@@ -338,13 +337,15 @@ function AdminMoney() {
                 ))}
               </div>
             )}
+            </Disclosure>
           </>
         )
       })()}
 
       {/* Bookings explorer — full width beneath the grid; the row list wants
           every pixel it can get. */}
-      <SectionTitle>All bookings</SectionTitle>
+      <Disclosure id="money.bookings" title="All bookings"
+        summary={`${bookings.length} booking(s)${status !== 'all' || co !== 'all' || from || to ? ` · ${rows.length} match the filters` : ''}`}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '14px' }}>
         <div style={{ marginBottom: '10px' }}><SearchInput value={q} onChange={setQ} placeholder="Search bookings — guest, title, id…" /></div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
@@ -400,6 +401,7 @@ function AdminMoney() {
           })}
         </div>
       )}
+      </Disclosure>
     </div>
   )
 }

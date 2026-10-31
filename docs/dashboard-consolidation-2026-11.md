@@ -45,6 +45,21 @@ links to that list with the filter preset.
 | **Listings** | grid, editor, duplicate | unchanged |
 | Market, Settings | unchanged | — |
 
+## Principle added 2026-10-31: overview first, expand in place
+
+Arjun: "everything is an overview page with more information that can be
+expanded … we don't want information-dense areas on a single page that are
+practically unreachable because of other dense information."
+
+So every page is: its headline tiles (always visible) followed by a list of
+**sections collapsed by default**, each a single row with the title and a
+one-line digest (the two or three numbers you would otherwise scroll for).
+A row expands in place; open/closed is remembered per section per browser.
+A section opens by default only when it needs action (a refund to send by
+hand, partners owed money). Component: `Disclosure` in
+`src/components/partner/ui.tsx`. Applied to Money first, then Members,
+Overview and partner Earnings.
+
 ## Delivery order
 
 1. Admin: revenue by app category + by city on Money (today).
