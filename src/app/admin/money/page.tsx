@@ -72,6 +72,11 @@ function AdminMoney() {
     router.replace(params.size ? `${pathname}?${params}` : pathname, { scroll: false })
   }
 
+  // Hooks must run on every render — the search state used to sit after
+  // this early return, so the first loaded render called one more hook than
+  // the skeleton render and React threw (Rules of Hooks).
+  const [q, setQ] = useState('')
+
   if (!loaded) return <MoneySkeleton />
 
   const coName = new Map(companies.map((c) => [c.id, c.name || 'Untitled']))
@@ -79,7 +84,6 @@ function AdminMoney() {
   const handleOf = (uid: string) => { const p = byId.get(uid); return p?.handle ? `@${p.handle.replace(/^@+/, '')}` : (p?.name || null) }
 
   // ── Explorer rows ──
-  const [q, setQ] = useState('')
   const fromD = from ? new Date(`${from}T00:00`) : null
   const toD = to ? new Date(`${to}T23:59:59`) : null
   const needle = q.trim().toLowerCase()
