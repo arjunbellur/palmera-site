@@ -126,6 +126,10 @@ export default function AdminAppGrowth() {
         <button onClick={load} style={{ marginTop: '4px', background: 'transparent', border: '1px solid var(--pf-border)', borderRadius: '8px', color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '11px', cursor: 'pointer', padding: '6px 12px' }}>↻ Refresh</button>
       </div>
 
+      {/* The admin's main lever on what members see — first thing on the page,
+          full width, above the analytics. */}
+      <FeaturedPanel experiences={experiences} />
+
       {/* Composition: charts flow down the main column; city, social graph and
           the earners leaderboard live on the sticky rail at ≥1200px. */}
       <div className="pf-cols">
@@ -233,7 +237,6 @@ export default function AdminAppGrowth() {
             <RankPills items={topEarners} />
           </>
         )}
-        <FeaturedPanel experiences={experiences} />
         <MembersPanel profiles={profiles} />
       </div>
       </div>
