@@ -16,7 +16,7 @@ import { BarChart, RankPills } from '@/components/charts'
 import { CountTile, SparkTile, FilterChip, glass } from '../ui'
 import type { AppProfile, AppDoc, Booking, Experience } from '@/lib/schema'
 import { Users, Gem, Camera, Heart, PencilLine, MessageSquare, Coins, ListOrdered, LayoutGrid, UserPlus, Clock } from 'lucide-react'
-import { formatAmount } from '@/lib/money'
+import { formatAmount, isDelivered } from '@/lib/money'
 import MembersPanel from '@/components/admin/MembersPanel'
 
 const fmt = formatAmount
@@ -92,14 +92,17 @@ export default function AdminAppGrowth() {
   const expImgByTitle = new Map(experiences.map((e) => [e.title || 'Untitled', e.img || null]))
   const favByExp = groupCount(favorites, 'exp_id')
   const bookedCount = bookings.length
-  const completedCount = bookings.filter((b) => b.status === 'completed').length
+  // "Delivered" = completed, or confirmed with the date passed — the app never
+  // writes `completed` itself, so the raw status read as zero forever. Same
+  // definition the Money page uses.
+  const completedCount = bookings.filter(isDelivered).length
   const rankItems = (() => {
     if (rankMode === 'favorites') {
       return favByExp.slice(0, 5).map((f) => ({ label: expTitle.get(f.label) || f.label, value: f.value, display: `${f.value} ♥`, img: expImgById.get(f.label) || null }))
     }
     const m = new Map<string, number>()
     bookings.forEach((b) => {
-      if (rankMode === 'revenue' && b.status !== 'completed') return
+      if (rankMode === 'revenue' && !isDelivered(b)) return
       const key = b.title || expTitle.get(b.experienceId) || '—'
       m.set(key, (m.get(key) || 0) + (rankMode === 'revenue' ? (b.bookingTotal || 0) : 1))
     })
@@ -175,12 +178,12 @@ export default function AdminAppGrowth() {
 
       {/* 5 — Funnel */}
       <Disclosure id="members.funnel" title="Discovery → booking funnel"
-        summary={`${favorites.length} favorited → ${bookedCount} booked → ${completedCount} completed`}>
+        summary={`${favorites.length} favorited → ${bookedCount} booked → ${completedCount} delivered`}>
       <div className="pf-glass" style={{ ...glass, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap', padding: '18px 22px' }}>
         {[
           { label: 'Favorited', value: favorites.length, icon: '♥' },
           { label: 'Booked', value: bookedCount, icon: '▤' },
-          { label: 'Completed', value: completedCount, icon: '✓' },
+          { label: 'Delivered', value: completedCount, icon: '✓' },
         ].map((step, i) => (
           <div key={step.label} style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: '1 1 auto' }}>
             {i > 0 && <span style={{ color: 'var(--pf-faint)', fontSize: '14px' }}>→</span>}
@@ -204,7 +207,7 @@ export default function AdminAppGrowth() {
           </div>
         }>
       {rankItems.length === 0 ? (
-        <EmptyState icon={<LayoutGrid size={22} strokeWidth={1.75} />} title="Nothing yet" body={`No ${rankMode === 'revenue' ? 'completed revenue' : rankMode} recorded so far.`} />
+        <EmptyState icon={<LayoutGrid size={22} strokeWidth={1.75} />} title="Nothing yet" body={`No ${rankMode === 'revenue' ? 'delivered revenue' : rankMode} recorded so far.`} />
       ) : (
         <RankPills items={rankItems} />
       )}
