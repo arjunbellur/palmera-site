@@ -110,6 +110,17 @@ gets a line here, newest first. Pure-UI dashboard changes are never listed.
   - `companies.categories?: MainCategoryId[]` (new, additive, dashboard-only):
     the business's app mains, from the partner profile. The app does not
     read it — it derives business chips from listings; ignore it.
+- 2026-10-31 **Three new subcategory ids: `yoga`, `pilates`, `spa`** (Samson's
+  ask 2026-10-28, Feedback Part 4). Added to `src/lib/categories.ts` under
+  `sports_wellness` in the app's order, with the keyword rules copied from
+  iOS 1.60 `Palmera/Models.swift` (yoga/pilates before the fitness rule,
+  spa + hammam before massages/beauty); legacy id `wellness`. Editor, admin
+  Catalogue and the backfill all accept them now. ⚠ **Samson: the server
+  classifier in `functions/index.js` (`CC_RULES`) still has the old rules —
+  "yoga"/"pilates" → fitness_classes, "spa" → beauty — so anything the
+  functions file by keyword disagrees with iOS and the dashboard until it is
+  updated.** Re-tag to do on `/admin/catalogue`: Palmera Spa (beauty → spa),
+  Palmera Pilates and Pilates Reformer (fitness_classes → pilates).
 - 2026-10-31 **Cancellation & refund views (dashboard reads; one additive
   admin write).** Partner reservations and the admin Money page now derive
   what happened to the money on a cancelled/declined booking from the

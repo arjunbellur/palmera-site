@@ -56,6 +56,11 @@ export const SUBCATEGORIES: { id: string; main: MainCategoryId; en: string; fr: 
   { id: 'tennis', main: 'sports_wellness', en: 'Tennis', fr: 'Tennis', legacy: 'sports' },
   { id: 'padel', main: 'sports_wellness', en: 'Padel', fr: 'Padel', legacy: 'sports' },
   { id: 'fitness_classes', main: 'sports_wellness', en: 'Fitness classes', fr: 'Cours de fitness', legacy: 'sports' },
+  // App Feedback Part 4 (P4·S1–S4, iOS 1.60 Models.swift): yoga, pilates and
+  // spa are their own subs, in this order. Samson asked for the ids 2026-10-28.
+  { id: 'yoga', main: 'sports_wellness', en: 'Yoga', fr: 'Yoga', legacy: 'wellness' },
+  { id: 'pilates', main: 'sports_wellness', en: 'Pilates', fr: 'Pilates', legacy: 'wellness' },
+  { id: 'spa', main: 'sports_wellness', en: 'Spa', fr: 'Spa', legacy: 'wellness' },
   { id: 'beauty', main: 'sports_wellness', en: 'Beauty treatments', fr: 'Soins de beauté', legacy: 'wellness' },
   { id: 'massages', main: 'sports_wellness', en: 'Massages', fr: 'Massages', legacy: 'wellness' },
   { id: 'hotels', main: 'stay', en: 'Hotels', fr: 'Hôtels', legacy: 'hotels' },
@@ -133,9 +138,15 @@ const RULES: [boolean, string[][], string][] = [
   [false, [['gym', 'salle de sport*', 'fitness center', 'fitness centre']], 'gyms'],
   [false, [['tennis']], 'tennis'],
   [false, [['padel']], 'padel'],
-  [false, [['yoga', 'pilates', 'fitness', 'bootcamp', 'boot camp', 'crossfit', 'zumba', 'spinning', 'cours de sport']], 'fitness_classes'],
+  // Yoga and pilates before the generic fitness rule ("Yoga fitness" is
+  // Yoga); spa before massages and beauty (a spa is where you go for a
+  // massage too). Mirrors Palmera/Models.swift CategoryClassifier (1.60).
+  [false, [['yoga']], 'yoga'],
+  [false, [['pilates']], 'pilates'],
+  [false, [['fitness', 'bootcamp', 'boot camp', 'crossfit', 'zumba', 'spinning', 'cours de sport']], 'fitness_classes'],
+  [false, [['spa', 'hammam']], 'spa'],
   [false, [['massage*']], 'massages'],
-  [false, [['spa', 'beauty', 'beaute', 'facial*', 'nail*', 'manucure', 'pedicure', 'hair', 'coiffure', 'soin*', 'hammam']], 'beauty'],
+  [false, [['beauty', 'beaute', 'facial*', 'nail*', 'manucure', 'pedicure', 'hair', 'coiffure', 'soin*']], 'beauty'],
   [false, [['boutique hotel*', 'guesthouse*', 'guest house*', 'maison d hote*']], 'boutique'],
   [false, [['hotel*']], 'hotels'],
   [false, [['villa']], 'villas'],

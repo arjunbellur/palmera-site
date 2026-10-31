@@ -24,6 +24,13 @@ const cases: { input: Parameters<typeof classifyListing>[0]; main: string; sub: 
   { input: { mainCategory: 'dining', subcategory: 'cafes', title: 'Golf club restaurant' }, main: 'dining', sub: 'cafes' },
   { input: { mainCategory: 'dining', subcategory: 'golf', title: 'Golf club restaurant' }, main: 'dining', sub: 'restaurants' },
   { input: { subcategory: 'padel' }, main: 'sports_wellness', sub: 'padel' },
+  // Feedback Part 4: yoga, pilates, spa are their own subs (iOS 1.60)
+  { input: { category: 'wellness', title: 'Palmera Spa' }, main: 'sports_wellness', sub: 'spa' },
+  { input: { category: 'wellness', title: 'Palmera Pilates' }, main: 'sports_wellness', sub: 'pilates' },
+  { input: { category: 'sports', title: 'Pilates Reformer' }, main: 'sports_wellness', sub: 'pilates' },
+  { input: { title: 'Yoga fitness au lever du soleil' }, main: 'sports_wellness', sub: 'yoga' },
+  { input: { title: 'Bootcamp fitness' }, main: 'sports_wellness', sub: 'fitness_classes' },
+  { input: { title: 'Hammam & massage' }, main: 'sports_wellness', sub: 'spa' },
   // Accent folding and plurals
   { input: { title: 'Dîner privé avec chef à domicile' }, main: 'dining', sub: 'private_dining' },
   { input: { title: 'Festivals de Saint-Louis' }, main: 'entertainment', sub: 'festivals' },
@@ -42,7 +49,7 @@ for (const c of cases) {
 const legacyIds = new Set(['dining', 'activities', 'lifestyle', 'safari', 'islands', 'nightlife', 'entertainment', 'sports', 'wellness', 'hotels', 'villas', 'rentals', 'yachts'])
 for (const s of SUBCATEGORIES) if (!legacyIds.has(s.legacy)) { failed++; console.log(`FAIL sub ${s.id} maps to unknown legacy id ${s.legacy}`) }
 for (const m of MAIN_CATEGORIES) if (subcategoriesFor(m.id).length === 0) { failed++; console.log(`FAIL main ${m.id} has no subcategories`) }
-if (SUBCATEGORIES.length !== 37) { failed++; console.log(`FAIL expected 37 subcategories, got ${SUBCATEGORIES.length}`) }
+if (SUBCATEGORIES.length !== 40) { failed++; console.log(`FAIL expected 40 subcategories, got ${SUBCATEGORIES.length}`) }
 if (legacyCategoryFor('stay', null) !== 'hotels' || legacyCategoryFor('rentals', 'boats') !== 'yachts') { failed++; console.log('FAIL legacyCategoryFor') }
 
 console.log(failed ? `\n${failed} failure(s)` : `\nall ${cases.length} cases + structure ok`)
