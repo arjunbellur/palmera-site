@@ -11,7 +11,7 @@ import {
 } from '@/lib/firestore'
 import { isAdminEmail } from '@/lib/admin'
 import { docDate, countSince, startOfToday, startOfWeek, startOfMonth, isRealBooking, sumField, bucketByPeriod } from '@/lib/analytics'
-import { ScreenHeader, Chip, Skeleton, Money, SectionTitle, eyebrow } from '@/components/partner/ui'
+import { ScreenHeader, Chip, Skeleton, Money, SectionTitle, Disclosure, eyebrow } from '@/components/partner/ui'
 import { CountTile, SparkTile, timeAgo, glass } from './ui'
 import type { AppProfile, AppDoc, Booking, Provider, Company } from '@/lib/schema'
 import { Sparkles, CalendarDays, Camera, Star, Users, TrendingUp, CalendarRange, Gem, Clock, Check } from 'lucide-react'
@@ -169,10 +169,8 @@ export default function AdminOverview() {
         <span style={{ marginTop: '4px' }}><Chip tone="green">● Live</Chip></span>
       </div>
 
-      {/* Wide screens: numbers in the main column, the live feed + actions on
-          a sticky right rail (pf-cols in globals.css). Single column <1200px. */}
-      <div className="pf-cols">
-      <div style={{ minWidth: 0 }}>
+      {/* Overview-first: the App + Business tiles are the headline; actions,
+          mail health and the feed are collapsed sections with a digest. */}
       {/* App growth */}
       <SectionTitle>App</SectionTitle>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '12px' }}>
@@ -201,13 +199,12 @@ export default function AdminOverview() {
         </div>
       </div>
 
-      </div>
+      <div style={{ height: '6px' }} />
 
-      <div className="pf-rail" style={{ minWidth: 0 }}>
-      {/* Pending actions */}
-      {actions.length > 0 && (
-        <>
-          <SectionTitle>Needs attention</SectionTitle>
+      {/* Pending actions — open by default whenever there is something to do. */}
+      <Disclosure id="overview.actions" title="Needs attention" defaultOpen={actions.length > 0}
+        summary={actions.length > 0 ? `${actions.length} item(s)` : 'nothing pending'}>
+        {actions.length > 0 ? (
           <div className="pf-glass" style={{ ...glass, padding: '14px 16px' }}>
             {actions.map((a, i) => (
               <a key={a.text} href={a.href} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '8px 0', textDecoration: 'none', borderTop: i > 0 ? '1px solid var(--pf-border)' : 'none' }}>
@@ -216,25 +213,28 @@ export default function AdminOverview() {
               </a>
             ))}
           </div>
-        </>
-      )}
+        ) : (
+          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--pf-faint)', fontStyle: 'italic', margin: 0 }}>Nothing needs attention.</p>
+        )}
+      </Disclosure>
 
-      <div className="pf-glass" style={{ ...glass, padding: '12px 16px', marginTop: actions.length > 0 ? '12px' : 0, marginBottom: '8px' }}>
-        <Link href="/admin/emails" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', textDecoration: 'none' }}>
-          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '12.5px', color: 'var(--pf-text)' }}>
-            <span style={{ ...eyebrow, display: 'block', marginBottom: '3px' }}>Emails · last 24h</span>
-            {mail ? `${mail.sent} sent${mail.failed ? ` · ${mail.failed} failed` : ''}` : '…'}
-          </span>
-          <span style={{ color: mail?.failed ? 'var(--pf-alert)' : 'var(--pf-gold)', fontSize: '13px' }}>→</span>
-        </Link>
-      </div>
+      <Disclosure id="overview.mail" title="Emails · last 24h"
+        summary={mail ? `${mail.sent} sent · ${mail.failed} failed` : '…'}>
+        <div className="pf-glass" style={{ ...glass, padding: '12px 16px' }}>
+          <Link href="/admin/emails" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', textDecoration: 'none' }}>
+            <span style={{ fontFamily: 'var(--font-sans)', fontSize: '12.5px', color: 'var(--pf-text)' }}>
+              <span style={{ ...eyebrow, display: 'block', marginBottom: '3px' }}>Emails · last 24h</span>
+              {mail ? `${mail.sent} sent${mail.failed ? ` · ${mail.failed} failed` : ''}` : '…'}
+            </span>
+            <span style={{ color: mail?.failed ? 'var(--pf-alert)' : 'var(--pf-gold)', fontSize: '13px' }}>→</span>
+          </Link>
+        </div>
+      </Disclosure>
 
       {/* Activity feed */}
-      <SectionTitle action={
-        <button onClick={loadSocial} style={{ background: 'transparent', border: 'none', color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '11.5px', cursor: 'pointer', padding: 0 }}>↻ Refresh</button>
-      }>
-        Latest activity
-      </SectionTitle>
+      <Disclosure id="overview.activity" title="Latest activity"
+        summary={activity === null ? '…' : activity[0] ? `${activity[0].title} ${activity[0].detail}` : 'nothing yet'}
+        action={<button onClick={loadSocial} style={{ background: 'transparent', border: 'none', color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '11.5px', cursor: 'pointer', padding: 0, whiteSpace: 'nowrap' }}>↻ Refresh</button>}>
       {activity === null ? (
         <Skeleton height="220px" />
       ) : activity.length === 0 ? (
@@ -268,8 +268,7 @@ export default function AdminOverview() {
           ))}
         </div>
       )}
-      </div>
-      </div>
+      </Disclosure>
     </div>
   )
 }

@@ -11,7 +11,7 @@ import {
   getAppChatMessages, getAllBookingsAdmin, getAllExperiencesAdmin,
 } from '@/lib/firestore'
 import { bucketByPeriod, groupCount, isRealBooking, docDate } from '@/lib/analytics'
-import { ScreenHeader, Chip, Skeleton, SectionTitle, EmptyState, card, eyebrow } from '@/components/partner/ui'
+import { ScreenHeader, Chip, Skeleton, SectionTitle, EmptyState, Disclosure, card, eyebrow } from '@/components/partner/ui'
 import { BarChart, RankPills } from '@/components/charts'
 import { CountTile, SparkTile, FilterChip, glass } from '../ui'
 import type { AppProfile, AppDoc, Booking, Experience } from '@/lib/schema'
@@ -121,10 +121,8 @@ export default function AdminAppGrowth() {
         <button onClick={load} style={{ marginTop: '4px', background: 'transparent', border: '1px solid var(--pf-border)', borderRadius: '8px', color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '11px', cursor: 'pointer', padding: '6px 12px' }}>↻ Refresh</button>
       </div>
 
-      {/* Composition: charts flow down the main column; city, social graph and
-          the earners leaderboard live on the sticky rail at ≥1200px. */}
-      <div className="pf-cols">
-      <div style={{ minWidth: 0 }}>
+      {/* Overview-first: the Signups tiles are the headline; everything else
+          is a collapsed section with a one-line digest (Disclosure). */}
       {/* 1 — Signups */}
       <SectionTitle>Signups</SectionTitle>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '12px', marginBottom: '12px' }}>
@@ -140,8 +138,11 @@ export default function AdminAppGrowth() {
       </div>
       <BarChart data={signupBuckets.map((b) => ({ label: b.label, value: b.count }))} />
 
+      <div style={{ height: '6px' }} />
+
       {/* 2 — Engagement */}
-      <SectionTitle>Engagement</SectionTitle>
+      <Disclosure id="members.engagement" title="Engagement" defaultOpen
+        summary={`${moments.length} moments · ${likes} likes · ${comments.length} comments · ${messages.length} chat messages`}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '12px', marginBottom: '12px' }}>
         <CountTile icon={<Camera size={14} strokeWidth={1.75} />} label="Moments" value={moments.length} />
         <CountTile icon={<Heart size={14} strokeWidth={1.75} />} label="Likes" value={likes} />
@@ -155,10 +156,11 @@ export default function AdminAppGrowth() {
       </div>
       <div style={{ ...eyebrow, marginBottom: '10px' }}>Content per week · moments + comments + messages</div>
       <BarChart data={contentBuckets.map((b) => ({ label: b.label, value: b.count }))} />
-
+      </Disclosure>
 
       {/* 4 — Points economy */}
-      <SectionTitle>Points economy</SectionTitle>
+      <Disclosure id="members.points" title="Points economy"
+        summary={`${fmt(totalPoints)} pts issued · ${points.length} entries`}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '12px', marginBottom: '16px' }}>
         <CountTile icon={<Coins size={14} strokeWidth={1.75} />} label="Points issued" value={totalPoints} tone="gold" />
         <CountTile icon={<ListOrdered size={14} strokeWidth={1.75} />} label="Ledger entries" value={points.length} />
@@ -169,9 +171,11 @@ export default function AdminAppGrowth() {
           <RankPills items={pointsByKind.slice(0, 5)} />
         </div>
       )}
+      </Disclosure>
 
       {/* 5 — Funnel */}
-      <SectionTitle>Discovery → booking funnel</SectionTitle>
+      <Disclosure id="members.funnel" title="Discovery → booking funnel"
+        summary={`${favorites.length} favorited → ${bookedCount} booked → ${completedCount} completed`}>
       <div className="pf-glass" style={{ ...glass, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap', padding: '18px 22px' }}>
         {[
           { label: 'Favorited', value: favorites.length, icon: '♥' },
@@ -187,32 +191,34 @@ export default function AdminAppGrowth() {
           </div>
         ))}
       </div>
+      </Disclosure>
 
       {/* 6 — Top experiences */}
-      <SectionTitle action={
-        <div style={{ display: 'flex', gap: '6px' }}>
-          {(['favorites', 'bookings', 'revenue'] as RankMode[]).map((m) => (
-            <FilterChip key={m} active={rankMode === m} onClick={() => setRankMode(m)}>{m}</FilterChip>
-          ))}
-        </div>
-      }>
-        Top experiences
-      </SectionTitle>
+      <Disclosure id="members.top" title="Top experiences"
+        summary={rankItems[0] ? `#1 ${rankItems[0].label}` : 'nothing yet'}
+        action={
+          <div style={{ display: 'flex', gap: '6px' }}>
+            {(['favorites', 'bookings', 'revenue'] as RankMode[]).map((m) => (
+              <FilterChip key={m} active={rankMode === m} onClick={() => setRankMode(m)}>{m}</FilterChip>
+            ))}
+          </div>
+        }>
       {rankItems.length === 0 ? (
         <EmptyState icon={<LayoutGrid size={22} strokeWidth={1.75} />} title="Nothing yet" body={`No ${rankMode === 'revenue' ? 'completed revenue' : rankMode} recorded so far.`} />
       ) : (
         <RankPills items={rankItems} />
       )}
-      </div>
+      </Disclosure>
 
-      <div className="pf-rail" style={{ minWidth: 0 }}>
-        {byCity.length > 0 && (
-          <>
-            <SectionTitle>Users by city</SectionTitle>
-            <RankPills items={byCity.map((c) => ({ label: c.label, value: c.value, display: `${c.value}` }))} />
-          </>
-        )}
-        <SectionTitle>Social graph</SectionTitle>
+      {byCity.length > 0 && (
+        <Disclosure id="members.cities" title="Users by city"
+          summary={`${byCity[0].label} · ${byCity[0].value}`}>
+          <RankPills items={byCity.map((c) => ({ label: c.label, value: c.value, display: `${c.value}` }))} />
+        </Disclosure>
+      )}
+
+      <Disclosure id="members.social" title="Social graph"
+        summary={`${accepted} friendships · ${pendingFriends} pending`}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '12px' }}>
           <CountTile icon={<UserPlus size={14} strokeWidth={1.75} />} label="Friendships" value={accepted} tone="gold" />
           <CountTile icon={<Clock size={14} strokeWidth={1.75} />} label="Pending requests" value={pendingFriends} />
@@ -222,15 +228,17 @@ export default function AdminAppGrowth() {
             <div style={{ fontFamily: 'var(--font-display)', fontSize: '27px', color: 'var(--pf-text)', marginTop: '6px' }}>{avgFriends}</div>
           </div>
         </div>
-        {topEarners.length > 0 && (
-          <>
-            <SectionTitle>Top earners</SectionTitle>
-            <RankPills items={topEarners} />
-          </>
-        )}
+      </Disclosure>
+
+      {topEarners.length > 0 && (
+        <Disclosure id="members.earners" title="Top earners" summary={`#1 ${topEarners[0].label}`}>
+          <RankPills items={topEarners} />
+        </Disclosure>
+      )}
+
+      <Disclosure id="members.list" title="Members list" summary={`${profiles.length} member(s)`}>
         <MembersPanel profiles={profiles} />
-      </div>
-      </div>
+      </Disclosure>
     </div>
   )
 }

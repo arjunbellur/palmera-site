@@ -9,7 +9,7 @@ import { getLedgerByProvider, getPayoutsByProvider, getCompanyAdmin, getExperien
 import { useSWRLite } from '@/lib/swr-lite'
 import type { Booking, LedgerEntry, LedgerEntryType, Payout, PayoutStatus } from '@/lib/schema'
 import { formatAmount, formatDate, toDate, isDelivered, isUpcoming, nextPayoutDate, moneySplit } from '@/lib/money'
-import { ScreenHeader, Money, EmptyState, SectionTitle, Skeleton, card, cardShape, eyebrow } from '@/components/partner/ui'
+import { ScreenHeader, Money, EmptyState, Disclosure, Skeleton, card, cardShape, eyebrow } from '@/components/partner/ui'
 import { BarChart, RankPills } from '@/components/charts'
 import { CalendarClock, TrendingUp, Wallet, Clock, Check } from 'lucide-react'
 import EarningsHero from '@/components/partner/EarningsHero'
@@ -167,6 +167,15 @@ export default function EarningsScreen() {
       .sort((a, b) => b.value - a.value).slice(0, 5)
   })()
 
+  // Section digests (Disclosure rows) — the numbers you'd otherwise scroll for.
+  const flowTotal = { gross: split.delivered.gross + split.upcoming.gross, commission: split.delivered.commission + split.upcoming.commission, net: split.delivered.net + split.upcoming.net }
+  // Same month rule as PerformanceGrid, for its digest.
+  const thisMonth = (b: Booking) => { const d = toDate(b.scheduledFor); return !!d && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() }
+  const monthLive = bookings.filter(b => thisMonth(b) && (['confirmed', 'completed'].includes(b.status) || (b.status === 'pending' && b.confirmationType !== 'instant')))
+  const monthRevenue = monthLive.reduce((s, b) => s + (b.payoutAmount || 0), 0)
+  const lastPayout = payouts[0]
+  const PS_KEY = { scheduled: 'ps_scheduled', processing: 'ps_processing', paid: 'ps_paid', failed: 'ps_failed' } as const
+
   const h3: React.CSSProperties = { margin: '0 0 12px', fontFamily: 'var(--font-display)', fontSize: '1.125rem', fontWeight: 400, letterSpacing: '0.03em', color: 'var(--pf-head)' }
   const listCard: React.CSSProperties = { borderRadius: '16px', overflow: 'hidden' }
 
@@ -251,9 +260,12 @@ export default function EarningsScreen() {
       {/* The money flow, made explicit (Jordan): what guests paid Palmera,
           what Palmera keeps, what the business receives — for money already
           earned (delivered) and money still to come (upcoming). */}
+      <div style={{ height: '6px' }} />
+
       {(split.upcoming.count + split.delivered.count) > 0 && (
-        <div className="pf-glass" style={{ ...cardShape, marginTop: '12px', overflowX: 'auto' }}>
-          <div style={{ ...eyebrow, marginBottom: '10px' }}>{L('flow_title')}</div>
+        <Disclosure id="earnings.flow" title={L('flow_title')}
+          summary={`${formatAmount(flowTotal.gross)} → −${formatAmount(flowTotal.commission)} → ${formatAmount(flowTotal.net)} XOF`}>
+        <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'var(--font-sans)', fontSize: '12.5px', minWidth: '28rem' }}>
             <thead>
               <tr style={{ color: 'var(--pf-faint)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
@@ -276,11 +288,12 @@ export default function EarningsScreen() {
           </table>
           <p style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-faint)', margin: '10px 0 0', lineHeight: 1.5 }}>{L('flow_note')}</p>
         </div>
+        </Disclosure>
       )}
       {/* Next-payout breakdown — Jordan: transparency on gross vs deductions. */}
       {unsettled.length > 0 && (
-        <div className="pf-glass" style={{ ...cardShape, marginTop: '12px' }}>
-          <div style={{ ...eyebrow, marginBottom: '10px' }}>{L('breakdown_title')}</div>
+        <Disclosure id="earnings.breakdown" title={L('breakdown_title')}
+          summary={`+${formatAmount(pendingGross)}${pendingDeductions !== 0 ? ` · −${formatAmount(Math.abs(pendingDeductions))}` : ''} · ${L('net_due')} ${formatAmount(pendingNet)} XOF`}>
           <div style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid var(--pf-border)', fontFamily: 'var(--font-sans)', fontSize: '12.5px' }}>
             <span style={{ color: 'var(--pf-muted)' }}>{L('gross')}{pendingBookings > 0 && ` · ${pendingBookings} ${L('bookings_n')}`}</span>
             <span style={{ color: 'var(--pf-success)' }}>+{formatAmount(pendingGross)}</span>
@@ -295,42 +308,42 @@ export default function EarningsScreen() {
             <span style={{ ...eyebrow }}>{L('net_due')}</span>
             <Money amount={formatAmount(pendingNet)} size={22} />
           </div>
-        </div>
+        </Disclosure>
       )}
 
       {/* Charts — real data only; before the first booking the empty states below carry. */}
       {hasData && (
-        <>
+        <Disclosure id="earnings.chart" title={L('chart_title')}
+          summary={[chartMax > 0 && `${chart[chart.length - 1].label} ${formatAmount(chart[chart.length - 1].val)} XOF`, revBars[0] && `#1 ${revBars[0].label}`].filter(Boolean).join(' · ')}>
           {chartMax > 0 && (
-            <div style={{ marginTop: '22px' }}>
-              <h3 style={h3}>{L('chart_title')}</h3>
-              {/* Shared kit — same markup this page pioneered, one source of truth. */}
-              <BarChart data={chart.map(c => ({ label: c.label, value: c.val, display: formatAmount(c.val) }))} />
-            </div>
+            /* Shared kit — same markup this page pioneered, one source of truth. */
+            <BarChart data={chart.map(c => ({ label: c.label, value: c.val, display: formatAmount(c.val) }))} />
           )}
 
           {revBars.length > 0 && (
-            <div style={{ marginTop: '22px' }}>
+            <div style={{ marginTop: chartMax > 0 ? '22px' : 0 }}>
               <h3 style={h3}>{L('rev_title')}</h3>
               <RankPills items={revBars.map(b => ({ label: b.label, value: b.val, display: `${formatAmount(b.val)} XOF` }))} />
             </div>
           )}
-        </>
+        </Disclosure>
       )}
 
       {topClients.length > 0 && (
-        <div style={{ marginTop: '22px' }}>
-          <h3 style={h3}>{L('top_clients')}</h3>
+        <Disclosure id="earnings.clients" title={L('top_clients')} summary={`#1 ${topClients[0].label} · ${topClients[0].display}`}>
           <RankPills items={topClients} />
-        </div>
+        </Disclosure>
       )}
 
       {/* Performance — moved here from Home (consolidation step 5): money
           and "how am I doing" read together. */}
-      <SectionTitle>{L('perf_title')}</SectionTitle>
-      <PerformanceGrid bookings={bookings} locale={locale} />
+      <Disclosure id="earnings.perf" title={L('perf_title')}
+        summary={`${monthLive.length} ${L('perf_month_res').toLowerCase()} · ${formatAmount(monthRevenue)} XOF ${L('perf_month_rev').toLowerCase()}`}>
+        <PerformanceGrid bookings={bookings} locale={locale} />
+      </Disclosure>
 
-      <SectionTitle>{L('payout_hist')}</SectionTitle>
+      <Disclosure id="earnings.payouts" title={L('payout_hist')}
+        summary={lastPayout ? `${formatAmount(lastPayout.netAmount)} XOF · ${formatDate(lastPayout.periodEnd)} · ${L(PS_KEY[lastPayout.status])}` : L('pay_empty_t')}>
       {payouts.length === 0 ? (
         <EmptyState icon={<Wallet size={22} strokeWidth={1.75} />} title={L('pay_empty_t')} body={L('pay_empty_b')} chip={L('pay_empty_chip')} />
       ) : (
@@ -352,12 +365,15 @@ export default function EarningsScreen() {
           ))}
         </div>
       )}
+      </Disclosure>
 
-      <SectionTitle action={ledger.length > 0 ? (
-        <button onClick={downloadCsv} style={{ background: 'transparent', border: '1px solid var(--pf-border-strong)', borderRadius: '10px', padding: '7px 13px', color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '11px', letterSpacing: '0.04em', cursor: 'pointer' }}>
-          ↓ {L('download_csv')}
-        </button>
-      ) : undefined}>{L('ledger')}</SectionTitle>
+      <Disclosure id="earnings.ledger" title={L('ledger')}
+        summary={ledger.length > 0 ? `${ledger.length} ${L('entries_n')}` : earning.length > 0 ? `${earning.length} ${L('bookings_n')}` : L('ledger_empty_t')}
+        action={ledger.length > 0 ? (
+          <button onClick={downloadCsv} style={{ background: 'transparent', border: '1px solid var(--pf-border-strong)', borderRadius: '10px', padding: '7px 13px', color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '11px', letterSpacing: '0.04em', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            ↓ {L('download_csv')}
+          </button>
+        ) : undefined}>
       {ledger.length > 0 && (
         <div style={{ display: 'flex', gap: '7px', flexWrap: 'wrap', marginBottom: '10px' }}>
           {([['all', 'ef_all'], ['month', 'ef_month'], ['last', 'ef_last'], ['30', 'ef_30']] as const).map(([k, label]) => (
@@ -416,6 +432,7 @@ export default function EarningsScreen() {
           ))}
         </div>
       )}
+      </Disclosure>
       </>}
     </div>
   )
