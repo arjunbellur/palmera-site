@@ -8,6 +8,7 @@ import { setBookingStatus, checkInBookingGuest } from '@/lib/firestore'
 import type { Booking } from '@/lib/schema'
 import { toDate } from '@/lib/money'
 import { bookingPaymentLabel } from '@/lib/payments'
+import { refundSummary, refundKindLabel, refundTone } from '@/lib/refunds'
 import { ScreenHeader, EmptyState, Chip, Money, eyebrow, GhostButton, Skeleton, PrimaryButton } from '@/components/partner/ui'
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
@@ -441,6 +442,27 @@ export default function ReservationsScreen() {
               })() : null}
               {row(locale === 'fr' ? 'Date' : 'Date', when ? `${formatDate(when)} · ${when.toLocaleTimeString(locale === 'fr' ? 'fr-FR' : 'en-GB', { hour: '2-digit', minute: '2-digit' })}` : L('dt_none'))}
               {row(L('dt_payment'), payLabel)}
+              {(b.status === 'cancelled' || b.status === 'declined') && (() => {
+                const r = refundSummary(b, locale === 'fr' ? 'fr' : 'en')
+                return <>
+                  {b.cancelledAt && row(L('dt_cancelled_on'), formatDate(b.cancelledAt, true))}
+                  {row(L('dt_refund'), (
+                    <span style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-end' }}>
+                      <Chip tone={refundTone(r.kind)}>{refundKindLabel(r.kind, locale === 'fr' ? 'fr' : 'en')}</Chip>
+                      {r.kind !== 'free' && r.kind !== 'unpaid' && (
+                        <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11.5px', color: 'var(--pf-muted)' }}>
+                          {formatAmount(r.amount)} {b.currency || 'XOF'} · {r.method}{r.kind === 'refunded' ? ` · ${L('rf_back_to')}${r.when ? ` ${formatDate(r.when)}` : ''}` : r.kind === 'kept' ? ` · ${L('rf_your_money')}` : ''}
+                        </span>
+                      )}
+                    </span>
+                  ))}
+                  {r.copays.length > 0 && row(L('dt_copay_refunds'), (
+                    <span style={{ display: 'flex', flexDirection: 'column', gap: '3px', alignItems: 'flex-end' }}>
+                      {r.copays.map((c) => <span key={c.uid} style={{ fontFamily: 'var(--font-sans)', fontSize: '11.5px' }}>{formatAmount(c.amount)} · {c.method} · <span style={{ color: c.kind === 'manual' ? 'var(--pf-alert)' : 'var(--pf-muted)' }}>{refundKindLabel(c.kind, locale === 'fr' ? 'fr' : 'en')}</span></span>)}
+                    </span>
+                  ))}
+                </>
+              })()}
               {b.specialRequests && row(L('dt_requests'), b.specialRequests)}
               {(b.selections?.length ?? 0) > 0 && row(L('dt_options'), (
                 <span style={{ display: 'flex', flexDirection: 'column', gap: '3px', alignItems: 'flex-end' }}>

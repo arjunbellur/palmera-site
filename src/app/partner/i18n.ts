@@ -135,6 +135,7 @@ const FR: Record<string, string> = {
   dt_checkin: 'Arrivée → départ', dt_policy_terms: 'remboursement intégral jusqu’à {h} h avant, aucun ensuite', dt_view_payout: 'Voir dans Revenus',
   dt_respond_by: 'Répondre avant', dt_overdue: 'Délai de 24 h dépassé — répondez maintenant',
   dt_paid: 'Payé', dt_unpaid: 'Non payé', dt_refunded: 'Remboursé',
+  dt_cancelled_on: 'Annulée le', dt_refund: 'Remboursement', dt_copay_refunds: 'Parts des invités', rf_back_to: 'retour au client', rf_your_money: 'le montant vous reste acquis',
   dt_requests: 'Demandes particulières', dt_none: '—', close: 'Fermer',
 
   earn_label: 'Revenus', earn_title: 'Revenus et versements',
@@ -353,6 +354,7 @@ const EN: Record<string, string> = {
   dt_checkin: 'Check-in → check-out', dt_policy_terms: 'full refund up to {h}h before, none after', dt_view_payout: 'View in Earnings',
   dt_respond_by: 'Respond by', dt_overdue: '24h window passed — respond now',
   dt_paid: 'Paid', dt_unpaid: 'Unpaid', dt_refunded: 'Refunded',
+  dt_cancelled_on: 'Cancelled on', dt_refund: 'Refund', dt_copay_refunds: 'Guest shares', rf_back_to: 'back to the guest', rf_your_money: 'you keep the amount',
   dt_requests: 'Special requests', dt_none: '—', close: 'Close',
 
   earn_label: 'Earnings', earn_title: 'Earnings & payouts',

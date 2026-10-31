@@ -558,6 +558,19 @@ export const checkInBookingGuest = async (id: string, guestId: string | null, fi
   })
 }
 
+/** Admin only (rules: admin write on /bookings): a pawaPay / PayDunya refund
+ *  that the processor could not do (`refundState: 'manual_review'`) was sent
+ *  by hand — close it out on the receipt so partner and member views agree.
+ *  Additive fields on `payment`; the app reads only status/refundState. */
+export const markRefundedManually = async (bookingId: string, adminEmail: string, note: string) => {
+  await updateDoc(doc(db, COLLECTIONS.bookings, bookingId), {
+    'payment.status': 'refunded', 'payment.refundState': 'refunded',
+    'payment.refundedAt': new Date(), 'payment.refundSettledAt': new Date(),
+    'payment.refundManual': { by: adminEmail, note: note.slice(0, 200), at: new Date() },
+    updatedAt: serverTimestamp(),
+  })
+}
+
 export const setBookingStatus = async (id: string, status: 'confirmed' | 'declined' | 'no_show' | 'completed') => {
   await updateDoc(doc(db, COLLECTIONS.bookings, id), {
     status,

@@ -6,13 +6,15 @@ import { useSWRLite } from '@/lib/swr-lite'
 // the URL so a view can be shared or reloaded.
 import { useState, Suspense } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import { getAllBookingsAdmin, getAllCompanies, getAppProfiles, getPayoutProfile } from '@/lib/firestore'
+import { getAllBookingsAdmin, getAllCompanies, getAppProfiles, getPayoutProfile, markRefundedManually } from '@/lib/firestore'
+import { refundSummary, refundKindLabel, refundTone, isCancelledPaid, type RefundKind } from '@/lib/refunds'
+import { useAdmin } from '../AdminContext'
 import { docDate, isRealBooking, startOfMonth, sumField, bucketByPeriod } from '@/lib/analytics'
 import { ScreenHeader, Chip, Skeleton, Money, SectionTitle, EmptyState, card, eyebrow, SearchInput, type Tone } from '@/components/partner/ui'
 import { BarChart, RankPills, Donut } from '@/components/charts'
 import { FilterChip, inputStyle, formatDate, glass } from '../ui'
 import type { Booking, BookingStatus, Company, AppProfile, CompanyPayoutProfile } from '@/lib/schema'
-import { Wallet, CalendarDays } from 'lucide-react'
+import { Wallet, CalendarDays, Undo2 } from 'lucide-react'
 import { formatAmount, isDelivered, isUpcoming } from '@/lib/money'
 
 const fmt = formatAmount
@@ -41,7 +43,8 @@ function AdminMoney() {
 
   // Cached across visits (stale-while-revalidate) — the page paints at once
   // on the way back from another tab and refreshes behind.
-  const { data, loaded } = useSWRLite('admin:money', async () => {
+  const { email: adminEmail } = useAdmin()
+  const { data, loaded, setData } = useSWRLite('admin:money', async () => {
     const [bs, cos, ps] = await Promise.all([getAllBookingsAdmin(), getAllCompanies(), getAppProfiles()])
     const real = bs.filter(isRealBooking)
     // Payout-detail presence, only for companies that have completed money.
@@ -70,6 +73,11 @@ function AdminMoney() {
   // this early return, so the first loaded render called one more hook than
   // the skeleton render and React threw (Rules of Hooks).
   const [q, setQ] = useState('')
+  // Manual-refund close-out (pawaPay / PayDunya refunds the processor couldn't do).
+  const [manualFor, setManualFor] = useState<string | null>(null)
+  const [manualNote, setManualNote] = useState('')
+  const [manualBusy, setManualBusy] = useState(false)
+  const [manualError, setManualError] = useState('')
 
   if (!loaded) return <MoneySkeleton />
 
@@ -213,6 +221,76 @@ function AdminMoney() {
 
       </div>
       </div>
+
+      {/* Cancellations & refunds — what happened to the money on every paid
+          booking that was cancelled or declined. The app refunds Stripe at
+          once and starts pawaPay refunds; the ones it could not do land here
+          as "needs Palmera" until an admin closes them out by hand. */}
+      {(() => {
+        const all = bookings.filter(isCancelledPaid).map((b) => ({ b, r: refundSummary(b, 'en') }))
+        // Checkouts abandoned before any money landed are noise here.
+        const rows = all.filter(({ r }) => r.kind !== 'unpaid' || r.copays.some((c) => c.kind !== 'unpaid'))
+          .sort((x, y) => (docDate(x.b, 'cancelledAt')?.getTime() ?? 0) - (docDate(y.b, 'cancelledAt')?.getTime() ?? 0)).reverse()
+        const unpaidCancelled = all.length - rows.length
+        const sum = (k: RefundKind) => rows.reduce((t, { r }) => t + (r.kind === k ? r.amount : 0) + r.copays.filter((c) => c.kind === k).reduce((a, c) => a + c.amount, 0), 0)
+        const count = (k: RefundKind) => rows.filter(({ r }) => r.kind === k || r.copays.some((c) => c.kind === k)).length
+        const refundedMonth = rows.filter(({ b }) => { const d = docDate(b, 'cancelledAt'); return d !== null && d >= month }).reduce((t, { r }) => t + (r.kind === 'refunded' ? r.amount : 0), 0)
+        const closeOut = async (id: string) => {
+          setManualBusy(true); setManualError('')
+          try {
+            await markRefundedManually(id, adminEmail, manualNote)
+            // Optimistic: flip the receipt; the background refetch brings the timestamps.
+            setData((d) => d ? { ...d, bookings: d.bookings.map((b) => b.id === id && b.payment ? { ...b, payment: { ...b.payment, status: 'refunded', refundState: 'refunded' } } : b) } : d)
+            setManualFor(null); setManualNote('')
+          } catch { setManualError('Could not save — try again.') }
+          setManualBusy(false)
+        }
+        return (
+          <>
+            <SectionTitle>Cancellations &amp; refunds</SectionTitle>
+            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-faint)', margin: '-6px 0 12px' }}>
+              Paid bookings that were cancelled or declined. Inside the free window the app refunds the guest (card at once, mobile money within minutes); after the cut-off the partner keeps the money. A mobile-money refund the processor rejected needs Palmera to send it by hand, then close it out here.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 170px), 1fr))', gap: '12px', marginBottom: '14px' }}>
+              <div className="pf-glass" style={glass}><div style={eyebrow}>Refunded to guests</div><div style={{ marginTop: '8px' }}><Money amount={fmt(sum('refunded'))} size={26} /></div><div style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-muted)', marginTop: '8px' }}>{fmt(refundedMonth)} XOF this month · {count('refunded')} booking(s)</div></div>
+              <div className="pf-glass" style={glass}><div style={eyebrow}>Refund in progress</div><div style={{ marginTop: '8px' }}><Money amount={fmt(sum('processing'))} size={26} /></div><div style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-muted)', marginTop: '8px' }}>{count('processing')} mobile-money refund(s) settling</div></div>
+              <div className={count('manual') ? 'pf-glass pf-glass-gold' : 'pf-glass'} style={glass}><div style={eyebrow}>Needs Palmera</div><div style={{ marginTop: '8px' }}><Money amount={fmt(sum('manual'))} size={26} /></div><div style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: count('manual') ? 'var(--pf-alert)' : 'var(--pf-muted)', marginTop: '8px' }}>{count('manual')} refund(s) to send by hand</div></div>
+              <div className="pf-glass" style={glass}><div style={eyebrow}>Kept by partners</div><div style={{ marginTop: '8px' }}><Money amount={fmt(sum('kept'))} size={26} /></div><div style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-muted)', marginTop: '8px' }}>{count('kept')} late cancellation(s), no refund</div></div>
+            </div>
+            {rows.length === 0 ? (
+              <EmptyState icon={<Undo2 size={22} strokeWidth={1.75} />} title="No cancelled paid bookings" body={`Cancellations of paid bookings will show here with what happened to the money.${unpaidCancelled ? ` ${unpaidCancelled} checkout(s) were cancelled before any payment landed.` : ''}`} />
+            ) : (
+              <div className="pf-glass" style={{ ...glass, padding: '6px 16px', marginBottom: '8px' }}>
+                {rows.slice(0, 60).map(({ b, r }, i) => (
+                  <div key={b.id} style={{ padding: '11px 0', borderTop: i > 0 ? '1px solid var(--pf-border)' : 'none' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                      <span style={{ minWidth: 0, flex: '1 1 16rem' }}>
+                        <span style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '13.5px', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.title} <span style={{ color: 'var(--pf-muted)' }}>· {coName.get(b.companyId) || '—'}</span></span>
+                        <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-faint)' }}>
+                          {handleOf(b.customerId) || b.customerName || 'guest'} · {b.status} {formatDate(b.cancelledAt)} · {r.method}{r.copays.length ? ` · ${r.copays.length} guest share(s)` : ''}{b.payment?.refundState === 'refunded' && r.when ? ` · refunded ${formatDate(r.when)}` : ''}
+                        </span>
+                      </span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <Chip tone={refundTone(r.kind)}>{refundKindLabel(r.kind, 'en')}</Chip>
+                        <Money amount={fmt(r.kind === 'kept' ? r.amount : r.total || r.amount)} size={18} />
+                        {r.kind === 'manual' && manualFor !== b.id && <button onClick={() => { setManualFor(b.id!); setManualNote(''); setManualError('') }} className="pf-cap pf-cap-ghost" style={{ padding: '7px 12px', border: '1px solid var(--pf-border-strong)', background: 'transparent', color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '11px', cursor: 'pointer' }}>Refunded by hand…</button>}
+                      </span>
+                    </div>
+                    {manualFor === b.id && (
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', marginTop: '10px' }}>
+                        <input value={manualNote} onChange={(e) => setManualNote(e.target.value)} placeholder="How it was sent — e.g. Wave to 77 xxx xx xx, ref …" style={{ ...inputStyle, flex: '1 1 16rem' }} />
+                        <button disabled={manualBusy} onClick={() => closeOut(b.id!)} className="pf-cap pf-cap-primary" style={{ padding: '8px 14px', border: 'none', color: '#f4ecdb', fontFamily: 'var(--font-sans)', fontSize: '11.5px', cursor: 'pointer' }}>{manualBusy ? 'Saving…' : `Confirm ${fmt(r.total || r.amount)} XOF sent`}</button>
+                        <button onClick={() => setManualFor(null)} style={{ background: 'transparent', border: 'none', color: 'var(--pf-faint)', fontFamily: 'var(--font-sans)', fontSize: '11.5px', cursor: 'pointer' }}>Cancel</button>
+                        {manualError && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-alert)' }}>{manualError}</span>}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )
+      })()}
 
       {/* Bookings explorer — full width beneath the grid; the row list wants
           every pixel it can get. */}

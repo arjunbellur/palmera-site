@@ -110,6 +110,16 @@ gets a line here, newest first. Pure-UI dashboard changes are never listed.
   - `companies.categories?: MainCategoryId[]` (new, additive, dashboard-only):
     the business's app mains, from the partner profile. The app does not
     read it — it derives business chips from listings; ignore it.
+- 2026-10-31 **Cancellation & refund views (dashboard reads; one additive
+  admin write).** Partner reservations and the admin Money page now derive
+  what happened to the money on a cancelled/declined booking from the
+  receipt the app's `refundBooking` writes (`payment.status`,
+  `payment.refundState`, `refundedAt`, `refundSettledAt`, `copayPayments`).
+  New admin action "Refunded by hand" for `refundState: 'manual_review'`
+  (the pawaPay/PayDunya refunds the processor could not do): sets
+  `payment.status` + `payment.refundState` to `refunded`, `refundedAt`,
+  `refundSettledAt`, and an additive `payment.refundManual { by, note, at }`
+  the app never reads. No rules change (admin already writes bookings).
 - 2026-10-25 ⚠ **Marketplace dépôt-vente v4 — rules change, dashboard-only
   collections, zero app impact but it IS a rules deploy.** `supply_orders`
   client writes removed (buyer create / supplier update / buyer cancel):

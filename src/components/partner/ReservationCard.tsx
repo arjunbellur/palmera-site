@@ -3,6 +3,7 @@ import type { Booking, BookingStatus } from '@/lib/schema'
 import { formatAmount, formatDate, toDate } from '@/lib/money'
 import { t, type Locale } from '@/app/partner/i18n'
 import { cardShape, eyebrow, Chip, Money, type Tone } from './ui'
+import { refundSummary, refundKindLabel, refundTone } from '@/lib/refunds'
 
 const STATUS: Record<BookingStatus, { key: string; tone: Tone }> = {
   pending: { key: 'f_pending', tone: 'gold' },
@@ -50,6 +51,10 @@ export default function ReservationCard({
         {b.confirmationType === 'instant' && <Chip tone="green">● {L('instant')}</Chip>}
         <Chip tone={awaitingPayment ? 'gold' : s.tone}>{awaitingPayment ? `◷ ${L('await_pay')}` : L(s.key)}</Chip>
         {duplicate && <Chip tone="alert">⧉ {L('dup_flag')}</Chip>}
+        {(b.status === 'cancelled' || b.status === 'declined') && (() => {
+          const r = refundSummary(b, locale)
+          return r.kind === 'unpaid' ? null : <Chip tone={refundTone(r.kind)}>{refundKindLabel(r.kind, locale)}{r.total > 0 ? ` · ${formatAmount(r.total)}` : ''}</Chip>
+        })()}
       </div>
 
       <div style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: compact ? '14.5px' : '15.5px', marginBottom: '3px' }}>{b.title}</div>
