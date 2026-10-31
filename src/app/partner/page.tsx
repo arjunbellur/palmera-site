@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { usePartner } from './PartnerContext'
 import { t } from './i18n'
@@ -140,7 +141,11 @@ export default function PartnerHome() {
           { href: '/partner/settings?s=company', label: L('qa_company') },
           { href: 'mailto:palmeraexp@gmail.com', label: L('qa_support') },
         ].map((a: { href: string; label: string; primary?: boolean }) => (
-          <a key={a.label} href={a.href} style={{ padding: '8px 15px', borderRadius: '999px', border: a.primary ? 'none' : '1px solid var(--pf-border-strong)', color: a.primary ? '#ebe8db' : 'var(--pf-gold)', textDecoration: 'none', fontFamily: 'var(--font-sans)', fontSize: '11.5px', letterSpacing: '0.03em', background: a.primary ? 'var(--pf-gold-deep)' : 'transparent', boxShadow: a.primary ? '0 0 14px rgba(190,154,86,0.3)' : 'none' }}>
+          a.href.startsWith('/')
+            ? <Link key={a.label} href={a.href} style={{ padding: '8px 15px', borderRadius: '999px', border: a.primary ? 'none' : '1px solid var(--pf-border-strong)', color: a.primary ? '#ebe8db' : 'var(--pf-gold)', textDecoration: 'none', fontFamily: 'var(--font-sans)', fontSize: '11.5px', letterSpacing: '0.03em', background: a.primary ? 'var(--pf-gold-deep)' : 'transparent', boxShadow: a.primary ? '0 0 14px rgba(190,154,86,0.3)' : 'none' }}>
+            {a.label}
+          </Link>
+            : <a key={a.label} href={a.href} style={{ padding: '8px 15px', borderRadius: '999px', border: a.primary ? 'none' : '1px solid var(--pf-border-strong)', color: a.primary ? '#ebe8db' : 'var(--pf-gold)', textDecoration: 'none', fontFamily: 'var(--font-sans)', fontSize: '11.5px', letterSpacing: '0.03em', background: a.primary ? 'var(--pf-gold-deep)' : 'transparent', boxShadow: a.primary ? '0 0 14px rgba(190,154,86,0.3)' : 'none' }}>
             {a.label}
           </a>
         ))}
@@ -153,7 +158,7 @@ export default function PartnerHome() {
         </div>
       )}
       {loaded && <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 10rem), 1fr))', gap: '12px', marginBottom: '12px' }}>
-        <a href="/partner/reservations?f=today" className="pf-glass" style={{ ...cardShape, textDecoration: 'none', display: 'block' }}>
+        <Link href="/partner/reservations?f=today" className="pf-glass" style={{ ...cardShape, textDecoration: 'none', display: 'block' }}>
           <div style={eyebrow}>{L('today_res')}</div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: '27px', color: 'var(--pf-text)', marginTop: '6px' }}>
             {todayCount}
@@ -162,8 +167,8 @@ export default function PartnerHome() {
             </span>
             <span style={{ color: 'var(--pf-gold)', fontSize: '13px', marginLeft: '8px' }}>→</span>
           </div>
-        </a>
-        <a href="/partner/reservations?f=next" className="pf-glass" style={{ ...cardShape, textDecoration: 'none', display: 'block' }}>
+        </Link>
+        <Link href="/partner/reservations?f=next" className="pf-glass" style={{ ...cardShape, textDecoration: 'none', display: 'block' }}>
           <div style={eyebrow}>{L('next_res')}</div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: nextRes ? '18px' : '27px', color: 'var(--pf-text)', marginTop: '6px', lineHeight: 1.25 }}>
             {nextRes && nextResWhen
@@ -171,7 +176,7 @@ export default function PartnerHome() {
               : '—'}
           </div>
           {nextRes && <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-faint)', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nextRes.title} <span style={{ color: 'var(--pf-gold)' }}>→</span></div>}
-        </a>
+        </Link>
       </div>}
 
       {/* Metrics: balance leads full-width, the two smaller tiles sit beside it. */}
@@ -219,7 +224,7 @@ export default function PartnerHome() {
         )
       })()}
 
-      <SectionTitle action={upcoming.length > 0 ? <a href="/partner/reservations" style={{ fontFamily: 'var(--font-sans)', fontSize: '11.5px', color: 'var(--pf-gold)' }}>{L('see_all')}</a> : undefined}>
+      <SectionTitle action={upcoming.length > 0 ? <Link href="/partner/reservations" style={{ fontFamily: 'var(--font-sans)', fontSize: '11.5px', color: 'var(--pf-gold)' }}>{L('see_all')}</Link> : undefined}>
         {L('upcoming')}
       </SectionTitle>
 

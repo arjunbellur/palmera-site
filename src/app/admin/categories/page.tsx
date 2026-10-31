@@ -3,8 +3,9 @@
 // pair the app shows it under (stored `mainCategory`/`subcategory`, or the
 // classifier's suggestion when the partner hasn't chosen yet), editable
 // inline. Admin-only; the same six mains + 37 subs as iOS 1.55 / Android 3.3.
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { getAllExperiencesAdmin, getAllCompanies, updateExperience } from '@/lib/firestore'
+import { useSWRLite } from '@/lib/swr-lite'
 import ConfirmDialog from '@/components/dashboard/ConfirmDialog'
 import { ScreenHeader, Chip, EmptyState, Skeleton, GhostButton, PrimaryButton, eyebrow } from '@/components/partner/ui'
 import { CountTile, FilterChip, inputStyle, glass } from '../ui'
@@ -48,9 +49,15 @@ function CategoriesSkeleton() {
 }
 
 export default function AdminCategories() {
-  const [exps, setExps] = useState<Experience[]>([])
-  const [companyName, setCompanyName] = useState<Record<string, string>>({})
-  const [loaded, setLoaded] = useState(false)
+  // Cached across visits (stale-while-revalidate); saves patch `data` in place.
+  const { data, loaded, error: loadError, setData } = useSWRLite('admin:categories', async () => {
+    const [es, cs] = await Promise.all([getAllExperiencesAdmin(), getAllCompanies()])
+    return { exps: es, companyName: Object.fromEntries(cs.map((c) => [c.id!, c.name || 'Untitled company'])) as Record<string, string> }
+  }, [])
+  const exps: Experience[] = data?.exps ?? []
+  const companyName: Record<string, string> = data?.companyName ?? {}
+  const patchExp = (id: string, patch: Partial<Experience>) =>
+    setData((d) => d && { ...d, exps: d.exps.map((x) => (x.id === id ? { ...x, ...patch } : x)) })
   const [error, setError] = useState('')
 
   const [mainFilter, setMainFilter] = useState<MainFilter>('all')
@@ -63,14 +70,6 @@ export default function AdminCategories() {
   const [bulkOpen, setBulkOpen] = useState(false)
   const [bulkBusy, setBulkBusy] = useState(false)
   const [bulkDone, setBulkDone] = useState(0)
-
-  useEffect(() => {
-    Promise.all([getAllExperiencesAdmin(), getAllCompanies()]).then(([es, cs]) => {
-      setExps(es)
-      setCompanyName(Object.fromEntries(cs.map((c) => [c.id!, c.name || 'Untitled company'])))
-      setLoaded(true)
-    }).catch(() => { setError('Could not load listings.'); setLoaded(true) })
-  }, [])
 
   const rows = useMemo(() => exps.map((e) => ({ e, ...effectivePair(e), suggestion: suggestionFor(e) })), [exps])
   const inScope = status === 'live' ? rows.filter((r) => r.e.status === 'published') : rows
@@ -105,7 +104,7 @@ export default function AdminCategories() {
       const patch: Partial<Experience> = { mainCategory: pair.main, subcategory: pair.sub as Experience['subcategory'] }
       if (legacyMain !== pair.main) patch.category = legacyCategoryFor(pair.main, pair.sub)
       await updateExperience(e.id, patch)
-      setExps((xs) => xs.map((x) => (x.id === e.id ? { ...x, ...patch } : x)))
+      patchExp(e.id, patch)
       setDrafts((d) => { const { [e.id!]: _gone, ...rest } = d; return rest })
     } catch { setError(`Could not save “${e.title}”. Try again.`) }
     setSavingId('')
@@ -119,8 +118,9 @@ export default function AdminCategories() {
     for (const r of unfiled) {
       if (!r.e.id) continue
       try {
-        await updateExperience(r.e.id, { mainCategory: r.suggestion.main, subcategory: r.suggestion.sub as Experience['subcategory'] })
-        setExps((xs) => xs.map((x) => (x.id === r.e.id ? { ...x, mainCategory: r.suggestion.main, subcategory: r.suggestion.sub as Experience['subcategory'] } : x)))
+        const patch: Partial<Experience> = { mainCategory: r.suggestion.main, subcategory: r.suggestion.sub as Experience['subcategory'] }
+        await updateExperience(r.e.id, patch)
+        patchExp(r.e.id, patch)
         setBulkDone(++n)
       } catch { setError(`Stopped at “${r.e.title}” — ${n} saved. Reload and run again for the rest.`); break }
     }
@@ -160,7 +160,7 @@ export default function AdminCategories() {
             </div>
           </div>
 
-          {error && <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--pf-alert)', margin: '0 0 12px' }}>{error}</p>}
+          {(error || !!loadError) && <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--pf-alert)', margin: '0 0 12px' }}>{error || 'Could not load listings.'}</p>}
 
           {shown.length === 0 ? (
             <EmptyState icon={<Tags size={22} strokeWidth={1.75} />} title="No listings match" body="Try clearing a filter or changing the search."

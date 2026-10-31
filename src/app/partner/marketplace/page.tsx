@@ -10,6 +10,7 @@ import { usePartner } from '../PartnerContext'
 import { t } from '../i18n'
 import type { SupplyProduct, SupplyOrder, SupplyOrderItem, SupplyLineMode, SupplyFulfilment, CompanyBilling } from '@/lib/schema'
 import { getLiveProducts, getSupplyOrdersByPartner, getCompanyBilling } from '@/lib/firestore'
+import { useSWRLite } from '@/lib/swr-lite'
 import { auth } from '@/lib/firebase'
 import { ScreenHeader, PrimaryButton, GhostButton, Chip, EmptyState, Skeleton, cardShape, eyebrow, SearchInput, fieldStyle, type Tone } from '@/components/partner/ui'
 import ConfirmDialog from '@/components/dashboard/ConfirmDialog'
@@ -392,9 +393,6 @@ function OrderCard({ o, billing, locale, busy, reporting, onCancel, onOpenReport
 export default function Marketplace() {
   const { uid, company, locale } = usePartner()
   const L = useCallback<Str>(k => t(locale, k), [locale])
-  const [products, setProducts] = useState<SupplyProduct[] | null>(null)
-  const [orders, setOrders] = useState<SupplyOrder[] | null>(null)
-  const [billing, setBilling] = useState<CompanyBilling | null>(null)
   const [cart, setCart] = useState<Cart>({})
   const [fulfilment, setFulfilment] = useState<SupplyFulfilment>('delivery')
   const [note, setNote] = useState('')
@@ -414,19 +412,17 @@ export default function Marketplace() {
     toastTimer.current = setTimeout(() => setToast(null), 4500)
   }, [])
 
-  const loadOrders = useCallback(async () => {
-    if (!uid) return
+  // Cached across visits (stale-while-revalidate); every write below calls
+  // the matching reload so the list is fresh after a send/cancel/report.
+  const companyId = company?.id
+  const { data: products, reload: reloadProducts } = useSWRLite('marketplace:products', getLiveProducts, [])
+  const { data: orders, reload: reloadOrders } = useSWRLite(uid ? `marketplace:orders:${uid}` : null, async () => {
     const os = await getSupplyOrdersByPartner(uid)
-    setOrders(os.sort((a, b) => millis(b.createdAt) - millis(a.createdAt)))
+    return os.sort((a, b) => millis(b.createdAt) - millis(a.createdAt))
   }, [uid])
-  const loadBilling = useCallback(async () => {
-    if (!company?.id) { setBilling(null); return }
-    setBilling(await getCompanyBilling(company.id).catch(() => null))
-  }, [company?.id])
-  const loadProducts = useCallback(async () => { setProducts(await getLiveProducts()) }, [])
+  const { data: billing, reload: reloadBilling } = useSWRLite(companyId ? `marketplace:billing:${companyId}` : null,
+    () => getCompanyBilling(companyId!).catch(() => null), [companyId])
 
-  useEffect(() => { loadProducts(); loadOrders() }, [loadProducts, loadOrders])
-  useEffect(() => { loadBilling() }, [loadBilling])
   useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current) }, [])
 
   // Return from Stripe. setup=… is the card-save session opened right after
@@ -447,14 +443,14 @@ export default function Marketplace() {
           else if (data.ok) showToast(L('mk_t_card_saved'))
           else showToast(L('mk_action_err'), 'alert')
         } catch { showToast(L('mk_action_err'), 'alert') }
-        await loadBilling()
+        await reloadBilling()
       } else if (setup === 'cancelled') showToast(L('mk_t_card_needed'), 'alert')
       else if (pay === 'success') showToast(L('mk_t_paid'))
       else if (pay === 'cancelled') showToast(L('mk_t_pay_cancelled'), 'alert')
-      await loadOrders()
+      await reloadOrders()
     }
     run()
-  }, [uid, L, loadOrders, loadBilling, showToast])
+  }, [uid, L, reloadOrders, reloadBilling, showToast])
 
   const byId = useMemo(() => new Map((products || []).map(p => [p.id!, p])), [products])
   const entries = useMemo<CartEntry[]>(() =>
@@ -496,13 +492,13 @@ export default function Marketplace() {
         } else if (status === 409) {
           const name = parseStockError(data.error)
           setError(name ? `${L('mk_err_stock')} ${name}.` : L('mk_err_stock_generic'))
-          loadProducts()
+          reloadProducts()
         } else setError(L('mk_submit_err'))
         return
       }
       if (data.setupUrl) { redirecting = true; window.location.href = data.setupUrl; return }
       setCart({}); setNote('')
-      await loadOrders()
+      await reloadOrders()
       setTab('orders'); showToast(L('mk_t_sent'))
     } catch (e) {
       console.error('order submit failed:', e)
@@ -534,12 +530,12 @@ export default function Marketplace() {
     if (!toCancel) return
     const r = await act(toCancel, { action: 'cancel' })
     if (!r) return
-    setToCancel(null); await loadOrders(); showToast(L('mk_t_cancelled'))
+    setToCancel(null); await reloadOrders(); showToast(L('mk_t_cancelled'))
   }
   const reportOrder = async (o: SupplyOrder, returned: ReturnedLine[]) => {
     const r = await act(o, { action: 'report', returned })
     if (!r) return
-    setReportingId(null); await loadOrders(); showToast(L('mk_t_reported'))
+    setReportingId(null); await reloadOrders(); showToast(L('mk_t_reported'))
   }
   const redirectTo = async (o: SupplyOrder, action: 'pay_now' | 'setup_card') => {
     const r = await act(o, { action }, true)

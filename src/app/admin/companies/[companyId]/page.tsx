@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 // Company detail — the admin's working view of one company: profile,
 // experiences (publish/unpublish + curation), agreement sign-off, and the
 // account-level controls. pf design language; behavior identical to the old
@@ -241,10 +242,10 @@ export default function AdminCompanyDetailPage({ params }: { params: Promise<{ c
 
   return (
     <div className="pf-in">
-      <a href="/admin/directory" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', textDecoration: 'none', color: 'var(--pf-faint)', fontFamily: 'var(--font-sans)', fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '22px' }}>
+      <Link href="/admin/directory" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', textDecoration: 'none', color: 'var(--pf-faint)', fontFamily: 'var(--font-sans)', fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '22px' }}>
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M7.5 2L3.5 6L7.5 10" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" /></svg>
         All partners
-      </a>
+      </Link>
 
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '14px', flexWrap: 'wrap', marginBottom: '8px' }}>
         <ScreenHeader label="Company profile" title={company.name || 'Untitled company'} />

@@ -1,9 +1,10 @@
 'use client'
+import { useSWRLite } from '@/lib/swr-lite'
 // Growth ("App") — how the mobile app is doing: signups, engagement, the
 // social graph, the points economy, and which experiences convert. One-shot
 // reads of the app's collections (all admin-readable under existing rules)
 // with a refresh button; charts from the shared pf kit.
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   getAppProfiles, getAppMoments, countDocs, getAppMomentComments,
   getAppFriends, getAppFavorites, getAppReviews, getAppPointsLedger,
@@ -24,23 +25,18 @@ const fmt = formatAmount
 type RankMode = 'favorites' | 'bookings' | 'revenue'
 
 export default function AdminAppGrowth() {
-  const [data, setData] = useState<{
-    profiles: AppProfile[]; moments: AppDoc[]; likes: number; comments: AppDoc[]
-    friends: AppDoc[]; favorites: AppDoc[]; reviews: AppDoc[]; points: AppDoc[]
-    messages: AppDoc[]; bookings: Booking[]; experiences: Experience[]
-  } | null>(null)
   const [rankMode, setRankMode] = useState<RankMode>('bookings')
 
-  const load = async () => {
-    setData(null)
+  // Eleven whole-collection reads — cached across visits so coming back to
+  // this tab paints instantly; the numbers refresh in the background and on ↻.
+  const { data, reload: load } = useSWRLite('admin:app-growth', async () => {
     const [profiles, moments, likes, comments, friends, favorites, reviews, points, messages, bookingsRaw, experiences] = await Promise.all([
       getAppProfiles(), getAppMoments(), countDocs('moment_likes'), getAppMomentComments(),
       getAppFriends(), getAppFavorites(), getAppReviews(), getAppPointsLedger(),
       getAppChatMessages(), getAllBookingsAdmin(), getAllExperiencesAdmin(),
     ])
-    setData({ profiles, moments, likes, comments, friends, favorites, reviews, points, messages, bookings: bookingsRaw.filter(isRealBooking), experiences })
-  }
-  useEffect(() => { load() }, [])
+    return { profiles, moments, likes, comments, friends, favorites, reviews, points, messages, bookings: bookingsRaw.filter(isRealBooking), experiences }
+  })
 
   if (!data) return (
     <div className="pf-in">

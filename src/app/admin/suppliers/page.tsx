@@ -1,12 +1,14 @@
 'use client'
+import Link from 'next/link'
 // Supplier directory + concierge authoring (marketplace phase 1). Admins
 // create supplier records (the supplier claims theirs at first /supplier
 // login with the registered email) and can author their catalog directly —
 // same concierge play as experiences. English-only, like the rest of /admin.
-import { useEffect, useState, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { useAdmin } from '../AdminContext'
 import type { Supplier, SupplyProduct } from '@/lib/schema'
 import { getAllSuppliers, createSupplier, updateSupplier, getProductsBySupplier, updateSupplyProduct, deleteSupplyProduct } from '@/lib/firestore'
+import { useSWRLite } from '@/lib/swr-lite'
 import ProductModal from '@/components/supplier/ProductModal'
 import { ScreenHeader, PrimaryButton, GhostButton, Chip, EmptyState, Skeleton, cardShape, eyebrow, SearchInput } from '@/components/partner/ui'
 import { Store, Package } from 'lucide-react'
@@ -77,15 +79,13 @@ function SupplierForm({ supplier, onDone }: { supplier: Supplier | null; onDone:
 
 export default function AdminSuppliers() {
   const { uid: adminUid } = useAdmin()
-  const [suppliers, setSuppliers] = useState<Supplier[] | null>(null)
+  // Cached across visits (stale-while-revalidate); every write below calls load() = fresh fetch.
+  const { data: suppliers, reload: load } = useSWRLite('admin:suppliers', getAllSuppliers, [])
   const [open, setOpen] = useState<string | null>(null) // expanded supplier id
   const [products, setProducts] = useState<Record<string, SupplyProduct[]>>({})
   const [form, setForm] = useState<{ show: boolean; supplier: Supplier | null }>({ show: false, supplier: null })
   const [q, setQ] = useState('')
   const [prodModal, setProdModal] = useState<{ supplier: Supplier; product: SupplyProduct | null } | null>(null)
-
-  const load = useCallback(async () => { setSuppliers(await getAllSuppliers()) }, [])
-  useEffect(() => { load() }, [load])
 
   const loadProducts = useCallback(async (supplierId: string) => {
     const ps = await getProductsBySupplier(supplierId)
@@ -104,7 +104,7 @@ export default function AdminSuppliers() {
           intro="Wholesale businesses selling to partners. Create the record with their email — they claim it at their first /supplier sign-in. You can author their catalog for them." />
         <div style={{ paddingBottom: '18px', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
           <SearchInput value={q} onChange={setQ} placeholder="Search suppliers…" />
-          <a href="/admin/suppliers/orders" style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--pf-gold)', textDecoration: 'none', padding: '9px 14px', borderRadius: '10px', border: '1px solid var(--pf-border-strong)' }}>Orders & money →</a>
+          <Link href="/admin/suppliers/orders" style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--pf-gold)', textDecoration: 'none', padding: '9px 14px', borderRadius: '10px', border: '1px solid var(--pf-border-strong)' }}>Orders & money →</Link>
           <PrimaryButton onClick={() => setForm({ show: true, supplier: null })}>+ Add supplier</PrimaryButton>
         </div>
       </div>

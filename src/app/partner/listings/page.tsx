@@ -1,5 +1,6 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useSWRLite } from '@/lib/swr-lite'
 import { usePartner } from '../PartnerContext'
 import { t } from '../i18n'
 import {
@@ -27,21 +28,21 @@ const STATUS: Record<ExperienceStatus, { key: string; tone: Tone }> = {
 export default function ListingsScreen() {
   const { uid, company, locale } = usePartner()
   const L = (k: string) => t(locale, k)
-  const [items, setItems] = useState<Experience[]>([])
-  const [rate, setRate] = useState<number | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<Experience | undefined>()
   const [editingOptions, setEditingOptions] = useState<Option[]>([])
-  const [loaded, setLoaded] = useState(false)
 
-  const load = async () => {
-    if (!uid || !company?.id) return
-    const [exps, adm] = await Promise.all([getExperiencesByCompany(uid, company.id), getCompanyAdmin(company.id).catch(() => null)])
-    setItems(exps)
-    setRate(typeof adm?.commissionRate === 'number' ? adm.commissionRate : null)
-    setLoaded(true)
-  }
-  useEffect(() => { load() /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [uid, company?.id])
+  // Cached across visits: the grid paints at once on the way back from
+  // another tab, then refreshes; every save below calls reload().
+  const companyId = company?.id
+  const { data, loaded, reload: load } = useSWRLite(
+    uid && companyId ? `listings:${companyId}` : null,
+    async () => {
+      const [exps, adm] = await Promise.all([getExperiencesByCompany(uid, companyId!), getCompanyAdmin(companyId!).catch(() => null)])
+      return { items: exps, rate: typeof adm?.commissionRate === 'number' ? adm.commissionRate : null }
+    }, [uid, companyId])
+  const items = data?.items ?? []
+  const rate = data?.rate ?? null
 
   const openNew = () => { setEditing(undefined); setEditingOptions([]); setShowModal(true) }
   const openEdit = async (e: Experience) => {

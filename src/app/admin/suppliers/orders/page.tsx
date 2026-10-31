@@ -3,8 +3,9 @@
 // collected (card settlements) vs what suppliers owe (off-platform
 // settlements), and the net owed to each supplier. Admin can unblock a stuck
 // order (mark paid off-platform, cancel) through the same API the portals use.
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { getAllSupplyOrders, getAllSuppliers, getSupplierLedger } from '@/lib/firestore'
+import { useSWRLite } from '@/lib/swr-lite'
 import { auth } from '@/lib/firebase'
 import type { SupplyOrder, Supplier, SupplierLedgerEntry } from '@/lib/schema'
 import { ScreenHeader, Chip, EmptyState, Skeleton, GhostButton, eyebrow, type Tone } from '@/components/partner/ui'
@@ -35,23 +36,23 @@ async function act(orderId: string, body: Record<string, unknown>) {
 }
 
 export default function AdminMarketOrders() {
-  const [orders, setOrders] = useState<SupplyOrder[] | null>(null)
-  const [suppliers, setSuppliers] = useState<Supplier[]>([])
-  const [ledger, setLedger] = useState<SupplierLedgerEntry[]>([])
   const [bucket, setBucket] = useState<Bucket>('open')
   const [q, setQ] = useState('')
   const [busy, setBusy] = useState('')
-  const [error, setError] = useState('')
+  const [actionError, setActionError] = useState('')
 
-  const load = useCallback(async () => {
+  // Cached across visits (stale-while-revalidate); every action calls load() = fresh fetch.
+  const { data, loaded, error: loadError, reload: load } = useSWRLite('admin:supply-orders', async () => {
     const [os, ss, ls] = await Promise.all([getAllSupplyOrders(), getAllSuppliers(), getSupplierLedger()])
-    setOrders(os.sort((a, b) => ms(b.createdAt) - ms(a.createdAt)))
-    setSuppliers(ss); setLedger(ls)
+    return { orders: os.sort((a, b) => ms(b.createdAt) - ms(a.createdAt)), suppliers: ss, ledger: ls }
   }, [])
-  useEffect(() => { load().catch(() => setError('Could not load orders.')) }, [load])
+  const orders: SupplyOrder[] = data?.orders ?? []
+  const suppliers: Supplier[] = data?.suppliers ?? []
+  const ledger: SupplierLedgerEntry[] = data?.ledger ?? []
+  const error = actionError || (loadError ? 'Could not load orders.' : '')
 
   const money = useMemo(() => {
-    const paid = (orders || []).filter((o) => o.status === 'paid')
+    const paid = orders.filter((o) => o.status === 'paid')
     const card = paid.filter((o) => o.paymentMethod === 'card')
     const off = paid.filter((o) => o.paymentMethod === 'off_platform')
     return {
@@ -59,7 +60,7 @@ export default function AdminMarketOrders() {
       commissionEarned: card.reduce((s, o) => s + (o.finalCommissionAmount || 0), 0),
       commissionOwed: off.reduce((s, o) => s + (o.finalCommissionAmount || 0), 0),
       netOwedToSuppliers: ledger.filter((l) => l.kind === 'order_net').reduce((s, l) => s + l.amount, 0),
-      due: (orders || []).filter((o) => o.status === 'payment_due').reduce((s, o) => s + (o.finalTotal || 0), 0),
+      due: orders.filter((o) => o.status === 'payment_due').reduce((s, o) => s + (o.finalTotal || 0), 0),
     }
   }, [orders, ledger])
 
@@ -68,7 +69,7 @@ export default function AdminMarketOrders() {
     return { s, net: mine.filter((l) => l.kind === 'order_net').reduce((a, l) => a + l.amount, 0), owed: -mine.filter((l) => l.kind === 'commission_owed').reduce((a, l) => a + l.amount, 0) }
   }).filter((r) => r.net || r.owed), [suppliers, ledger])
 
-  if (orders === null) return <div className="pf-in"><Skeleton height="74px" style={{ maxWidth: '30rem', marginBottom: '22px' }} /><Skeleton height="86px" /><div style={{ height: 12 }} /><Skeleton height="200px" /></div>
+  if (!loaded) return <div className="pf-in"><Skeleton height="74px" style={{ maxWidth: '30rem', marginBottom: '22px' }} /><Skeleton height="86px" /><div style={{ height: 12 }} /><Skeleton height="200px" /></div>
 
   const needle = q.trim().toLowerCase()
   const shown = orders.filter((o) => {
@@ -82,8 +83,8 @@ export default function AdminMarketOrders() {
 
   const run = async (o: SupplyOrder, body: Record<string, unknown>) => {
     if (!o.id || busy) return
-    setBusy(o.id); setError('')
-    try { await act(o.id, body); await load() } catch (e) { setError(e instanceof Error ? e.message : 'failed') }
+    setBusy(o.id); setActionError('')
+    try { await act(o.id, body); await load() } catch (e) { setActionError(e instanceof Error ? e.message : 'failed') }
     setBusy('')
   }
 

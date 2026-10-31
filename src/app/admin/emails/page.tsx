@@ -3,8 +3,9 @@
 // why, what failed. Read through /api/admin/emails (the collection has no
 // client read rule, and rules are shared with the app), addresses already
 // masked server-side. Filters are client-side like the Money page.
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { auth } from '@/lib/firebase'
+import { useSWRLite } from '@/lib/swr-lite'
 import { ScreenHeader, Chip, Skeleton, EmptyState, SearchInput, eyebrow, type Tone } from '@/components/partner/ui'
 import { FilterChip, formatDate, timeAgo, glass } from '../ui'
 import { Mail } from 'lucide-react'
@@ -42,26 +43,19 @@ function EmailsSkeleton() {
 }
 
 export default function AdminEmailsPage() {
-  const [rows, setRows] = useState<Row[]>([])
-  const [loaded, setLoaded] = useState(false)
-  const [error, setError] = useState('')
   const [status, setStatus] = useState<Status | 'all'>('all')
   const [q, setQ] = useState('')
 
-  useEffect(() => {
-    ;(async () => {
-      try {
-        const token = await auth.currentUser?.getIdToken()
-        const res = await fetch('/api/admin/emails', { headers: { authorization: `Bearer ${token ?? ''}` } })
-        const data = await res.json().catch(() => null) as { ok?: boolean; rows?: Row[]; error?: string; reason?: string } | null
-        if (!res.ok || !data?.ok) { setError(data?.error ? `${data.error}${data.reason ? ` — ${data.reason}` : ''}` : `HTTP ${res.status}`); setLoaded(true); return }
-        setRows(data.rows ?? [])
-      } catch (e) {
-        setError(e instanceof Error ? e.message : String(e))
-      }
-      setLoaded(true)
-    })()
+  // Cached across visits (stale-while-revalidate); a failed read surfaces as `error`.
+  const { data, loaded, error: loadError } = useSWRLite('admin:emails', async (): Promise<Row[]> => {
+    const token = await auth.currentUser?.getIdToken()
+    const res = await fetch('/api/admin/emails', { headers: { authorization: `Bearer ${token ?? ''}` } })
+    const data = await res.json().catch(() => null) as { ok?: boolean; rows?: Row[]; error?: string; reason?: string } | null
+    if (!res.ok || !data?.ok) throw new Error(data?.error ? `${data.error}${data.reason ? ` — ${data.reason}` : ''}` : `HTTP ${res.status}`)
+    return data.rows ?? []
   }, [])
+  const rows: Row[] = data ?? []
+  const error = loadError ? (loadError instanceof Error ? loadError.message : String(loadError)) : ''
 
   if (!loaded) return <EmailsSkeleton />
 

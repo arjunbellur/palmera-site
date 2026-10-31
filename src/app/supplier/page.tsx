@@ -1,12 +1,13 @@
 'use client'
 // Supplier home = inventory. Products marked "live" appear in the partner
 // marketplace (phase 2); stock and price edits are the supplier's daily loop.
-import { useEffect, useState, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import Link from 'next/link'
 import { useSupplier } from './SupplierContext'
 import { t } from './i18n'
 import type { SupplyProduct } from '@/lib/schema'
 import { getProductsBySupplier, updateSupplyProduct, deleteSupplyProduct, getSupplyOrdersBySupplier } from '@/lib/firestore'
+import { useSWRLite } from '@/lib/swr-lite'
 import ProductModal from '@/components/supplier/ProductModal'
 import { ScreenHeader, PrimaryButton, GhostButton, Chip, EmptyState, Skeleton, cardShape, SearchInput } from '@/components/partner/ui'
 import { Package, Inbox } from 'lucide-react'
@@ -17,26 +18,17 @@ const fmtXof = formatAmount
 export default function SupplierInventory() {
   const { supplier, uid, locale } = useSupplier()
   const L = useCallback((k: string) => t(locale, k), [locale])
-  const [products, setProducts] = useState<SupplyProduct[] | null>(null)
   const [modal, setModal] = useState<{ open: boolean; product: SupplyProduct | null }>({ open: false, product: null })
   const [q, setQ] = useState('')
+
+  // Cached across visits (stale-while-revalidate); every write below calls load() = fresh fetch.
+  const supplierId = supplier?.id
+  const { data: products, reload: load } = useSWRLite(supplierId ? `supplier:products:${supplierId}` : null, () => getProductsBySupplier(supplierId!), [supplierId])
   // Orders waiting on the supplier (submitted / pending_review) — one read on
   // mount, surfaced as a banner that links to the inbox.
-  const [pendingOrders, setPendingOrders] = useState(0)
-
-  const load = useCallback(async () => {
-    if (!supplier?.id) return
-    setProducts(await getProductsBySupplier(supplier.id))
-  }, [supplier?.id])
-  useEffect(() => { load() }, [load])
-  useEffect(() => {
-    if (!supplier?.id) return
-    let alive = true
-    getSupplyOrdersBySupplier(supplier.id)
-      .then(orders => { if (alive) setPendingOrders(orders.filter(o => o.status === 'submitted' || o.status === 'pending_review').length) })
-      .catch(e => console.error('orders count failed:', e))
-    return () => { alive = false }
-  }, [supplier?.id])
+  const { data: orders } = useSWRLite(supplierId ? `supplier:pending-orders:${supplierId}` : null,
+    () => getSupplyOrdersBySupplier(supplierId!).catch(e => { console.error('orders count failed:', e); return [] }), [supplierId])
+  const pendingOrders = (orders ?? []).filter(o => o.status === 'submitted' || o.status === 'pending_review').length
 
   const isLowStock = (p: SupplyProduct) => p.lowStockAt != null && p.stock <= p.lowStockAt
 

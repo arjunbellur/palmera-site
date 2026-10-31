@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 // Admin home — a PARTNER directory, matching the real hierarchy: one row per
 // provider (person), their companies nested inside the row. Live-updating
 // (collection listeners), filters carried in the URL so views are shareable
@@ -238,7 +239,7 @@ function AdminDirectory() {
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                               <DangerButton onClick={() => { setDeleteError(''); setToDelete(c) }}>Delete</DangerButton>
-                              <a href={`/admin/companies/${c.id}`} style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-gold)', textDecoration: 'none', padding: '8px 14px', borderRadius: '10px', border: '1px solid var(--pf-border-strong)', letterSpacing: '0.03em' }}>Manage →</a>
+                              <Link href={`/admin/companies/${c.id}`} style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-gold)', textDecoration: 'none', padding: '8px 14px', borderRadius: '10px', border: '1px solid var(--pf-border-strong)', letterSpacing: '0.03em' }}>Manage →</Link>
                             </div>
                           </div>
                         ))}

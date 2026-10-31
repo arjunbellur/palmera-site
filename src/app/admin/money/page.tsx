@@ -1,9 +1,10 @@
 'use client'
+import { useSWRLite } from '@/lib/swr-lite'
 // Money — every booking across all partners, revenue, and what Palmera will
 // owe each company. Read-only over collections the admin rules already allow;
 // all filtering client-side (no query shapes → no indexes). Filters live in
 // the URL so a view can be shared or reloaded.
-import { useEffect, useState, Suspense } from 'react'
+import { useState, Suspense } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { getAllBookingsAdmin, getAllCompanies, getAppProfiles, getPayoutProfile } from '@/lib/firestore'
 import { docDate, isRealBooking, startOfMonth, sumField, bucketByPeriod } from '@/lib/analytics'
@@ -38,28 +39,21 @@ function AdminMoney() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  const [bookings, setBookings] = useState<Booking[]>([])
-  const [orphans, setOrphans] = useState(0)
-  const [companies, setCompanies] = useState<Company[]>([])
-  const [profiles, setProfiles] = useState<AppProfile[]>([])
-  const [payoutProfiles, setPayoutProfiles] = useState<Record<string, CompanyPayoutProfile | null>>({})
-  const [loaded, setLoaded] = useState(false)
-
-  useEffect(() => {
-    ;(async () => {
-      const [bs, cos, ps] = await Promise.all([getAllBookingsAdmin(), getAllCompanies(), getAppProfiles()])
-      const real = bs.filter(isRealBooking)
-      setOrphans(bs.length - real.length)
-      setBookings(real)
-      setCompanies(cos)
-      setProfiles(ps)
-      setLoaded(true)
-      // Payout-detail presence, only for companies that have completed money.
-      const owedIds = [...new Set(real.filter((b) => b.status === 'completed').map((b) => b.companyId))]
-      const entries = await Promise.all(owedIds.map(async (id) => [id, await getPayoutProfile(id)] as const))
-      setPayoutProfiles(Object.fromEntries(entries))
-    })()
-  }, [])
+  // Cached across visits (stale-while-revalidate) — the page paints at once
+  // on the way back from another tab and refreshes behind.
+  const { data, loaded } = useSWRLite('admin:money', async () => {
+    const [bs, cos, ps] = await Promise.all([getAllBookingsAdmin(), getAllCompanies(), getAppProfiles()])
+    const real = bs.filter(isRealBooking)
+    // Payout-detail presence, only for companies that have completed money.
+    const owedIds = [...new Set(real.filter((b) => b.status === 'completed').map((b) => b.companyId))]
+    const entries = await Promise.all(owedIds.map(async (id) => [id, await getPayoutProfile(id)] as const))
+    return { bookings: real, orphans: bs.length - real.length, companies: cos, profiles: ps, payoutProfiles: Object.fromEntries(entries) as Record<string, CompanyPayoutProfile | null> }
+  })
+  const bookings: Booking[] = data?.bookings ?? []
+  const orphans = data?.orphans ?? 0
+  const companies: Company[] = data?.companies ?? []
+  const profiles: AppProfile[] = data?.profiles ?? []
+  const payoutProfiles = data?.payoutProfiles ?? {}
 
   // ── URL-backed filters ──
   const status = searchParams.get('status') || 'all'

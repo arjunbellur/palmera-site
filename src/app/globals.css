@@ -226,10 +226,13 @@ body {
    `.pf-glass` is the card; `.pf-glass-gold` the warm hero face;
    `.pf-glass-bar` the chrome (sidebar, headers); `.pf-tabbar` the floating
    pill with the sliding active lens; `.pf-cap` buttons/chips/fields. */
-.pf-glass, .pf-glass-gold, .pf-glass-bar, .pf-tabbar {
-  position: relative;
-  backdrop-filter: blur(22px) saturate(170%);
-}
+.pf-glass, .pf-glass-gold, .pf-glass-bar, .pf-tabbar { position: relative; }
+/* Blur is the one expensive part (it scales with blurred area, and a list
+   has many cards): cards get a light blur, the chrome — one bar, one tab bar —
+   gets the deep one. Phones go lighter still. */
+.pf-glass, .pf-glass-gold { backdrop-filter: blur(10px) saturate(140%); }
+.pf-glass-bar, .pf-tabbar { backdrop-filter: blur(22px) saturate(170%); }
+@media (max-width: 768px) { .pf-glass, .pf-glass-gold { backdrop-filter: blur(6px) saturate(130%); } }
 .pf-glass {
   background:
     linear-gradient(165deg, rgba(255,255,255,0.075), rgba(255,255,255,0.02) 45%, rgba(190,154,86,0.06));

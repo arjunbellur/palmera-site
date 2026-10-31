@@ -2,10 +2,11 @@
 // Earnings — ported faithfully from the Claude Design mockup: gradient hero
 // card with circled stat icons, a monthly bar chart and per-experience revenue
 // pills (real data, shown once it exists), and list-card payout/ledger rows.
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { usePartner } from '../PartnerContext'
 import { t } from '../i18n'
 import { getLedgerByProvider, getPayoutsByProvider, getCompanyAdmin, getExperiencesByCompany } from '@/lib/firestore'
+import { useSWRLite } from '@/lib/swr-lite'
 import type { Booking, LedgerEntry, LedgerEntryType, Payout, PayoutStatus } from '@/lib/schema'
 import { formatAmount, formatDate, toDate, isDelivered, isUpcoming, nextPayoutDate, moneySplit } from '@/lib/money'
 import { ScreenHeader, Money, EmptyState, SectionTitle, Skeleton, card, cardShape, eyebrow } from '@/components/partner/ui'
@@ -37,29 +38,29 @@ function CircleStat({ icon, label, value, tone = 'var(--pf-gold)' }: { icon: Rea
 export default function EarningsScreen() {
   const { uid, company, locale, bookings } = usePartner()
   const L = (k: string) => t(locale, k)
-  const [ledger, setLedger] = useState<LedgerEntry[]>([])
-  const [payouts, setPayouts] = useState<Payout[]>([])
   const [period, setPeriod] = useState<'all' | 'month' | 'last' | '30'>('all')
-  const [loaded, setLoaded] = useState(false)
-  const [rate, setRate] = useState<number | null>(null)
-  const [extrasGroupIds, setExtrasGroupIds] = useState<Set<string>>(new Set())
 
-  useEffect(() => {
-    if (!uid || !company?.id) return
-    ;(async () => {
-      const [l, p, adm, exps] = await Promise.all([
-        getLedgerByProvider(uid), getPayoutsByProvider(uid),
-        getCompanyAdmin(company.id!).catch(() => null),
-        getExperiencesByCompany(uid, company.id!).catch(() => []),
-      ])
-      setRate(typeof adm?.commissionRate === 'number' ? adm.commissionRate : null)
+  // Cached across visits (stale-while-revalidate): the hero paints at once
+  // on the way back from another tab, then refreshes in the background.
+  const companyId = company?.id
+  const { data, loaded } = useSWRLite(uid && companyId ? `earnings:${companyId}` : null, async () => {
+    const [l, p, adm, exps] = await Promise.all([
+      getLedgerByProvider(uid), getPayoutsByProvider(uid),
+      getCompanyAdmin(companyId!).catch(() => null),
+      getExperiencesByCompany(uid, companyId!).catch(() => []),
+    ])
+    return {
+      rate: typeof adm?.commissionRate === 'number' ? adm.commissionRate : null,
       // Which option groups are ADD-ONS (vs required choices) — extras revenue counts only those.
-      setExtrasGroupIds(new Set(exps.flatMap(e => (e.optionGroups || []).filter(g => !g.required).map(g => g.id))))
-      setLedger(l.filter(e => e.companyId === company.id))
-      setPayouts(p.filter(x => x.companyId === company.id))
-      setLoaded(true)
-    })()
-  }, [uid, company?.id])
+      extrasGroupIds: new Set(exps.flatMap(e => (e.optionGroups || []).filter(g => !g.required).map(g => g.id))),
+      ledger: l.filter(e => e.companyId === companyId),
+      payouts: p.filter(x => x.companyId === companyId),
+    }
+  }, [uid, companyId])
+  const ledger: LedgerEntry[] = data?.ledger ?? []
+  const payouts: Payout[] = data?.payouts ?? []
+  const rate = data?.rate ?? null
+  const extrasGroupIds = data?.extrasGroupIds ?? new Set<string>()
 
   const ledgerBalance = ledger.reduce((s, e) => s + (e.amount || 0), 0)
   // Until the ledger/payout writer exists (and bookings start completing),

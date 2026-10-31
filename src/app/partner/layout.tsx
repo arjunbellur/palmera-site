@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { onAuthChange, needsEmailVerification } from '@/lib/auth'
@@ -157,7 +158,7 @@ function Shell({ children }: { children: React.ReactNode }) {
     const active = pathname === item.href
     const iconOnly = !mobile && collapsed
     return (
-      <a key={item.href} href={item.href} title={iconOnly ? L(item.key) : undefined} aria-label={mobile || iconOnly ? L(item.key) : undefined} style={{
+      <Link key={item.href} href={item.href} title={iconOnly ? L(item.key) : undefined} aria-label={mobile || iconOnly ? L(item.key) : undefined} style={{
         display: 'flex', alignItems: 'center', gap: mobile || iconOnly ? 0 : '11px',
         flexDirection: mobile ? 'column' : 'row',
         justifyContent: mobile || iconOnly ? 'center' : 'flex-start',
@@ -178,7 +179,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         {item.key === 'nav_res' && pendingCount > 0 && !mobile && !collapsed && (
           <span style={{ marginLeft: 'auto', minWidth: '18px', height: '18px', borderRadius: '999px', background: 'var(--pf-gold)', color: '#0a0e18', fontSize: '10px', fontFamily: 'var(--font-sans)', display: 'grid', placeItems: 'center', padding: '0 5px' }}>{pendingCount}</span>
         )}
-      </a>
+      </Link>
     )
   }
 

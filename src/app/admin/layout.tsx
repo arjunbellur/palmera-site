@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 // The admin surface's own slim shell — pf design language, separate from both
 // the partner dashboard and the onboarding portal. Internal tool: English
 // only, no locale switcher, no company pill.
@@ -83,13 +84,13 @@ function Shell({ children }: { children: React.ReactNode }) {
       : pathname.startsWith(item.href) || (item.href === '/admin/directory' && pathname.startsWith('/admin/companies'))
     if (mobile) return (
       // Bottom tab bar (same pattern as the partner shell) — ≥44px targets.
-      <a key={item.href} href={item.href} aria-label={item.label} data-active={active ? 'true' : 'false'} style={{ flex: 1, minHeight: '48px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', textDecoration: 'none', borderRadius: '999px', color: active ? 'var(--pf-gold)' : 'var(--pf-faint)' }}>
+      <Link key={item.href} href={item.href} aria-label={item.label} data-active={active ? 'true' : 'false'} style={{ flex: 1, minHeight: '48px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', textDecoration: 'none', borderRadius: '999px', color: active ? 'var(--pf-gold)' : 'var(--pf-faint)' }}>
         <item.icon size={18} strokeWidth={1.75} />
         <span className="pf-tablabel" style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', letterSpacing: '0.04em' }}>{item.label}</span>
-      </a>
+      </Link>
     )
     return (
-      <a key={item.href} href={item.href} title={collapsed ? item.label : undefined} style={{
+      <Link key={item.href} href={item.href} title={collapsed ? item.label : undefined} style={{
         display: 'flex', alignItems: 'center', gap: collapsed ? 0 : '11px',
         justifyContent: collapsed ? 'center' : 'flex-start',
         padding: collapsed ? '11px 0' : '10px 14px', borderRadius: '999px', textDecoration: 'none',
@@ -97,7 +98,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       }} className="pf-navpill" data-active={active ? 'true' : 'false'}>
         <span style={{ lineHeight: 0, width: '18px', display: 'grid', placeItems: 'center', flexShrink: 0 }}><item.icon size={15} strokeWidth={1.75} /></span>
         {!collapsed && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '12.5px', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{item.label}</span>}
-      </a>
+      </Link>
     )
   }
 

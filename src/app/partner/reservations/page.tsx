@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 import { useEffect, useState, useMemo } from 'react'
 import { useEscape } from '@/lib/use-escape'
 import { usePartner } from '../PartnerContext'
@@ -543,9 +544,9 @@ export default function ReservationsScreen() {
 
               {b.status === 'completed' && (
                 <div style={{ marginTop: '16px' }}>
-                  <a href="/partner/earnings" style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '12px', textDecoration: 'none' }}>
+                  <Link href="/partner/earnings" style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '12px', textDecoration: 'none' }}>
                     <Wallet size={13} strokeWidth={1.75} /> {L('dt_view_payout')}
-                  </a>
+                  </Link>
                 </div>
               )}
 

@@ -10,7 +10,8 @@ import { auth } from '@/lib/firebase'
 import { MailCheck, MailWarning } from 'lucide-react'
 import { updateProvider, updateCompany, getPayoutProfile, setPayoutProfile, getExperiencesByCompany, updateExperience, getCompanyAdmin, getStaffByCompany, inviteStaff, revokeStaff } from '@/lib/firestore'
 import { getEnabledCategories, getEnabledCities } from '@/lib/config'
-import type { CompanyPayoutProfile, StaffMember } from '@/lib/schema'
+import { useSWRLite } from '@/lib/swr-lite'
+import type { CompanyPayoutProfile } from '@/lib/schema'
 import { MAIN_CATEGORIES, type MainCategoryId } from '@/lib/categories'
 import PhotoUpload from '@/components/dashboard/PhotoUpload'
 import GalleryUpload from '@/components/dashboard/GalleryUpload'
@@ -46,8 +47,14 @@ export default function SettingsScreen() {
   const [coSaving, setCoSaving] = useState(false)
   const [coSaved, setCoSaved] = useState(false)
   const [coForm, setCoForm] = useState(EMPTY_CO)
-  const [cats, setCats] = useState<{ id: string; name: string }[]>([])
-  const [cities, setCities] = useState<{ id: string; name: string }[]>([])
+  // Read-on-mount data is cached across visits (stale-while-revalidate).
+  const companyId = company?.id
+  const { data: cfg } = useSWRLite('settings:config', async () => {
+    const [cats, cities] = await Promise.all([getEnabledCategories(), getEnabledCities()])
+    return { cats, cities }
+  }, [])
+  const cats = cfg?.cats ?? []
+  const cities = cfg?.cities ?? []
 
   // Payout details — the partner's own, per company (Jordan: biggest omission).
   const [poEditing, setPoEditing] = useState(false)
@@ -55,13 +62,14 @@ export default function SettingsScreen() {
   const [po, setPo] = useState<{ method: PoMethod; accountName: string; phone: string; bankName: string; accountRef: string }>({
     method: 'wave', accountName: '', phone: '', bankName: '', accountRef: '',
   })
-  const [poLoaded, setPoLoaded] = useState<CompanyPayoutProfile | null>(null)
-  const [rate, setRate] = useState<number | null>(null)
-  const [staff, setStaff] = useState<StaffMember[] | null>(null)
+  const { data: poLoaded, setData: setPoLoaded } = useSWRLite(companyId ? `settings:payout:${companyId}` : null, () => getPayoutProfile(companyId!), [companyId])
+  // The real commission rate lives in companies/{id}/private/admin — never hardcode it.
+  const { data: adm } = useSWRLite(companyId ? `settings:admin:${companyId}` : null, () => getCompanyAdmin(companyId!).catch(() => null), [companyId])
+  const rate = typeof adm?.commissionRate === 'number' ? adm.commissionRate : null
   const [inv, setInv] = useState({ name: '', email: '' })
   const [invBusy, setInvBusy] = useState(false)
-  const loadStaff = async () => { if (company?.id && uid) setStaff(await getStaffByCompany(uid, company.id).catch(e => { console.error('staff load failed:', e); return [] })) }
-  useEffect(() => { if (section === 'team') loadStaff() /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [section, company?.id])
+  const { data: staff, reload: loadStaff } = useSWRLite(section === 'team' && companyId && uid ? `settings:staff:${companyId}` : null,
+    () => getStaffByCompany(uid, companyId!).catch(e => { console.error('staff load failed:', e); return [] }), [uid, companyId])
 
   // Contact & hours — light operational info Jordan asked for.
   const [contact, setContact] = useState({ phone: '', whatsapp: '', hours: '', opsName: '', opsWa: '' })
@@ -91,19 +99,14 @@ export default function SettingsScreen() {
     setPwBusy(false)
   }
 
+  // Seed the payout form from the stored profile (cached, then fresh).
   useEffect(() => {
-    getEnabledCategories().then(setCats)
-    getEnabledCities().then(setCities)
-  }, [])
+    const p = poLoaded
+    if (p) setPo({ method: p.method, accountName: p.accountName || '', phone: p.phone || '', bankName: p.bankName || '', accountRef: p.accountRef || '' })
+  }, [poLoaded])
 
   useEffect(() => {
     if (!company?.id) return
-    // The real commission rate lives in companies/{id}/private/admin — never hardcode it.
-    getCompanyAdmin(company.id).then(a => setRate(typeof a?.commissionRate === 'number' ? a.commissionRate : null)).catch(() => setRate(null))
-    getPayoutProfile(company.id).then(p => {
-      setPoLoaded(p)
-      if (p) setPo({ method: p.method, accountName: p.accountName || '', phone: p.phone || '', bankName: p.bankName || '', accountRef: p.accountRef || '' })
-    })
     const ops = (company.operations as Record<string, unknown>) || {}
     setContact({
       phone: company.phone || '',

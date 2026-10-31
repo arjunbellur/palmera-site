@@ -10,6 +10,7 @@ import { useSupplier } from '../SupplierContext'
 import { t, type Locale } from '../i18n'
 import type { SupplyOrder, SupplyOrderItem, SupplyOrderStatus } from '@/lib/schema'
 import { getSupplyOrdersBySupplier } from '@/lib/firestore'
+import { useSWRLite } from '@/lib/swr-lite'
 import { auth } from '@/lib/firebase'
 import { formatAmount, toDate } from '@/lib/money'
 import { ScreenHeader, Chip, PrimaryButton, GhostButton, EmptyState, Skeleton, SearchInput, cardShape, eyebrow, fieldStyle, fieldLabel, type Tone } from '@/components/partner/ui'
@@ -436,7 +437,6 @@ function RecordPaymentForm({ order, locale, onSubmit, onClose }: {
 export default function SupplierOrders() {
   const { supplier, locale } = useSupplier()
   const L = useCallback((k: string) => t(locale, k), [locale])
-  const [orders, setOrders] = useState<OrderWithId[] | null>(null)
   const [q, setQ] = useState('')
   const [busyId, setBusyId] = useState<string | null>(null)
   const [toast, setToast] = useState<{ tone: 'ok' | 'err'; text: string } | null>(null)
@@ -444,19 +444,19 @@ export default function SupplierOrders() {
   const [settle, setSettle] = useState<OrderWithId | null>(null)
   const [record, setRecord] = useState<OrderWithId | null>(null)
 
-  const load = useCallback(async () => {
-    if (!supplier?.id) return
+  // Cached across visits (stale-while-revalidate); every action calls load() = fresh fetch.
+  const supplierId = supplier?.id
+  const { data: orders, reload: load } = useSWRLite(supplierId ? `supplier:orders:${supplierId}` : null, async (): Promise<OrderWithId[]> => {
     try {
-      const list = await getSupplyOrdersBySupplier(supplier.id)
+      const list = await getSupplyOrdersBySupplier(supplierId!)
       const withId = list.filter((o): o is OrderWithId => typeof o.id === 'string')
       withId.sort((a, b) => (toDate(b.createdAt)?.getTime() ?? 0) - (toDate(a.createdAt)?.getTime() ?? 0))
-      setOrders(withId)
+      return withId
     } catch (e) {
       console.error('orders load failed:', e)
-      setOrders([])
+      return []
     }
-  }, [supplier?.id])
-  useEffect(() => { load() }, [load])
+  }, [supplierId])
 
   useEffect(() => {
     if (!toast) return
