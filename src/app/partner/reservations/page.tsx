@@ -451,7 +451,7 @@ export default function ReservationsScreen() {
                       <Chip tone={refundTone(r.kind)}>{refundKindLabel(r.kind, locale === 'fr' ? 'fr' : 'en')}</Chip>
                       {r.kind !== 'free' && r.kind !== 'unpaid' && (
                         <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11.5px', color: 'var(--pf-muted)' }}>
-                          {formatAmount(r.amount)} {b.currency || 'XOF'} · {r.method}{r.kind === 'refunded' ? ` · ${L('rf_back_to')}${r.when ? ` ${formatDate(r.when)}` : ''}` : r.kind === 'kept' ? ` · ${L('rf_your_money')}` : ''}
+                          {formatAmount(r.amount)} {b.currency || 'XOF'}{r.charged ? ` (${r.charged})` : ''} · {r.method}{r.kind === 'refunded' ? ` · ${L('rf_back_to')}${r.when ? ` ${formatDate(r.when)}` : ''}` : r.kind === 'kept' ? ` · ${L('rf_your_money')}` : ''}
                         </span>
                       )}
                     </span>

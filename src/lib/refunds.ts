@@ -8,7 +8,6 @@
 // action lives in firestore.ts.
 import type { Booking, PaymentReceipt } from './schema'
 import { paymentMethodLabel } from './payments'
-import { toDate } from './money'
 
 export type RefundKind =
   | 'free'        // nothing was paid (reservation-only)
@@ -21,20 +20,38 @@ export type RefundKind =
 export interface RefundSummary {
   kind: RefundKind
   amount: number                // XOF the receipt is worth (host share)
+  /** What the processor actually moved when it wasn't XOF — "1.65 USD" (Apple
+   *  Pay charges in USD at the app's fixed rate). Null when charged in XOF. */
+  charged: string | null
   method: string                // "Mobile money · Wave", "Card"…
-  when: Date | null             // refundedAt / refundSettledAt
+  when: unknown                 // refundSettledAt ?? refundedAt (Timestamp) — pass to formatDate
   /** Co-payers' shares, each with its own state (the app refunds them one by one). */
   copays: { uid: string; kind: RefundKind; amount: number; method: string }[]
   /** Everything refunded or due back, host + co-payers. */
   total: number
 }
 
-/** XOF value of a receipt. Stripe stores minor units; XOF has none. */
-export function receiptAmountXof(r: PaymentReceipt | null | undefined): number {
+/** XOF value of a receipt. Every rail writes `amountXof` (the app adds it on
+ *  Stripe receipts too, next to the USD `amountMinor` it actually charged —
+ *  1 000 XOF rides as 165 cents). Fall back to the booking's XOF share when a
+ *  receipt lacks it; never read foreign minor units as francs. */
+export function receiptAmountXof(r: PaymentReceipt | null | undefined, fallbackXof = 0): number {
   if (!r) return 0
-  if (r.provider === 'pawapay' || r.provider === 'paydunya') return Number(r.amountXof) || 0
-  const minor = Number(r.amountMinor) || 0
-  return String(r.currency || 'XOF').toUpperCase() === 'XOF' ? minor : Math.round(minor / 100)
+  const xof = Number((r as { amountXof?: unknown }).amountXof)
+  if (xof > 0) return xof
+  if (r.provider === 'stripe') {
+    const minor = Number(r.amountMinor) || 0
+    return String(r.currency || 'XOF').toUpperCase() === 'XOF' ? minor : fallbackXof
+  }
+  return fallbackXof
+}
+
+/** "1.65 USD" when the processor moved something other than XOF. */
+export function receiptCharged(r: PaymentReceipt | null | undefined): string | null {
+  if (!r || r.provider !== 'stripe') return null
+  const cur = String(r.currency || 'XOF').toUpperCase()
+  if (cur === 'XOF') return null
+  return `${(Number(r.amountMinor) / 100).toFixed(2)} ${cur}`
 }
 
 function kindOf(r: PaymentReceipt | null | undefined): RefundKind {
@@ -46,17 +63,19 @@ function kindOf(r: PaymentReceipt | null | undefined): RefundKind {
   return 'unpaid'
 }
 
-export function refundSummary(b: Pick<Booking, 'mode' | 'payment' | 'copayPayments' | 'customerId'>, lang: 'en' | 'fr' = 'en'): RefundSummary {
+export function refundSummary(b: Pick<Booking, 'mode' | 'payment' | 'copayPayments' | 'customerId' | 'bookingTotal' | 'payersCount'>, lang: 'en' | 'fr' = 'en'): RefundSummary {
   const host = b.payment ?? null
   const kind = !host && b.mode === 'reservation' ? 'free' : kindOf(host)
+  // A share of the booking in XOF, for receipts that only carry a foreign amount.
+  const share = Math.round((Number(b.bookingTotal) || 0) / Math.max(1, Number(b.payersCount) || 1))
   const copays = Object.entries(b.copayPayments ?? {})
     .filter(([uid]) => uid !== b.customerId)
-    .map(([uid, r]) => ({ uid, kind: kindOf(r), amount: receiptAmountXof(r), method: paymentMethodLabel(r, lang) }))
-  const amount = receiptAmountXof(host)
+    .map(([uid, r]) => ({ uid, kind: kindOf(r), amount: receiptAmountXof(r, share), method: paymentMethodLabel(r, lang) }))
+  const amount = receiptAmountXof(host, share)
   const counts = (k: RefundKind) => (kind === k ? amount : 0) + copays.filter((c) => c.kind === k).reduce((s, c) => s + c.amount, 0)
   return {
-    kind, amount, method: paymentMethodLabel(host, lang),
-    when: toDate(host?.refundSettledAt) ?? toDate(host?.refundedAt),
+    kind, amount, charged: receiptCharged(host), method: paymentMethodLabel(host, lang),
+    when: host?.refundSettledAt ?? host?.refundedAt ?? null,
     copays,
     total: counts('refunded') + counts('processing') + counts('manual'),
   }

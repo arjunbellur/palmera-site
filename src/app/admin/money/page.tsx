@@ -267,7 +267,7 @@ function AdminMoney() {
                       <span style={{ minWidth: 0, flex: '1 1 16rem' }}>
                         <span style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '13.5px', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.title} <span style={{ color: 'var(--pf-muted)' }}>· {coName.get(b.companyId) || '—'}</span></span>
                         <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-faint)' }}>
-                          {handleOf(b.customerId) || b.customerName || 'guest'} · {b.status} {formatDate(b.cancelledAt)} · {r.method}{r.copays.length ? ` · ${r.copays.length} guest share(s)` : ''}{b.payment?.refundState === 'refunded' && r.when ? ` · refunded ${formatDate(r.when)}` : ''}
+                          {handleOf(b.customerId) || b.customerName || 'guest'} · {b.status} {formatDate(b.cancelledAt)} · {r.method}{r.charged ? ` (charged ${r.charged})` : ''}{r.copays.length ? ` · ${r.copays.length} guest share(s)` : ''}{b.payment?.refundState === 'refunded' && r.when ? ` · refunded ${formatDate(r.when)}` : ''}
                         </span>
                       </span>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
