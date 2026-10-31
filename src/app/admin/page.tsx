@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 // Overview ("Pulse") — the screen Arjun + Jordan open every morning: app
 // growth (Samson's live data), the business numbers, what needs action, and
 // a feed of what just happened. App + booking tiles are LIVE listeners;
@@ -15,6 +16,8 @@ import { CountTile, SparkTile, timeAgo, glass } from './ui'
 import type { AppProfile, AppDoc, Booking, Provider, Company } from '@/lib/schema'
 import { Sparkles, CalendarDays, Camera, Star, Users, TrendingUp, CalendarRange, Gem, Clock, Check } from 'lucide-react'
 import { formatAmount } from '@/lib/money'
+import { useSWRLite } from '@/lib/swr-lite'
+import { auth } from '@/lib/firebase'
 
 const fmtXof = formatAmount
 
@@ -131,7 +134,18 @@ export default function AdminOverview() {
   const stalePending = bookings.filter((b) => { const d = docDate(b); return b.status === 'pending' && d !== null && d < dayAgo })
   const unsigned = providers.filter((p) => !p.signoff).length
   const incompleteCompanies = companies.filter((c) => !c.name || !c.heroPhoto || !c.logo)
+  // Mail health (last 24h) — the Emails page is reached from here now.
+  const { data: mail } = useSWRLite('admin:mail-health', async () => {
+    const token = await auth.currentUser?.getIdToken()
+    const res = await fetch('/api/admin/emails', { headers: { authorization: `Bearer ${token}` } })
+    const j = await res.json() as { rows?: { kind: string; sentAt: string | null }[] }
+    const since = Date.now() - 24 * 3600 * 1000
+    const recent = (j.rows || []).filter((r) => r.sentAt && new Date(r.sentAt).getTime() >= since)
+    return { sent: recent.filter((r) => r.kind !== 'send_failed' && r.kind !== 'skipped').length, failed: recent.filter((r) => r.kind === 'send_failed').length }
+  })
+
   const actions = [
+    ...(mail && mail.failed > 0 ? [{ text: `${mail.failed} email(s) failed to send in the last 24h`, href: '/admin/emails' }] : []),
     ...(stalePending.length > 0 ? [{ text: `${stalePending.length} pending booking(s) waiting on a partner for over 24h`, href: '/admin/directory' }] : []),
     ...(unsigned > 0 ? [{ text: `${unsigned} partner(s) haven't signed the agreement`, href: '/admin/directory?agreement=unsigned' }] : []),
     ...((uncountersigned ?? 0) > 0 ? [{ text: `${uncountersigned} signed agreement(s) awaiting your countersignature`, href: '/admin/directory?agreement=signed' }] : []),
@@ -204,6 +218,16 @@ export default function AdminOverview() {
           </div>
         </>
       )}
+
+      <div className="pf-glass" style={{ ...glass, padding: '12px 16px', marginTop: actions.length > 0 ? '12px' : 0, marginBottom: '8px' }}>
+        <Link href="/admin/emails" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', textDecoration: 'none' }}>
+          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '12.5px', color: 'var(--pf-text)' }}>
+            <span style={{ ...eyebrow, display: 'block', marginBottom: '3px' }}>Emails · last 24h</span>
+            {mail ? `${mail.sent} sent${mail.failed ? ` · ${mail.failed} failed` : ''}` : '…'}
+          </span>
+          <span style={{ color: mail?.failed ? 'var(--pf-alert)' : 'var(--pf-gold)', fontSize: '13px' }}>→</span>
+        </Link>
+      </div>
 
       {/* Activity feed */}
       <SectionTitle action={

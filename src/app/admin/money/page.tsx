@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 import { useSWRLite } from '@/lib/swr-lite'
 // Money — every booking across all partners, revenue, and what Palmera will
 // owe each company. Read-only over collections the admin rules already allow;
@@ -6,7 +7,8 @@ import { useSWRLite } from '@/lib/swr-lite'
 // the URL so a view can be shared or reloaded.
 import { useState, Suspense } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import { getAllBookingsAdmin, getAllCompanies, getAppProfiles, getPayoutProfile, markRefundedManually } from '@/lib/firestore'
+import { getAllBookingsAdmin, getAllCompanies, getAppProfiles, getPayoutProfile, markRefundedManually, getAllExperiencesAdmin, getAllSupplyOrders, getSupplierLedger } from '@/lib/firestore'
+import { MAIN_CATEGORIES, classifyListing, isMainCategoryId } from '@/lib/categories'
 import { refundSummary, refundKindLabel, refundTone, isCancelledPaid, type RefundKind } from '@/lib/refunds'
 import { useAdmin } from '../AdminContext'
 import { docDate, isRealBooking, startOfMonth, sumField, bucketByPeriod } from '@/lib/analytics'
@@ -45,18 +47,35 @@ function AdminMoney() {
   // on the way back from another tab and refreshes behind.
   const { email: adminEmail } = useAdmin()
   const { data, loaded, setData } = useSWRLite('admin:money', async () => {
-    const [bs, cos, ps] = await Promise.all([getAllBookingsAdmin(), getAllCompanies(), getAppProfiles()])
+    const [bs, cos, ps, exps, orders, ledger] = await Promise.all([getAllBookingsAdmin(), getAllCompanies(), getAppProfiles(), getAllExperiencesAdmin(), getAllSupplyOrders().catch(() => []), getSupplierLedger().catch(() => [])])
     const real = bs.filter(isRealBooking)
     // Payout-detail presence, only for companies that have completed money.
     const owedIds = [...new Set(real.filter((b) => b.status === 'completed').map((b) => b.companyId))]
     const entries = await Promise.all(owedIds.map(async (id) => [id, await getPayoutProfile(id)] as const))
-    return { bookings: real, orphans: bs.length - real.length, companies: cos, profiles: ps, payoutProfiles: Object.fromEntries(entries) as Record<string, CompanyPayoutProfile | null> }
+    return { bookings: real, orphans: bs.length - real.length, companies: cos, profiles: ps, experiences: exps, orders, ledger, payoutProfiles: Object.fromEntries(entries) as Record<string, CompanyPayoutProfile | null> }
   })
   const bookings: Booking[] = data?.bookings ?? []
   const orphans = data?.orphans ?? 0
   const companies: Company[] = data?.companies ?? []
   const profiles: AppProfile[] = data?.profiles ?? []
   const payoutProfiles = data?.payoutProfiles ?? {}
+  const experiences = data?.experiences ?? []
+  const orders = data?.orders ?? []
+  const ledger = data?.ledger ?? []
+  // Marketplace (dépôt-vente) money — computed here, the Suppliers page links to it.
+  const market = (() => {
+    const paid = orders.filter((o) => o.status === 'paid')
+    const card = paid.filter((o) => o.paymentMethod === 'card')
+    const off = paid.filter((o) => o.paymentMethod === 'off_platform')
+    return {
+      collected: card.reduce((t, o) => t + (o.finalTotal || 0), 0),
+      commissionEarned: card.reduce((t, o) => t + (o.finalCommissionAmount || 0), 0),
+      commissionOwed: off.reduce((t, o) => t + (o.finalCommissionAmount || 0), 0),
+      netOwedToSuppliers: ledger.filter((l) => l.kind === 'order_net').reduce((t, l) => t + l.amount, 0),
+      due: orders.filter((o) => o.status === 'payment_due').reduce((t, o) => t + (o.finalTotal || 0), 0),
+      open: orders.filter((o) => ['submitted', 'pending_review', 'accepted', 'handed_over', 'reported', 'settled'].includes(o.status)).length,
+    }
+  })()
 
   // ── URL-backed filters ──
   const status = searchParams.get('status') || 'all'
@@ -115,20 +134,36 @@ function AdminMoney() {
   const gmvMonth = sumField(completedMonth, 'bookingTotal')
   const commMonth = sumField(completedMonth, 'commissionAmount')
   const commBuckets = bucketByPeriod(completed, { period: 'month', buckets: 6, dateKey: 'scheduledFor', sumOf: (b) => (b as Booking).commissionAmount || 0 })
-  const resolved = bookings.filter((b) => b.status !== 'pending' && b.status !== 'confirmed')
+  // Delivered vs everything that ended without delivery — never over 100%.
+  const resolved = bookings.filter((b) => isDelivered(b) || ['declined', 'cancelled', 'no_show'].includes(b.status))
   const completionRate = resolved.length ? (completed.length / resolved.length) * 100 : 0
 
   const byCompany = (() => {
     const m = new Map<string, number>()
     const coLogo = new Map(companies.map((c) => [c.id, c.logo || null]))
     completed.forEach((b) => m.set(b.companyId, (m.get(b.companyId) || 0) + (b.bookingTotal || 0)))
-    return [...m.entries()].map(([id, v]) => ({ label: coName.get(id) || '—', value: v, display: `${fmt(v)} XOF`, img: coLogo.get(id) || null })).sort((a, b) => b.value - a.value).slice(0, 5)
+    return [...m.entries()].filter(([, v]) => v > 0).map(([id, v]) => ({ label: coName.get(id) || '—', value: v, display: `${fmt(v)} XOF`, img: coLogo.get(id) || null })).sort((a, b) => b.value - a.value).slice(0, 5)
   })()
+  // Revenue by APP category — the booked listing's main category (the pair
+  // the app files it under), classified from the legacy id when a listing
+  // predates the taxonomy. Was: the company's legacy config id ("nightlife").
+  const expById = new Map(experiences.map((e) => [e.id!, e]))
+  const mainLabel = new Map(MAIN_CATEGORIES.map((m) => [m.id, m.en]))
+  const mainOfBooking = (b: Booking): string => {
+    const e = expById.get(b.experienceId)
+    if (e && isMainCategoryId(e.mainCategory)) return mainLabel.get(e.mainCategory) || e.mainCategory
+    const main = classifyListing({ category: e?.category ?? companies.find((c) => c.id === b.companyId)?.category, title: e?.title ?? b.title, tag: e?.tag }).main
+    return mainLabel.get(main) || main
+  }
   const byCategory = (() => {
-    const catOf = new Map(companies.map((c) => [c.id, c.category || '—']))
     const m = new Map<string, number>()
-    completed.forEach((b) => { const k = catOf.get(b.companyId) || '—'; m.set(k, (m.get(k) || 0) + (b.bookingTotal || 0)) })
-    return [...m.entries()].map(([label, v]) => ({ label, value: v, display: `${fmt(v)} XOF` })).sort((a, b) => b.value - a.value).slice(0, 5)
+    completed.forEach((b) => { const k = mainOfBooking(b); m.set(k, (m.get(k) || 0) + (b.bookingTotal || 0)) })
+    return [...m.entries()].filter(([, v]) => v > 0).map(([label, v]) => ({ label, value: v, display: `${fmt(v)} XOF` })).sort((a, b) => b.value - a.value).slice(0, 6)
+  })()
+  const byCity = (() => {
+    const m = new Map<string, number>()
+    completed.forEach((b) => { const city = String(expById.get(b.experienceId)?.city || companies.find((c) => c.id === b.companyId)?.city || '—'); const k = city.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()); m.set(k, (m.get(k) || 0) + (b.bookingTotal || 0)) })
+    return [...m.entries()].filter(([, v]) => v > 0).map(([label, v]) => ({ label, value: v, display: `${fmt(v)} XOF` })).sort((a, b) => b.value - a.value).slice(0, 6)
   })()
 
   // ── Payout readiness ──
@@ -183,9 +218,10 @@ function AdminMoney() {
         </div>
       )}
       {(byCompany.length > 0 || byCategory.length > 0) && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 20rem), 1fr))', gap: '20px', marginTop: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 16rem), 1fr))', gap: '20px', marginTop: '16px' }}>
           {byCompany.length > 0 && <div><div style={{ ...eyebrow, marginBottom: '10px' }}>Revenue by company</div><RankPills items={byCompany} /></div>}
           {byCategory.length > 0 && <div><div style={{ ...eyebrow, marginBottom: '10px' }}>Revenue by category</div><RankPills items={byCategory} /></div>}
+          {byCity.length > 0 && <div><div style={{ ...eyebrow, marginBottom: '10px' }}>Revenue by city</div><RankPills items={byCity} /></div>}
         </div>
       )}
 
@@ -220,6 +256,20 @@ function AdminMoney() {
       )}
 
       </div>
+      </div>
+
+      {/* Marketplace money — same numbers the Suppliers › Orders page shows;
+          this is their home, that page links here. */}
+      <SectionTitle action={<Link href="/admin/suppliers/orders" style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-gold)', textDecoration: 'none' }}>Orders →</Link>}>Marketplace</SectionTitle>
+      <p style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-faint)', margin: '-6px 0 12px' }}>
+        Dépôt-vente between suppliers and partners. Card settlements are collected by Palmera and the supplier's net accrues; cash or Wave handed to the supplier accrues the commission they owe Palmera instead.
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '12px', marginBottom: '8px' }}>
+        <div className="pf-glass" style={glass}><div style={eyebrow}>Collected by card</div><div style={{ marginTop: '8px' }}><Money amount={fmt(market.collected)} size={24} /></div></div>
+        <div className="pf-glass" style={glass}><div style={eyebrow}>Commission earned</div><div style={{ marginTop: '8px' }}><Money amount={fmt(market.commissionEarned)} size={24} /></div></div>
+        <div className={market.commissionOwed ? 'pf-glass pf-glass-gold' : 'pf-glass'} style={glass}><div style={eyebrow}>Owed by suppliers</div><div style={{ marginTop: '8px' }}><Money amount={fmt(market.commissionOwed)} size={24} /></div></div>
+        <div className="pf-glass" style={glass}><div style={eyebrow}>Net owed to suppliers</div><div style={{ marginTop: '8px' }}><Money amount={fmt(market.netOwedToSuppliers)} size={24} /></div></div>
+        <div className={market.due ? 'pf-glass pf-glass-gold' : 'pf-glass'} style={glass}><div style={eyebrow}>Payments due</div><div style={{ marginTop: '8px' }}><Money amount={fmt(market.due)} size={24} /></div><div style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-muted)', marginTop: '8px' }}>{market.open} open order(s)</div></div>
       </div>
 
       {/* Cancellations & refunds — what happened to the money on every paid

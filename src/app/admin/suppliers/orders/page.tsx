@@ -90,7 +90,7 @@ export default function AdminMarketOrders() {
 
   return (
     <div className="pf-in">
-      <ScreenHeader label="Marketplace" title="Orders & money" intro="Every dépôt-vente order, what Palmera collected, and what each supplier is owed or owes." />
+      <ScreenHeader label="Marketplace" title="Orders" intro="Every dépôt-vente order by state. The money totals live on the Money page, under Marketplace." />
       <div className="pf-cols">
         <div style={{ minWidth: 0 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '18px' }}>
