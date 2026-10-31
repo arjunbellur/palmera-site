@@ -10,6 +10,7 @@ import type { Supplier, SupplyProduct } from '@/lib/schema'
 import { getAllSuppliers, createSupplier, updateSupplier, getProductsBySupplier, updateSupplyProduct, deleteSupplyProduct } from '@/lib/firestore'
 import { useSWRLite } from '@/lib/swr-lite'
 import ProductModal from '@/components/supplier/ProductModal'
+import PartnersTabs from '@/components/admin/PartnersTabs'
 import { ScreenHeader, PrimaryButton, GhostButton, Chip, EmptyState, Skeleton, cardShape, eyebrow, SearchInput } from '@/components/partner/ui'
 import { Store, Package } from 'lucide-react'
 import { formatAmount } from '@/lib/money'
@@ -99,8 +100,9 @@ export default function AdminSuppliers() {
 
   return (
     <>
+      <PartnersTabs />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '14px', flexWrap: 'wrap' }}>
-        <ScreenHeader label="Marketplace" title="Suppliers"
+        <ScreenHeader label="Partners" title="Suppliers"
           intro="Wholesale businesses selling to partners. Create the record with their email — they claim it at their first /supplier sign-in. You can author their catalog for them." />
         <div style={{ paddingBottom: '18px', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
           <SearchInput value={q} onChange={setQ} placeholder="Search suppliers…" />

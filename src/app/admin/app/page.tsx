@@ -18,7 +18,6 @@ import type { AppProfile, AppDoc, Booking, Experience } from '@/lib/schema'
 import { Users, Gem, Camera, Heart, PencilLine, MessageSquare, Coins, ListOrdered, LayoutGrid, UserPlus, Clock } from 'lucide-react'
 import { formatAmount } from '@/lib/money'
 import MembersPanel from '@/components/admin/MembersPanel'
-import FeaturedPanel from '@/components/admin/FeaturedPanel'
 
 const fmt = formatAmount
 
@@ -118,13 +117,9 @@ export default function AdminAppGrowth() {
   return (
     <div className="pf-in">
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '14px', flexWrap: 'wrap' }}>
-        <ScreenHeader label="Palmera HQ" title="App growth" intro="Signups, engagement, and what's converting inside the app." />
+        <ScreenHeader label="Palmera HQ" title="Members" intro="Who is on the app, what they do, and what converts into bookings." />
         <button onClick={load} style={{ marginTop: '4px', background: 'transparent', border: '1px solid var(--pf-border)', borderRadius: '8px', color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '11px', cursor: 'pointer', padding: '6px 12px' }}>↻ Refresh</button>
       </div>
-
-      {/* The admin's main lever on what members see — first thing on the page,
-          full width, above the analytics. */}
-      <FeaturedPanel experiences={experiences} />
 
       {/* Composition: charts flow down the main column; city, social graph and
           the earners leaderboard live on the sticky rail at ≥1200px. */}

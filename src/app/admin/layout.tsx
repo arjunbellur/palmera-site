@@ -10,16 +10,24 @@ import { ThemeProvider, useTheme } from '@/lib/theme'
 import { isAdminEmail } from '@/lib/admin'
 import { Chip, IconButton, Spinner } from '@/components/partner/ui'
 import { AdminContext } from './AdminContext'
-import { LayoutDashboard, Smartphone, CircleDollarSign, Building2, Truck, Tags, Moon, Sun, LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { LayoutDashboard, Smartphone, CircleDollarSign, Building2, Tags, Moon, Sun, LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 
 const NAV = [
   { href: '/admin', icon: LayoutDashboard, label: 'Overview' },
-  { href: '/admin/app', icon: Smartphone, label: 'App' },
   { href: '/admin/money', icon: CircleDollarSign, label: 'Money' },
-  { href: '/admin/directory', icon: Building2, label: 'Directory' },
-  { href: '/admin/categories', icon: Tags, label: 'Categories' },
-  { href: '/admin/suppliers', icon: Truck, label: 'Suppliers' },
+  { href: '/admin/directory', icon: Building2, label: 'Partners' },
+  { href: '/admin/catalogue', icon: Tags, label: 'Catalogue' },
+  { href: '/admin/app', icon: Smartphone, label: 'Members' },
 ] as const
+/** Routes that live under a tab without being its href. */
+const UNDER: Record<string, string[]> = {
+  '/admin/directory': ['/admin/companies', '/admin/suppliers'],
+  '/admin/catalogue': ['/admin/categories'],
+  '/admin': ['/admin/emails'],
+}
+const tabActive = (href: string, pathname: string) =>
+  href === '/admin' ? (pathname === '/admin' || (UNDER['/admin'] ?? []).some((p) => pathname.startsWith(p)))
+    : pathname.startsWith(href) || (UNDER[href] ?? []).some((p) => pathname.startsWith(p))
 
 function Shell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -78,9 +86,7 @@ function Shell({ children }: { children: React.ReactNode }) {
 
   const navLink = (item: typeof NAV[number], mobile = false) => {
     // Company detail pages belong to the Directory's world.
-    const active = item.href === '/admin'
-      ? pathname === '/admin'
-      : pathname.startsWith(item.href) || (item.href === '/admin/directory' && pathname.startsWith('/admin/companies'))
+    const active = tabActive(item.href, pathname)
     if (mobile) return (
       // Bottom tab bar (same pattern as the partner shell) — ≥44px targets.
       <Link key={item.href} href={item.href} aria-label={item.label} data-active={active ? 'true' : 'false'} style={{ flex: 1, minHeight: '48px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', textDecoration: 'none', borderRadius: '999px', color: active ? 'var(--pf-gold)' : 'var(--pf-faint)' }}>
@@ -140,7 +146,7 @@ function Shell({ children }: { children: React.ReactNode }) {
             {children}
           </main>
           {isMobile && (
-            <nav aria-label="Admin" className="pf-tabbar" style={{ ['--n' as string]: NAV.length, ['--i' as string]: Math.max(0, NAV.findIndex(item => item.href === '/admin' ? pathname === '/admin' : pathname.startsWith(item.href) || (item.href === '/admin/directory' && pathname.startsWith('/admin/companies')))) }}>
+            <nav aria-label="Admin" className="pf-tabbar" style={{ ['--n' as string]: NAV.length, ['--i' as string]: Math.max(0, NAV.findIndex(item => tabActive(item.href, pathname))) }}>
               {NAV.map(n => navLink(n, true))}
             </nav>
           )}

@@ -132,7 +132,7 @@ export default function AdminCategories() {
   return (
     <div className="pf-in">
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '14px', flexWrap: 'wrap' }}>
-        <ScreenHeader label="Internal" title="Categories" intro="Where every listing appears in the app. Unfiled listings show the app's own guess — save it, or pick the right place." />
+        <ScreenHeader label="Catalogue" title="Listings & categories" intro="Every live listing and where it appears in the app. Unfiled listings show the app's own guess — save it, or pick the right place." />
         {unfiled.length > 0 && (
           <span style={{ marginTop: '4px' }}>
             <PrimaryButton onClick={() => setBulkOpen(true)}>File {unfiled.length} unfiled as suggested</PrimaryButton>

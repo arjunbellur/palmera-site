@@ -12,6 +12,7 @@ import {
 } from '@/lib/firestore'
 import { isAdminEmail } from '@/lib/admin'
 import ConfirmDialog from '@/components/dashboard/ConfirmDialog'
+import PartnersTabs from '@/components/admin/PartnersTabs'
 import { ScreenHeader, Chip, EmptyState, Skeleton, GhostButton, card, eyebrow } from '@/components/partner/ui'
 import { CountTile, FilterChip, DangerButton, inputStyle, formatDate, glass } from '../ui'
 import type { Company, Provider } from '@/lib/schema'
@@ -165,12 +166,13 @@ function AdminDirectory() {
   return (
     <div className="pf-in">
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '14px', flexWrap: 'wrap' }}>
-        <ScreenHeader label="Internal" title="Partners" intro="Every partner on Palmera — their companies live inside each row." />
+        <ScreenHeader label="Partners" title="Businesses" intro="Every partner on Palmera — their companies live inside each row." />
         <span style={{ marginTop: '4px' }}><Chip tone="green">● Live</Chip></span>
       </div>
 
       {/* Composition: the directory list is the working column; the stat
           tiles ride the sticky rail on wide screens (single column below). */}
+      <PartnersTabs />
       <div className="pf-cols">
       <div style={{ minWidth: 0 }}>
       {/* Search + filter chips — all mirrored in the URL */}
