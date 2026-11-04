@@ -136,6 +136,9 @@ const FR: Record<string, string> = {
   dt_respond_by: 'Répondre avant', dt_overdue: 'Délai de 24 h dépassé — répondez maintenant',
   dt_paid: 'Payé', dt_unpaid: 'Non payé', dt_refunded: 'Remboursé',
   dt_cancelled_on: 'Annulée le', dt_refund: 'Remboursement', dt_copay_refunds: 'Parts des invités', rf_back_to: 'retour au client', rf_your_money: 'le montant vous reste acquis',
+  dt_split: 'Paiement partagé', split_short: 'Pas entièrement couvert', split_settled: 'Versement réglé', split_part: 'une partie de l’addition',
+  split_short_body: 'Un invité a quitté le groupe après le paiement des autres — {amount} n’est pas couvert. Palmera réglera votre versement sur ce qui a été encaissé.',
+  split_settled_body: 'Palmera a réglé ce versement à {amount}.',
   dt_requests: 'Demandes particulières', dt_none: '—', close: 'Fermer',
 
   earn_label: 'Revenus', earn_title: 'Revenus et versements',
@@ -355,6 +358,9 @@ const EN: Record<string, string> = {
   dt_respond_by: 'Respond by', dt_overdue: '24h window passed — respond now',
   dt_paid: 'Paid', dt_unpaid: 'Unpaid', dt_refunded: 'Refunded',
   dt_cancelled_on: 'Cancelled on', dt_refund: 'Refund', dt_copay_refunds: 'Guest shares', rf_back_to: 'back to the guest', rf_your_money: 'you keep the amount',
+  dt_split: 'Split payment', split_short: 'Not fully covered', split_settled: 'Payout settled', split_part: 'part of the bill',
+  split_short_body: 'A guest left the group after the others paid — {amount} is not covered. Palmera will settle your payout on what was collected.',
+  split_settled_body: 'Palmera settled this payout at {amount}.',
   dt_requests: 'Special requests', dt_none: '—', close: 'Close',
 
   earn_label: 'Earnings', earn_title: 'Earnings & payouts',

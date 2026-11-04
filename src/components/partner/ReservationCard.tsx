@@ -51,6 +51,8 @@ export default function ReservationCard({
         {b.confirmationType === 'instant' && <Chip tone="green">● {L('instant')}</Chip>}
         <Chip tone={awaitingPayment ? 'gold' : s.tone}>{awaitingPayment ? `◷ ${L('await_pay')}` : L(s.key)}</Chip>
         {duplicate && <Chip tone="alert">⧉ {L('dup_flag')}</Chip>}
+        {b.payoutAdjustmentNeeded && <Chip tone="alert">{L('split_short')}{b.payoutAdjustment?.uncoveredXof ? ` · ${formatAmount(b.payoutAdjustment.uncoveredXof)}` : ''}</Chip>}
+        {!b.payoutAdjustmentNeeded && b.payoutAdjustment?.settled && <Chip tone="neutral">{L('split_settled')}</Chip>}
         {(b.status === 'cancelled' || b.status === 'declined') && (() => {
           const r = refundSummary(b, locale)
           return r.kind === 'unpaid' ? null : <Chip tone={refundTone(r.kind)}>{refundKindLabel(r.kind, locale)}{r.total > 0 ? ` · ${formatAmount(r.total)}` : ''}</Chip>

@@ -444,6 +444,16 @@ export default function ReservationsScreen() {
               })() : null}
               {row(locale === 'fr' ? 'Date' : 'Date', when ? `${formatDate(when)} · ${when.toLocaleTimeString(locale === 'fr' ? 'fr-FR' : 'en-GB', { hour: '2-digit', minute: '2-digit' })}` : L('dt_none'))}
               {row(L('dt_payment'), payLabel)}
+              {(b.payoutAdjustmentNeeded || b.payoutAdjustment?.settled) && row(L('dt_split'), (
+                <span style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-end' }}>
+                  <Chip tone={b.payoutAdjustmentNeeded ? 'alert' : 'neutral'}>{b.payoutAdjustmentNeeded ? L('split_short') : L('split_settled')}</Chip>
+                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11.5px', color: 'var(--pf-muted)', textAlign: 'right' }}>
+                    {b.payoutAdjustmentNeeded
+                      ? L('split_short_body').replace('{amount}', b.payoutAdjustment?.uncoveredXof != null ? `${formatAmount(b.payoutAdjustment.uncoveredXof)} ${b.currency || 'XOF'}` : L('split_part'))
+                      : L('split_settled_body').replace('{amount}', `${formatAmount(b.payoutAdjustment?.settled?.payoutXof ?? b.payoutAmount)} ${b.currency || 'XOF'}`)}
+                  </span>
+                </span>
+              ))}
               {(b.status === 'cancelled' || b.status === 'declined') && (() => {
                 const r = refundSummary(b, locale === 'fr' ? 'fr' : 'en')
                 return <>

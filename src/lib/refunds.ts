@@ -68,9 +68,14 @@ export function refundSummary(b: Pick<Booking, 'mode' | 'payment' | 'copayPaymen
   const kind = !host && b.mode === 'reservation' ? 'free' : kindOf(host)
   // A share of the booking in XOF, for receipts that only carry a foreign amount.
   const share = Math.round((Number(b.bookingTotal) || 0) / Math.max(1, Number(b.payersCount) || 1))
+  // A co-payer's refund state also lives in `copayRefunds[uid]` (Part 5): the
+  // receipt itself is left untouched when the processor rejects the refund.
+  const flagged = (b as { copayRefunds?: Record<string, string> }).copayRefunds ?? {}
+  const copayKind = (uid: string, r: PaymentReceipt): RefundKind =>
+    flagged[uid] === 'manual_review' ? 'manual' : flagged[uid] === 'processing' ? 'processing' : flagged[uid] === 'refunded' ? 'refunded' : kindOf(r)
   const copays = Object.entries(b.copayPayments ?? {})
     .filter(([uid]) => uid !== b.customerId)
-    .map(([uid, r]) => ({ uid, kind: kindOf(r), amount: receiptAmountXof(r, share), method: paymentMethodLabel(r, lang) }))
+    .map(([uid, r]) => ({ uid, kind: copayKind(uid, r), amount: receiptAmountXof(r, share), method: paymentMethodLabel(r, lang) }))
   const amount = receiptAmountXof(host, share)
   const counts = (k: RefundKind) => (kind === k ? amount : 0) + copays.filter((c) => c.kind === k).reduce((s, c) => s + c.amount, 0)
   return {

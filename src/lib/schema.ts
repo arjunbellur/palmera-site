@@ -461,6 +461,28 @@ export interface Booking {
   checkedInAt?: TS | null
   /** Guest ids from scanned per-guest tickets (palmera://checkin?…&guest=). */
   checkedInGuests?: string[]
+  // ── Split-payment flags the APP's functions write (Part 5, 2026-11-03).
+  // We read them; the dashboard only ever adds `payoutAdjustment.settled`
+  // and `copayRefundManual`, and flips the two booleans when an admin has
+  // dealt with the case by hand (Money › Split payments).
+  /** Once everyone left in a split has paid, the money held is compared with
+   *  bookingTotal. Short (a co-payer was refunded or dropped) → true; the
+   *  booking keeps its status and the partner's payout is settled by hand. */
+  payoutAdjustmentNeeded?: boolean
+  payoutAdjustment?: {
+    heldXof: number | null; bookingTotal: number; uncoveredXof: number | null
+    reason: string            // 'copayer_refunded' | 'split_reduced'
+    uid: string               // the payer who left
+    at: number                // ms epoch
+    /** Dashboard-written: how Palmera settled the partner's payout. */
+    settled?: { by: string; note: string; at: TS | Date; payoutXof: number }
+  }
+  /** A co-payer's refund the processor rejected — Palmera refunds by hand. */
+  refundNeedsReview?: boolean
+  /** Per co-payer uid: 'refunded' | 'processing' | 'manual_review'. */
+  copayRefunds?: Record<string, string>
+  /** Dashboard-written: a co-payer refund an admin sent by hand. */
+  copayRefundManual?: Record<string, { by: string; note: string; at: TS | Date }>
 }
 
 export type LedgerEntryType =

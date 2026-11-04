@@ -10,7 +10,8 @@ import { ThemeProvider, useTheme } from '@/lib/theme'
 import { isAdminEmail } from '@/lib/admin'
 import { Chip, IconButton, Spinner } from '@/components/partner/ui'
 import { AdminContext } from './AdminContext'
-import { LayoutDashboard, Smartphone, CircleDollarSign, Building2, Tags, Moon, Sun, LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { LayoutDashboard, Smartphone, CircleDollarSign, Building2, Tags, MessageSquare, Moon, Sun, LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { useSupportUnread } from '@/lib/support'
 
 const NAV = [
   { href: '/admin', icon: LayoutDashboard, label: 'Overview' },
@@ -18,6 +19,7 @@ const NAV = [
   { href: '/admin/directory', icon: Building2, label: 'Partners' },
   { href: '/admin/catalogue', icon: Tags, label: 'Catalogue' },
   { href: '/admin/app', icon: Smartphone, label: 'Members' },
+  { href: '/admin/messages', icon: MessageSquare, label: 'Messages' },
 ] as const
 /** Routes that live under a tab without being its href. */
 const UNDER: Record<string, string[]> = {
@@ -39,6 +41,8 @@ function Shell({ children }: { children: React.ReactNode }) {
   const [isMobile, setIsMobile] = useState(false)
   // Collapsed = a 68px icon rail; the whole width goes to the content.
   const [collapsed, setCollapsed] = useState(false)
+  // Members waiting on a support reply — a count on the Messages item.
+  const unread = useSupportUnread()
   useEffect(() => { setCollapsed(localStorage.getItem('palmera.admin.nav') === 'collapsed') }, [])
   const toggleNav = () => setCollapsed((c) => { localStorage.setItem('palmera.admin.nav', c ? 'open' : 'collapsed'); return !c })
 
@@ -87,10 +91,13 @@ function Shell({ children }: { children: React.ReactNode }) {
   const navLink = (item: typeof NAV[number], mobile = false) => {
     // Company detail pages belong to the Directory's world.
     const active = tabActive(item.href, pathname)
+    const badge = item.href === '/admin/messages' && unread > 0
+      ? <span aria-label={`${unread} unread`} style={{ position: 'absolute', top: '-6px', right: '-10px', minWidth: '16px', height: '16px', padding: '0 4px', borderRadius: '999px', background: 'var(--pf-gold)', color: '#1a1408', fontFamily: 'var(--font-sans)', fontSize: '9.5px', fontWeight: 600, lineHeight: '16px', textAlign: 'center' }}>{unread > 99 ? '99+' : unread}</span>
+      : null
     if (mobile) return (
       // Bottom tab bar (same pattern as the partner shell) — ≥44px targets.
       <Link key={item.href} href={item.href} aria-label={item.label} data-active={active ? 'true' : 'false'} style={{ flex: 1, minHeight: '48px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', textDecoration: 'none', borderRadius: '999px', color: active ? 'var(--pf-gold)' : 'var(--pf-faint)' }}>
-        <item.icon size={18} strokeWidth={1.75} />
+        <span style={{ position: 'relative', lineHeight: 0 }}><item.icon size={18} strokeWidth={1.75} />{badge}</span>
         <span className="pf-tablabel" style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', letterSpacing: '0.04em' }}>{item.label}</span>
       </Link>
     )
@@ -101,8 +108,9 @@ function Shell({ children }: { children: React.ReactNode }) {
         padding: collapsed ? '11px 0' : '10px 14px', borderRadius: '999px', textDecoration: 'none',
         color: active ? 'var(--pf-gold)' : 'var(--pf-faint)',
       }} className="pf-navpill" data-active={active ? 'true' : 'false'}>
-        <span style={{ lineHeight: 0, width: '18px', display: 'grid', placeItems: 'center', flexShrink: 0 }}><item.icon size={15} strokeWidth={1.75} /></span>
+        <span style={{ lineHeight: 0, width: '18px', display: 'grid', placeItems: 'center', flexShrink: 0, position: 'relative' }}><item.icon size={15} strokeWidth={1.75} />{collapsed && badge}</span>
         {!collapsed && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '12.5px', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{item.label}</span>}
+        {!collapsed && unread > 0 && item.href === '/admin/messages' && <span style={{ marginLeft: 'auto', minWidth: '18px', height: '18px', padding: '0 5px', borderRadius: '999px', background: 'var(--pf-gold)', color: '#1a1408', fontFamily: 'var(--font-sans)', fontSize: '10px', fontWeight: 600, lineHeight: '18px', textAlign: 'center' }}>{unread > 99 ? '99+' : unread}</span>}
       </Link>
     )
   }

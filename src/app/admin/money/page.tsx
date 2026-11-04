@@ -7,16 +7,17 @@ import { useSWRLite } from '@/lib/swr-lite'
 // the URL so a view can be shared or reloaded.
 import { useState, Suspense } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import { getAllBookingsAdmin, getAllCompanies, getAppProfiles, getPayoutProfile, markRefundedManually, getAllExperiencesAdmin, getAllSupplyOrders, getSupplierLedger } from '@/lib/firestore'
+import { getAllBookingsAdmin, getAllCompanies, getAppProfiles, getPayoutProfile, markRefundedManually, settlePayoutAdjustment, markCopayRefundedManually, getAllExperiencesAdmin, getAllSupplyOrders, getSupplierLedger } from '@/lib/firestore'
 import { MAIN_CATEGORIES, classifyListing, isMainCategoryId } from '@/lib/categories'
 import { refundSummary, refundKindLabel, refundTone, isCancelledPaid, type RefundKind } from '@/lib/refunds'
+import { shortSplits, copayManualRefunds, splitReasonLabel } from '@/lib/splits'
 import { useAdmin } from '../AdminContext'
 import { docDate, isRealBooking, startOfMonth, sumField, bucketByPeriod } from '@/lib/analytics'
 import { ScreenHeader, Chip, Skeleton, Money, EmptyState, Disclosure, card, eyebrow, SearchInput, type Tone } from '@/components/partner/ui'
 import { BarChart, RankPills, Donut } from '@/components/charts'
 import { FilterChip, inputStyle, formatDate, glass } from '../ui'
 import type { Booking, BookingStatus, Company, AppProfile, CompanyPayoutProfile } from '@/lib/schema'
-import { Wallet, CalendarDays, Undo2 } from 'lucide-react'
+import { Wallet, CalendarDays, Undo2, Users } from 'lucide-react'
 import { formatAmount, isDelivered, isUpcoming } from '@/lib/money'
 
 const fmt = formatAmount
@@ -97,6 +98,12 @@ function AdminMoney() {
   const [manualNote, setManualNote] = useState('')
   const [manualBusy, setManualBusy] = useState(false)
   const [manualError, setManualError] = useState('')
+  // Split payments: settle a short payout / close out a co-payer refund sent by hand.
+  const [adjFor, setAdjFor] = useState<string | null>(null)   // bookingId, or `${bookingId}:${uid}` for a co-payer refund
+  const [adjNote, setAdjNote] = useState('')
+  const [adjPayout, setAdjPayout] = useState('')
+  const [adjBusy, setAdjBusy] = useState(false)
+  const [adjError, setAdjError] = useState('')
 
   if (!loaded) return <MoneySkeleton />
 
@@ -269,6 +276,131 @@ function AdminMoney() {
         <div className={market.due ? 'pf-glass pf-glass-gold' : 'pf-glass'} style={glass}><div style={eyebrow}>Payments due</div><div style={{ marginTop: '8px' }}><Money amount={fmt(market.due)} size={24} /></div><div style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-muted)', marginTop: '8px' }}>{market.open} open order(s)</div></div>
       </div>
       </Disclosure>
+
+      {/* Split payments — the app flags a booking when, after a co-payer was
+          refunded or dropped, the money held is less than the bill (the
+          booking keeps its status; the partner's payout is settled here), and
+          when a co-payer refund the processor rejected must be sent by hand. */}
+      {(() => {
+        const short = shortSplits(bookings).sort((x, y) => (y.at?.getTime() ?? 0) - (x.at?.getTime() ?? 0))
+        const copays = copayManualRefunds(bookings)
+        const settled = bookings.filter((b) => b.payoutAdjustment?.settled && !b.payoutAdjustmentNeeded)
+          .sort((x, y) => (docDate(x.payoutAdjustment?.settled ?? {}, 'at')?.getTime() ?? 0) - (docDate(y.payoutAdjustment?.settled ?? {}, 'at')?.getTime() ?? 0)).reverse()
+        const uncovered = short.reduce((t, s) => t + (s.uncovered ?? 0), 0)
+        const pending = short.length + copays.length
+        const openSettle = (id: string, payout: number) => { setAdjFor(id); setAdjNote(''); setAdjPayout(String(payout)); setAdjError('') }
+        const settle = async (id: string, commissionRate: number) => {
+          const payout = Math.round(Number(adjPayout))
+          if (!(payout >= 0)) { setAdjError('Enter the payout in XOF.'); return }
+          setAdjBusy(true); setAdjError('')
+          try {
+            // Commission re-based on the money held: payout = held − commission.
+            const held = Math.round(payout / Math.max(0.0001, 1 - commissionRate))
+            await settlePayoutAdjustment(id, adminEmail, adjNote, payout, Math.max(0, held - payout))
+            setData((d) => d ? { ...d, bookings: d.bookings.map((b) => b.id === id ? { ...b, payoutAdjustmentNeeded: false, payoutAmount: payout, commissionAmount: Math.max(0, held - payout), payoutAdjustment: { ...(b.payoutAdjustment ?? { heldXof: null, bookingTotal: b.bookingTotal, uncoveredXof: null, reason: '', uid: '', at: Date.now() }), settled: { by: adminEmail, note: adjNote, at: new Date(), payoutXof: payout } } } : b) } : d)
+            setAdjFor(null)
+          } catch { setAdjError('Could not save — try again.') }
+          setAdjBusy(false)
+        }
+        const closeCopay = async (id: string, uid: string) => {
+          setAdjBusy(true); setAdjError('')
+          try {
+            const b = bookings.find((x) => x.id === id)
+            const left = Object.entries(b?.copayRefunds ?? {}).some(([u, st]) => u !== uid && st === 'manual_review')
+            await markCopayRefundedManually(id, uid, adminEmail, adjNote, left)
+            setData((d) => d ? { ...d, bookings: d.bookings.map((x) => x.id === id ? { ...x, refundNeedsReview: left, copayRefunds: { ...(x.copayRefunds ?? {}), [uid]: 'refunded' } } : x) } : d)
+            setAdjFor(null)
+          } catch { setAdjError('Could not save — try again.') }
+          setAdjBusy(false)
+        }
+        const form = (onConfirm: () => void, label: string, withAmount: boolean) => (
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', marginTop: '10px' }}>
+            {withAmount && <input value={adjPayout} onChange={(e) => setAdjPayout(e.target.value.replace(/[^0-9]/g, ''))} inputMode="numeric" aria-label="Payout in XOF" style={{ ...inputStyle, width: '8rem' }} />}
+            <input value={adjNote} onChange={(e) => setAdjNote(e.target.value)} placeholder={withAmount ? 'How it was agreed — e.g. partner OK with reduced payout, WhatsApp 3 Nov' : 'How it was sent — e.g. Wave to 77 xxx xx xx, ref …'} style={{ ...inputStyle, flex: '1 1 16rem' }} />
+            <button disabled={adjBusy} onClick={onConfirm} className="pf-cap pf-cap-primary" style={{ padding: '8px 14px', border: 'none', color: '#f4ecdb', fontFamily: 'var(--font-sans)', fontSize: '11.5px', cursor: 'pointer' }}>{adjBusy ? 'Saving…' : label}</button>
+            <button onClick={() => setAdjFor(null)} style={{ background: 'transparent', border: 'none', color: 'var(--pf-faint)', fontFamily: 'var(--font-sans)', fontSize: '11.5px', cursor: 'pointer' }}>Cancel</button>
+            {adjError && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-alert)' }}>{adjError}</span>}
+          </div>
+        )
+        const rowTitle = (b: Booking) => (
+          <span style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '13.5px', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.title} <span style={{ color: 'var(--pf-muted)' }}>· {coName.get(b.companyId) || '—'}</span></span>
+        )
+        return (
+          <Disclosure id="money.splits" title="Split payments" defaultOpen={pending > 0}
+            summary={pending ? `${short.length ? `${short.length} short · ${fmt(uncovered)} XOF not covered` : ''}${short.length && copays.length ? ' · ' : ''}${copays.length ? `${copays.length} co-payer refund(s) need Palmera` : ''}` : `nothing pending · ${settled.length} settled`}>
+            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--pf-faint)', margin: '0 0 12px' }}>
+              Group bookings paid in shares. When a guest is refunded or leaves after the others have paid, the money held falls short of the bill: the booking stays confirmed, the host is told, and the partner's payout is settled here on what was actually collected. A guest-share refund the processor rejected is sent by hand, then closed out here.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 170px), 1fr))', gap: '12px', marginBottom: '14px' }}>
+              <div className={short.length ? 'pf-glass pf-glass-gold' : 'pf-glass'} style={glass}><div style={eyebrow}>Not fully covered</div><div style={{ marginTop: '8px' }}><Money amount={fmt(uncovered)} size={26} /></div><div style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: short.length ? 'var(--pf-alert)' : 'var(--pf-muted)', marginTop: '8px' }}>{short.length} booking(s) to settle with the partner</div></div>
+              <div className={copays.length ? 'pf-glass pf-glass-gold' : 'pf-glass'} style={glass}><div style={eyebrow}>Guest refunds to send</div><div style={{ marginTop: '8px' }}><Money amount={fmt(copays.reduce((t, c) => t + c.amount, 0))} size={26} /></div><div style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: copays.length ? 'var(--pf-alert)' : 'var(--pf-muted)', marginTop: '8px' }}>{copays.length} share(s) the processor could not refund</div></div>
+              <div className="pf-glass" style={glass}><div style={eyebrow}>Settled</div><div style={{ marginTop: '8px' }}><Money amount={fmt(settled.reduce((t, b) => t + (b.payoutAdjustment?.settled?.payoutXof ?? 0), 0))} size={26} /></div><div style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-muted)', marginTop: '8px' }}>{settled.length} payout(s) re-based by hand</div></div>
+            </div>
+            {pending === 0 && settled.length === 0 ? (
+              <EmptyState icon={<Users size={22} strokeWidth={1.75} />} title="No split needs Palmera" body="When a group booking's shares stop covering the bill, or a guest-share refund fails at the processor, it shows here." />
+            ) : (
+              <div className="pf-glass" style={{ ...glass, padding: '6px 16px', marginBottom: '8px' }}>
+                {short.map((s, i) => (
+                  <div key={s.b.id} style={{ padding: '11px 0', borderTop: i > 0 ? '1px solid var(--pf-border)' : 'none' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                      <span style={{ minWidth: 0, flex: '1 1 16rem' }}>
+                        {rowTitle(s.b)}
+                        <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-faint)' }}>
+                          host {handleOf(s.b.customerId) || s.b.customerName || 'guest'} · {s.b.status} · {formatDate(s.b.scheduledFor)} · {splitReasonLabel(s.reason)}{s.leaver ? ` (${handleOf(s.leaver) || 'guest'})` : ''}{s.at ? ` · ${formatDate(s.at)}` : ''}
+                        </span>
+                        <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-muted)', display: 'block' }}>
+                          bill {fmt(s.total)} · held {s.held === null ? 'unknown' : fmt(s.held)} · payout on paper {fmt(s.b.payoutAmount)} → suggested {fmt(s.suggestedPayout)} at {Math.round((s.b.commissionRate || 0) * 1000) / 10}%
+                        </span>
+                      </span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <Chip tone="alert">Not fully covered</Chip>
+                        <Money amount={fmt(s.uncovered ?? 0)} size={18} />
+                        {adjFor !== s.b.id && <button onClick={() => openSettle(s.b.id!, s.suggestedPayout)} className="pf-cap pf-cap-ghost" style={{ padding: '7px 12px', border: '1px solid var(--pf-border-strong)', background: 'transparent', color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '11px', cursor: 'pointer' }}>Settle payout…</button>}
+                      </span>
+                    </div>
+                    {adjFor === s.b.id && form(() => settle(s.b.id!, s.b.commissionRate || 0), `Confirm payout ${fmt(Number(adjPayout) || 0)} XOF`, true)}
+                  </div>
+                ))}
+                {copays.map((c, i) => (
+                  <div key={`${c.b.id}:${c.uid}`} style={{ padding: '11px 0', borderTop: i > 0 || short.length ? '1px solid var(--pf-border)' : 'none' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                      <span style={{ minWidth: 0, flex: '1 1 16rem' }}>
+                        {rowTitle(c.b)}
+                        <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-faint)' }}>
+                          guest share of {handleOf(c.uid) || 'guest'} · host {handleOf(c.b.customerId) || c.b.customerName || 'guest'} · {c.b.status} · {formatDate(c.b.scheduledFor)} · {refundSummary(c.b, 'en').copays.find((x) => x.uid === c.uid)?.method || 'mobile money'}
+                        </span>
+                      </span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <Chip tone="alert">Refund needs Palmera</Chip>
+                        <Money amount={fmt(c.amount)} size={18} />
+                        {adjFor !== `${c.b.id}:${c.uid}` && <button onClick={() => openSettle(`${c.b.id}:${c.uid}`, 0)} className="pf-cap pf-cap-ghost" style={{ padding: '7px 12px', border: '1px solid var(--pf-border-strong)', background: 'transparent', color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '11px', cursor: 'pointer' }}>Refunded by hand…</button>}
+                      </span>
+                    </div>
+                    {adjFor === `${c.b.id}:${c.uid}` && form(() => closeCopay(c.b.id!, c.uid), `Confirm ${fmt(c.amount)} XOF sent`, false)}
+                  </div>
+                ))}
+                {settled.slice(0, 20).map((b, i) => {
+                  const st = b.payoutAdjustment!.settled!
+                  return (
+                    <div key={`settled:${b.id}`} style={{ padding: '11px 0', borderTop: i > 0 || pending ? '1px solid var(--pf-border)' : 'none', opacity: 0.8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                        <span style={{ minWidth: 0, flex: '1 1 16rem' }}>
+                          {rowTitle(b)}
+                          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', color: 'var(--pf-faint)' }}>settled {formatDate(st.at)} by {st.by}{st.note ? ` · ${st.note}` : ''} · bill {fmt(b.payoutAdjustment!.bookingTotal)}</span>
+                        </span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <Chip tone="green">Settled</Chip>
+                          <Money amount={fmt(st.payoutXof)} size={18} />
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </Disclosure>
+        )
+      })()}
 
       {/* Cancellations & refunds — what happened to the money on every paid
           booking that was cancelled or declined. The app refunds Stripe at

@@ -20,15 +20,16 @@ app-side change.
 | Month revenue / avg booking / top experience | — | Home "How you are doing", Earnings |
 | Pending / upcoming counts | — | Home tiles, Home performance block, Reservations filters |
 
-## Admin — target: five tabs
+## Admin — target: five tabs (six since 2026-11-03: + Messages)
 
 | Tab | Holds | Comes from |
 | --- | --- | --- |
 | **Overview** | today & this week: signups, bookings by status, GMV + commission month, needs attention, activity feed, **mail health** (last 24h sent/failed → Emails) | Overview as is, minus nothing; Emails demoted from the nav to a link here |
-| **Money** | the four money tiles, commission by month, revenue by **app category** and **by city**, completion, payout readiness, cancellations & refunds, **marketplace money** (collected / commission / owed / due → Suppliers), all bookings explorer | Money + the five tiles from Suppliers › Orders & money |
+| **Money** | the four money tiles, commission by month, revenue by **app category** and **by city**, completion, payout readiness, **split payments** (shares that stopped covering the bill → settle the partner payout; guest-share refunds to send by hand), cancellations & refunds, **marketplace money** (collected / commission / owed / due → Suppliers), all bookings explorer | Money + the five tiles from Suppliers › Orders & money |
 | **Partners** | Businesses (directory) and Suppliers as two sub-tabs | Directory + Suppliers |
 | **Catalogue** | Featured tonight, categories re-filing, every live listing in one table (status, city, company, pair) | Categories + Featured panel moved out of App growth |
 | **Members** | signups, engagement, points economy, funnel, users by city, social graph, top earners, members list | App growth renamed; no Featured panel |
+| **Messages** (added 2026-11-03) | the support inbox: every member who wrote to Palmera from the app, the thread, reply (push to the member), open/close; unread count on the nav item | Samson's `supportInbox` / `supportThread` / `supportReply` / `supportStatus` endpoints (Part 5); Jordan's ask that the in-app support icon lands on a dashboard tab |
 
 Rules: a number is computed in one place and linked to from the others;
 "Revenue by category" uses the app taxonomy (`mainCategory` of the booked

@@ -115,6 +115,9 @@ export function formatDate(ts: unknown): string {
   if (!ts) return '—'
   const sec = (ts as { seconds?: number })?.seconds
   if (sec) return new Date(sec * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-  if (typeof ts === 'string') return new Date(ts).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+  if (typeof ts === 'string' || typeof ts === 'number' || ts instanceof Date) {
+    const d = new Date(ts)
+    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+  }
   return '—'
 }

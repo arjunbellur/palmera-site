@@ -17,6 +17,8 @@ import type { AppProfile, AppDoc, Booking, Provider, Company } from '@/lib/schem
 import { Sparkles, CalendarDays, Camera, Star, Users, TrendingUp, CalendarRange, Gem, Clock, Check } from 'lucide-react'
 import { formatAmount } from '@/lib/money'
 import { useSWRLite } from '@/lib/swr-lite'
+import { useSupportUnread } from '@/lib/support'
+import { shortSplits, copayManualRefunds } from '@/lib/splits'
 import { auth } from '@/lib/firebase'
 
 const fmtXof = formatAmount
@@ -132,6 +134,9 @@ export default function AdminOverview() {
   // ── Pending actions ──
   const dayAgo = new Date(Date.now() - 24 * 3600 * 1000)
   const stalePending = bookings.filter((b) => { const d = docDate(b); return b.status === 'pending' && d !== null && d < dayAgo })
+  const shortSplitCount = shortSplits(bookings).length
+  const copayManualCount = copayManualRefunds(bookings).length
+  const supportUnread = useSupportUnread()
   const unsigned = providers.filter((p) => !p.signoff).length
   const incompleteCompanies = companies.filter((c) => !c.name || !c.heroPhoto || !c.logo)
   // Mail health (last 24h) — the Emails page is reached from here now.
@@ -150,6 +155,9 @@ export default function AdminOverview() {
     ...(unsigned > 0 ? [{ text: `${unsigned} partner(s) haven't signed the agreement`, href: '/admin/directory?agreement=unsigned' }] : []),
     ...((uncountersigned ?? 0) > 0 ? [{ text: `${uncountersigned} signed agreement(s) awaiting your countersignature`, href: '/admin/directory?agreement=signed' }] : []),
     ...(incompleteCompanies.length > 0 ? [{ text: `${incompleteCompanies.length} company profile(s) missing name or photos`, href: '/admin/directory' }] : []),
+    ...(shortSplitCount > 0 ? [{ text: `${shortSplitCount} group booking(s) not fully covered after a guest left — settle the partner payout`, href: '/admin/money' }] : []),
+    ...(copayManualCount > 0 ? [{ text: `${copayManualCount} guest-share refund(s) the processor rejected — send by hand`, href: '/admin/money' }] : []),
+    ...(supportUnread > 0 ? [{ text: `${supportUnread} support message(s) waiting for a reply`, href: '/admin/messages' }] : []),
   ]
 
   if (loading) return (

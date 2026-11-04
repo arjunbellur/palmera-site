@@ -87,6 +87,36 @@ time-based mails (12h partner reminder, member day-before reminder).
 Every dashboard change that touches documents/rules/indexes the app consumes
 gets a line here, newest first. Pure-UI dashboard changes are never listed.
 
+- 2026-11-03 ⚠ **Split-payment flags now handled on the dashboard; four
+  dashboard-written fields on `bookings`** (Samson's ask, group chat
+  2026-11-03 05:09Z). Money › "Split payments" reads the Part 5 flags
+  `payoutAdjustmentNeeded` / `payoutAdjustment` (held vs bill after a
+  co-payer was refunded or dropped) and `refundNeedsReview` /
+  `copayRefunds[uid] == 'manual_review'`. When an admin deals with one by
+  hand the dashboard writes, additively:
+  - **Settle payout** → `payoutAdjustmentNeeded: false`,
+    `payoutAdjustment.settled {by, note, at, payoutXof}`, and re-bases
+    **`payoutAmount` + `commissionAmount`** on the money actually held
+    (payout = held − commission at the booking's rate; the admin can
+    override the amount). `bookingTotal` and `status` are never touched.
+    Your Audit B1 re-check (`!cur.payoutAdjustmentNeeded` in
+    applyCopayShare) will re-flag if the split shrinks again — intended.
+  - **Guest-share refund sent by hand** → `copayRefunds[uid] = 'refunded'`,
+    `copayRefundManual[uid] {by, note, at}`, `refundNeedsReview` = whether
+    any other share is still `manual_review`. The split is NOT rolled back
+    by the dashboard (`copayPayments[uid]`, `paidCount`, `payersCount`,
+    ledger untouched) — if the app should treat a hand-refunded co-payer as
+    out of the split, that stays server-side.
+  Partners see a "Not fully covered · X XOF" chip and a drawer row on the
+  reservation; nothing app-facing changes.
+- 2026-11-03 **Dashboard "Messages" tab consumes the support inbox
+  endpoints** (`functions/SUPPORT_INBOX_CONTRACT.md`, p5/backend):
+  `supportInbox` (polled every 30 s while the tab is open; every 60 s for the
+  nav badge), `supportThread`, `supportReply`, `supportStatus`, with the
+  admin's ID token. The dashboard never reads `support_messages` /
+  `support_threads` directly, so no rules or indexes change. Base URL is
+  `NEXT_PUBLIC_FUNCTIONS_BASE`, else `us-central1-<project>`.
+
 - 2026-10-25 ⚠ **Category backfill ready — NOT yet run on production
   (phase 2 of `docs/app-parity-plan-2026-10.md`).** Heads-up for the app
   side before it runs:

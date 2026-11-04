@@ -571,6 +571,31 @@ export const markRefundedManually = async (bookingId: string, adminEmail: string
   })
 }
 
+/** Split payment came up short (a co-payer was refunded or dropped after the
+ *  rest had paid): the app flags the booking and leaves the partner's payout
+ *  to be settled by hand. Records how, and re-bases the booking's payout on
+ *  the money actually held so Earnings and payout readiness stop owing the
+ *  full amount. `bookingTotal` is left alone — it is what the guests see. */
+export const settlePayoutAdjustment = async (bookingId: string, adminEmail: string, note: string, payoutXof: number, commissionXof: number) => {
+  await updateDoc(doc(db, COLLECTIONS.bookings, bookingId), {
+    payoutAdjustmentNeeded: false,
+    'payoutAdjustment.settled': { by: adminEmail, note: note.slice(0, 200), at: new Date(), payoutXof: Math.round(payoutXof) },
+    payoutAmount: Math.round(payoutXof),
+    commissionAmount: Math.round(commissionXof),
+    updatedAt: serverTimestamp(),
+  })
+}
+
+/** A co-payer's refund the processor rejected, sent by Palmera by hand. */
+export const markCopayRefundedManually = async (bookingId: string, uid: string, adminEmail: string, note: string, stillPending: boolean) => {
+  await updateDoc(doc(db, COLLECTIONS.bookings, bookingId), {
+    [`copayRefunds.${uid}`]: 'refunded',
+    [`copayRefundManual.${uid}`]: { by: adminEmail, note: note.slice(0, 200), at: new Date() },
+    refundNeedsReview: stillPending,
+    updatedAt: serverTimestamp(),
+  })
+}
+
 export const setBookingStatus = async (id: string, status: 'confirmed' | 'declined' | 'no_show' | 'completed') => {
   await updateDoc(doc(db, COLLECTIONS.bookings, id), {
     status,
