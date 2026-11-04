@@ -34,6 +34,7 @@ import { renderBookingEmail, type BookingCtx } from '@/lib/email-templates'
 import {
   bearerMatches, isRealBooking, isUnpaidCheckoutStub, logIsTerminal,
   memberAddress, memberMailAllowed, partnerAddress, partnerOptedOut,
+  memberLang, partnerLang,
 } from '@/lib/notify'
 
 export const dynamic = 'force-dynamic'
@@ -90,11 +91,15 @@ export async function POST(req: NextRequest) {
     const all = [...bookings, ...tomorrow]
     const providerIds = [...new Set(all.map(x => x.b.providerId as string))]
     const companyIds = [...new Set(all.map(x => x.b.companyId as string).filter(Boolean))]
-    const [logSnaps, provSnaps, coSnaps] = await Promise.all([
+    // Member reminders go out in the member's app language (profiles/{uid}).
+    const memberIds = [...new Set(tomorrow.map(x => String(x.b.customerId || '')).filter(Boolean))]
+    const [logSnaps, provSnaps, coSnaps, profSnaps] = await Promise.all([
       getAll(logIds.map(id => db.collection('email_log').doc(id))),
       getAll(providerIds.map(id => db.collection('providers').doc(id))),
       getAll(companyIds.map(id => db.collection('companies').doc(id))),
+      getAll(memberIds.map(id => db.collection('profiles').doc(id))),
     ])
+    const profiles = new Map(profSnaps.filter(s => s.exists).map(s => [s.id, s.data() as Doc]))
     const logs = new Map(logSnaps.filter(s => s.exists).map(s => [s.id, s.data() as Doc]))
     const providers = new Map(provSnaps.filter(s => s.exists).map(s => [s.id, s.data() as Doc]))
     const companies = new Map(coSnaps.filter(s => s.exists).map(s => [s.id, s.data() as Doc]))
@@ -110,7 +115,10 @@ export async function POST(req: NextRequest) {
     // set+merge, not update: a booking the app deleted mid-run must not sink
     // the whole batch (and every log row in it).
     const stamp = (id: string, key: string) => { if (!dry) { batch.set(db.collection('bookings').doc(id), { notified: { [key]: FieldValue.serverTimestamp() } }, { merge: true }); writes++ } }
-    const ctxOf = (id: string, b: Doc): BookingCtx => ({ id, b, companyName: companies.get(b.companyId)?.name || b.provider || 'votre établissement' })
+    const ctxOf = (id: string, b: Doc, recipient: 'partner' | 'member' = 'partner'): BookingCtx => ({
+      id, b, companyName: companies.get(b.companyId)?.name || b.provider || 'votre établissement',
+      lang: recipient === 'partner' ? partnerLang(providers.get(b.providerId)) : memberLang(profiles.get(String(b.customerId || '')), undefined),
+    })
     /** Pass 1 already happened for this booking, by either path. */
     const partnerNotified = (id: string, b: Doc) =>
       logIsTerminal(logs.get(id)) || logIsTerminal(logs.get(`${id}_created_partner`)) || !!b.notified?.created_partner
@@ -198,7 +206,7 @@ export async function POST(req: NextRequest) {
       // One bad send must never 500 the run (that would re-fail every tick
       // and starve the partner passes). Record it on the slot — retryable.
       try {
-        if (!dry) await sendEmail({ to, ...renderBookingEmail('member_reminder_24h', ctxOf(id, b)) })
+        if (!dry) await sendEmail({ to, ...renderBookingEmail('member_reminder_24h', ctxOf(id, b, 'member')) })
       } catch (e) {
         const reason = (e instanceof Error ? e.message : String(e)).slice(0, 200)
         console.error('member reminder failed', id, reason)

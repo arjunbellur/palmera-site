@@ -13,6 +13,10 @@
 //
 //   POST /api/notify/event          Authorization: Bearer <NOTIFY_SECRET>
 //   POST /api/notify/event?dry=1    decide + render, send and write nothing
+//
+// Body: { bookingId, event, lang?, uid? } — `lang` is the member's app
+// language (the mail is written in it), `uid` the guest for
+// 'attendee_joined'. Partners get their Settings → Notifications language.
 import { NextRequest, NextResponse } from 'next/server'
 import { FieldValue } from 'firebase-admin/firestore'
 import { adminDb } from '@/lib/firebase-admin'
@@ -21,13 +25,13 @@ import { renderBookingEmail, maskEmail, type BookingEmailKind, type BookingCtx }
 import {
   NOTIFY_EVENTS, type NotifyEvent,
   bearerMatches, isRealBooking, isUnpaidCheckoutStub, logIsTerminal,
-  memberAddress, memberMailAllowed, partnerAddress, partnerOptedOut,
+  memberAddress, memberMailAllowed, partnerAddress, partnerOptedOut, memberLang, partnerLang,
 } from '@/lib/notify'
 
 export const dynamic = 'force-dynamic'
 
 type Doc = FirebaseFirestore.DocumentData
-type Recipient = 'partner' | 'member'
+type Recipient = 'partner' | 'member' | 'attendee'
 
 interface Job { recipient: Recipient; kind: BookingEmailKind }
 interface Result { recipient: Recipient; kind: BookingEmailKind; to?: string; sent?: boolean; skipped?: string; failed?: string }
@@ -63,7 +67,28 @@ function jobsFor(event: NotifyEvent, b: Doc): { jobs: Job[]; skipped?: string } 
       if (b.payment?.status !== 'completed') return { jobs: [], skipped: 'payment not completed' }
       if (b.status !== 'pending') return { jobs: [], skipped: `status is ${b.status}` }
       return { jobs: [{ recipient: 'member', kind: 'member_payment_received' }] }
+    case 'attendee_joined':
+      // A guest joined a live booking; the host's booking must itself be
+      // mailable (paid, or a free reservation) before any guest hears of it.
+      if (b.status !== 'pending' && b.status !== 'confirmed') return { jobs: [], skipped: `status is ${b.status}` }
+      return { jobs: [{ recipient: 'attendee', kind: 'member_attendee_joined' }] }
   }
+}
+
+/** The guest really is on this booking's roster, per the invites the app
+ *  keeps: an invitation from the host they accepted, or a join request the
+ *  host accepted. Trusting the uid alone would let a replayed call mail
+ *  anyone. */
+async function attendeeOnRoster(db: FirebaseFirestore.Firestore, bookingId: string, b: Doc, uid: string): Promise<boolean> {
+  const host = String(b.customerId || '')
+  if (!host || uid === host) return false
+  const inv = db.collection('invites').where('bookingId', '==', bookingId).where('status', '==', 'accepted')
+  const [asInvitee, asRequester] = await Promise.all([
+    inv.where('inviteeId', '==', uid).limit(5).get(),
+    inv.where('inviterId', '==', uid).limit(5).get(),
+  ])
+  if (asInvitee.docs.some(d => String(d.data().inviterId || '') === host && d.data().type !== 'share')) return true
+  return asRequester.docs.some(d => d.data().type === 'join_request' && String(d.data().inviteeId || '') === host)
 }
 
 export async function POST(req: NextRequest) {
@@ -71,10 +96,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
   const dry = req.nextUrl.searchParams.get('dry') === '1'
-  const body = await req.json().catch(() => null) as { bookingId?: unknown; event?: unknown } | null
+  const body = await req.json().catch(() => null) as { bookingId?: unknown; event?: unknown; lang?: unknown; uid?: unknown } | null
   const bookingId = typeof body?.bookingId === 'string' && /^[A-Za-z0-9_-]{4,128}$/.test(body.bookingId) ? body.bookingId : null
   const event = (NOTIFY_EVENTS as readonly string[]).includes(String(body?.event)) ? body!.event as NotifyEvent : null
   if (!bookingId || !event) return NextResponse.json({ ok: false, error: 'bad request: { bookingId, event } required' }, { status: 400 })
+  const requestedLang = typeof body?.lang === 'string' ? body.lang : undefined
+  const attendeeUid = typeof body?.uid === 'string' && /^[A-Za-z0-9_-]{4,128}$/.test(body.uid) ? body.uid : null
+  if (event === 'attendee_joined' && !attendeeUid) return NextResponse.json({ ok: false, error: 'bad request: attendee_joined needs { uid }' }, { status: 400 })
 
   try {
     const db = adminDb()
@@ -87,21 +115,44 @@ export async function POST(req: NextRequest) {
     const { jobs, skipped } = jobsFor(event, b)
     if (jobs.length === 0) return NextResponse.json({ ok: true, dry, bookingId, event, skipped })
 
-    const logRef = (recipient: Recipient) => db.collection('email_log').doc(`${bookingId}_${event}_${recipient}`)
-    const [provSnap, coSnap, ...logSnaps] = await db.getAll(
+    // One log slot per (booking, event, recipient); a guest's slot carries their uid.
+    const slot = (recipient: Recipient) => recipient === 'attendee' ? `attendee_${attendeeUid}` : recipient
+    const logRef = (recipient: Recipient) => db.collection('email_log').doc(`${bookingId}_${event}_${slot(recipient)}`)
+    const [provSnap, coSnap, hostSnap, guestSnap, ...logSnaps] = await db.getAll(
       db.collection('providers').doc(String(b.providerId)),
       db.collection('companies').doc(String(b.companyId || '_')),
+      db.collection('profiles').doc(String(b.customerId || '_')),
+      db.collection('profiles').doc(attendeeUid || '_'),
       ...jobs.map(j => logRef(j.recipient)),
     )
     const provider = provSnap.exists ? provSnap.data() : undefined
     const company = coSnap.exists ? coSnap.data() : undefined
-    const ctx: BookingCtx = { id: bookingId, b, companyName: company?.name || b.provider || 'votre établissement' }
+    const hostProfile = hostSnap.exists ? hostSnap.data() : undefined
+    const guestProfile = guestSnap.exists ? guestSnap.data() : undefined
+    const companyName = company?.name || b.provider || 'votre établissement'
+    // Each recipient reads the mail in their own language.
+    const ctxFor = (recipient: Recipient): BookingCtx => ({
+      id: bookingId, b, companyName,
+      lang: recipient === 'partner' ? partnerLang(provider) : recipient === 'member' ? memberLang(hostProfile, requestedLang) : memberLang(guestProfile, requestedLang),
+      hostName: hostProfile?.name || b.customerName || undefined,
+      attendeeName: guestProfile?.name || undefined,
+    })
 
     const results: Result[] = []
     const stamps: Record<string, FieldValue> = {}  // nested under `notified`
     const log = async (recipient: Recipient, data: Doc) => {
       if (dry) return
-      await logRef(recipient).set({ ...data, event, bookingId, title: b.title ?? null, party: `${b.customerId}__${b.experienceId}__${b.scheduledFor?.toMillis?.() ?? ''}`, sentAt: new Date() })
+      await logRef(recipient).set({ ...data, event, bookingId, title: b.title ?? null, party: `${b.customerId}__${b.experienceId}__${b.scheduledFor?.toMillis?.() ?? ''}`, sentAt: new Date(), ...(recipient === 'attendee' ? { uid: attendeeUid } : {}) })
+    }
+    /** A guest's address: the verified sign-in email first, the profile's second. */
+    const attendeeAddress = async (): Promise<string | null> => {
+      let to = ''
+      try {
+        const { getAuth } = await import('firebase-admin/auth')
+        to = String((await getAuth().getUser(attendeeUid!)).email || '')
+      } catch { /* no auth user, or auth unavailable — fall through */ }
+      if (!to) to = String(guestProfile?.email || '')
+      return to.includes('@') ? to.trim() : null
     }
 
     for (const [i, job] of jobs.entries()) {
@@ -116,6 +167,17 @@ export async function POST(req: NextRequest) {
         }
         to = partnerAddress(provider, company)
         if (!to) { await log('partner', { kind: 'skipped', reason: 'no partner email' }); results.push({ ...job, skipped: 'provider and company have no email' }); continue }
+      } else if (job.recipient === 'attendee') {
+        if (!memberMailAllowed(b)) {
+          await log('attendee', { kind: 'skipped', reason: 'host booking unpaid and not a reservation' })
+          results.push({ ...job, skipped: 'guest mail only when the host booking is paid or a free reservation' }); continue
+        }
+        if (!(await attendeeOnRoster(db, bookingId, b, attendeeUid!))) {
+          await log('attendee', { kind: 'skipped', reason: 'not on the roster' })
+          results.push({ ...job, skipped: 'no accepted invite for this guest on this booking' }); continue
+        }
+        to = await attendeeAddress()
+        if (!to) { await log('attendee', { kind: 'skipped', reason: 'no guest email' }); results.push({ ...job, skipped: 'guest has no email' }); continue }
       } else {
         if (!memberMailAllowed(b)) {
           await log('member', { kind: 'skipped', reason: 'unpaid and not a reservation' })
@@ -125,7 +187,7 @@ export async function POST(req: NextRequest) {
         if (!to) { await log('member', { kind: 'skipped', reason: 'no member email' }); results.push({ ...job, skipped: 'booking has no customer email' }); continue }
       }
 
-      const { subject, html } = renderBookingEmail(job.kind, ctx)
+      const { subject, html } = renderBookingEmail(job.kind, ctxFor(job.recipient))
       try {
         if (!dry) await sendEmail({ to, subject, html })
       } catch (e) {
@@ -135,7 +197,7 @@ export async function POST(req: NextRequest) {
         results.push({ ...job, to: maskEmail(to), failed: reason }); continue
       }
       await log(job.recipient, { kind: job.kind, to })
-      stamps[`${event}_${job.recipient}`] = FieldValue.serverTimestamp()
+      stamps[`${event}_${slot(job.recipient)}`] = FieldValue.serverTimestamp()
       results.push({ ...job, to: maskEmail(to), sent: true })
     }
 

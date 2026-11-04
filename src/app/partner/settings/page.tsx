@@ -628,6 +628,26 @@ export default function SettingsScreen() {
       <SectionTitle>{L('np_title')}</SectionTitle>
       <div className="pf-glass" style={cardShape}>
         <p style={{ ...bodyText, fontSize: '0.75rem', margin: '0 0 6px' }}>{L('np_hint')}</p>
+        {/* Language of the emails — independent of the dashboard's display language. */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px', padding: '10px 0', borderBottom: '1px solid var(--pf-border)', marginBottom: '2px' }}>
+          <span style={{ minWidth: 0 }}>
+            <span style={eyebrow}>{L('np_lang')}</span>
+            <span style={{ ...bodyText, fontSize: '0.72rem', display: 'block', marginTop: '3px' }}>{L('np_lang_hint')}</span>
+          </span>
+          <div role="radiogroup" aria-label={L('np_lang')} style={{ display: 'flex', border: '1px solid var(--pf-border-strong)', borderRadius: '999px', overflow: 'hidden', flexShrink: 0 }}>
+            {(['fr', 'en'] as const).map((l) => {
+              const chosen = (provider?.notificationPrefs?.lang ?? 'fr') === l
+              return (
+                <button key={l} role="radio" aria-checked={chosen} onClick={async () => {
+                  await updateProvider(uid, { notificationPrefs: { ...(provider?.notificationPrefs || {}), lang: l } })
+                  await refresh()
+                }} style={{ padding: '7px 14px', minWidth: '58px', border: 'none', background: chosen ? 'var(--pf-gold-deep)' : 'transparent', color: chosen ? '#ebe8db' : 'var(--pf-faint)', fontFamily: 'var(--font-sans)', fontSize: '11px', letterSpacing: '0.06em', cursor: 'pointer' }}>
+                  {l === 'fr' ? 'Français' : 'English'}
+                </button>
+              )
+            })}
+          </div>
+        </div>
         {(['bookings', 'payouts', 'marketing'] as const).map((k, i) => {
           const on = provider?.notificationPrefs?.[k] ?? true
           return (

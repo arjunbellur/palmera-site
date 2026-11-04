@@ -12,8 +12,12 @@ POST {BASE}/api/notify/event
 Authorization: Bearer <NOTIFY_SECRET>
 Content-Type: application/json
 
-{ "bookingId": "<bookings/{id}>", "event": "<event>" }
+{ "bookingId": "<bookings/{id}>", "event": "<event>", "lang": "fr" | "en", "uid": "<guest uid, attendee_joined only>" }
 ```
+
+`lang` (optional) is the recipient's saved app language — the member's for
+member events, the guest's for `attendee_joined` — and the mail is written
+in it. `uid` is required for `attendee_joined`, ignored otherwise.
 
 | Environment | BASE | Secret |
 | --- | --- | --- |
@@ -38,10 +42,26 @@ as it is now, so a late or replayed call is harmless.
 | `cancelled` | `status` → cancelled | partner: cancelled by member · member: cancelled (+ refund line when paid) |
 | `refunded` | `payment.refundState` → `refunded` (or `payment.status` → `refunded`) | partner: refund issued |
 | `payment_received` | `payment.status` → `completed` while `status` is still `pending` | member: payment received, awaiting the partner (replaces the in-app "Confirmation sent" claim) |
+| `attendee_joined` (2026-11-03, from `onInviteUpdated`) | an invitation the host sent flips to `accepted`, or the host accepts a `join_request` — only when `bookingId` is a real server booking the host owns; body carries `uid` = the guest | guest: "You're on the list" — the plan and where their ticket is. The route re-checks `invites` (accepted, from/for the host), requires the host booking to be paid or a free reservation, takes the address from Auth (profile `email` fallback). Slot `email_log/{bookingId}_attendee_joined_attendee_{uid}` |
 
 Not events (the dashboard handles them on its schedule): the 12h partner
 reminder, the member day-before reminder. Do not post for `completed` or
 `no_show`.
+
+## Language (2026-11-03)
+
+Every booking mail is written in one language, the recipient's:
+
+- **Members and guests**: `profiles/{uid}.notificationLang` (`'fr'|'en'`) if
+  the app ever lets a member choose one separately; else the `lang` posted
+  with the event (the member's saved app language — `userLang()` on the
+  functions side); else the profile's app-language fields (`lang`,
+  `language`, `app_language`, `appLanguage`, `locale`); else French.
+- **Partners**: `providers/{uid}.notificationPrefs.lang`, chosen in the
+  dashboard under Settings → Notifications → Email language; French until
+  they choose.
+
+Before this the mails were French with a short English line at the bottom.
 
 Member mails are only sent when `payment.status === 'completed'` or
 `mode === 'reservation'` — the address on the booking is client-writable, so
@@ -85,12 +105,12 @@ const BASE = process.env.DASHBOARD_BASE_URL || 'https://www.palmeraexp.com'
 
 /** Report one booking transition to the dashboard mailer. Never throws:
  *  a mail problem must not fail the trigger that detected the change. */
-async function notifyDashboard(bookingId, event) {
+async function notifyDashboard(bookingId, event, lang, extra) {
   try {
     const res = await fetch(`${BASE}/api/notify/event`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${NOTIFY_SECRET.value()}` },
-      body: JSON.stringify({ bookingId, event }),
+      body: JSON.stringify({ bookingId, event, ...(lang ? { lang } : {}), ...(extra?.uid ? { uid: String(extra.uid) } : {}) }),
       signal: AbortSignal.timeout(10_000),
     })
     const data = await res.json().catch(() => ({}))
@@ -110,6 +130,9 @@ async function notifyDashboard(bookingId, event) {
 //   if (before.status !== 'cancelled' && after.status === 'cancelled') await notifyDashboard(id, 'cancelled')
 //   if (before.payment?.refundState !== 'refunded' && after.payment?.refundState === 'refunded') await notifyDashboard(id, 'refunded')
 //   if (before.payment?.status !== 'completed' && after.payment?.status === 'completed' && after.status === 'pending') await notifyDashboard(id, 'payment_received')
+// In onInviteUpdated (add NOTIFY_SECRET to its `secrets: [...]`), once the booking is known to be the host's:
+//   invitation accepted   → await notifyDashboard(bookingId, 'attendee_joined', await userLang(inviteeId), { uid: inviteeId })
+//   join request accepted → await notifyDashboard(bookingId, 'attendee_joined', await userLang(requester), { uid: requester })
 module.exports = { notifyDashboard, NOTIFY_SECRET }
 ```
 

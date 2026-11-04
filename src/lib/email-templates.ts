@@ -1,8 +1,10 @@
 // Every transactional email the dashboard sends, as pure render functions:
 // `{ subject, html }` from a booking (or payout / invite) document. No I/O,
 // no secrets — the notify routes pick a template, send through Resend and
-// write `email_log`. FR first with a short EN line at the bottom, the same
-// shape as the partner mails that have been live since August.
+// write `email_log`. Booking mails render in the recipient's language
+// (`BookingCtx.lang`, French by default): the member's app language, or the
+// partner's Settings → Notifications choice. The dashboard-originated mails
+// below are still French with a short English line.
 //
 // Everything interpolated from a client-written field goes through `esc`
 // (bodies) or `subj` (subject lines): the app lets any member write
@@ -32,15 +34,29 @@ const toDate = (v: unknown): Date | undefined => {
   const t = v as { toDate?: () => Date }
   return typeof t.toDate === 'function' ? t.toDate() : undefined
 }
-const FR_DATE: Intl.DateTimeFormatOptions = { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }
-export const whenFr = (b: BookingDoc) => {
-  const d = toDate(b.scheduledFor)
-  return d ? d.toLocaleDateString('fr-FR', FR_DATE) : '—'
+
+/** The language a mail is written in. Members: their app language (the app
+ *  posts it with the event; `profiles.notificationLang` overrides). Partners:
+ *  `providers.notificationPrefs.lang`, set in Settings → Notifications.
+ *  Senegal default: French. */
+export type MailLang = 'fr' | 'en'
+export const asMailLang = (v: unknown, fallback: MailLang = 'fr'): MailLang => {
+  const s = String(v ?? '').toLowerCase()
+  return s.startsWith('en') ? 'en' : s.startsWith('fr') ? 'fr' : fallback
 }
+const LOCALE: Record<MailLang, string> = { fr: 'fr-FR', en: 'en-GB' }
+const WHEN: Intl.DateTimeFormatOptions = { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }
+export const whenIn = (b: BookingDoc, lang: MailLang) => {
+  const d = toDate(b.scheduledFor)
+  return d ? d.toLocaleDateString(LOCALE[lang], WHEN) : '—'
+}
+export const whenFr = (b: BookingDoc) => whenIn(b, 'fr')
 const dayFr = (v: unknown) => {
   const d = toDate(v)
   return d ? d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'
 }
+/** Pick the sentence for the mail's language. */
+const T = (lang: MailLang, fr: string, en: string) => (lang === 'fr' ? fr : en)
 
 export const row = (label: string, value: string) =>
   `<tr><td style="padding:6px 14px 6px 0;color:#8a8577;font-size:13px">${label}</td><td style="padding:6px 0;color:#2a2119;font-size:14px"><strong>${value}</strong></td></tr>`
@@ -70,133 +86,188 @@ export interface BookingCtx {
   b: BookingDoc
   /** companies/{companyId}.name, falling back to the frozen `provider`. */
   companyName: string
+  /** The recipient's language. Absent = French (how every mail read before
+   *  2026-11-03, minus the small English line at the bottom). */
+  lang?: MailLang
+  /** Attendee mails: the guest who joined, and the host who added them. */
+  attendeeName?: string
+  hostName?: string
 }
+const langOf = (ctx: BookingCtx): MailLang => ctx.lang ?? 'fr'
 
 const detailsTable = (ctx: BookingCtx, opts: { withCompany?: boolean; withRef?: boolean; withPayment?: boolean } = {}) => {
   const { b } = ctx
+  const l = langOf(ctx)
   const payment = opts.withPayment && (b.payment || b.mode === 'reservation')
-    ? row('Paiement', esc(bookingPaymentLabel(b as Pick<Booking, 'mode' | 'payment' | 'paidCount' | 'payersCount'>, 'fr')))
+    ? row(T(l, 'Paiement', 'Payment'), esc(bookingPaymentLabel(b as Pick<Booking, 'mode' | 'payment' | 'paidCount' | 'payersCount'>, l)))
     : ''
   return `<table style="border-collapse:collapse">
-    ${row('Expérience', esc(b.title || '—'))}
-    ${opts.withCompany ? row('Chez', esc(ctx.companyName)) : row('Client', esc(b.customerName || '—'))}
-    ${row('Date', esc(whenFr(b)))}
-    ${row('Personnes', esc(b.guestCount || 1))}
-    ${typeof b.bookingTotal === 'number' && b.bookingTotal > 0 ? row('Montant', `${fmtXof(b.bookingTotal)} XOF`) : ''}
+    ${row(T(l, 'Expérience', 'Experience'), esc(b.title || '—'))}
+    ${opts.withCompany ? row(T(l, 'Chez', 'At'), esc(ctx.companyName)) : row(T(l, 'Client', 'Guest'), esc(b.customerName || '—'))}
+    ${row('Date', esc(whenIn(b, l)))}
+    ${row(T(l, 'Personnes', 'Guests'), esc(b.guestCount || 1))}
+    ${typeof b.bookingTotal === 'number' && b.bookingTotal > 0 ? row(T(l, 'Montant', 'Amount'), `${fmtXof(b.bookingTotal)} XOF`) : ''}
     ${payment}
-    ${opts.withRef ? row('Référence', esc(ctx.id)) : ''}
+    ${opts.withRef ? row(T(l, 'Référence', 'Reference'), esc(ctx.id)) : ''}
   </table>`
 }
 
 // ── Partner ─────────────────────────────────────────────────────────────────
-// Wording unchanged from the August route — partners know these mails.
+// French wording unchanged from the August route — partners know these
+// mails; the English versions say the same thing.
 
-export const partnerNewPending = (ctx: BookingCtx): Rendered => ({
-  subject: `⏳ Nouvelle réservation à confirmer — ${subj(ctx.b.title)}`,
-  html: shell(`Palmera · ${ctx.companyName}`, 'Nouvelle réservation — action requise',
-    `${detailsTable(ctx)}
-    ${p('Cette réservation attend votre confirmation — <strong>merci de répondre sous 24 h</strong>. Sans réponse, le client risque de réserver ailleurs.')}
-    ${button(`${SITE}/partner/reservations?f=pending`, 'Répondre dans le tableau de bord')}
-    ${en('New booking awaiting your confirmation — please respond within 24h from your Palmera dashboard.')}`),
-})
+export const partnerNewPending = (ctx: BookingCtx): Rendered => {
+  const l = langOf(ctx)
+  return {
+    subject: T(l, `⏳ Nouvelle réservation à confirmer — ${subj(ctx.b.title)}`, `⏳ New booking to confirm — ${subj(ctx.b.title)}`),
+    html: shell(`Palmera · ${ctx.companyName}`, T(l, 'Nouvelle réservation — action requise', 'New booking — action required'),
+      `${detailsTable(ctx)}
+      ${p(T(l, 'Cette réservation attend votre confirmation — <strong>merci de répondre sous 24 h</strong>. Sans réponse, le client risque de réserver ailleurs.',
+                'This booking is waiting for your confirmation — <strong>please respond within 24h</strong>. Without an answer the guest may book elsewhere.'))}
+      ${button(`${SITE}/partner/reservations?f=pending`, T(l, 'Répondre dans le tableau de bord', 'Respond in the dashboard'))}`),
+  }
+}
 
-export const partnerNewConfirmed = (ctx: BookingCtx): Rendered => ({
-  subject: `✓ Nouvelle réservation confirmée — ${subj(ctx.b.title)}`,
-  html: shell(`Palmera · ${ctx.companyName}`, 'Nouvelle réservation — confirmée automatiquement',
-    `${detailsTable(ctx)}
-    ${p('Réservation instantanée — aucune action requise, elle est déjà sur votre calendrier.')}
-    ${button(`${SITE}/partner/reservations`, 'Voir dans le tableau de bord')}
-    ${en('Instant booking, auto-confirmed — no action needed; it is already on your calendar.')}`),
-})
+export const partnerNewConfirmed = (ctx: BookingCtx): Rendered => {
+  const l = langOf(ctx)
+  return {
+    subject: T(l, `✓ Nouvelle réservation confirmée — ${subj(ctx.b.title)}`, `✓ New confirmed booking — ${subj(ctx.b.title)}`),
+    html: shell(`Palmera · ${ctx.companyName}`, T(l, 'Nouvelle réservation — confirmée automatiquement', 'New booking — confirmed automatically'),
+      `${detailsTable(ctx)}
+      ${p(T(l, 'Réservation instantanée — aucune action requise, elle est déjà sur votre calendrier.',
+                'Instant booking — no action needed, it is already on your calendar.'))}
+      ${button(`${SITE}/partner/reservations`, T(l, 'Voir dans le tableau de bord', 'Open the dashboard'))}`),
+  }
+}
 
-export const partnerPendingReminder = (ctx: BookingCtx, hours: number): Rendered => ({
-  subject: `⏰ Toujours en attente — ${subj(ctx.b.title)}`,
-  html: shell('Palmera · rappel', `Une réservation attend votre réponse depuis ${hours} h`,
-    `${p(`<strong>${esc(ctx.b.title)}</strong> — ${esc(ctx.b.customerName || 'un client')} · ${esc(whenFr(ctx.b))} · ${esc(ctx.b.guestCount || 1)} pers.`)}
-    ${p('Les clients attendent une réponse sous 24 h. Sans réponse, ils risquent de réserver ailleurs.')}
-    ${button(`${SITE}/partner/reservations?f=pending`, 'Répondre maintenant')}
-    ${en(`Reminder: a booking has been awaiting your response for ${hours}h — guests expect an answer within 24h.`)}`),
-})
+export const partnerPendingReminder = (ctx: BookingCtx, hours: number): Rendered => {
+  const l = langOf(ctx)
+  return {
+    subject: T(l, `⏰ Toujours en attente — ${subj(ctx.b.title)}`, `⏰ Still waiting — ${subj(ctx.b.title)}`),
+    html: shell(T(l, 'Palmera · rappel', 'Palmera · reminder'), T(l, `Une réservation attend votre réponse depuis ${hours} h`, `A booking has been waiting on you for ${hours}h`),
+      `${p(`<strong>${esc(ctx.b.title)}</strong> — ${esc(ctx.b.customerName || T(l, 'un client', 'a guest'))} · ${esc(whenIn(ctx.b, l))} · ${esc(ctx.b.guestCount || 1)} ${T(l, 'pers.', 'guest(s)')}`)}
+      ${p(T(l, 'Les clients attendent une réponse sous 24 h. Sans réponse, ils risquent de réserver ailleurs.',
+                'Guests expect an answer within 24h. Without one they may book elsewhere.'))}
+      ${button(`${SITE}/partner/reservations?f=pending`, T(l, 'Répondre maintenant', 'Respond now'))}`),
+  }
+}
 
-export const partnerCancelledByMember = (ctx: BookingCtx): Rendered => ({
-  subject: `✕ Réservation annulée par le client — ${subj(ctx.b.title)}`,
-  html: shell(`Palmera · ${ctx.companyName}`, 'Réservation annulée par le client',
-    `${detailsTable(ctx, { withPayment: true })}
-    ${p('Le client a annulé cette réservation. Le créneau est de nouveau disponible — aucune action requise de votre part.')}
-    ${button(`${SITE}/partner/reservations`, 'Voir le calendrier')}
-    ${en('The guest cancelled this booking. The slot is free again — nothing to do on your side.')}`),
-})
+export const partnerCancelledByMember = (ctx: BookingCtx): Rendered => {
+  const l = langOf(ctx)
+  return {
+    subject: T(l, `✕ Réservation annulée par le client — ${subj(ctx.b.title)}`, `✕ Booking cancelled by the guest — ${subj(ctx.b.title)}`),
+    html: shell(`Palmera · ${ctx.companyName}`, T(l, 'Réservation annulée par le client', 'Booking cancelled by the guest'),
+      `${detailsTable(ctx, { withPayment: true })}
+      ${p(T(l, 'Le client a annulé cette réservation. Le créneau est de nouveau disponible — aucune action requise de votre part.',
+                'The guest cancelled this booking. The slot is free again — nothing to do on your side.'))}
+      ${button(`${SITE}/partner/reservations`, T(l, 'Voir le calendrier', 'Open the calendar'))}`),
+  }
+}
 
-export const partnerRefundIssued = (ctx: BookingCtx): Rendered => ({
-  subject: `↩ Remboursement effectué — ${subj(ctx.b.title)}`,
-  html: shell(`Palmera · ${ctx.companyName}`, 'Remboursement effectué au client',
-    `${detailsTable(ctx, { withPayment: true })}
-    ${p('Le paiement de cette réservation a été remboursé au client par Palmera. Le montant n’apparaîtra pas dans votre prochain versement.')}
-    ${button(`${SITE}/partner/reservations`, 'Voir dans le tableau de bord')}
-    ${en('Palmera refunded the guest for this booking; the amount will not be part of your next payout.')}`),
-})
+export const partnerRefundIssued = (ctx: BookingCtx): Rendered => {
+  const l = langOf(ctx)
+  return {
+    subject: T(l, `↩ Remboursement effectué — ${subj(ctx.b.title)}`, `↩ Refund issued — ${subj(ctx.b.title)}`),
+    html: shell(`Palmera · ${ctx.companyName}`, T(l, 'Remboursement effectué au client', 'The guest was refunded'),
+      `${detailsTable(ctx, { withPayment: true })}
+      ${p(T(l, 'Le paiement de cette réservation a été remboursé au client par Palmera. Le montant n’apparaîtra pas dans votre prochain versement.',
+                'Palmera refunded the guest for this booking. The amount will not be part of your next payout.'))}
+      ${button(`${SITE}/partner/reservations`, T(l, 'Voir dans le tableau de bord', 'Open the dashboard'))}`),
+  }
+}
 
 // ── Member ──────────────────────────────────────────────────────────────────
 // Sent only when the recipient is trustworthy: the routes gate on
 // `payment.status === 'completed'` or `mode === 'reservation'`, never on the
 // client-writable address alone.
 
-export const memberConfirmed = (ctx: BookingCtx): Rendered => ({
-  subject: `✓ Réservation confirmée — ${subj(ctx.b.title)}`,
-  html: shell('Palmera', 'Votre réservation est confirmée',
-    `${detailsTable(ctx, { withCompany: true, withRef: true, withPayment: true })}
-    ${p('Tout est prêt. Retrouvez les détails et votre billet dans l’app Palmera.')}
-    ${en('Your booking is confirmed — details and your ticket are in the Palmera app.')}`),
-})
+export const memberConfirmed = (ctx: BookingCtx): Rendered => {
+  const l = langOf(ctx)
+  return {
+    subject: T(l, `✓ Réservation confirmée — ${subj(ctx.b.title)}`, `✓ Booking confirmed — ${subj(ctx.b.title)}`),
+    html: shell('Palmera', T(l, 'Votre réservation est confirmée', 'Your booking is confirmed'),
+      `${detailsTable(ctx, { withCompany: true, withRef: true, withPayment: true })}
+      ${p(T(l, 'Tout est prêt. Retrouvez les détails et votre billet dans l’app Palmera.',
+                'All set. The details and your ticket are in the Palmera app.'))}`),
+  }
+}
 
-export const memberDeclined = (ctx: BookingCtx): Rendered => ({
-  subject: `Réservation non disponible — ${subj(ctx.b.title)}`,
-  html: shell('Palmera', 'Votre réservation n’a pas pu être acceptée',
-    `${detailsTable(ctx, { withCompany: true, withRef: true })}
-    ${p(`${esc(ctx.companyName)} n’a pas pu accepter cette réservation pour ce créneau.${ctx.b.payment?.status === 'completed' ? ' Votre paiement vous est intégralement remboursé.' : ''} Vous pouvez choisir une autre date ou une autre expérience dans l’app.`)}
-    ${en('The partner could not accept this booking for that slot. Any payment is refunded in full — pick another date or experience in the app.')}`),
-})
+export const memberDeclined = (ctx: BookingCtx): Rendered => {
+  const l = langOf(ctx)
+  const paid = ctx.b.payment?.status === 'completed'
+  return {
+    subject: T(l, `Réservation non disponible — ${subj(ctx.b.title)}`, `Booking not available — ${subj(ctx.b.title)}`),
+    html: shell('Palmera', T(l, 'Votre réservation n’a pas pu être acceptée', 'Your booking could not be accepted'),
+      `${detailsTable(ctx, { withCompany: true, withRef: true })}
+      ${p(T(l, `${esc(ctx.companyName)} n’a pas pu accepter cette réservation pour ce créneau.${paid ? ' Votre paiement vous est intégralement remboursé.' : ''} Vous pouvez choisir une autre date ou une autre expérience dans l’app.`,
+                `${esc(ctx.companyName)} could not accept this booking for that slot.${paid ? ' Your payment is refunded in full.' : ''} Pick another date or experience in the app.`))}`),
+  }
+}
 
 export const memberCancelled = (ctx: BookingCtx): Rendered => {
+  const l = langOf(ctx)
   const paid = !!ctx.b.payment && ctx.b.payment.status !== 'pending' && ctx.b.payment.status !== 'failed'
   const settled = ctx.b.payment?.refundState === 'refunded' || ctx.b.payment?.status === 'refunded'
   const refundLine = paid
     ? settled
-      ? p('Votre paiement a été remboursé. Selon votre banque ou votre opérateur, il peut apparaître sous 5 à 10 jours ouvrés.')
-      : p('Le remboursement de votre paiement est en cours. Selon votre banque ou votre opérateur, il peut apparaître sous 5 à 10 jours ouvrés.')
+      ? p(T(l, 'Votre paiement a été remboursé. Selon votre banque ou votre opérateur, il peut apparaître sous 5 à 10 jours ouvrés.',
+                'Your payment has been refunded. Depending on your bank or operator it can take 5 to 10 business days to appear.'))
+      : p(T(l, 'Le remboursement de votre paiement est en cours. Selon votre banque ou votre opérateur, il peut apparaître sous 5 à 10 jours ouvrés.',
+                'Your refund is on its way. Depending on your bank or operator it can take 5 to 10 business days to appear.'))
     : ''
   return {
-    subject: `Réservation annulée — ${subj(ctx.b.title)}`,
-    html: shell('Palmera', 'Votre réservation est annulée',
+    subject: T(l, `Réservation annulée — ${subj(ctx.b.title)}`, `Booking cancelled — ${subj(ctx.b.title)}`),
+    html: shell('Palmera', T(l, 'Votre réservation est annulée', 'Your booking is cancelled'),
       `${detailsTable(ctx, { withCompany: true, withRef: true, withPayment: paid })}
       ${refundLine}
-      ${p('Nous espérons vous retrouver bientôt sur Palmera.')}
-      ${en(paid ? 'Your booking is cancelled and your payment is being refunded (5–10 business days depending on your bank or operator).' : 'Your booking is cancelled.')}`),
+      ${p(T(l, 'Nous espérons vous retrouver bientôt sur Palmera.', 'We hope to see you again on Palmera soon.'))}`),
   }
 }
 
-export const memberReminder24h = (ctx: BookingCtx): Rendered => ({
-  subject: `Demain — ${subj(ctx.b.title)}`,
-  html: shell('Palmera · rappel', 'C’est demain',
-    `${detailsTable(ctx, { withCompany: true, withRef: true })}
-    ${p('Votre billet est dans l’app Palmera — présentez le QR code à l’arrivée.')}
-    ${en('Your experience is tomorrow — your ticket (QR code) is in the Palmera app.')}`),
-})
+export const memberReminder24h = (ctx: BookingCtx): Rendered => {
+  const l = langOf(ctx)
+  return {
+    subject: T(l, `Demain — ${subj(ctx.b.title)}`, `Tomorrow — ${subj(ctx.b.title)}`),
+    html: shell(T(l, 'Palmera · rappel', 'Palmera · reminder'), T(l, 'C’est demain', 'It’s tomorrow'),
+      `${detailsTable(ctx, { withCompany: true, withRef: true })}
+      ${p(T(l, 'Votre billet est dans l’app Palmera — présentez le QR code à l’arrivée.',
+                'Your ticket is in the Palmera app — show the QR code when you arrive.'))}`),
+  }
+}
 
 /** Replaces the app's "Confirmation sent" claim: the money is in, the
  *  partner still has to say yes. */
-export const memberPaymentReceived = (ctx: BookingCtx): Rendered => ({
-  subject: `Paiement reçu — ${subj(ctx.b.title)}`,
-  html: shell('Palmera', 'Paiement reçu — en attente de confirmation',
-    `${detailsTable(ctx, { withCompany: true, withRef: true, withPayment: true })}
-    ${p(`Votre paiement est bien reçu. ${esc(ctx.companyName)} confirme généralement sous 24 h — vous recevrez un e-mail dès que c’est fait. En cas de refus, vous êtes intégralement remboursé.`)}
-    ${en('Payment received. The partner usually confirms within 24h — you will get an email as soon as they do; if they decline you are refunded in full.')}`),
-})
+export const memberPaymentReceived = (ctx: BookingCtx): Rendered => {
+  const l = langOf(ctx)
+  return {
+    subject: T(l, `Paiement reçu — ${subj(ctx.b.title)}`, `Payment received — ${subj(ctx.b.title)}`),
+    html: shell('Palmera', T(l, 'Paiement reçu — en attente de confirmation', 'Payment received — awaiting confirmation'),
+      `${detailsTable(ctx, { withCompany: true, withRef: true, withPayment: true })}
+      ${p(T(l, `Votre paiement est bien reçu. ${esc(ctx.companyName)} confirme généralement sous 24 h — vous recevrez un e-mail dès que c’est fait. En cas de refus, vous êtes intégralement remboursé.`,
+                `Your payment is in. ${esc(ctx.companyName)} usually confirms within 24h — you will get an email as soon as they do. If they decline, you are refunded in full.`))}`),
+  }
+}
+
+/** A guest the host added to the group (invite accepted, or join request
+ *  approved): their own copy of the plan, and where their ticket is. */
+export const memberAttendeeJoined = (ctx: BookingCtx): Rendered => {
+  const l = langOf(ctx)
+  const host = esc(ctx.hostName || ctx.b.customerName || T(l, 'votre hôte', 'your host'))
+  const hello = ctx.attendeeName ? `${esc(ctx.attendeeName)}, ` : ''
+  return {
+    subject: T(l, `Vous êtes sur la liste — ${subj(ctx.b.title)}`, `You’re on the list — ${subj(ctx.b.title)}`),
+    html: shell('Palmera', T(l, `${host} vous a ajouté à sa réservation`, `${host} added you to their booking`),
+      `${detailsTable(ctx, { withCompany: true, withRef: true })}
+      ${p(T(l, `${hello}vous faites partie du groupe. Votre billet (QR code) est dans l’app Palmera, onglet Journey — présentez-le à l’arrivée.`,
+                `${hello}you are part of the group. Your ticket (QR code) is in the Palmera app under Journey — show it when you arrive.`))}`),
+  }
+}
 
 export type BookingEmailKind =
   | 'partner_new_pending' | 'partner_new_confirmed' | 'partner_pending_reminder'
   | 'partner_cancelled_by_member' | 'partner_refund_issued'
   | 'member_confirmed' | 'member_declined' | 'member_cancelled' | 'member_reminder_24h' | 'member_payment_received'
+  | 'member_attendee_joined'
 
 /** One dispatcher so the routes never hold a template switch of their own. */
 export function renderBookingEmail(kind: BookingEmailKind, ctx: BookingCtx, extra: { hours?: number } = {}): Rendered {
@@ -211,6 +282,7 @@ export function renderBookingEmail(kind: BookingEmailKind, ctx: BookingCtx, extr
     case 'member_cancelled': return memberCancelled(ctx)
     case 'member_reminder_24h': return memberReminder24h(ctx)
     case 'member_payment_received': return memberPaymentReceived(ctx)
+    case 'member_attendee_joined': return memberAttendeeJoined(ctx)
   }
 }
 

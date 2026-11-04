@@ -66,8 +66,10 @@ export interface Provider {
   whatsapp: string
   country: string                 // ISO alpha-2
   logo: string | null             // provider-level mark/avatar (distinct from company.logo)
-  /** Notification opt-ins (email today; SMS later). Absent = all on. */
-  notificationPrefs?: { bookings?: boolean; payouts?: boolean; marketing?: boolean }
+  /** Notification opt-ins (email today; SMS later). Absent = all on.
+   *  `lang`: the language booking mails are written in (Settings →
+   *  Notifications); absent = French. */
+  notificationPrefs?: { bookings?: boolean; payouts?: boolean; marketing?: boolean; lang?: 'fr' | 'en' }
   onboardingStage: 'registered' | 'active' | 'complete'
   signoff: Signoff | null         // create-once, immutable; one agreement covers all companies
   createdAt: TS
@@ -549,6 +551,12 @@ export interface Payout {
 export interface AppProfile {
   id?: string // uid
   name?: string
+  /** App-written. The app's language fields (`lang` | `language` |
+   *  `app_language` | `appLanguage` | `locale`) decide a member's mail
+   *  language; `notificationLang` ('fr' | 'en'), if the app ever lets a
+   *  member pick one separately, overrides them. */
+  lang?: string
+  notificationLang?: 'fr' | 'en'
   handle?: string
   city?: string
   phone?: string

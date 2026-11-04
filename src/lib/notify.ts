@@ -3,13 +3,28 @@
 // how a bearer secret is compared. Pure functions over raw Firestore data —
 // keep I/O in the routes.
 import { timingSafeEqual } from 'node:crypto'
+import { asMailLang, type MailLang } from './email-templates'
 
 type Doc = FirebaseFirestore.DocumentData
 
 /** Booking transitions the app's `onBookingWritten` reports to
  *  POST /api/notify/event (docs/app-notify-event-contract.md). */
-export const NOTIFY_EVENTS = ['created', 'confirmed', 'declined', 'cancelled', 'refunded', 'payment_received'] as const
+export const NOTIFY_EVENTS = ['created', 'confirmed', 'declined', 'cancelled', 'refunded', 'payment_received', 'attendee_joined'] as const
 export type NotifyEvent = typeof NOTIFY_EVENTS[number]
+
+// ── Language ─────────────────────────────────────────────────────────────
+/** A member's mail language: an explicit `profiles.notificationLang` wins;
+ *  else the language the app posted with the event (the member's saved app
+ *  language, fresh); else the profile's app-language fields (the same ones
+ *  the app's functions read); else French. */
+export const memberLang = (profile: Doc | undefined, requested: unknown): MailLang => {
+  if (profile?.notificationLang) return asMailLang(profile.notificationLang)
+  if (requested) return asMailLang(requested)
+  const raw = profile?.lang ?? profile?.language ?? profile?.app_language ?? profile?.appLanguage ?? profile?.locale
+  return asMailLang(raw, 'fr')
+}
+/** A partner's mail language: Settings → Notifications → Language; French until chosen. */
+export const partnerLang = (provider: Doc | undefined): MailLang => asMailLang(provider?.notificationPrefs?.lang, 'fr')
 
 /** Constant-time compare of `Authorization: Bearer …` against a secret.
  *  A missing secret never matches — an unset env var must fail closed. */

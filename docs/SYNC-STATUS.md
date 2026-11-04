@@ -87,6 +87,25 @@ time-based mails (12h partner reminder, member day-before reminder).
 Every dashboard change that touches documents/rules/indexes the app consumes
 gets a line here, newest first. Pure-UI dashboard changes are never listed.
 
+- 2026-11-03 ⚠ **Attendee ticket email — `attendee_joined` event; PR
+  samsonjiya002/palmera-expo#36 (base p5/backend) for Samson.** When an
+  invitation the host sent is accepted, or the host accepts a join request,
+  `onInviteUpdated` calls `notifyDashboard(bookingId, 'attendee_joined',
+  userLang(guest), { uid })`. The dashboard re-checks `invites` (needs a
+  read; the collection has no client rule but the Admin SDK reads it) and
+  the host booking's payment before mailing the guest. New additive
+  dashboard-written fields: `email_log/{bookingId}_attendee_joined_attendee_{uid}`
+  rows and `bookings.notified.attendee_joined_attendee_{uid}` stamps.
+  Contract doc updated. Nothing sends until #36 is merged and deployed.
+- 2026-11-03 **Booking emails in the recipient's language** (Jordan's ask):
+  members get the `lang` the app already posts with each event
+  (`profiles.notificationLang` would override it if the app ever adds a
+  separate choice; else the profile's app-language fields; else French).
+  Partners choose under Settings → Notifications → Email language →
+  `providers.notificationPrefs.lang` ('fr'|'en', dashboard-written; absent
+  = French). The small English line at the bottom of every French mail is
+  gone. No rule or index change.
+
 - 2026-11-03 ⚠ **Split-payment flags now handled on the dashboard; four
   dashboard-written fields on `bookings`** (Samson's ask, group chat
   2026-11-03 05:09Z). Money › "Split payments" reads the Part 5 flags
