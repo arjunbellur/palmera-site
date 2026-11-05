@@ -11,6 +11,7 @@ import {
   User,
 } from 'firebase/auth'
 import { auth } from './firebase'
+import { track } from './ga'
 
 // Accounts created from this date must verify their email before using any
 // surface (Dashboard Time call, 2026-08-19). Older accounts are grandfathered
@@ -21,6 +22,7 @@ export const signUp = async (email: string, password: string) => {
   const cred = await createUserWithEmailAndPassword(auth, email, password)
   auth.languageCode = 'fr'
   await sendEmailVerification(cred.user).catch((e) => console.error('verification email failed:', e))
+  track('partner_signup')
   return cred
 }
 

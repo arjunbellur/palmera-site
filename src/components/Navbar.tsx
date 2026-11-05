@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { trackStoreClick } from '@/lib/ga'
 import Link from 'next/link'
 import LanguageToggle from './LanguageToggle'
 import { onScrollFrame } from '@/lib/scroll-bus'
@@ -144,7 +145,7 @@ export default function Navbar({ messages }: { messages: Record<string, string> 
               )
             })}
             <a href="https://apps.apple.com/app/palmera/id6784757513" target="_blank" rel="noopener noreferrer"
-              onClick={() => setMenuOpen(false)}
+              onClick={() => { trackStoreClick('apple', 'nav_menu'); setMenuOpen(false) }}
               style={{ ...pill, background: ctaBg, textDecoration: 'none' }}>
               <span style={{ ...mono, color: ctaText }}>{messages.earlyAccess}</span>
             </a>
@@ -178,7 +179,7 @@ export default function Navbar({ messages }: { messages: Record<string, string> 
             </Link>
           )
         })}
-        <a href="https://apps.apple.com/app/palmera/id6784757513" target="_blank" rel="noopener noreferrer"
+        <a href="https://apps.apple.com/app/palmera/id6784757513" target="_blank" rel="noopener noreferrer" onClick={() => trackStoreClick('apple', 'nav')}
           style={{ ...pill, background: ctaBg, flexShrink: 0, textDecoration: 'none', minWidth: '120px' }}>
           <span style={{ ...mono, color: ctaText }}>{messages.earlyAccess}</span>
         </a>

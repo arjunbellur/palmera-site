@@ -7,6 +7,7 @@ import VerifyEmailGate from '@/components/dashboard/VerifyEmailGate'
 import { ThemeProvider, useTheme } from '@/lib/theme'
 import { getProvider, getCompanies, subscribeBookingsByCompany, updateProvider } from '@/lib/firestore'
 import Tour from '@/components/partner/Tour'
+import { track } from '@/lib/ga'
 import type { Booking, Company, Provider } from '@/lib/schema'
 import { PartnerContext } from './PartnerContext'
 import { t, type Locale } from './i18n'
@@ -52,6 +53,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   const startTour = () => setTourOpen(true)
   const closeTour = async (done: boolean) => {
     setTourOpen(false)
+    track('partner_tour', { outcome: done ? 'completed' : 'skipped' })
     if (!uid) return
     try { localStorage.setItem(`palmera.partner.tour.${uid}`, done ? 'done' : 'skipped') } catch { /* private mode */ }
     if (provider && !provider.tourCompletedAt) {

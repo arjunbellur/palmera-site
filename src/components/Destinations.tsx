@@ -5,6 +5,7 @@
 // scrubbed by ScrollTrigger (reading Lenis). Places with no listings never
 // appear — the counts come from Firestore (src/lib/place-counts.ts).
 import { useLayoutEffect, useRef } from 'react'
+import { trackStoreClick } from '@/lib/ga'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import { gsap } from 'gsap'
@@ -106,7 +107,7 @@ export default function Destinations({ counts }: { counts: Record<string, number
 
         {/* One framed photo — framed, not full-bleed, so every real photo stays sharp */}
         <div className="dc-stage" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 0 }}>
-          <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" aria-label="App Store" className="dc-frame"
+          <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" aria-label="App Store" className="dc-frame" onClick={() => trackStoreClick('apple', 'destinations')}
             style={{ position: 'relative', display: 'block', width: '100%', height: 'min(72svh, 46rem)', borderRadius: '0.75rem', overflow: 'hidden', background: '#1d1711', boxShadow: '0 2.5rem 5rem rgba(0,0,0,0.45)' }}>
             {PLACES.map((p, i) => (
               <div key={p.id} ref={(el) => { imgRefs.current[i] = el }} style={{ position: 'absolute', inset: 0, willChange: 'opacity, transform' }}>

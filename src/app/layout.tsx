@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import Preloader from '@/components/Preloader'
 import SmoothScroll from '@/components/SmoothScroll'
+import Analytics from '@/components/Analytics'
 
 export const metadata: Metadata = {
   title: 'The Palmera Experience',
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <Preloader />
         <SmoothScroll />
+        <Analytics />
         {children}
       </body>
     </html>
