@@ -76,7 +76,8 @@
     "legalRefunds": "Remboursements & annulations",
     "legalCookies": "Politique de cookies",
     "legalAi": "Politique IA",
-    "legalDmca": "DMCA & droits d’auteur"
+    "legalDmca": "DMCA & droits d’auteur",
+    "cookiePrefs": "Préférences cookies"
   },
   "dashboard": {
     "login": {

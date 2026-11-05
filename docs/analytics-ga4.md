@@ -39,8 +39,12 @@ default is 2 months and loses the cohort reports).
 | `partner_signup` | after a successful account creation | `src/lib/auth.ts` `signUp` |
 | `partner_tour` `{ outcome: completed \| skipped }` | when the portal's guided tour closes | `src/app/partner/layout.tsx` |
 
-Not loaded on `/admin/**` and `/api/**` (team activity would pollute every
-report). Local and preview builds have no Measurement IDs, so they send
+Loaded only after the visitor chooses **Accept** in the cookie banner
+(`src/components/CookieBanner.tsx`, choice kept 180 days in the
+`palmera_consent` cookie + local storage, versioned by `POLICY_VERSION` in
+`src/lib/consent.ts`; "Essential only" loads nothing). "Cookie preferences"
+in the footer reopens the banner. Not loaded on `/admin/**` and `/api/**`
+(team activity would pollute every report). Local and preview builds have no Measurement IDs, so they send
 nothing. A visitor who goes from the public site into the portal counts as a
 user in each stream — accepted, the audiences differ (public vs. partners). Add an event with `track('name', { … })` from `src/lib/ga.ts`; mark
 it as a key event in GA4 (Admin → Events → toggle) if it should count as a

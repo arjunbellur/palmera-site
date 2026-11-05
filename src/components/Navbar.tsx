@@ -15,8 +15,6 @@ export default function Navbar({ messages }: { messages: Record<string, string> 
     { label: messages.learn,      href: '#base',      section: 'base' },
     { label: messages.location,   href: '#makes',     section: 'makes' },
     { label: messages.experience, href: '#skills',    section: 'skills' },
-    { label: messages.app,        href: '#story',     section: 'story' },
-    { label: messages.signup,     href: '#story',     section: 'story' },
     { label: messages.partners,   href: '/dashboard', section: '' },
   ]
 

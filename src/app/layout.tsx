@@ -3,6 +3,7 @@ import './globals.css'
 import Preloader from '@/components/Preloader'
 import SmoothScroll from '@/components/SmoothScroll'
 import Analytics from '@/components/Analytics'
+import CookieBanner from '@/components/CookieBanner'
 
 export const metadata: Metadata = {
   title: 'The Palmera Experience',
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Preloader />
         <SmoothScroll />
         <Analytics />
+        <CookieBanner />
         {children}
       </body>
     </html>

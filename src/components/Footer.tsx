@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { trackStoreClick } from '@/lib/ga'
+import { openCookieBanner } from '@/lib/consent'
 import { StoreBadges } from './AppStoreBadge'
 export default function Footer() {
   const t = useTranslations('footer')
@@ -36,6 +37,9 @@ export default function Footer() {
             {t(key)}
           </Link>
         ))}
+        <button type="button" onClick={openCookieBanner} style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', color: 'rgba(42,33,25,0.55)', background: 'transparent', border: 'none', padding: 0, letterSpacing: '0.04em', cursor: 'pointer' }}>
+          {t('cookiePrefs')}
+        </button>
       </div>
       <div className="site-container" style={{ paddingTop: 'clamp(1rem,1.5vw,1.25rem)', paddingBottom: 'clamp(1rem,1.5vw,1.25rem)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
         <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', letterSpacing: '0.08em', color: 'rgba(42,33,25,0.5)', textTransform: 'uppercase', margin: 0 }}>{t('copyright')}</p>
