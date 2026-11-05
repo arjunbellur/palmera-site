@@ -6,6 +6,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
+import { trackStoreClick } from '@/lib/ga'
 
 // A true square bento on a 4×4 grid — 16 cells, no gaps:
 //   A A B B
@@ -64,7 +65,7 @@ export default function Services() {
             third of a wide screen empty on both sides. */}
         <div className="cat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gridTemplateRows: 'repeat(4, minmax(0, 1fr))', gap: 'clamp(0.375rem, 1vw, 0.875rem)', width: '100%' }}>
           {TILES.map((tile, i) => (
-            <a key={tile.key} href="https://apps.apple.com/app/palmera/id6784757513" target="_blank" rel="noopener noreferrer" className="cat-tile"
+            <a key={tile.key} href="https://apps.apple.com/app/palmera/id6784757513" target="_blank" rel="noopener noreferrer" className="cat-tile" onClick={() => trackStoreClick('apple', `mosaic_${tile.key}`)}
               style={{ ['--i' as string]: i, position: 'relative', gridArea: tile.area, borderRadius: 'var(--radius-tile)', overflow: 'hidden', display: 'block', textDecoration: 'none', background: '#2a2119' }}>
               {/* Sized to the tile, not the viewport: a small tile is a quarter of the
                   grid, a big one half — the old 40vw hint fetched ~2× the pixels. */}

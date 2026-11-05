@@ -32,7 +32,7 @@ default is 2 months and loses the cohort reports).
 | Signal | How | Where |
 | --- | --- | --- |
 | `page_view` on every page and client-side route change | `@next/third-parties` `GoogleAnalytics` loader | `src/components/Analytics.tsx`, mounted in the root layout |
-| `store_click` `{ store: apple \| google, placement }` | `trackStoreClick()` on every App Store / Google Play link; placements: `badge_dark/light/glass`, `nav`, `nav_menu`, `footer`, `destinations` | `src/components/AppStoreBadge.tsx`, `Navbar.tsx`, `Footer.tsx`, `Destinations.tsx` |
+| `store_click` `{ store: apple \| google, placement }` | `trackStoreClick()` on every App Store / Google Play link; placements: `badge_dark/light/glass`, `nav`, `nav_menu`, `footer`, `destinations`, `mosaic_<category>` | `src/components/AppStoreBadge.tsx`, `Navbar.tsx`, `Footer.tsx`, `Destinations.tsx`, `Services.tsx` |
 | `partner_signup` | after a successful account creation | `src/lib/auth.ts` `signUp` |
 | `partner_tour` `{ outcome: completed \| skipped }` | when the portal's guided tour closes | `src/app/partner/layout.tsx` |
 
