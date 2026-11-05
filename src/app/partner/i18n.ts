@@ -223,6 +223,20 @@ const FR: Record<string, string> = {
   pw_saved: '✓ Mot de passe modifié', pw_mismatch: 'Les mots de passe ne correspondent pas.',
   pw_short: 'Au moins 6 caractères.', pw_wrong: 'Mot de passe actuel incorrect.',
   pw_error: 'Impossible de modifier le mot de passe. Réessayez.',
+  // Guided tour (Tour.tsx)
+  tour_aria: 'Visite guidée du tableau de bord', tour_label: 'Bienvenue', tour_step: 'Étape', tour_skip: 'Passer', tour_next: 'Suivant', tour_back: 'Retour', tour_start: 'Commencer la visite', tour_done: 'Terminer', tour_open: 'Ouvrir',
+  tour_replay: 'Visite guidée', tour_replay_hint: '2 minutes',
+  tour_welcome_t: 'Bienvenue sur votre tableau de bord Palmera', tour_welcome_b: 'Deux minutes pour voir où tout se trouve : réservations, revenus, annonces et réglages. Vous connaissez déjà ? Passez, vous pourrez relancer la visite depuis Réglages → Aide.',
+  tour_home_t: 'Accueil : votre journée', tour_home_b: 'Ce qui demande votre attention (réservations à confirmer, infos de versement manquantes), les réservations du jour, le prochain versement et les raccourcis.',
+  tour_res_t: 'Réservations', tour_res_b: 'Toutes vos réservations, en liste ou en calendrier. Acceptez ou refusez les demandes, ouvrez le détail d’un client, filtrez par statut. Une pastille sur l’onglet signale ce qui attend votre réponse.',
+  tour_scan_t: 'Scanner un billet', tour_scan_b: 'À l’arrivée des clients, scannez le QR code de leur billet depuis ici ou depuis Réservations. La réservation passe en « réalisée » et compte pour votre versement.',
+  tour_earn_t: 'Revenus', tour_earn_b: 'Montant brut, commission Palmera et net par période, vos performances (réservations du mois, panier moyen, taux d’annulation), l’historique et les versements. Payés le 1er et le 16.',
+  tour_list_t: 'Annonces', tour_list_b: 'Vos expériences dans l’app : créez-en une, modifiez les photos, prix, options et politique d’annulation, dupliquez ou dépubliez. Une annonce incomplète ne se vend pas.',
+  tour_market_t: 'Dépôt-vente', tour_market_b: 'Commandez auprès des fournisseurs Palmera et ne payez que ce que vous utilisez. Vos commandes et leur statut sont dans l’onglet Mes commandes.',
+  tour_set_t: 'Réglages', tour_set_b: 'Profil de l’établissement, photos, coordonnées, équipe (accès scanner), informations de versement, notifications et langue des emails, convention de partenariat, aide.',
+  tour_company_t: 'Votre établissement', tour_company_b: 'Vous gérez plusieurs établissements ? Touchez ici pour passer de l’un à l’autre ou en ajouter un. Chaque onglet affiche l’établissement sélectionné.',
+  tour_lang_t: 'Langue et thème', tour_lang_b: 'Le tableau de bord en français ou en anglais, en clair ou en sombre. La langue de vos emails se règle séparément dans Réglages → Notifications.',
+  tour_end_t: 'C’est tout', tour_end_b: 'Besoin d’aide ? Réglages → Aide, ou écrivez-nous à palmeraexp@gmail.com. Pour revoir cette visite : Réglages → Aide → Visite guidée.',
 }
 
 const EN: Record<string, string> = {
@@ -446,6 +460,20 @@ const EN: Record<string, string> = {
   pw_saved: '✓ Password changed', pw_mismatch: 'Passwords do not match.',
   pw_short: 'At least 6 characters.', pw_wrong: 'Current password is incorrect.',
   pw_error: 'Could not change password. Try again.',
+  // Guided tour (Tour.tsx)
+  tour_aria: 'Dashboard guided tour', tour_label: 'Welcome', tour_step: 'Step', tour_skip: 'Skip', tour_next: 'Next', tour_back: 'Back', tour_start: 'Start the tour', tour_done: 'Finish', tour_open: 'Open',
+  tour_replay: 'Guided tour', tour_replay_hint: '2 minutes',
+  tour_welcome_t: 'Welcome to your Palmera dashboard', tour_welcome_b: 'Two minutes to see where everything lives: reservations, earnings, listings and settings. Already know your way around? Skip — you can replay the tour from Settings → Help.',
+  tour_home_t: 'Home: your day', tour_home_b: 'What needs your attention (bookings to confirm, missing payout details), today’s reservations, your next payout, and quick actions.',
+  tour_res_t: 'Reservations', tour_res_b: 'Every booking, as a list or a calendar. Accept or decline requests, open a guest’s details, filter by status. A badge on the tab shows what is waiting on you.',
+  tour_scan_t: 'Scan a ticket', tour_scan_b: 'When guests arrive, scan the QR code on their ticket from here or from Reservations. The booking is marked delivered and counts towards your payout.',
+  tour_earn_t: 'Earnings', tour_earn_b: 'Gross, Palmera’s commission and your net by period, your performance (month’s bookings, average booking, cancellation rate), the ledger and payouts. Paid on the 1st and the 16th.',
+  tour_list_t: 'Listings', tour_list_b: 'Your experiences in the app: create one, edit photos, prices, options and the cancellation policy, duplicate or unpublish. An incomplete listing does not sell.',
+  tour_market_t: 'Market', tour_market_b: 'Order from Palmera suppliers and only pay for what you use. Your orders and their status live under My orders.',
+  tour_set_t: 'Settings', tour_set_b: 'Company profile, photos, contact details, team (scanner access), payout details, notifications and email language, the partnership agreement, help.',
+  tour_company_t: 'Your company', tour_company_b: 'Run more than one place? Tap here to switch between them or add one. Every tab shows the company selected here.',
+  tour_lang_t: 'Language and theme', tour_lang_b: 'The dashboard in French or English, light or dark. The language of your emails is set separately under Settings → Notifications.',
+  tour_end_t: 'That’s everything', tour_end_b: 'Need a hand? Settings → Help, or write to palmeraexp@gmail.com. To see this tour again: Settings → Help → Guided tour.',
 }
 
 export function t(locale: Locale, key: string): string {

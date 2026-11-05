@@ -25,7 +25,7 @@ function CircleStatHome({ label, value }: { label: string; value: string }) {
 
 
 export default function PartnerHome() {
-  const { uid, company, provider, locale, bookings } = usePartner()
+  const { uid, company, provider, locale, bookings, startTour } = usePartner()
   const L = (k: string) => t(locale, k)
   const [ledger, setLedger] = useState<LedgerEntry[]>([])
   const [payouts, setPayouts] = useState<Payout[]>([])
@@ -82,6 +82,7 @@ export default function PartnerHome() {
         label={L('home_label')}
         title={firstName ? `${L('greeting')}, ${firstName}` : L('home_title')}
         intro={L('home_intro')}
+        aside={<button type="button" onClick={startTour} className="pf-cap pf-cap-ghost" style={{ padding: '8px 14px', border: '1px solid var(--pf-border-strong)', background: 'transparent', color: 'var(--pf-gold)', fontFamily: 'var(--font-sans)', fontSize: '11.5px', letterSpacing: '0.03em', cursor: 'pointer' }}>? {L('tour_replay')}</button>}
       />
 
       {/* Pending actions — severity-ranked (urgent → whenever), each row a
@@ -133,7 +134,7 @@ export default function PartnerHome() {
           { href: 'mailto:palmeraexp@gmail.com', label: L('qa_support') },
         ].map((a: { href: string; label: string; primary?: boolean }) => (
           a.href.startsWith('/')
-            ? <Link key={a.label} href={a.href} style={{ padding: '8px 15px', borderRadius: '999px', border: a.primary ? 'none' : '1px solid var(--pf-border-strong)', color: a.primary ? '#ebe8db' : 'var(--pf-gold)', textDecoration: 'none', fontFamily: 'var(--font-sans)', fontSize: '11.5px', letterSpacing: '0.03em', background: a.primary ? 'var(--pf-gold-deep)' : 'transparent', boxShadow: a.primary ? '0 0 14px rgba(190,154,86,0.3)' : 'none' }}>
+            ? <Link key={a.label} href={a.href} data-tour={a.primary ? 'scan' : undefined} style={{ padding: '8px 15px', borderRadius: '999px', border: a.primary ? 'none' : '1px solid var(--pf-border-strong)', color: a.primary ? '#ebe8db' : 'var(--pf-gold)', textDecoration: 'none', fontFamily: 'var(--font-sans)', fontSize: '11.5px', letterSpacing: '0.03em', background: a.primary ? 'var(--pf-gold-deep)' : 'transparent', boxShadow: a.primary ? '0 0 14px rgba(190,154,86,0.3)' : 'none' }}>
             {a.label}
           </Link>
             : <a key={a.label} href={a.href} style={{ padding: '8px 15px', borderRadius: '999px', border: a.primary ? 'none' : '1px solid var(--pf-border-strong)', color: a.primary ? '#ebe8db' : 'var(--pf-gold)', textDecoration: 'none', fontFamily: 'var(--font-sans)', fontSize: '11.5px', letterSpacing: '0.03em', background: a.primary ? 'var(--pf-gold-deep)' : 'transparent', boxShadow: a.primary ? '0 0 14px rgba(190,154,86,0.3)' : 'none' }}>

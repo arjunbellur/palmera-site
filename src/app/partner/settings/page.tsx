@@ -25,7 +25,7 @@ const EMPTY_CO = { name: '', legalName: '', category: '', categories: [] as Main
 
 export default function SettingsScreen() {
   const router = useRouter()
-  const { uid, provider, email, company, companies, locale, setLocale, setCompanyId, refresh } = usePartner()
+  const { uid, provider, email, company, companies, locale, setLocale, setCompanyId, refresh, startTour } = usePartner()
   const { theme, toggle } = useTheme()
   const L = (k: string) => t(locale, k)
   const [logo, setLogo] = useState(provider?.logo || '')
@@ -238,6 +238,7 @@ export default function SettingsScreen() {
             { k: 'prefs', label: L('prefs_row'), hint: locale.toUpperCase() },
           ]},
           { group: L('g_help'), items: [
+            { k: 'tour', label: L('tour_replay'), hint: L('tour_replay_hint') },
             { k: 'support', label: L('sec_support'), hint: '' },
           ]},
         ]
@@ -246,7 +247,7 @@ export default function SettingsScreen() {
             <div style={{ ...eyebrow, color: 'var(--pf-eyebrow)', margin: '0 0 8px' }}>{g.group}</div>
             <div style={{ borderRadius: '16px', background: 'var(--pf-card)', border: '1px solid var(--pf-border)', overflow: 'hidden' }}>
               {g.items.map((it, i) => (
-                <button key={it.k} onClick={() => it.k === 'agreement' ? router.push('/partner/agreement') : setSection(it.k)}
+                <button key={it.k} onClick={() => it.k === 'agreement' ? router.push('/partner/agreement') : it.k === 'tour' ? startTour() : setSection(it.k)}
                   style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', width: '100%', textAlign: 'left', padding: '14px 16px', background: 'transparent', border: 'none', borderTop: i === 0 ? 'none' : '1px solid var(--pf-border)', cursor: 'pointer' }}>
                   <span style={{ fontFamily: 'var(--font-serif)', color: 'var(--pf-text)', fontSize: '14px' }}>{it.label}</span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>

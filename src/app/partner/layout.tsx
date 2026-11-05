@@ -5,7 +5,8 @@ import { useRouter, usePathname } from 'next/navigation'
 import { onAuthChange, needsEmailVerification } from '@/lib/auth'
 import VerifyEmailGate from '@/components/dashboard/VerifyEmailGate'
 import { ThemeProvider, useTheme } from '@/lib/theme'
-import { getProvider, getCompanies, subscribeBookingsByCompany } from '@/lib/firestore'
+import { getProvider, getCompanies, subscribeBookingsByCompany, updateProvider } from '@/lib/firestore'
+import Tour from '@/components/partner/Tour'
 import type { Booking, Company, Provider } from '@/lib/schema'
 import { PartnerContext } from './PartnerContext'
 import { t, type Locale } from './i18n'
@@ -45,6 +46,29 @@ function Shell({ children }: { children: React.ReactNode }) {
   // Collapsed = icon rail; full width for the content. Remembered per device.
   const [collapsed, setCollapsed] = useState(false)
   useEffect(() => { setCollapsed(localStorage.getItem('palmera.partner.nav') === 'collapsed') }, [])
+  // Guided tour: once per partner (providers.tourCompletedAt, with a device
+  // flag as a fallback when the write fails), replayable from Settings › Help.
+  const [tourOpen, setTourOpen] = useState(false)
+  const startTour = () => setTourOpen(true)
+  const closeTour = async (done: boolean) => {
+    setTourOpen(false)
+    if (!uid) return
+    try { localStorage.setItem(`palmera.partner.tour.${uid}`, done ? 'done' : 'skipped') } catch { /* private mode */ }
+    if (provider && !provider.tourCompletedAt) {
+      const at = new Date()
+      setProvider({ ...provider, tourCompletedAt: at })
+      try { await updateProvider(uid, { tourCompletedAt: at }) } catch { /* the device flag covers it */ }
+    }
+  }
+  useEffect(() => {
+    if (loading || !uid || !provider || provider.tourCompletedAt) return
+    let seen = false
+    try { seen = !!localStorage.getItem(`palmera.partner.tour.${uid}`) } catch { /* ignore */ }
+    if (seen) return
+    const id = setTimeout(() => setTourOpen(true), 900)
+    return () => clearTimeout(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, uid, provider?.tourCompletedAt])
   const toggleNav = () => setCollapsed(c => { localStorage.setItem('palmera.partner.nav', c ? 'open' : 'collapsed'); return !c })
 
   useEffect(() => {
@@ -132,7 +156,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   const initial = (company?.name || '?').trim().charAt(0).toUpperCase()
 
   const LocaleToggle = (
-    <div role="group" aria-label="Language" style={{ display: 'flex', border: '1px solid var(--pf-border)', borderRadius: '10px', overflow: 'hidden', height: '40px' }}>
+    <div role="group" aria-label="Language" data-tour="locale" style={{ display: 'flex', border: '1px solid var(--pf-border)', borderRadius: '10px', overflow: 'hidden', height: '40px' }}>
       {(['fr', 'en'] as const).map(l => (
         <button key={l} onClick={() => setLocale(l)} aria-pressed={locale === l} style={{ padding: '0 12px', minWidth: '40px', background: locale === l ? 'var(--pf-card)' : 'transparent', border: 'none', color: locale === l ? 'var(--pf-gold)' : 'var(--pf-faint)', fontFamily: 'var(--font-sans)', fontSize: '11px', letterSpacing: '0.06em', cursor: 'pointer' }}>{l.toUpperCase()}</button>
       ))}
@@ -141,7 +165,7 @@ function Shell({ children }: { children: React.ReactNode }) {
 
   // Always opens the sheet — with one company it's how you ADD another.
   const CompanyPill = (
-    <button onClick={() => setSwitcherOpen(true)}
+    <button onClick={() => setSwitcherOpen(true)} data-tour="company"
       style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}>
       <span style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'var(--pf-green-soft)', color: 'var(--pf-gold)', display: 'grid', placeItems: 'center', fontFamily: 'var(--font-display)', fontSize: '15px', flexShrink: 0, overflow: 'hidden' }}>
         {company?.logo ? <img loading="lazy" decoding="async" src={company.logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initial}
@@ -158,7 +182,7 @@ function Shell({ children }: { children: React.ReactNode }) {
     const active = pathname === item.href
     const iconOnly = !mobile && collapsed
     return (
-      <Link key={item.href} href={item.href} title={iconOnly ? L(item.key) : undefined} aria-label={mobile || iconOnly ? L(item.key) : undefined} style={{
+      <Link key={item.href} href={item.href} data-tour={item.key} title={iconOnly ? L(item.key) : undefined} aria-label={mobile || iconOnly ? L(item.key) : undefined} style={{
         display: 'flex', alignItems: 'center', gap: mobile || iconOnly ? 0 : '11px',
         flexDirection: mobile ? 'column' : 'row',
         justifyContent: mobile || iconOnly ? 'center' : 'flex-start',
@@ -184,7 +208,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <PartnerContext.Provider value={{ uid, email, provider, companies, company, bookings, bookingsLoaded, setCompanyId, locale, setLocale, refresh }}>
+    <PartnerContext.Provider value={{ uid, email, provider, companies, company, bookings, bookingsLoaded, setCompanyId, locale, setLocale, refresh, startTour }}>
       <div data-theme={theme} style={{ minHeight: '100vh', background: 'var(--pf-bg)', display: 'flex' }}>
         {!isMobile && (
           <aside className="pf-glass-bar" style={{ width: collapsed ? '68px' : '236px', flexShrink: 0, borderRight: '1px solid var(--pf-border)', padding: collapsed ? '22px 10px' : '22px 16px', position: 'sticky', top: 0, height: '100vh', display: 'flex', flexDirection: 'column', gap: '20px', transition: 'width 0.25s cubic-bezier(0.22,1,0.36,1), padding 0.25s ease', overflow: 'hidden', zIndex: 20 }}>
@@ -235,6 +259,8 @@ function Shell({ children }: { children: React.ReactNode }) {
             </nav>
           )}
         </div>
+
+        <Tour open={tourOpen} locale={locale} isMobile={isMobile} onClose={closeTour} />
 
         {switcherOpen && (
           <div onClick={() => setSwitcherOpen(false)} style={{ position: 'fixed', inset: 0, background: 'var(--pf-scrim)', zIndex: 60, display: 'flex', alignItems: isMobile ? 'flex-end' : 'center', justifyContent: 'center', padding: isMobile ? 0 : '20px' }}>

@@ -87,6 +87,10 @@ time-based mails (12h partner reminder, member day-before reminder).
 Every dashboard change that touches documents/rules/indexes the app consumes
 gets a line here, newest first. Pure-UI dashboard changes are never listed.
 
+- 2026-11-05 **No app impact** — `providers/{uid}.tourCompletedAt` (Timestamp,
+  dashboard-written when a partner finishes or skips the portal's guided
+  tour). `providers` is dashboard-owned; the app never reads the field.
+
 - 2026-11-03 ⚠ **Attendee ticket email — `attendee_joined` event; PR
   samsonjiya002/palmera-expo#36 (base p5/backend) for Samson.** When an
   invitation the host sent is accepted, or the host accepts a join request,

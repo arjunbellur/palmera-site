@@ -19,6 +19,8 @@ export interface PartnerCtx {
   setLocale: (l: 'fr' | 'en') => void
   /** Refetch provider + companies after an edit, keeping the selected company. */
   refresh: () => Promise<void>
+  /** Replay the guided tour (Settings › Help, Home header). */
+  startTour: () => void
 }
 
 export const PartnerContext = createContext<PartnerCtx | null>(null)

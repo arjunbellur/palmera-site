@@ -72,6 +72,9 @@ export interface Provider {
   notificationPrefs?: { bookings?: boolean; payouts?: boolean; marketing?: boolean; lang?: 'fr' | 'en' }
   onboardingStage: 'registered' | 'active' | 'complete'
   signoff: Signoff | null         // create-once, immutable; one agreement covers all companies
+  /** The portal's guided tour was finished or skipped (dashboard-only; the
+   *  tour shows once until this is set). */
+  tourCompletedAt?: TS | Date | null
   createdAt: TS
   updatedAt: TS
 }
