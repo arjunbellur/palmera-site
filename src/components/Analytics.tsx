@@ -1,13 +1,15 @@
 'use client'
-// Loads GA4 on the public site and the partner portal, never on /admin.
-// Rendered once from the root layout; the gtag loader is deferred so it
-// never competes with the preloader or the fonts.
+// Loads GA4 on the public site (site stream) and the partner portal
+// (dashboard stream), never on /admin. Rendered once from the root layout;
+// keyed on the stream so moving between the two surfaces re-initialises
+// gtag with the other Measurement ID.
 import { usePathname } from 'next/navigation'
 import { GoogleAnalytics } from '@next/third-parties/google'
-import { GA_ID, gaAllowedOn } from '@/lib/ga'
+import { gaIdFor } from '@/lib/ga'
 
 export default function Analytics() {
   const pathname = usePathname() || '/'
-  if (!gaAllowedOn(pathname)) return null
-  return <GoogleAnalytics gaId={GA_ID} />
+  const id = gaIdFor(pathname)
+  if (!id) return null
+  return <GoogleAnalytics key={id} gaId={id} />
 }

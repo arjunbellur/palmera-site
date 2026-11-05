@@ -1,27 +1,30 @@
 # Google Analytics 4 for the site
 
-The site (`www.palmeraexp.com`: public pages + the partner portal) reports to
-one GA4 property owned by Palmera's Google account (`palmeraexp@gmail.com`).
-The code is in place; it stays silent until the Measurement ID is set.
+The site (`www.palmeraexp.com`) reports to the existing GA4 property owned by
+Palmera's Google account (`palmeraexp@gmail.com`, property 540560399), on two
+web streams so the numbers stay separate: the **site** stream for the public
+pages and the **dashboard** stream for the partner portal (`/partner`,
+`/dashboard` onboarding, `/supplier`, `/door`). Every page view goes to
+exactly one stream, chosen by path. The code is in place; it stays silent
+until the Measurement IDs are set.
 
 ## One-time setup (as palmeraexp@gmail.com)
 
-1. Sign in to https://analytics.google.com as palmeraexp@gmail.com.
-2. Admin (gear, bottom left) → **Create** → **Property**. Name: `Palmera
-   website`. Time zone: Senegal (GMT). Currency: XOF (West African CFA franc).
-3. Business details: Travel, small. Objectives: whatever is offered; they only
-   pick the default reports.
-4. **Data stream** → Web. URL `https://www.palmeraexp.com`, stream name
-   `palmeraexp.com`. Leave Enhanced measurement on (it adds scrolls, outbound
-   clicks and site search for free).
-5. Copy the **Measurement ID** (`G-XXXXXXXXXX`) from the stream page.
-6. Vercel → palmera-site → Settings → Environment Variables → add
-   `NEXT_PUBLIC_GA_MEASUREMENT_ID` = that ID, **Production** only. Redeploy
-   (or push anything to `main`).
-7. Open https://www.palmeraexp.com in a private window, then GA4 → Reports →
-   **Realtime**: one user should appear within a minute. Tap a store badge:
-   `store_click` shows under Event count.
-8. Add Jordan and Arjun under Admin → Property access management (Viewer or
+1. Admin (gear, bottom left) → **Data streams** in the existing property.
+2. The web stream named "palmera dashboard" is the dashboard stream: copy its
+   **Measurement ID** (`G-…`, top right of the stream page).
+3. **Add stream** → Web, URL `https://www.palmeraexp.com`, name
+   `palmera site`. Leave Enhanced measurement on (scrolls, outbound clicks
+   and site search for free). Copy its Measurement ID too.
+4. Vercel → palmera-site → Settings → Environment Variables, **Production**
+   only: `NEXT_PUBLIC_GA_MEASUREMENT_ID` = the site ID,
+   `NEXT_PUBLIC_GA_DASHBOARD_MEASUREMENT_ID` = the dashboard ID. Redeploy (or
+   push anything to `main`).
+5. Open https://www.palmeraexp.com in a private window, then GA4 → Reports →
+   **Realtime**: one user should appear within a minute under the site
+   stream. Tap a store badge: `store_click` shows under Event count. Open
+   `/dashboard`: the user moves to the dashboard stream.
+6. Add Jordan and Arjun under Admin → Property access management (Viewer or
    Analyst), so the property stays owned by the Palmera account.
 
 Data retention: Admin → Data settings → Data retention → **14 months** (the
@@ -31,14 +34,15 @@ default is 2 months and loses the cohort reports).
 
 | Signal | How | Where |
 | --- | --- | --- |
-| `page_view` on every page and client-side route change | `@next/third-parties` `GoogleAnalytics` loader | `src/components/Analytics.tsx`, mounted in the root layout |
+| `page_view` on every page and client-side route change, to the stream `gaIdFor(path)` picks | `@next/third-parties` `GoogleAnalytics` loader | `src/components/Analytics.tsx`, mounted in the root layout |
 | `store_click` `{ store: apple \| google, placement }` | `trackStoreClick()` on every App Store / Google Play link; placements: `badge_dark/light/glass`, `nav`, `nav_menu`, `footer`, `destinations`, `mosaic_<category>` | `src/components/AppStoreBadge.tsx`, `Navbar.tsx`, `Footer.tsx`, `Destinations.tsx`, `Services.tsx` |
 | `partner_signup` | after a successful account creation | `src/lib/auth.ts` `signUp` |
 | `partner_tour` `{ outcome: completed \| skipped }` | when the portal's guided tour closes | `src/app/partner/layout.tsx` |
 
 Not loaded on `/admin/**` and `/api/**` (team activity would pollute every
-report). Local and preview builds have no Measurement ID, so they send
-nothing. Add an event with `track('name', { … })` from `src/lib/ga.ts`; mark
+report). Local and preview builds have no Measurement IDs, so they send
+nothing. A visitor who goes from the public site into the portal counts as a
+user in each stream — accepted, the audiences differ (public vs. partners). Add an event with `track('name', { … })` from `src/lib/ga.ts`; mark
 it as a key event in GA4 (Admin → Events → toggle) if it should count as a
 conversion. The services mosaic (`Services.tsx`) tiles also link to the App
 Store but are not instrumented yet (file in flight elsewhere).
