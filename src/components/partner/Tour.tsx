@@ -56,6 +56,9 @@ export default function Tour({ open, locale, isMobile, onClose }: {
   const pathname = usePathname()
   const [i, setI] = useState(0)
   const [rect, setRect] = useState<Rect | null>(null)
+  // Viewport size is read in an effect, never during render, so a server
+  // render and the first client render agree (no hydration mismatch).
+  const [vp, setVp] = useState<{ w: number; h: number } | null>(null)
   const cardRef = useRef<HTMLDivElement>(null)
   const step = TOUR_STEPS[i]
   const last = i === TOUR_STEPS.length - 1
@@ -65,7 +68,7 @@ export default function Tour({ open, locale, isMobile, onClose }: {
   // Re-measure on step change, resize, scroll and after the page swaps.
   useLayoutEffect(() => {
     if (!open) return
-    const update = () => setRect(measure(step.target))
+    const update = () => { setRect(measure(step.target)); setVp({ w: window.innerWidth, h: window.innerHeight }) }
     update()
     const t1 = setTimeout(update, 60); const t2 = setTimeout(update, 400)
     window.addEventListener('resize', update)
@@ -86,23 +89,23 @@ export default function Tour({ open, locale, isMobile, onClose }: {
 
   useEffect(() => { if (open) cardRef.current?.focus() }, [open, i])
 
-  if (!open) return null
+  if (!open || !vp) return null
 
   // Card placement: beside the spotlight on desktop (right of the rail, or
   // below a content element), above the tab bar on phones, centred when
   // there is nothing to point at.
-  const W = Math.min(360, (typeof window !== 'undefined' ? window.innerWidth : 400) - 32)
+  const W = Math.min(360, vp.w - 32)
   let cardStyle: CSSProperties
   if (!rect) {
     cardStyle = { position: 'fixed', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', width: W }
   } else if (isMobile) {
-    const above = rect.top > window.innerHeight / 2
+    const above = rect.top > vp.h / 2
     cardStyle = above
-      ? { position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: Math.max(16, window.innerHeight - rect.top + 12), width: W }
+      ? { position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: Math.max(16, vp.h - rect.top + 12), width: W }
       : { position: 'fixed', left: '50%', transform: 'translateX(-50%)', top: rect.top + rect.height + 12, width: W }
   } else {
-    const fitsRight = rect.left + rect.width + 16 + W < window.innerWidth
-    const top = Math.min(Math.max(16, rect.top), window.innerHeight - 320)
+    const fitsRight = rect.left + rect.width + 16 + W < vp.w
+    const top = Math.min(Math.max(16, rect.top), vp.h - 320)
     cardStyle = fitsRight
       ? { position: 'fixed', left: rect.left + rect.width + 16, top, width: W }
       : { position: 'fixed', left: Math.max(16, rect.left), top: rect.top + rect.height + 14, width: W }
