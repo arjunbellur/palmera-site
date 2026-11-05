@@ -97,7 +97,7 @@ export default function BaseSection() {
           </div>
         ))}
 
-        <div ref={introRef} className="pf-intro" style={{ position: 'absolute', top: 'clamp(4rem,5.5vw,5.5rem)', left: 'clamp(1.5rem,4.5vw,2.5rem)', right: 'clamp(1.5rem,4.5vw,2.5rem)', zIndex: 5, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'clamp(0.75rem,3.8vw,3rem)' }}>
+        <div ref={introRef} className="pf-intro" style={{ position: 'absolute', top: 'clamp(4rem,5.5vw,5.5rem)', left: 'var(--site-gutter)', right: 'var(--site-gutter)', zIndex: 5, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'clamp(0.75rem,3.8vw,3rem)' }}>
           <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(42,33,25,0.72)', lineHeight: 1.7, margin: 0, maxWidth: '24rem' }}>{t('intro1')}</p>
           <p className="pf-intro2" style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1rem,1.6vw,1.25rem)', lineHeight: 1.6, color: 'rgba(42,33,25,0.82)', margin: 0, maxWidth: '32rem', justifySelf: 'end' }}>{t('intro2')}</p>
         </div>
@@ -113,7 +113,7 @@ export default function BaseSection() {
           <div style={{ position: 'relative', width: '100%', textAlign: 'center', minHeight: 'clamp(5.5rem,9vw,7.5rem)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {PILLARS.map((p, i) => (
               <div key={p.text} ref={el => { headingRefs.current[i] = el }} style={{ position: i === 0 ? 'relative' : 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', willChange: 'opacity, transform' }}>
-                <h2 className="pf-h" style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.875rem,5vw,4.25rem)', fontWeight: 400, letterSpacing: '-0.09375rem', lineHeight: 1.12, color: 'var(--color-dark)', margin: 0, padding: '0 clamp(1.5rem,4.5vw,2.5rem)', textAlign: 'center', textWrap: 'balance', maxWidth: '18ch' }}>{p.text}</h2>
+                <h2 className="pf-h" style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.875rem,5vw,4.25rem)', fontWeight: 400, letterSpacing: '-0.09375rem', lineHeight: 1.12, color: 'var(--color-dark)', margin: 0, padding: '0 var(--site-gutter)', textAlign: 'center', textWrap: 'balance', maxWidth: '18ch' }}>{p.text}</h2>
               </div>
             ))}
           </div>

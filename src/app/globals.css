@@ -94,7 +94,27 @@ body {
      no Google Fonts request. */
   --font-sans: 'Geist Mono', 'Courier New', monospace;
   --font-mono: 'Geist Mono', 'Geist Mono Variable', 'Courier New', monospace;
+
+  /* ── Layout tokens (marketing site) ──────────────────────────────────
+     One set of sizes every section shares, so nothing hardcodes its own
+     container, gutter or vertical rhythm. Fluid by default: each value is
+     a clamp(min, preferred-in-vw, max) and scales with the viewport, with
+     no breakpoint needed. The single breakpoint the site uses is 760px
+     (phones); custom properties cannot be used inside @media, so it is
+     written out where needed. */
+  --site-max: 75rem;                                   /* content column */
+  --site-gutter: clamp(1.5rem, 4.5vw, 2.5rem);          /* side padding   */
+  --section-y: clamp(4.5rem, 9vw, 9rem);                /* section rhythm */
+  --space-lg: clamp(2rem, 4vw, 3.5rem);                 /* heading → body */
+  --space-md: clamp(1.25rem, 2.5vw, 2rem);
+  --radius-tile: clamp(0.5rem, 1vw, 0.75rem);
+  --text-section: clamp(2rem, 5.5vw, 4.5rem);           /* section h2     */
+  --text-subsection: clamp(1.625rem, 3vw, 2.875rem);    /* smaller h2     */
+  --text-body: clamp(1rem, 1.2vw, 1.125rem);
 }
+
+/* The content column: max width, centred, with the shared gutter. */
+.site-container { max-width: var(--site-max); margin: 0 auto; padding-left: var(--site-gutter); padding-right: var(--site-gutter); }
 
 /* ============================================
    Typography

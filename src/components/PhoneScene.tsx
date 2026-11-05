@@ -69,12 +69,12 @@ export default function PhoneScene() {
 
   return (
     <section id="story" ref={sectionRef} style={{ position: 'relative', height: '100svh', minHeight: '40rem', background: '#2a2119', overflow: 'hidden' }}>
-      <div className="ps-grid" style={{ height: '100%', maxWidth: '84rem', margin: '0 auto', padding: 'clamp(4.5rem,7vh,6rem) clamp(1.25rem,4.5vw,2.5rem) clamp(1.25rem,3vh,2.5rem)', boxSizing: 'border-box' }}>
+      <div className="ps-grid" style={{ height: '100%', maxWidth: '84rem', margin: '0 auto', padding: 'clamp(4.5rem,7vh,6rem) var(--site-gutter) clamp(1.25rem,3vh,2.5rem)', boxSizing: 'border-box' }}>
         {/* Copy column */}
         <div className="ps-copy" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 'clamp(1.25rem,3vh,2.5rem)', minWidth: 0 }}>
           <div className="ps-head" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: TAN, margin: 0 }}>{t('label')}</p>
-            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.625rem,3vw,2.875rem)', fontWeight: 400, letterSpacing: '-0.03em', lineHeight: 1.04, color: '#ebe8db', margin: 0, textWrap: 'balance' }}>{t('heading')}</h2>
+            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'var(--text-subsection)', fontWeight: 400, letterSpacing: '-0.03em', lineHeight: 1.04, color: '#ebe8db', margin: 0, textWrap: 'balance' }}>{t('heading')}</h2>
           </div>
           <ol className="ps-caps" style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', minHeight: '7.5rem' }}>
             {BEATS.map((b, i) => (
