@@ -3,7 +3,7 @@
 // /admin/ai goes through here with the admin's ID token.
 //
 //   GET    /api/admin/ai-keys            → { keys, audit }
-//   POST   /api/admin/ai-keys            { name, scopes } → { key, url } (the key is shown ONCE)
+//   POST   /api/admin/ai-keys            { name, client, scopes } → { key, url } (the key is shown ONCE)
 //   DELETE /api/admin/ai-keys?id=<id>    → revoke
 import { NextRequest, NextResponse } from 'next/server'
 import { FieldValue } from 'firebase-admin/firestore'
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     const [keys, audit] = await Promise.all([db.collection('ai_keys').get(), db.collection('ai_audit').orderBy('at', 'desc').limit(40).get()])
     return NextResponse.json({
       ok: true,
-      keys: keys.docs.map((d) => { const x = d.data(); return { id: d.id, name: x.name || '', scopes: x.scopes || [], hint: x.hint || '', createdBy: x.createdBy || '', createdAt: iso(x.createdAt), lastUsedAt: iso(x.lastUsedAt), uses: x.uses || 0, revokedAt: iso(x.revokedAt) } })
+      keys: keys.docs.map((d) => { const x = d.data(); return { id: d.id, name: x.name || '', scopes: x.scopes || [], client: x.client || 'other', hint: x.hint || '', createdBy: x.createdBy || '', createdAt: iso(x.createdAt), lastUsedAt: iso(x.lastUsedAt), uses: x.uses || 0, revokedAt: iso(x.revokedAt) } })
         .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))),
       audit: audit.docs.map((d) => { const x = d.data(); return { id: d.id, keyName: x.keyName || '', tool: x.tool || '', ok: !!x.ok, summary: x.summary || '', targetId: x.targetId ?? null, at: iso(x.at) } }),
     })
@@ -42,13 +42,14 @@ export async function POST(req: NextRequest) {
   try {
     const email = await adminEmail(req)
     if (!email) return fail(401, 'unauthorized')
-    const body = await req.json().catch(() => null) as { name?: unknown; scopes?: unknown } | null
+    const body = await req.json().catch(() => null) as { name?: unknown; scopes?: unknown; client?: unknown } | null
+    const client = ['claude', 'chatgpt'].includes(String(body?.client)) ? String(body?.client) : 'other'
     const name = String(body?.name ?? '').trim().slice(0, 60)
     const scopes = (Array.isArray(body?.scopes) ? body!.scopes : []).filter((s): s is AiScope => (AI_SCOPES as readonly string[]).includes(String(s)))
-    if (!name) return fail(400, 'name is required (who is this key for?)')
+    if (!name) return fail(400, 'name is required')
     if (!scopes.includes('read')) scopes.unshift('read')   // every key can look things up
     const { raw, id } = mintKey()
-    await adminDb().collection('ai_keys').doc(id).set({ name, scopes: [...new Set(scopes)], hint: `${raw.slice(0, 8)}…${raw.slice(-4)}`, createdBy: email, createdAt: FieldValue.serverTimestamp(), uses: 0, revokedAt: null })
+    await adminDb().collection('ai_keys').doc(id).set({ name, client, scopes: [...new Set(scopes)], hint: `${raw.slice(0, 8)}…${raw.slice(-4)}`, createdBy: email, createdAt: FieldValue.serverTimestamp(), uses: 0, revokedAt: null })
     const origin = req.nextUrl.origin
     return NextResponse.json({ ok: true, id, key: raw, url: `${origin}/api/mcp/${raw}`, headerUrl: `${origin}/api/mcp` })
   } catch (e) { console.error('ai-keys POST failed', e); return fail(500, 'could not create the key') }

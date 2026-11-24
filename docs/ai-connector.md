@@ -5,15 +5,17 @@ assistant can look things up in Palmera and draft listings for them, instead
 of clicking through the editor.
 
 - Endpoint: `POST https://www.palmeraexp.com/api/mcp`
-- Keys are issued, listed and revoked at `/admin/ai` (admins only).
+- Self-serve: anyone signed in to the admin dashboard opens `/admin/ai`,
+  clicks **Connect Claude** or **Connect ChatGPT**, and follows the steps on
+  the page. Connections are listed and disconnected there too.
 - Code: `src/lib/ai/` (keys, listing builder, tools, protocol) and
   `src/app/api/mcp/`.
 
 ## Access keys
 
-There is no shared password. Each person (and each assistant) gets a key of
-their own, so access can be cut for one without touching the others and every
-change is attributed.
+There is no shared password. Each click of Connect makes a key of its own
+(labelled with the person's name if they give one), so one connection can be
+cut without touching the others and every change is attributed.
 
 - A key looks like `pal_…` (256 bits of randomness). It is shown once, when it
   is created. Only its SHA-256 is stored (`ai_keys/{hash}`), so a database
@@ -36,8 +38,9 @@ change is attributed.
 | `write` | Create listings as drafts; edit listings that are not live | Members see nothing until a person publishes |
 | `publish` | Publish and unpublish, edit live listings, set Featured tonight | Members see the change at once |
 
-Start people on `read` + `write`. Give `publish` only to someone who wants the
-assistant to act on the live app, and expect the assistant to ask before it
+The page connects with `read` + `write` by default. Ticking "Also let it
+publish and change what is live" adds `publish`; do that only for someone who
+wants the assistant to act on the live app, and expect the assistant to ask before it
 does: the server tells it to confirm first.
 
 ## Tools
@@ -75,7 +78,8 @@ under Activity at `/admin/ai`.
 
 ## Connecting an assistant
 
-Menus in both products move; these were right in November 2026.
+The page at `/admin/ai` shows these steps with the link ready to copy. Menus
+in both products move; these were right in November 2026.
 
 **Claude** (any plan; the Free plan allows one custom connector):
 claude.ai/customize/connectors → Add → Add custom connector → name it
