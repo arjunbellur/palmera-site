@@ -174,7 +174,10 @@ export default function AdminOverview() {
     <div className="pf-in">
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '14px', flexWrap: 'wrap' }}>
         <ScreenHeader label="Palmera HQ" title="Overview" intro="The pulse of the app and the business — live." />
-        <span style={{ marginTop: '4px' }}><Chip tone="green">● Live</Chip></span>
+        <span style={{ marginTop: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Link href="/admin/ai" style={{ fontFamily: 'var(--font-sans)', fontSize: '11.5px', color: 'var(--pf-gold)', textDecoration: 'none', letterSpacing: '0.03em' }}>AI access →</Link>
+          <Chip tone="green">● Live</Chip>
+        </span>
       </div>
 
       {/* Overview-first: the App + Business tiles are the headline; actions,

@@ -87,6 +87,23 @@ time-based mails (12h partner reminder, member day-before reminder).
 Every dashboard change that touches documents/rules/indexes the app consumes
 gets a line here, newest first. Pure-UI dashboard changes are never listed.
 
+- 2026-11-23 **No app change needed** — AI connector for the team
+  (`/api/mcp`, docs/ai-connector.md). A teammate's Claude or ChatGPT can read
+  the catalogue and draft listings through the Admin SDK, with a personal
+  access key an admin issues at /admin/ai. What it can write to shared data:
+  - `experiences` + `experiences/{id}/options`: the SAME document shape the
+    dashboard editor writes (it reuses the editor's classifier, availability
+    and cancellation-tier derivations). New listings are always
+    `status: 'draft'`, `active: false`, no photos, so the app never sees them
+    until a person publishes. One additive field: `createdVia:
+    'ai_connector'` (the app can ignore it).
+  - Publishing/unpublishing and `config/featured` only with a key that has
+    the `publish` permission; `config/featured.{city}.updatedByEmail` then
+    reads `ai-connector:<key name>` instead of an email.
+  - Two new Admin-SDK-only collections, `ai_keys` (SHA-256 of each key, never
+    the key) and `ai_audit` (one row per change). No client rule on either,
+    so they are closed to the app and the browser. No rules or index deploy.
+
 - 2026-11-05 **No app impact** — `providers/{uid}.tourCompletedAt` (Timestamp,
   dashboard-written when a partner finishes or skips the portal's guided
   tour). `providers` is dashboard-owned; the app never reads the field.

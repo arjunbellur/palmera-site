@@ -280,6 +280,9 @@ export interface Experience {
   rating: number                  // server-only
   reviews: number                 // server-only
   needsReview?: string[]          // transient (migration): e.g. ['cancellationTier','photos','coords']
+  /** 'ai_connector' when the listing was created through /api/mcp (2026-11-23,
+   *  additive, dashboard-only — the app ignores it). Absent = made in the dashboard. */
+  createdVia?: string
   createdAt: TS
   updatedAt: TS
 }

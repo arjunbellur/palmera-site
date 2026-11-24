@@ -25,7 +25,7 @@ const NAV = [
 const UNDER: Record<string, string[]> = {
   '/admin/directory': ['/admin/companies', '/admin/suppliers'],
   '/admin/catalogue': ['/admin/categories'],
-  '/admin': ['/admin/emails'],
+  '/admin': ['/admin/emails', '/admin/ai'],
 }
 const tabActive = (href: string, pathname: string) =>
   href === '/admin' ? (pathname === '/admin' || (UNDER['/admin'] ?? []).some((p) => pathname.startsWith(p)))
