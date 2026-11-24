@@ -69,6 +69,7 @@ day) is the backstop keyed on missing `notified.*` stamps, and sends the
 time-based mails (12h partner reminder, member day-before reminder).
 
 ## Rules sync log
+- 2026-11-24: **`app_events` rule added (Part 5, Note 4; Samson).** Create only, own uid, fixed type list, `at == request.time`, platform ios/android, fixed key list, `app_open` id `open_<uid>_<yyyy-MM-dd>`; admin read; no update/delete. Written by iOS 1.78 and Android 3.15. Profiles also gain `signup_source` / `signup_inviter_uid` (owner-writable today, no rule change). Group photos now upload to Storage `chat/<uid>-group-<ms>.jpg` and photo messages to `chat/<uid>-<ms>.jpg` with `image_url`/`image_w`/`image_h` on chat_messages (existing rules already allow both).
 - 2026-10-25: **Production rules deployed from main (ruleset a5d8c669…)** — supply_orders client writes removed (server-side marketplace), explicit deny-all on pawapay_payments / pawapay_refunds / concierge_usage. No change to anything the app reads or writes. Samson: pull main before your next deploy.
 - 2026-08-21: **Samson's 2026-08-12 Storage ruleset adopted verbatim** into
   `storage.rules` + partner block appended (see changelog). Storage rules

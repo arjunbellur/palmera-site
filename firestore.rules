@@ -423,6 +423,31 @@ service cloud.firestore {
     function threadMembers(tid) {
       return get(/databases/$(database)/documents/chat_threads/$(tid)).data.memberIds;
     }
+    // ── App events for the admin dashboard statistics (Part 5, Note 4) ───────
+    // One document per event, written by the app for the signed-in member
+    // only. Create only: never edited or deleted from a client. The dashboard
+    // (admin) reads them; rollups run with the Admin SDK.
+    // app_open uses the id open_<uid>_<yyyy-MM-dd> so a member is counted once
+    // a day even across devices (a second create of that id is an update and
+    // is refused, which the app ignores).
+    match /app_events/{eventId} {
+      allow read: if isAdmin();
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.type in ['app_open', 'listing_view', 'search',
+             'category_tap', 'checkout_start', 'payment_fail', 'featured_tap',
+             'push_open']
+        && request.resource.data.at == request.time
+        && request.resource.data.platform in ['ios', 'android']
+        && request.resource.data.keys().hasOnly(['uid', 'type', 'at', 'city',
+             'platform', 'appVersion', 'listingId', 'source', 'query',
+             'resultCount', 'mainCategory', 'subcategory', 'bookingId', 'rail',
+             'reason', 'kind'])
+        && (request.resource.data.type != 'app_open'
+            || eventId.matches('open_' + request.auth.uid + '_[0-9]{4}-[0-9]{2}-[0-9]{2}'));
+      allow update, delete: if false;
+    }
+
     match /chat_threads/{tid} {
       // Every EXISTING thread was backfilled by /migrateChatMemberIds, so this
       // is enforced from the moment it deploys — the leak is closed today.
